@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:cache_image/cache_image.dart';
+import 'package:wallpapers_app/wallpapers.dart';
 
 final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
 
@@ -9,24 +10,15 @@ class Feed extends StatefulWidget {
 }
 
 class _FeedState extends State<Feed> {
-
-  void getimage() async {
-    var file = await DefaultCacheManager().getSingleFile("https://46.media.tumblr.com/85b3585957f0c810bf7f1f09dd8c7fe7/tumblr_p14hllwA221uzwgsuo1_400.gif");
-    print(file.path.toString());
-  }
-
-
   @override
   void initState() {
     super.initState();
-    getimage();
-
-    
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(initialIndex: 0,
+    return DefaultTabController(
+      initialIndex: 0,
       length: 4,
       child: Scaffold(
         key: _scaffoldKey,
@@ -64,7 +56,8 @@ class _FeedState extends State<Feed> {
                 ),
                 decoration: new BoxDecoration(
                   image: new DecorationImage(
-                    image: new NetworkImage('https://46.media.tumblr.com/85b3585957f0c810bf7f1f09dd8c7fe7/tumblr_p14hllwA221uzwgsuo1_400.gif'),
+                    image: new CacheImage(
+                        'https://46.media.tumblr.com/85b3585957f0c810bf7f1f09dd8c7fe7/tumblr_p14hllwA221uzwgsuo1_400.gif'),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -74,42 +67,61 @@ class _FeedState extends State<Feed> {
                     size: 48,
                     color: Colors.white70,
                   ),
-                  backgroundImage: NetworkImage("https://46.media.tumblr.com/85b3585957f0c810bf7f1f09dd8c7fe7/tumblr_p14hllwA221uzwgsuo1_400.gif"),
+                  backgroundImage: CacheImage(
+                      "https://46.media.tumblr.com/85b3585957f0c810bf7f1f09dd8c7fe7/tumblr_p14hllwA221uzwgsuo1_400.gif"),
                 ),
               ),
               new ListTile(
-                  leading: Icon(Icons.format_paint,color: Colors.deepPurple,),
+                  leading: Icon(
+                    Icons.format_paint,
+                    color: Colors.deepPurple,
+                  ),
                   title: new Text("Wallpapers"),
                   onTap: () {
                     Navigator.pop(context);
                   }),
               new ListTile(
-                  leading: Icon(Icons.photo,color: Colors.green,),
+                  leading: Icon(
+                    Icons.photo,
+                    color: Colors.green,
+                  ),
                   title: new Text("Photographs"),
                   onTap: () {
                     Navigator.pop(context);
                   }),
               new ListTile(
-                  leading: Icon(Icons.favorite,color: Colors.pink,),
+                  leading: Icon(
+                    Icons.favorite,
+                    color: Colors.pink,
+                  ),
                   title: new Text("Favourites"),
                   onTap: () {
                     Navigator.pop(context);
                   }),
               new ListTile(
-                  leading: Icon(Icons.arrow_downward,color: Colors.blue,),
+                  leading: Icon(
+                    Icons.arrow_downward,
+                    color: Colors.blue,
+                  ),
                   title: new Text("Downloads"),
                   onTap: () {
                     Navigator.pop(context);
                   }),
               new ListTile(
-                  leading: Icon(Icons.settings,color: Colors.deepOrange,),
+                  leading: Icon(
+                    Icons.settings,
+                    color: Colors.deepOrange,
+                  ),
                   title: new Text("Settings"),
                   onTap: () {
                     Navigator.pop(context);
                   }),
               new Divider(),
               new ListTile(
-                  leading: Icon(Icons.info,color: Colors.amber[700],),
+                  leading: Icon(
+                    Icons.info,
+                    color: Colors.amber[700],
+                  ),
                   title: new Text("About"),
                   onTap: () {
                     Navigator.pop(context);
@@ -119,9 +131,7 @@ class _FeedState extends State<Feed> {
         ),
         body: TabBarView(
           children: [
-            new Container(
-              color: Colors.deepPurple,
-            ),
+            Wallpapers(),
             new Container(
               color: Colors.green,
             ),
@@ -153,7 +163,6 @@ class _FeedState extends State<Feed> {
           indicatorSize: TabBarIndicatorSize.label,
           indicatorPadding: EdgeInsets.all(5.0),
           indicatorColor: Colors.grey,
-
         ),
       ),
     );
