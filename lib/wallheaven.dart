@@ -6,10 +6,10 @@ class WallData {
   Future getData(String query) async {
     if (query == "") {
       fetchUrl =
-          "https://wallhaven.cc/api/v1/search?categories=100&purity=100&sorting=random&resolutions=1920x1080&order=desc&page=1";
+          "https://wallhaven.cc/api/v1/search?categories=100&purity=100&sorting=random&resolutions=1080x1920&order=desc&page=1";
     } else {
       fetchUrl =
-          "https://wallhaven.cc/api/v1/search?q=$query&categories=100&purity=100&sorting=random&resolutions=1920x1080&order=desc&page=1";
+          "https://wallhaven.cc/api/v1/search?q=$query&categories=100&purity=100&sorting=random&resolutions=1080x1920&order=desc&page=1";
     }
     http.Response response = await http.get(fetchUrl);
     if (response.statusCode == 200) {
@@ -43,10 +43,10 @@ class WallData {
         } else {
           if (query == "") {
             fetchUrl =
-                "https://wallhaven.cc/api/v1/search?categories=100&purity=100&sorting=random&resolutions=1920x1080&order=desc&page=$i";
+                "https://wallhaven.cc/api/v1/search?categories=100&purity=100&sorting=random&resolutions=1080x1920&order=desc&page=$i";
           } else {
             fetchUrl =
-                "https://wallhaven.cc/api/v1/search?q=$query&categories=100&purity=100&sorting=random&resolutions=1920x1080&order=desc&page=$i";
+                "https://wallhaven.cc/api/v1/search?q=$query&categories=100&purity=100&sorting=random&resolutions=1080x1920&order=desc&page=$i";
           }
           http.Response response = await http.get(fetchUrl);
           if (response.statusCode == 200) {

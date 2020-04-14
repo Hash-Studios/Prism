@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cache_image/cache_image.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:wallpapers_app/wallheaven.dart';
+import 'package:wallpapers_app/display.dart';
 
 class Wallpapers extends StatefulWidget {
   @override
@@ -39,7 +41,7 @@ class _WallpapersState extends State<Wallpapers> {
   }
 
   Future<Null> refreshList() async {
-    refreshKey.currentState?.show(atTop: false);
+    refreshKey.currentState?.show(atTop: true);
     getwalls(query);
 
     // setState(() {
@@ -59,7 +61,6 @@ class _WallpapersState extends State<Wallpapers> {
     super.initState();
     getwalls(query);
     controller = new ScrollController()..addListener(_scrollListener);
-    // ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
   }
 
   @override
@@ -84,6 +85,7 @@ class _WallpapersState extends State<Wallpapers> {
 
   @override
   Widget build(BuildContext context) {
+    ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
     return fetchedData
         ? RefreshIndicator(
             onRefresh: refreshList,
@@ -122,35 +124,46 @@ class _WallpapersState extends State<Wallpapers> {
                             )),
                           ),
                           onTap: () {
-                            showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              child: new AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(24))),
-                                title: new Column(
-                                  children: <Widget>[
-                                    new Text("Image $index"),
-                                  ],
-                                ),
-                                content: new FadeInImage(
-                                  image: CacheImage(fetchedData
-                                      ? wallpapersLinks[index]
-                                      : items[index]),
-                                  placeholder: CacheImage(fetchedData
-                                      ? wallpapersThumbs[index]
-                                      : "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF"),
-                                ),
-                                actions: <Widget>[
-                                  new FlatButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: new Text("OK"))
-                                ],
-                              ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) {
+                                    return Display(
+                                        wallpapersLinks[index],
+                                        wallpapersThumbs[index],
+                                        wallpapersColors[index]);
+                                  },
+                                  fullscreenDialog: true),
                             );
+                            // showDialog(
+                            //   barrierDismissible: false,
+                            //   context: context,
+                            //   child: new AlertDialog(
+                            //     shape: RoundedRectangleBorder(
+                            //         borderRadius:
+                            //             BorderRadius.all(Radius.circular(24))),
+                            //     title: new Column(
+                            //       children: <Widget>[
+                            //         new Text("Image $index"),
+                            //       ],
+                            //     ),
+                            //     content: new FadeInImage(
+                            //       image: CacheImage(fetchedData
+                            //           ? wallpapersLinks[index]
+                            //           : items[index]),
+                            //       placeholder: CacheImage(fetchedData
+                            //           ? wallpapersThumbs[index]
+                            //           : "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF"),
+                            //     ),
+                            //     actions: <Widget>[
+                            //       new FlatButton(
+                            //           onPressed: () {
+                            //             Navigator.of(context).pop();
+                            //           },
+                            //           child: new Text("OK"))
+                            //     ],
+                            //   ),
+                            // );
                           },
                         );
                       }),
@@ -158,7 +171,29 @@ class _WallpapersState extends State<Wallpapers> {
           )
         : Container(
             child: Center(
-              child: Text("Loading"),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Image(
+                    image: AssetImage("assets/images/loading.png"),
+                    height: 600.h,
+                    width: 600.w,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      "Loading",
+                      style: GoogleFonts.raleway(fontSize: 30),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Text(
+                    "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
+                    style: GoogleFonts.raleway(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           );
   }

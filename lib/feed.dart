@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cache_image/cache_image.dart';
 import 'package:wallpapers_app/wallpapers.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
 
@@ -25,10 +26,17 @@ class _FeedState extends State<Feed> {
         // floatingActionButton: FloatingActionButton(onPressed: null),
         key: _scaffoldKey,
         appBar: AppBar(
-          title: Text('Prism'),
+          title: Text(
+            'Prism',
+            style:
+                GoogleFonts.pacifico(fontWeight: FontWeight.w600, fontSize: 30),
+          ),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.search),
+              icon: Icon(
+                Icons.search,
+                color: Colors.black,
+              ),
               onPressed: null,
             )
           ],
@@ -48,13 +56,23 @@ class _FeedState extends State<Feed> {
           child: new ListView(
             children: <Widget>[
               new UserAccountsDrawerHeader(
-                accountName: new Text(
-                  " Prism ",
-                  style: TextStyle(backgroundColor: Colors.white70),
+                accountName: Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: ClipRRect(borderRadius: BorderRadius.all(Radius.circular(5)),
+                                    child: new Text(
+                      " Prism ",
+                      style: GoogleFonts.pacifico(fontWeight: FontWeight.w500, fontSize: 16,backgroundColor: Colors.white54),
+                    ),
+                  ),
                 ),
-                accountEmail: new Text(
-                  " Always on the colourful side! ",
-                  style: TextStyle(backgroundColor: Colors.white70),
+                accountEmail: Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: ClipRRect(borderRadius: BorderRadius.all(Radius.circular(5)),
+                                    child: new Text(
+                      " Always on the colourful side! ",
+                      style: TextStyle(backgroundColor: Colors.white54),
+                    ),
+                  ),
                 ),
                 decoration: new BoxDecoration(
                   image: new DecorationImage(
@@ -160,11 +178,11 @@ class _FeedState extends State<Feed> {
               icon: new Icon(Icons.arrow_downward),
             )
           ],
-          labelColor: Colors.deepPurple,
+          labelColor: Colors.black,
           unselectedLabelColor: Colors.grey,
           indicatorSize: TabBarIndicatorSize.label,
           indicatorPadding: EdgeInsets.all(5.0),
-          indicatorColor: Colors.grey,
+          indicatorColor: Colors.black,
         ),
       ),
     );
