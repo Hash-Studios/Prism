@@ -21,6 +21,8 @@ class _FeedState extends State<Feed> {
       initialIndex: 0,
       length: 4,
       child: Scaffold(
+        // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        // floatingActionButton: FloatingActionButton(onPressed: null),
         key: _scaffoldKey,
         appBar: AppBar(
           title: Text('Prism'),
