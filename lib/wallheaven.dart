@@ -30,7 +30,12 @@ class WallData {
         print(wallpapers[i]["path"]);
         wallpapersLinks.add(wallpapers[i]["path"].toString());
         wallpapersThumbs.add(wallpapers[i]["thumbs"]["original"].toString());
-        wallpapersColors.add(wallpapers[i]["colors"][0].toString());
+        try {
+          wallpapersColors
+              .add(wallpapers[i]["colors"][0].toString().substring(1));
+        } catch (e) {
+          wallpapersColors.add("FFFFFF");
+        }
       }
       for (int i = 2; i <= 5; i++) {
         if (currentPage == wallpPages) {
@@ -54,7 +59,12 @@ class WallData {
               wallpapersLinks.add(wallpapers[i]["path"].toString());
               wallpapersThumbs
                   .add(wallpapers[i]["thumbs"]["original"].toString());
-              wallpapersColors.add(wallpapers[i]["colors"][0].toString());
+              try {
+                wallpapersColors
+                    .add(wallpapers[i]["colors"][0].toString().substring(1));
+              } catch (e) {
+                wallpapersColors.add("FFFFFF");
+              }
             }
           } else {
             print(response.statusCode);
@@ -62,7 +72,11 @@ class WallData {
           }
         }
       }
-      Map wallheavenData = {"links":wallpapersLinks,"thumbs":wallpapersThumbs,"colors":wallpapersColors};
+      Map wallheavenData = {
+        "links": wallpapersLinks,
+        "thumbs": wallpapersThumbs,
+        "colors": wallpapersColors
+      };
       print(wallheavenData.toString());
       return wallheavenData;
     } else {
