@@ -45,14 +45,79 @@ class _DisplayState extends State<Display> {
                   backgroundColor: Colors.white,
                   child: Icon(Icons.format_paint),
                   onPressed: () async {
-                    int location = WallpaperManager
-                        .LOCK_SCREEN; // or location = WallpaperManager.LOCK_SCREEN;
-                    String result;
-                    var file =
-                        await DefaultCacheManager().getSingleFile(widget.link);
-                    final String result1 =
-                        await WallpaperManager.setWallpaperFromFile(
-                            file.path, location);
+                    showDialog(
+                      context: context,
+                      child: AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(24),
+                          ),
+                        ),
+                        content: Container(
+                          height: 270.h,
+                          width: 200.w,
+                          child: ListView.builder(
+                              itemCount: 3,
+                              itemBuilder: (context, index) {
+                                return ListTile(
+                                  leading: Icon(index == 0
+                                      ? Icons.add_to_home_screen
+                                      : index == 1
+                                          ? Icons.screen_lock_portrait
+                                          : Icons.wallpaper),
+                                  title: Text(index == 0
+                                      ? "Home Screen"
+                                      : index == 1 ? "Lock Screen" : "Both"),
+                                  onTap: index == 0
+                                      ? () async {
+                                          Navigator.of(context).pop();
+                                          int location =
+                                              WallpaperManager.HOME_SCREEN;
+                                          var file = await DefaultCacheManager()
+                                              .getSingleFile(widget.link);
+                                          final String result1 =
+                                              await WallpaperManager
+                                                  .setWallpaperFromFile(
+                                                      file.path, location);
+                                        }
+                                      : index == 1
+                                          ? () async {
+                                              Navigator.of(context).pop();
+                                              int location =
+                                                  WallpaperManager.LOCK_SCREEN;
+                                              var file =
+                                                  await DefaultCacheManager()
+                                                      .getSingleFile(
+                                                          widget.link);
+                                              final String result1 =
+                                                  await WallpaperManager
+                                                      .setWallpaperFromFile(
+                                                          file.path, location);
+                                            }
+                                          : () async {
+                                              Navigator.of(context).pop();
+                                              int location =
+                                                  WallpaperManager.HOME_SCREEN;
+                                              var file =
+                                                  await DefaultCacheManager()
+                                                      .getSingleFile(
+                                                          widget.link);
+                                              final String result1 =
+                                                  await WallpaperManager
+                                                      .setWallpaperFromFile(
+                                                          file.path, location);
+                                              location =
+                                                  WallpaperManager.LOCK_SCREEN;
+                                              final String result2 =
+                                                  await WallpaperManager
+                                                      .setWallpaperFromFile(
+                                                          file.path, location);
+                                            },
+                                );
+                              }),
+                        ),
+                      ),
+                    );
                   }),
             ))
       ],

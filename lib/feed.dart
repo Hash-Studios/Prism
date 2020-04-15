@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cache_image/cache_image.dart';
 import 'package:wallpapers_app/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
 
@@ -18,6 +19,7 @@ class _FeedState extends State<Feed> {
 
   @override
   Widget build(BuildContext context) {
+    ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
     return DefaultTabController(
       initialIndex: 0,
       length: 4,
@@ -58,17 +60,22 @@ class _FeedState extends State<Feed> {
               new UserAccountsDrawerHeader(
                 accountName: Padding(
                   padding: const EdgeInsets.only(left: 10),
-                  child: ClipRRect(borderRadius: BorderRadius.all(Radius.circular(5)),
-                                    child: new Text(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(5)),
+                    child: new Text(
                       " Prism ",
-                      style: GoogleFonts.pacifico(fontWeight: FontWeight.w500, fontSize: 16,backgroundColor: Colors.white54),
+                      style: GoogleFonts.pacifico(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                          backgroundColor: Colors.white54),
                     ),
                   ),
                 ),
                 accountEmail: Padding(
                   padding: const EdgeInsets.only(left: 10),
-                  child: ClipRRect(borderRadius: BorderRadius.all(Radius.circular(5)),
-                                    child: new Text(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(5)),
+                    child: new Text(
                       " Always on the colourful side! ",
                       style: TextStyle(backgroundColor: Colors.white54),
                     ),
@@ -151,7 +158,8 @@ class _FeedState extends State<Feed> {
         ),
         body: TabBarView(
           children: [
-            Wallpapers(),
+            Wallpapers(ScreenUtil.screenWidth.round(),
+                ScreenUtil.screenHeight.round()),
             new Container(
               color: Colors.green,
             ),

@@ -3,13 +3,15 @@ import 'package:http/http.dart' as http;
 
 class WallData {
   String fetchUrl;
-  Future getData(String query) async {
+  Future getData(String query, int width, int height) async {
+    width = 1080;
+    height = 1920;
     if (query == "") {
       fetchUrl =
-          "https://wallhaven.cc/api/v1/search?categories=100&purity=100&sorting=random&resolutions=1080x1920&order=desc&page=1";
+          "https://wallhaven.cc/api/v1/search?categories=100&purity=100&resolutions=${width}x${height}&sorting=random&order=desc&page=1";
     } else {
       fetchUrl =
-          "https://wallhaven.cc/api/v1/search?q=$query&categories=100&purity=100&sorting=random&resolutions=1080x1920&order=desc&page=1";
+          "https://wallhaven.cc/api/v1/search?q=$query&categories=100&purity=100&resolutions=${width}x${height}&sorting=random&order=desc&page=1";
     }
     http.Response response = await http.get(fetchUrl);
     if (response.statusCode == 200) {
@@ -27,7 +29,8 @@ class WallData {
         wallpPages = 5;
       }
       for (int i = 0; i < wallpapers.length; i++) {
-        print(wallpapers[i]["path"]);
+        print(
+            '${wallpapers[i]["dimension_x"]}x${wallpapers[i]["dimension_y"]}');
         wallpapersLinks.add(wallpapers[i]["path"].toString());
         wallpapersThumbs.add(wallpapers[i]["thumbs"]["original"].toString());
         try {
@@ -43,10 +46,10 @@ class WallData {
         } else {
           if (query == "") {
             fetchUrl =
-                "https://wallhaven.cc/api/v1/search?categories=100&purity=100&sorting=random&resolutions=1080x1920&order=desc&page=$i";
+                "https://wallhaven.cc/api/v1/search?categories=100&purity=100&resolutions=${width}x${height}&sorting=random&order=desc&page=$i";
           } else {
             fetchUrl =
-                "https://wallhaven.cc/api/v1/search?q=$query&categories=100&purity=100&sorting=random&resolutions=1080x1920&order=desc&page=$i";
+                "https://wallhaven.cc/api/v1/search?q=$query&categories=100&purity=100&resolutions=${width}x${height}&sorting=random&order=desc&page=$i";
           }
           http.Response response = await http.get(fetchUrl);
           if (response.statusCode == 200) {
@@ -77,7 +80,7 @@ class WallData {
         "thumbs": wallpapersThumbs,
         "colors": wallpapersColors
       };
-      print(wallheavenData.toString());
+      // print(wallheavenData.toString());
       return wallheavenData;
     } else {
       print(response.statusCode);

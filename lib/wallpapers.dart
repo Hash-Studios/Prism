@@ -6,6 +6,9 @@ import 'package:wallpapers_app/wallheaven.dart';
 import 'package:wallpapers_app/display.dart';
 
 class Wallpapers extends StatefulWidget {
+  int width;
+  int height;
+  Wallpapers(this.width, this.height);
   @override
   _WallpapersState createState() => _WallpapersState();
 }
@@ -21,14 +24,14 @@ class _WallpapersState extends State<Wallpapers> {
   List<String> items = List.generate(
       20, (number) => "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF");
 
-  void getwalls(String query) async {
+  void getwalls(String query, int width, int height) async {
     setState(() {
       fetchedData = false;
     });
     adder = 0;
     items = List.generate(20,
         (number) => "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF");
-    Map data = await wallheaven.getData(query);
+    Map data = await wallheaven.getData(query, width, height);
     wallpapersLinks = data["links"];
     wallpapersThumbs = data["thumbs"];
     wallpapersColors = data["colors"];
@@ -42,7 +45,7 @@ class _WallpapersState extends State<Wallpapers> {
 
   Future<Null> refreshList() async {
     refreshKey.currentState?.show(atTop: true);
-    getwalls(query);
+    getwalls(query, widget.width, widget.height);
 
     // setState(() {
     //   items = List.generate(
@@ -59,7 +62,7 @@ class _WallpapersState extends State<Wallpapers> {
   @override
   void initState() {
     super.initState();
-    getwalls(query);
+    getwalls(query, widget.width, widget.height);
     controller = new ScrollController()..addListener(_scrollListener);
   }
 
