@@ -56,6 +56,12 @@ class _WallpapersState extends State<Wallpapers> {
     return null;
   }
 
+  Future<Null> refreshLoad() async {
+    refreshKey.currentState?.show(atTop: true);
+    await Future.delayed(Duration(seconds: 5));
+    return null;
+  }
+
   ScrollController controller;
   var refreshKey = GlobalKey<RefreshIndicatorState>();
 
@@ -91,6 +97,7 @@ class _WallpapersState extends State<Wallpapers> {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
     return fetchedData
         ? RefreshIndicator(
+            key: refreshKey,
             onRefresh: refreshList,
             child: new Container(
                 color: Colors.white,
@@ -172,30 +179,34 @@ class _WallpapersState extends State<Wallpapers> {
                       }),
                 )),
           )
-        : Container(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Image(
-                    image: AssetImage("assets/images/loading.png"),
-                    height: 600.h,
-                    width: 600.w,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      "Loading",
-                      style: GoogleFonts.raleway(fontSize: 30),
+        : RefreshIndicator(
+            key: refreshKey,
+            onRefresh: refreshLoad,
+            child: Container(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Image(
+                      image: AssetImage("assets/images/loading.png"),
+                      height: 600.h,
+                      width: 600.w,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        "Loading",
+                        style: GoogleFonts.raleway(fontSize: 30),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Text(
+                      "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
+                      style: GoogleFonts.raleway(fontSize: 16),
                       textAlign: TextAlign.center,
                     ),
-                  ),
-                  Text(
-                    "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
-                    style: GoogleFonts.raleway(fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
