@@ -72,7 +72,7 @@ packages:
     source: hosted
     version: "2.1.3"
   cupertino_icons:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       name: cupertino_icons
       url: "https://pub.dartlang.org"
