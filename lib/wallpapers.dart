@@ -20,6 +20,12 @@ class _WallpapersState extends State<Wallpapers> {
   List wallpapersLinks = [];
   List wallpapersThumbs = [];
   List wallpapersColors = [];
+  List wallpapersColors2 = [];
+  List wallpapersViews = [];
+  List wallpapersResolution = [];
+  List wallpapersUrl = [];
+  List wallpapersCreatedAt = [];
+  List wallpapersFav = [];
   WallData wallheaven = WallData();
   List<String> items = List.generate(
       20, (number) => "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF");
@@ -35,7 +41,13 @@ class _WallpapersState extends State<Wallpapers> {
     wallpapersLinks = data["links"];
     wallpapersThumbs = data["thumbs"];
     wallpapersColors = data["colors"];
-    print(wallpapersColors.toString());
+    wallpapersColors2 = data["colors2"];
+    wallpapersViews = data["views"];
+    wallpapersResolution = data["resolution"];
+    wallpapersUrl = data["url"];
+    wallpapersCreatedAt = data["created_at"];
+    wallpapersFav = data["favourites"];
+    // print(wallpapersColors.toString());
     items =
         List.generate(20, (number) => wallpapersLinks[int.parse('$number')]);
     setState(() {
@@ -141,7 +153,13 @@ class _WallpapersState extends State<Wallpapers> {
                                     return Display(
                                         wallpapersLinks[index],
                                         wallpapersThumbs[index],
-                                        wallpapersColors[index]);
+                                        wallpapersColors[index],
+                                        wallpapersColors2[index],
+                                        wallpapersViews[index],
+                                        wallpapersResolution[index],
+                                        wallpapersUrl[index],
+                                        wallpapersCreatedAt[index],
+                                        wallpapersFav[index]);
                                   },
                                   fullscreenDialog: true),
                             );

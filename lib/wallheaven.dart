@@ -21,6 +21,12 @@ class WallData {
       List wallpapersLinks = [];
       List wallpapersThumbs = [];
       List wallpapersColors = [];
+      List wallpapersColors2 = [];
+      List wallpapersViews = [];
+      List wallpapersUrl = [];
+      List wallpapersCreatedAt = [];
+      List wallpapersResolution = [];
+      List wallpapersFav = [];
       List wallpapers = fetchData["data"];
       Map meta = fetchData["meta"];
       currentPage = meta["current_page"];
@@ -29,15 +35,26 @@ class WallData {
         wallpPages = 5;
       }
       for (int i = 0; i < wallpapers.length; i++) {
-        print(
-            '${wallpapers[i]["dimension_x"]}x${wallpapers[i]["dimension_y"]}');
+        // print(
+        //     '${wallpapers[i]["dimension_x"]}x${wallpapers[i]["dimension_y"]}');
         wallpapersLinks.add(wallpapers[i]["path"].toString());
         wallpapersThumbs.add(wallpapers[i]["thumbs"]["original"].toString());
+        wallpapersViews.add(wallpapers[i]["views"].toString());
+        wallpapersUrl.add(wallpapers[i]["short_url"].toString());
+        wallpapersResolution.add(wallpapers[i]["resolution"].toString());
+        wallpapersCreatedAt.add(wallpapers[i]["created_at"].toString());
+        wallpapersFav.add(wallpapers[i]["favorites"].toString());
         try {
           wallpapersColors
               .add(wallpapers[i]["colors"][0].toString().substring(1));
         } catch (e) {
           wallpapersColors.add("FFFFFF");
+        }
+        try {
+          wallpapersColors2
+              .add(wallpapers[i]["colors"][2].toString().substring(1));
+        } catch (e) {
+          wallpapersColors2.add("000000");
         }
       }
       for (int i = 2; i <= 5; i++) {
@@ -62,11 +79,22 @@ class WallData {
               wallpapersLinks.add(wallpapers[i]["path"].toString());
               wallpapersThumbs
                   .add(wallpapers[i]["thumbs"]["original"].toString());
+              wallpapersViews.add(wallpapers[i]["views"].toString());
+              wallpapersUrl.add(wallpapers[i]["short_url"].toString());
+              wallpapersResolution.add(wallpapers[i]["resolution"].toString());
+              wallpapersCreatedAt.add(wallpapers[i]["created_at"].toString());
+              wallpapersFav.add(wallpapers[i]["favorites"].toString());
               try {
                 wallpapersColors
                     .add(wallpapers[i]["colors"][0].toString().substring(1));
               } catch (e) {
                 wallpapersColors.add("FFFFFF");
+              }
+              try {
+                wallpapersColors2
+                    .add(wallpapers[i]["colors"][2].toString().substring(1));
+              } catch (e) {
+                wallpapersColors2.add("000000");
               }
             }
           } else {
@@ -78,7 +106,13 @@ class WallData {
       Map wallheavenData = {
         "links": wallpapersLinks,
         "thumbs": wallpapersThumbs,
-        "colors": wallpapersColors
+        "colors": wallpapersColors,
+        "colors2": wallpapersColors2,
+        "views": wallpapersViews,
+        "url": wallpapersUrl,
+        "resolution": wallpapersResolution,
+        "created_at": wallpapersCreatedAt,
+        "favourites": wallpapersFav
       };
       // print(wallheavenData.toString());
       return wallheavenData;
