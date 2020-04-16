@@ -133,17 +133,19 @@ class _WallpapersState extends State<Wallpapers> {
                             margin: EdgeInsets.fromLTRB(7, 7, 7, 7),
                             clipBehavior: Clip.antiAliasWithSaveLayer,
                             child: new Container(
-                                child: new FadeInImage(
-                              placeholder: CacheImage(fetchedData
-                                  ? "https://via.placeholder.com/300x400.jpg/${wallpapersColors[index]}/${wallpapersColors[index]}"
-                                  : "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF"),
-                              image: CacheImage(
-                                fetchedData
-                                    ? wallpapersThumbs[index]
-                                    : items[index],
-                              ),
-                              fit: BoxFit.cover,
-                            )),
+                                child: new Hero(
+                                    tag: wallpapersUrl[index],
+                                    child: FadeInImage(
+                                      placeholder: CacheImage(fetchedData
+                                          ? "https://via.placeholder.com/300x400.jpg/${wallpapersColors[index]}/${wallpapersColors[index]}"
+                                          : "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF"),
+                                      image: CacheImage(
+                                        fetchedData
+                                            ? wallpapersThumbs[index]
+                                            : items[index],
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ))),
                           ),
                           onTap: () {
                             Navigator.push(

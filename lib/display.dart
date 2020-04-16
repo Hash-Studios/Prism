@@ -30,6 +30,7 @@ class Display extends StatefulWidget {
 class _DisplayState extends State<Display> {
   final GlobalKey<FabCircularMenuState> fabKey = GlobalKey();
   bool isOpen = false;
+  double opacity = 0.0;
   var file;
   bool isFile = false;
   void getFile() async {
@@ -47,6 +48,7 @@ class _DisplayState extends State<Display> {
     super.initState();
     isFile = false;
     isOpen = false;
+    opacity = 0.0;
     getFile();
   }
 
@@ -64,24 +66,45 @@ class _DisplayState extends State<Display> {
     return Stack(
       alignment: Alignment.center,
       children: <Widget>[
+        Hero(
+            tag: widget.url,
+            child: Container(
+              width: 720.w,
+              height: 1440.h,
+              decoration: BoxDecoration(
+                  image: DecorationImage(
+                image: isFile ? FileImage(file) : CacheImage(widget.thumb),
+                fit: BoxFit.cover,
+              )),
+            )),
         Container(
             width: 720.w,
             height: 1440.h,
-            decoration: BoxDecoration(
-                image: DecorationImage(
-              image: isFile ? FileImage(file) : CacheImage(widget.thumb),
-              fit: BoxFit.cover,
-            )),
             child: isOpen
                 ? BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                    child: Container(
-                      color: Colors.transparent,
-                    ),
+                    filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
+                    child: Container(color: Colors.transparent),
                   )
-                : Container(
-                    child: Text(""),
-                  )),
+                : Container()),
+        // Container(
+        //     width: 720.w,
+        //     height: 1440.h,
+        //     child: AnimatedCrossFade(
+        //       duration: Duration(milliseconds: 500),
+        //       reverseDuration: Duration(milliseconds: 500),
+        //       firstCurve: Curves.easeOutSine,
+        //       secondCurve: Curves.easeOutSine,
+        //       firstChild: BackdropFilter(
+        //         filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+        //         child: Container(color: Colors.transparent),
+        //       ),
+        //       secondChild: Container(
+        //         width: 720.w,
+        //         height: 1440.h,
+        //       ),
+        //       crossFadeState:
+        //           isOpen ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+        //     )),
         Padding(
           padding: const EdgeInsets.only(bottom: 40),
           child: Stack(
@@ -96,35 +119,45 @@ class _DisplayState extends State<Display> {
                   animationCurve: Curves.easeOutSine,
                   fabOpenIcon: Icon(
                     Icons.info_outline,
-                    color: Hexcolor("#${widget.color2}"),
+                    color: Hexcolor("#${widget.color}"),
                   ),
                   fabCloseIcon: Icon(
                     Icons.close,
-                    color: Hexcolor("#${widget.color2}"),
+                    color: Hexcolor("#${widget.color}"),
                   ),
                   ringDiameter: 600.w,
                   animationDuration: Duration(milliseconds: 500),
                   alignment: Alignment.bottomCenter,
                   ringColor: Colors.transparent,
-                  fabColor: Hexcolor("#${widget.color}"),
+                  fabColor: Hexcolor("#${widget.color2}"),
                   children: <Widget>[
                     FloatingActionButton(
                         child: Icon(
                           Icons.file_download,
-                          color: Hexcolor("#${widget.color2}"),
+                          color: Hexcolor("#${widget.color}"),
                         ),
-                        backgroundColor: Hexcolor("#${widget.color}"),
+                        backgroundColor: Hexcolor("#${widget.color2}"),
                         onPressed: () {
+                          fabKey.currentState.close();
+                          setState(() {
+                            isOpen = false;
+                            opacity = 0.0;
+                          });
                           // print('Home');
                         }),
                     FloatingActionButton(
-                        backgroundColor: Hexcolor("#${widget.color}"),
+                        backgroundColor: Hexcolor("#${widget.color2}"),
                         child: Icon(
                           Icons.format_paint,
-                          color: Hexcolor("#${widget.color2}"),
+                          color: Hexcolor("#${widget.color}"),
                         ),
                         onPressed: isFile
                             ? () async {
+                                setState(() {
+                                  isOpen = false;
+                                  opacity = 0.0;
+                                });
+                                fabKey.currentState.close();
                                 showDialog(
                                   context: context,
                                   child: AlertDialog(
@@ -288,10 +321,15 @@ class _DisplayState extends State<Display> {
                     FloatingActionButton(
                       child: Icon(
                         Icons.favorite,
-                        color: Hexcolor("#${widget.color2}"),
+                        color: Hexcolor("#${widget.color}"),
                       ),
-                      backgroundColor: Hexcolor("#${widget.color}"),
+                      backgroundColor: Hexcolor("#${widget.color2}"),
                       onPressed: () {
+                        fabKey.currentState.close();
+                        setState(() {
+                          isOpen = false;
+                          opacity = 0.0;
+                        });
                         // print('Favorite');
                       },
                     )
@@ -306,11 +344,13 @@ class _DisplayState extends State<Display> {
                       fabKey.currentState.close();
                       setState(() {
                         isOpen = false;
+                        opacity = 0.0;
                       });
                     } else {
                       fabKey.currentState.open();
                       setState(() {
                         isOpen = true;
+                        opacity = 1.0;
                       });
                     }
                   },
@@ -321,125 +361,122 @@ class _DisplayState extends State<Display> {
                   ),
                 ),
               ),
-              isOpen
-                  ? Card(
-                      color: Hexcolor("#${widget.color}"),
-                      elevation: 8,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(24),
-                        ),
-                      ),
-                      child: SizedBox(
-                        width: 500.w,
-                        height: 400.h,
-                        child: Container(
-                          padding:
-                              EdgeInsets.fromLTRB(100.w, 20.w, 100.w, 20.w),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    Icon(
-                                      Icons.remove_red_eye,
-                                      color: Hexcolor("#${widget.color2}"),
-                                    ),
-                                    Text(
-                                      "${widget.views}",
-                                      style: TextStyle(
-                                        color: Hexcolor("#${widget.color2}"),
-                                      ),
-                                    )
-                                  ],
+              AnimatedOpacity(
+                opacity: opacity,
+                curve: Curves.easeOutSine,
+                duration: Duration(milliseconds: 500),
+                child: Card(
+                  color: Hexcolor("#${widget.color2}"),
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(24),
+                    ),
+                  ),
+                  child: SizedBox(
+                    width: 500.w,
+                    height: 400.h,
+                    child: Container(
+                      padding: EdgeInsets.fromLTRB(100.w, 20.w, 100.w, 20.w),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.remove_red_eye,
+                                  color: Hexcolor("#${widget.color}"),
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    Icon(
-                                      Icons.favorite,
-                                      color: Hexcolor("#${widget.color2}"),
-                                    ),
-                                    Text(
-                                      "${widget.favourites}",
-                                      style: TextStyle(
-                                        color: Hexcolor("#${widget.color2}"),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    Icon(
-                                      Icons.photo_size_select_large,
-                                      color: Hexcolor("#${widget.color2}"),
-                                    ),
-                                    Text(
-                                      "${widget.resolution}",
-                                      style: TextStyle(
-                                        color: Hexcolor("#${widget.color2}"),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    Icon(
-                                      Icons.link,
-                                      color: Hexcolor("#${widget.color2}"),
-                                    ),
-                                    Text(
-                                      "${widget.url}",
-                                      style: TextStyle(
-                                        color: Hexcolor("#${widget.color2}"),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    Icon(
-                                      Icons.calendar_today,
-                                      color: Hexcolor("#${widget.color2}"),
-                                    ),
-                                    Text(
-                                      "${widget.createdAt}",
-                                      style: TextStyle(
-                                        color: Hexcolor("#${widget.color2}"),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ],
+                                Text(
+                                  "${widget.views}",
+                                  style: TextStyle(
+                                    color: Hexcolor("#${widget.color}"),
+                                  ),
+                                )
+                              ],
+                            ),
                           ),
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.favorite,
+                                  color: Hexcolor("#${widget.color}"),
+                                ),
+                                Text(
+                                  "${widget.favourites}",
+                                  style: TextStyle(
+                                    color: Hexcolor("#${widget.color}"),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.photo_size_select_large,
+                                  color: Hexcolor("#${widget.color}"),
+                                ),
+                                Text(
+                                  "${widget.resolution}",
+                                  style: TextStyle(
+                                    color: Hexcolor("#${widget.color}"),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.link,
+                                  color: Hexcolor("#${widget.color}"),
+                                ),
+                                Text(
+                                  "${widget.url}",
+                                  style: TextStyle(
+                                    color: Hexcolor("#${widget.color}"),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.calendar_today,
+                                  color: Hexcolor("#${widget.color}"),
+                                ),
+                                Text(
+                                  "${widget.createdAt}",
+                                  style: TextStyle(
+                                    color: Hexcolor("#${widget.color}"),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    )
-                  : Container()
+                    ),
+                  ),
+                ),
+              )
             ],
           ),
           // FloatingActionButton(
