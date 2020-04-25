@@ -14,6 +14,8 @@ class Wallpapers extends StatefulWidget {
 }
 
 class _WallpapersState extends State<Wallpapers> {
+  final Color loadingTextColor = Color(0xFFFFFFFF);
+  final Color bgColor = Color(0xFF000000);
   String query = "";
   int adder = 0;
   bool fetchedData = false;
@@ -57,6 +59,7 @@ class _WallpapersState extends State<Wallpapers> {
 
   Future<Null> refreshList() async {
     refreshKey.currentState?.show(atTop: true);
+    await Future.delayed(Duration(seconds: 2));
     getwalls(query, widget.width, widget.height);
 
     // setState(() {
@@ -68,11 +71,11 @@ class _WallpapersState extends State<Wallpapers> {
     return null;
   }
 
-  Future<Null> refreshLoad() async {
-    refreshKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(seconds: 5));
-    return null;
-  }
+  // Future<Null> refreshLoad() async {
+  //   refreshKey.currentState?.show(atTop: true);
+  //   await Future.delayed(Duration(seconds: 5));
+  //   return null;
+  // }
 
   ScrollController controller;
   var refreshKey = GlobalKey<RefreshIndicatorState>();
@@ -112,7 +115,7 @@ class _WallpapersState extends State<Wallpapers> {
             key: refreshKey,
             onRefresh: refreshList,
             child: new Container(
-                color: Colors.white,
+                color: bgColor,
                 child: Scrollbar(
                   child: GridView.builder(
                       shrinkWrap: true,
@@ -128,7 +131,7 @@ class _WallpapersState extends State<Wallpapers> {
                             shape: RoundedRectangleBorder(
                                 borderRadius:
                                     BorderRadius.all(Radius.circular(24))),
-                            elevation: 2.0,
+                            elevation: 0.0,
                             semanticContainer: true,
                             margin: EdgeInsets.fromLTRB(7, 7, 7, 7),
                             clipBehavior: Clip.antiAliasWithSaveLayer,
@@ -136,13 +139,12 @@ class _WallpapersState extends State<Wallpapers> {
                                 child: new Hero(
                                     tag: wallpapersUrl[index],
                                     child: FadeInImage(
-                                      placeholder: CacheImage(fetchedData
-                                          ? "https://via.placeholder.com/300x400.jpg/${wallpapersColors[index]}/${wallpapersColors[index]}"
-                                          : "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF"),
+                                      fadeInDuration:
+                                          Duration(milliseconds: 200),
+                                      placeholder: CacheImage(
+                                          "https://via.placeholder.com/300x400.jpg/${wallpapersColors[index]}/${wallpapersColors[index]}"),
                                       image: CacheImage(
-                                        fetchedData
-                                            ? wallpapersThumbs[index]
-                                            : items[index],
+                                        wallpapersThumbs[index],
                                       ),
                                       fit: BoxFit.cover,
                                     ))),
@@ -199,34 +201,32 @@ class _WallpapersState extends State<Wallpapers> {
                       }),
                 )),
           )
-        : RefreshIndicator(
-            key: refreshKey,
-            onRefresh: refreshLoad,
-            child: Container(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Image(
-                      image: AssetImage("assets/images/loading.png"),
-                      height: 600.h,
-                      width: 600.w,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        "Loading",
-                        style: GoogleFonts.raleway(fontSize: 30),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    Text(
-                      "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
-                      style: GoogleFonts.raleway(fontSize: 16),
+        : Container(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Image(
+                    image: AssetImage("assets/images/loading.png"),
+                    height: 600.h,
+                    width: 600.w,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      "Loading",
+                      style: GoogleFonts.raleway(
+                          fontSize: 30, color: loadingTextColor),
                       textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
+                    style: GoogleFonts.raleway(
+                        fontSize: 16, color: loadingTextColor),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
           );

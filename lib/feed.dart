@@ -3,6 +3,7 @@ import 'package:cache_image/cache_image.dart';
 import 'package:wallpapers_app/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
 
@@ -12,6 +13,8 @@ class Feed extends StatefulWidget {
 }
 
 class _FeedState extends State<Feed> {
+  final Color iconColor = Color(0xFFFFFFFF);
+  final Color bgColor = Color(0xFF000000);
   @override
   void initState() {
     super.initState();
@@ -30,30 +33,33 @@ class _FeedState extends State<Feed> {
         appBar: AppBar(
           title: Text(
             'Prism',
-            style:
-                GoogleFonts.pacifico(fontWeight: FontWeight.w600, fontSize: 30),
+            style: GoogleFonts.pacifico(
+                fontWeight: FontWeight.w600, fontSize: 30, color: iconColor),
           ),
           actions: <Widget>[
             IconButton(
               icon: Icon(
                 Icons.search,
-                color: Colors.black,
+                color: iconColor,
               ),
               onPressed: null,
             )
           ],
           centerTitle: true,
           elevation: 0,
-          backgroundColor: Colors.white,
+          backgroundColor: bgColor,
           brightness: Brightness.light,
           leading: IconButton(
-            icon: Icon(Icons.menu),
+            icon: Icon(
+              Icons.menu,
+              color: iconColor,
+            ),
             onPressed: () {
               _scaffoldKey.currentState.openDrawer();
             },
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: bgColor,
         drawer: Drawer(
           child: new ListView(
             children: <Widget>[
@@ -134,6 +140,82 @@ class _FeedState extends State<Feed> {
                   onTap: () {
                     Navigator.pop(context);
                   }),
+              ExpansionTile(
+                leading: Icon(Icons.brightness_4),
+                title: Text(
+                  'Themes',
+                  style: TextStyle(),
+                ),
+                children: <Widget>[
+                  Tooltip(
+                    message: "Theme#1",
+                    waitDuration: Duration(seconds: 1),
+                    child: ListTile(
+                      title: Text(
+                        'Theme#1',
+                        style: TextStyle(),
+                      ),
+                      onTap: () {},
+                    ),
+                  ),
+                  Divider(
+                    height: 2.0,
+                  ),
+                  Tooltip(
+                    message: "Theme#2",
+                    waitDuration: Duration(seconds: 1),
+                    child: ListTile(
+                      title: Text(
+                        'Theme#2',
+                        style: TextStyle(),
+                      ),
+                      onTap: () {},
+                    ),
+                  ),
+                  Divider(
+                    height: 2.0,
+                  ),
+                  Tooltip(
+                    message: "Theme#3",
+                    waitDuration: Duration(seconds: 1),
+                    child: ListTile(
+                      title: Text(
+                        'Theme#3',
+                        style: TextStyle(),
+                      ),
+                      onTap: () {},
+                    ),
+                  ),
+                  Divider(
+                    height: 2.0,
+                  ),
+                  Tooltip(
+                    message: "Theme#4",
+                    waitDuration: Duration(seconds: 1),
+                    child: ListTile(
+                      title: Text(
+                        'Theme#4',
+                        style: TextStyle(),
+                      ),
+                      onTap: () {},
+                    ),
+                  ),
+                  Divider(
+                    height: 2.0,
+                  ),
+                  Tooltip(
+                    message: "Theme#5",
+                    waitDuration: Duration(seconds: 1),
+                    child: ListTile(
+                      title: Text(
+                        'Theme#5',
+                        style: TextStyle(),
+                      ),
+                      onTap: () {},
+                    ),
+                  ),
+                ],
+              ),
               new ListTile(
                   leading: Icon(
                     Icons.settings,
@@ -186,11 +268,11 @@ class _FeedState extends State<Feed> {
               icon: new Icon(Icons.arrow_downward),
             )
           ],
-          labelColor: Colors.black,
+          labelColor: iconColor,
           unselectedLabelColor: Colors.grey,
           indicatorSize: TabBarIndicatorSize.label,
           indicatorPadding: EdgeInsets.all(5.0),
-          indicatorColor: Colors.black,
+          indicatorColor: iconColor,
         ),
       ),
     );
