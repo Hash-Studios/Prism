@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:complimentary_colors/complimentary_colors.dart';
+import 'package:color/color.dart';
 
 class WallData {
   String fetchUrl;
@@ -47,14 +49,30 @@ class WallData {
         try {
           wallpapersColors
               .add(wallpapers[i]["colors"][0].toString().substring(1));
+              // print(wallpapersColors);
         } catch (e) {
           wallpapersColors.add("FFFFFF");
         }
         try {
+          // if(wallpapers[i]["colors"][0].toString().substring(1)!="000000"){
+          // HexColor givenColor = new HexColor(wallpapers[i]["colors"][0].toString().substring(1));
+          // HexColor complimentaryColor = CalculateComplimentaryColor.fromHex(givenColor);
+          // wallpapersColors.add(complimentaryColor.toString());
+          // print(wallpapersColors);
+        // }else{
+          // wallpapersColors.add("FFFFFF");
+        // }
           wallpapersColors2
               .add(wallpapers[i]["colors"][2].toString().substring(1));
         } catch (e) {
-          wallpapersColors2.add("000000");
+          // if(wallpapers[i]["colors"][0].toString().substring(1)!="000000"){
+          // HexColor givenColor = new HexColor(wallpapers[i]["colors"][0].toString().substring(1));
+          // HexColor complimentaryColor = CalculateComplimentaryColor.fromHex(givenColor);
+          // wallpapersColors.add(complimentaryColor.toString());
+          // print(wallpapersColors);
+        // }else{
+          wallpapersColors.add("000000");
+        // }
         }
       }
       for (int i = 2; i <= 5; i++) {

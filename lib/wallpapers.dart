@@ -14,8 +14,8 @@ class Wallpapers extends StatefulWidget {
 }
 
 class _WallpapersState extends State<Wallpapers> {
-  final Color loadingTextColor = Color(0xFFFFFFFF);
-  final Color bgColor = Color(0xFF000000);
+  final Color loadingTextColor = Color(0xFF000000);
+  final Color bgColor = Color(0xFFAAAAAA);
   String query = "";
   int adder = 0;
   bool fetchedData = false;

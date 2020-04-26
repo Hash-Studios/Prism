@@ -13,8 +13,8 @@ class Feed extends StatefulWidget {
 }
 
 class _FeedState extends State<Feed> {
-  final Color iconColor = Color(0xFFFFFFFF);
-  final Color bgColor = Color(0xFF000000);
+  final Color iconColor = Color(0xFF000000);
+  final Color bgColor = Color(0xFFAAAAAA);
   @override
   void initState() {
     super.initState();

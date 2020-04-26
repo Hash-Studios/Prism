@@ -23,3 +23,4 @@ A new Flutter project.
 - [ ] fade in image and cache walpaper cards in feed
 - [ ] hero animation
 - [ ] refractor
+- [ ] back button closes radial menu

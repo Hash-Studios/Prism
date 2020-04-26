@@ -106,9 +106,23 @@ class _DisplayState extends State<Display> {
         //       crossFadeState:
         //           isOpen ? CrossFadeState.showFirst : CrossFadeState.showSecond,
         //     )),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 40),
-          child: SizedBox.expand(child: RadialMenu()),
+        // Padding(
+        //   padding: const EdgeInsets.only(top: 80,left: 40,right: 40),
+        //   child: 
+          // SizedBox.expand(
+          //     child: 
+              RadialMenu(
+                  Hexcolor("#${widget.color}"),
+                  Hexcolor("#${widget.color2}"),
+                  isOpen,
+                  widget.link,
+                  widget.thumb,
+                  widget.views,
+                  widget.resolution,
+                  widget.url,
+                  widget.createdAt,
+                  widget.favourites)
+                  // ),
           // Stack(
           //   alignment: Alignment.center,
           //   children: <Widget>[
@@ -379,101 +393,101 @@ class _DisplayState extends State<Display> {
           //         child: SizedBox(
           //           width: 500.w,
           //           height: 400.h,
-          //           child: Container(
-          //             padding: EdgeInsets.fromLTRB(100.w, 20.w, 100.w, 20.w),
-          //             child: Column(
-          //               mainAxisAlignment: MainAxisAlignment.center,
-          //               children: <Widget>[
-          //                 Padding(
-          //                   padding: const EdgeInsets.only(bottom: 10),
-          //                   child: Row(
-          //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //                     children: <Widget>[
-          //                       Icon(
-          //                         Icons.remove_red_eye,
-          //                         color: Hexcolor("#${widget.color}"),
-          //                       ),
-          //                       Text(
-          //                         "${widget.views}",
-          //                         style: TextStyle(
-          //                           color: Hexcolor("#${widget.color}"),
-          //                         ),
-          //                       )
-          //                     ],
-          //                   ),
-          //                 ),
-          //                 Padding(
-          //                   padding: const EdgeInsets.only(bottom: 10),
-          //                   child: Row(
-          //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //                     children: <Widget>[
-          //                       Icon(
-          //                         Icons.favorite,
-          //                         color: Hexcolor("#${widget.color}"),
-          //                       ),
-          //                       Text(
-          //                         "${widget.favourites}",
-          //                         style: TextStyle(
-          //                           color: Hexcolor("#${widget.color}"),
-          //                         ),
-          //                       )
-          //                     ],
-          //                   ),
-          //                 ),
-          //                 Padding(
-          //                   padding: const EdgeInsets.only(bottom: 10),
-          //                   child: Row(
-          //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //                     children: <Widget>[
-          //                       Icon(
-          //                         Icons.photo_size_select_large,
-          //                         color: Hexcolor("#${widget.color}"),
-          //                       ),
-          //                       Text(
-          //                         "${widget.resolution}",
-          //                         style: TextStyle(
-          //                           color: Hexcolor("#${widget.color}"),
-          //                         ),
-          //                       )
-          //                     ],
-          //                   ),
-          //                 ),
-          //                 Padding(
-          //                   padding: const EdgeInsets.only(bottom: 10),
-          //                   child: Row(
-          //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //                     children: <Widget>[
-          //                       Icon(
-          //                         Icons.link,
-          //                         color: Hexcolor("#${widget.color}"),
-          //                       ),
-          //                       Text(
-          //                         "${widget.url}",
-          //                         style: TextStyle(
-          //                           color: Hexcolor("#${widget.color}"),
-          //                         ),
-          //                       )
-          //                     ],
-          //                   ),
-          //                 ),
-          //                 Padding(
-          //                   padding: const EdgeInsets.only(bottom: 10),
-          //                   child: Row(
-          //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //                     children: <Widget>[
-          //                       Icon(
-          //                         Icons.calendar_today,
-          //                         color: Hexcolor("#${widget.color}"),
-          //                       ),
-          //                       Text(
-          //                         "${widget.createdAt}",
-          //                         style: TextStyle(
-          //                           color: Hexcolor("#${widget.color}"),
-          //                         ),
-          //                       )
-          //                     ],
-          //                   ),
-          //                 ),
+                    // child: Container(
+                    //   padding: EdgeInsets.fromLTRB(100.w, 20.w, 100.w, 20.w),
+                    //   child: Column(
+                    //     mainAxisAlignment: MainAxisAlignment.center,
+                    //     children: <Widget>[
+                    //       Padding(
+                    //         padding: const EdgeInsets.only(bottom: 10),
+                    //         child: Row(
+                    //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //           children: <Widget>[
+                    //             Icon(
+                    //               Icons.remove_red_eye,
+                    //               color: Hexcolor("#${widget.color}"),
+                    //             ),
+                    //             Text(
+                    //               "${widget.views}",
+                    //               style: TextStyle(
+                    //                 color: Hexcolor("#${widget.color}"),
+                    //               ),
+                    //             )
+                    //           ],
+                    //         ),
+                    //       ),
+                    //       Padding(
+                    //         padding: const EdgeInsets.only(bottom: 10),
+                    //         child: Row(
+                    //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //           children: <Widget>[
+                    //             Icon(
+                    //               Icons.favorite,
+                    //               color: Hexcolor("#${widget.color}"),
+                    //             ),
+                    //             Text(
+                    //               "${widget.favourites}",
+                    //               style: TextStyle(
+                    //                 color: Hexcolor("#${widget.color}"),
+                    //               ),
+                    //             )
+                    //           ],
+                    //         ),
+                    //       ),
+                    //       Padding(
+                    //         padding: const EdgeInsets.only(bottom: 10),
+                    //         child: Row(
+                    //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //           children: <Widget>[
+                    //             Icon(
+                    //               Icons.photo_size_select_large,
+                    //               color: Hexcolor("#${widget.color}"),
+                    //             ),
+                    //             Text(
+                    //               "${widget.resolution}",
+                    //               style: TextStyle(
+                    //                 color: Hexcolor("#${widget.color}"),
+                    //               ),
+                    //             )
+                    //           ],
+                    //         ),
+                    //       ),
+                    //       Padding(
+                    //         padding: const EdgeInsets.only(bottom: 10),
+                    //         child: Row(
+                    //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //           children: <Widget>[
+                    //             Icon(
+                    //               Icons.link,
+                    //               color: Hexcolor("#${widget.color}"),
+                    //             ),
+                    //             Text(
+                    //               "${widget.url}",
+                    //               style: TextStyle(
+                    //                 color: Hexcolor("#${widget.color}"),
+                    //               ),
+                    //             )
+                    //           ],
+                    //         ),
+                    //       ),
+                    //       Padding(
+                    //         padding: const EdgeInsets.only(bottom: 10),
+                    //         child: Row(
+                    //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //           children: <Widget>[
+                    //             Icon(
+                    //               Icons.calendar_today,
+                    //               color: Hexcolor("#${widget.color}"),
+                    //             ),
+                    //             Text(
+                    //               "${widget.createdAt}",
+                    //               style: TextStyle(
+                    //                 color: Hexcolor("#${widget.color}"),
+                    //               ),
+                    //             )
+                    //           ],
+                    //         ),
+                    //       ),
           //               ],
           //             ),
           //           ),
@@ -627,7 +641,7 @@ class _DisplayState extends State<Display> {
           //             );
           //           }
           //         : null),
-        )
+        // )
       ],
     );
   }
