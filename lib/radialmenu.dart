@@ -187,7 +187,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                   ),
                   Transform(
                     transform: Matrix4.identity()
-                      ..translate(0.1, -(widget.translation.value) * 3.5),
+                      ..translate(0.1, -(widget.translation.value.h) * 6.5),
                     child: Transform.scale(
                       scale: 1.3 - widget.scale.value,
                       child: Card(
@@ -394,34 +394,34 @@ class _RadialAnimationState extends State<RadialAnimation> {
     );
   }
 
-  _buildButtonR(double angle,
-      {Color color, Color color2, IconData icon, Function func}) {
-    final double rad = radians(angle);
-    return Transform.scale(
-      scale: 0.9 - widget.scale2.value,
-      child: Transform(
-          transform: Matrix4.identity()
-            ..translate((widget.translation.value) * cos(rad) * 1.2,
-                (widget.translation.value) * sin(rad) * 1.2),
-          child: FloatingActionButton(
-              heroTag: 5 * angle,
-              child: Transform.rotate(
-                angle: 45 * pi / 180,
-                child: Icon(
-                  icon,
-                  color: color2,
-                ),
-              ),
-              backgroundColor: color,
-              onPressed: () {
-                HapticFeedback.vibrate();
-                widget.changeIsOpen();
-                _close();
-                func();
-              },
-              elevation: 8)),
-    );
-  }
+  // _buildButtonR(double angle,
+  //     {Color color, Color color2, IconData icon, Function func}) {
+  //   final double rad = radians(angle);
+  //   return Transform.scale(
+  //     scale: 0.9 - widget.scale2.value,
+  //     child: Transform(
+  //         transform: Matrix4.identity()
+  //           ..translate((widget.translation.value) * cos(rad) * 1.2,
+  //               (widget.translation.value) * sin(rad) * 1.2),
+  //         child: FloatingActionButton(
+  //             heroTag: 5 * angle,
+  //             child: Transform.rotate(
+  //               angle: 45 * pi / 180,
+  //               child: Icon(
+  //                 icon,
+  //                 color: color2,
+  //               ),
+  //             ),
+  //             backgroundColor: color,
+  //             onPressed: () {
+  //               HapticFeedback.vibrate();
+  //               widget.changeIsOpen();
+  //               _close();
+  //               func();
+  //             },
+  //             elevation: 8)),
+  //   );
+  // }
 
   void onPaint() async {
     if (widget.isFile) {
