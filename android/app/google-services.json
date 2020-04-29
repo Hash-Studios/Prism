@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "826747654419",
+    "firebase_url": "https://prism-a0d11.firebaseio.com",
+    "project_id": "prism-a0d11",
+    "storage_bucket": "prism-a0d11.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:826747654419:android:c8e604267c0f0d1f9c8ae6",
+        "android_client_info": {
+          "package_name": "com.example.wallpapers_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "826747654419-vn19m3of60650ht09o01t9qc4hmnt4sf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASlMfVx9kdokcoCegJJ-Ex2FFGwdKMvNI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "826747654419-vn19m3of60650ht09o01t9qc4hmnt4sf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

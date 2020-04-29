@@ -24,3 +24,10 @@ A new Flutter project.
 - [x] hero animation
 - [ ] refactor
 - [x] back button closes radial menu
+- [ ] google signin
+- [ ] refresh fix fav
+- [ ] downloads
+- [ ] animation fix
+- [x] remove extra tab
+- [x] like/dislike on fav page(related to local liked list)
+ 

@@ -6,6 +6,7 @@ import 'package:wallpapers_app/wallheaven.dart';
 import 'package:wallpapers_app/display.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class Wallpapers extends StatefulWidget {
   int width;
@@ -16,6 +17,7 @@ class Wallpapers extends StatefulWidget {
 }
 
 class _WallpapersState extends State<Wallpapers> {
+  final databaseReference = FirebaseDatabase.instance.reference().child("user");
   List liked = [];
   final FlareControls flareControls = FlareControls();
   final Color loadingTextColor = Color(0xFF000000);
@@ -23,6 +25,7 @@ class _WallpapersState extends State<Wallpapers> {
   String query = "";
   int adder = 0;
   bool fetchedData = false;
+  List wallpapersId = [];
   List wallpapersLinks = [];
   List wallpapersThumbs = [];
   List wallpapersColors = [];
@@ -44,6 +47,7 @@ class _WallpapersState extends State<Wallpapers> {
     items = List.generate(20,
         (number) => "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF");
     Map data = await wallheaven.getData(query, width, height);
+    wallpapersId = data["id"];
     wallpapersLinks = data["links"];
     wallpapersThumbs = data["thumbs"];
     wallpapersColors = data["colors"];
@@ -223,9 +227,20 @@ class _WallpapersState extends State<Wallpapers> {
                             if (liked.contains(wallpapersLinks[index])) {
                               print("Dislike");
                               liked.remove(wallpapersLinks[index]);
+                              deleteData(wallpapersId[index]);
                             } else {
                               print("Like");
                               liked.add(wallpapersLinks[index]);
+                              createRecord(
+                                  wallpapersId[index],
+                                  wallpapersLinks[index],
+                                  wallpapersThumbs[index],
+                                  wallpapersColors[index],
+                                  wallpapersColors2[index],
+                                  wallpapersViews[index],
+                                  wallpapersResolution[index],
+                                  wallpapersCreatedAt[index],
+                                  wallpapersFav[index]);
                             }
                             flareControls.play("like");
                             print(liked.toString());
@@ -263,5 +278,38 @@ class _WallpapersState extends State<Wallpapers> {
               ),
             ),
           );
+  }
+
+  void createRecord(
+      String id,
+      String url,
+      String thumb,
+      String color,
+      String color2,
+      String views,
+      String resolution,
+      String created,
+      String fav) {
+    databaseReference.child(id.toString()).set({
+      "id": id,
+      "url": url,
+      "thumb": thumb,
+      "color": color,
+      "color2": color2,
+      "views": views,
+      "resolution": resolution,
+      "created": created,
+      "fav": fav
+    });
+  }
+
+  void getData() {
+    databaseReference.once().then((DataSnapshot snapshot) {
+      print('Data : ${snapshot.value}');
+    });
+  }
+
+  void deleteData(String id) {
+    databaseReference.child(id.toString()).remove();
   }
 }
