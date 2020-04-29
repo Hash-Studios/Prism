@@ -13,6 +13,7 @@ import 'package:image/image.dart' as IMG;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 
 // void main() => runApp(MyApp());
 
@@ -305,11 +306,11 @@ class _RadialAnimationState extends State<RadialAnimation> {
                       ),
                     ),
                   ),
-                  _buildButtonR(215,
+                  _buildButton(215,
                       color: widget.color,
                       color2: widget.color2,
-                      icon: Icons.add,
-                      func: _close),
+                      icon: Icons.file_download,
+                      func: onDownload),
                   _buildButton(270,
                       color: widget.color,
                       color2: widget.color2,
@@ -327,7 +328,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                     child: FloatingActionButton(
                         heroTag: 1,
                         child: Icon(
-                          Icons.format_paint,
+                          Icons.close,
                           color: Colors.black,
                         ),
                         onPressed: () {
@@ -557,5 +558,19 @@ class _RadialAnimationState extends State<RadialAnimation> {
           textColor: Colors.white,
           fontSize: 16.0);
     }
+  }
+
+  void onDownload() async {
+    setState(() {
+      widget.isOpen = false;
+      widget.opacity = 0.0;
+    });
+    GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) =>
+        Fluttertoast.showToast(
+            msg: "Downloaded image in Pictures/Prism!",
+            toastLength: Toast.LENGTH_LONG,
+            timeInSecForIosWeb: 1,
+            textColor: Colors.white,
+            fontSize: 16.0));
   }
 }
