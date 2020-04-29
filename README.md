@@ -6,21 +6,21 @@ A new Flutter project.
 
 - [ ] double tap animation
 - [ ] saving favourites using files
-- [ ] wallpaper display page buttons and ui
+- [x] wallpaper display page buttons and ui
 - [ ] hex color to button accents
 - [ ] refresh indictor key
-- [ ] toast/snackbar
+- [x] toast/snackbar
 - [ ] search and favourites
 - [ ] primary swatch/themeing
 - [x] google fonts universal
 - [ ] navdrawer link to tabs
 - [ ] redesign navdrawer
-- [ ] disable button
+- [x] disable button (not needed)
 - [ ] sorting
 - [ ] adder length dynamic
 - [x] refresh indicator delay
 - [ ] inkwell cards
 - [ ] fade in image and cache walpaper cards in feed
-- [ ] hero animation
+- [x] hero animation
 - [ ] refractor
-- [ ] back button closes radial menu
+- [x] back button closes radial menu

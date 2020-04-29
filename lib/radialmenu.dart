@@ -167,197 +167,211 @@ class RadialAnimation extends StatefulWidget {
 }
 
 class _RadialAnimationState extends State<RadialAnimation> {
+  Future<bool> _onBackPressed() {
+    _close();
+    if (widget.isOpen) {
+      widget.changeIsOpen();
+      Navigator.canPop(context);
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
+  @override
   build(context) {
     ScreenUtil.init(context, width: 720, height: 1440);
-    return AnimatedBuilder(
-        animation: widget.controller,
-        builder: (context, builder) {
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              SizedBox(
-                height: 1060.h,
-                width: 720.w,
-              ),
-              Stack(
-                alignment: Alignment.center,
-                children: <Widget>[
-                  SizedBox(
-                    height: 500.h,
-                  ),
-                  Transform(
-                    transform: Matrix4.identity()
-                      ..translate(0.1, -(widget.translation.value.h) * 6.5),
-                    child: Transform.scale(
-                      scale: 1.3 - widget.scale.value,
-                      child: Card(
-                        color: widget.color,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24)),
-                        elevation: 8,
-                        child: SizedBox(
-                          height: 400.h,
-                          width: 500.w,
-                          child: Container(
-                            padding:
-                                EdgeInsets.fromLTRB(60.w, 20.w, 60.w, 20.w),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: <Widget>[
-                                      Icon(
-                                        Icons.remove_red_eye,
-                                        color: widget.color2,
-                                      ),
-                                      Text(
-                                        "${widget.views}",
-                                        style: TextStyle(
+    return WillPopScope(
+      onWillPop: _onBackPressed,
+      child: AnimatedBuilder(
+          animation: widget.controller,
+          builder: (context, builder) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                SizedBox(
+                  height: 1060.h,
+                  width: 720.w,
+                ),
+                Stack(
+                  alignment: Alignment.center,
+                  children: <Widget>[
+                    SizedBox(
+                      height: 500.h,
+                    ),
+                    Transform(
+                      transform: Matrix4.identity()
+                        ..translate(0.1, -(widget.translation.value.h) * 6.5),
+                      child: Transform.scale(
+                        scale: 1.3 - widget.scale.value,
+                        child: Card(
+                          color: widget.color,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24)),
+                          elevation: 8,
+                          child: SizedBox(
+                            height: 400.h,
+                            width: 500.w,
+                            child: Container(
+                              padding:
+                                  EdgeInsets.fromLTRB(60.w, 20.w, 60.w, 20.w),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: <Widget>[
+                                        Icon(
+                                          Icons.remove_red_eye,
                                           color: widget.color2,
                                         ),
-                                      )
-                                    ],
+                                        Text(
+                                          "${widget.views}",
+                                          style: TextStyle(
+                                            color: widget.color2,
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: <Widget>[
-                                      Icon(
-                                        Icons.favorite,
-                                        color: widget.color2,
-                                      ),
-                                      Text(
-                                        "${widget.favourites}",
-                                        style: TextStyle(
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: <Widget>[
+                                        Icon(
+                                          Icons.favorite,
                                           color: widget.color2,
                                         ),
-                                      )
-                                    ],
+                                        Text(
+                                          "${widget.favourites}",
+                                          style: TextStyle(
+                                            color: widget.color2,
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: <Widget>[
-                                      Icon(
-                                        Icons.photo_size_select_large,
-                                        color: widget.color2,
-                                      ),
-                                      Text(
-                                        "${widget.resolution}",
-                                        style: TextStyle(
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: <Widget>[
+                                        Icon(
+                                          Icons.photo_size_select_large,
                                           color: widget.color2,
                                         ),
-                                      )
-                                    ],
+                                        Text(
+                                          "${widget.resolution}",
+                                          style: TextStyle(
+                                            color: widget.color2,
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: <Widget>[
-                                      Icon(
-                                        Icons.link,
-                                        color: widget.color2,
-                                      ),
-                                      Text(
-                                        "${widget.url}",
-                                        style: TextStyle(
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: <Widget>[
+                                        Icon(
+                                          Icons.link,
                                           color: widget.color2,
                                         ),
-                                      )
-                                    ],
+                                        Text(
+                                          "${widget.url}",
+                                          style: TextStyle(
+                                            color: widget.color2,
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: <Widget>[
-                                      Icon(
-                                        Icons.calendar_today,
-                                        color: widget.color2,
-                                      ),
-                                      Text(
-                                        "${widget.createdAt}",
-                                        style: TextStyle(
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: <Widget>[
+                                        Icon(
+                                          Icons.calendar_today,
                                           color: widget.color2,
                                         ),
-                                      )
-                                    ],
+                                        Text(
+                                          "${widget.createdAt}",
+                                          style: TextStyle(
+                                            color: widget.color2,
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  _buildButton(215,
-                      color: widget.color,
-                      color2: widget.color2,
-                      icon: Icons.file_download,
-                      func: onDownload),
-                  _buildButton(270,
-                      color: widget.color,
-                      color2: widget.color2,
-                      icon: Icons.format_paint,
-                      func: onPaint),
-                  _buildButton(325,
-                      color: widget.color,
-                      color2: widget.color2,
-                      icon: Icons.favorite,
-                      func: _close),
-                  Transform.scale(
-                    scale: 1.3 -
-                        widget.scale
-                            .value, // subtract the beginning value to run the opposite animation
-                    child: FloatingActionButton(
-                        heroTag: 1,
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.black,
-                        ),
-                        onPressed: () {
-                          HapticFeedback.vibrate();
-                          widget.changeIsOpen();
-                          _close();
-                        },
-                        backgroundColor: Colors.white),
-                  ),
-                  Transform.scale(
-                    scale: widget.scale.value,
-                    child: FloatingActionButton(
-                        heroTag: 2,
-                        child: Icon(
-                          Icons.info_outline,
-                          color: Colors.black,
-                        ),
-                        backgroundColor: Colors.white,
-                        onPressed: () {
-                          HapticFeedback.vibrate();
-                          widget.changeIsOpen();
-                          _open();
-                        }),
-                  )
-                ],
-              ),
-            ],
-          );
-        });
+                    _buildButton(215,
+                        color: widget.color,
+                        color2: widget.color2,
+                        icon: Icons.file_download,
+                        func: onDownload),
+                    _buildButton(270,
+                        color: widget.color,
+                        color2: widget.color2,
+                        icon: Icons.format_paint,
+                        func: onPaint),
+                    _buildButton(325,
+                        color: widget.color,
+                        color2: widget.color2,
+                        icon: Icons.favorite,
+                        func: _close),
+                    Transform.scale(
+                      scale: 1.3 -
+                          widget.scale
+                              .value, // subtract the beginning value to run the opposite animation
+                      child: FloatingActionButton(
+                          heroTag: 1,
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.black,
+                          ),
+                          onPressed: () {
+                            HapticFeedback.vibrate();
+                            widget.changeIsOpen();
+                            _close();
+                          },
+                          backgroundColor: Colors.white),
+                    ),
+                    Transform.scale(
+                      scale: widget.scale.value,
+                      child: FloatingActionButton(
+                          heroTag: 2,
+                          child: Icon(
+                            Icons.info_outline,
+                            color: Colors.black,
+                          ),
+                          backgroundColor: Colors.white,
+                          onPressed: () {
+                            HapticFeedback.vibrate();
+                            widget.changeIsOpen();
+                            _open();
+                          }),
+                    )
+                  ],
+                ),
+              ],
+            );
+          }),
+    );
   }
 
   _open() {
