@@ -30,6 +30,7 @@ dependencies:
   complimentary_colors: ^1.0.3
   fluttertoast: ^4.0.1
   gallery_saver: ^2.0.1
+  flare_flutter: ^2.0.3
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -55,6 +56,7 @@ flutter:
 
   assets:
     - assets/images/loading.png
+    - assets/animations/like.flr
 
 
   # To add assets to your application, add an assets section, like this:

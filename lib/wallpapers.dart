@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:wallpapers_app/wallheaven.dart';
 import 'package:wallpapers_app/display.dart';
+import 'package:flare_flutter/flare_actor.dart';
+import 'package:flare_flutter/flare_controls.dart';
 
 class Wallpapers extends StatefulWidget {
   int width;
@@ -14,8 +16,10 @@ class Wallpapers extends StatefulWidget {
 }
 
 class _WallpapersState extends State<Wallpapers> {
+  List liked = [];
+  final FlareControls flareControls = FlareControls();
   final Color loadingTextColor = Color(0xFF000000);
-  final Color bgColor = Color(0xFFAAAAAA);
+  final Color bgColor = Color(0xFFFFFFFF);
   String query = "";
   int adder = 0;
   bool fetchedData = false;
@@ -120,34 +124,52 @@ class _WallpapersState extends State<Wallpapers> {
                   child: GridView.builder(
                       shrinkWrap: true,
                       controller: controller,
-                      padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+                      padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
                       itemCount: items.length,
                       gridDelegate:
                           new SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2, childAspectRatio: 0.75),
                       itemBuilder: (BuildContext context, int index) {
                         return new GestureDetector(
-                          child: new Card(
-                            shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(24))),
-                            elevation: 0.0,
-                            semanticContainer: true,
-                            margin: EdgeInsets.fromLTRB(7, 7, 7, 7),
-                            clipBehavior: Clip.antiAliasWithSaveLayer,
-                            child: new Container(
-                                child: new Hero(
-                                    tag: wallpapersUrl[index],
-                                    child: FadeInImage(
-                                      fadeInDuration:
-                                          Duration(milliseconds: 200),
-                                      placeholder: CacheImage(
-                                          "https://via.placeholder.com/300x400.jpg/${wallpapersColors[index]}/${wallpapersColors[index]}"),
-                                      image: CacheImage(
-                                        wallpapersThumbs[index],
-                                      ),
-                                      fit: BoxFit.cover,
-                                    ))),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: <Widget>[
+                              Positioned.fill(
+                                child: new Card(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.all(
+                                          Radius.circular(24))),
+                                  elevation: 0.0,
+                                  semanticContainer: true,
+                                  margin: EdgeInsets.fromLTRB(4, 4, 4, 4),
+                                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                                  child: new Container(
+                                      child: new Hero(
+                                          tag: wallpapersUrl[index],
+                                          child: FadeInImage(
+                                            fadeInDuration:
+                                                Duration(milliseconds: 200),
+                                            placeholder: CacheImage(
+                                                "https://via.placeholder.com/300x400.jpg/${wallpapersColors[index]}/${wallpapersColors[index]}"),
+                                            image: CacheImage(
+                                              wallpapersThumbs[index],
+                                            ),
+                                            fit: BoxFit.cover,
+                                          ))),
+                                ),
+                              ),
+                              Positioned(
+                                child: SizedBox(
+                                  width: 100,
+                                  height: 100,
+                                  child: FlareActor(
+                                    'assets/animations/like.flr',
+                                    controller: flareControls,
+                                    animation: 'idle',
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           onTap: () {
                             Navigator.push(
@@ -196,6 +218,17 @@ class _WallpapersState extends State<Wallpapers> {
                             //     ],
                             //   ),
                             // );
+                          },
+                          onDoubleTap: () {
+                            if (liked.contains(wallpapersLinks[index])) {
+                              print("Dislike");
+                              liked.remove(wallpapersLinks[index]);
+                            } else {
+                              print("Like");
+                              liked.add(wallpapersLinks[index]);
+                            }
+                            flareControls.play("like");
+                            print(liked.toString());
                           },
                         );
                       }),
