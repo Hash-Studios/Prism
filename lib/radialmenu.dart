@@ -12,6 +12,7 @@ import 'package:wallpaper_manager/wallpaper_manager.dart';
 import 'package:image/image.dart' as IMG;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 // void main() => runApp(MyApp());
 
@@ -324,7 +325,10 @@ class _RadialAnimationState extends State<RadialAnimation> {
                           Icons.format_paint,
                           color: Colors.black,
                         ),
-                        onPressed: _close,
+                        onPressed: () {
+                          HapticFeedback.vibrate();
+                          _close();
+                        },
                         backgroundColor: Colors.white),
                   ),
                   Transform.scale(
@@ -336,7 +340,10 @@ class _RadialAnimationState extends State<RadialAnimation> {
                           color: Colors.black,
                         ),
                         backgroundColor: Colors.white,
-                        onPressed: _open),
+                        onPressed: () {
+                          HapticFeedback.vibrate();
+                          _open();
+                        }),
                   )
                 ],
               ),
@@ -369,7 +376,10 @@ class _RadialAnimationState extends State<RadialAnimation> {
                 color: color2,
               ),
               backgroundColor: color,
-              onPressed: func,
+              onPressed: () {
+                HapticFeedback.vibrate();
+                func();
+              },
               elevation: 8)),
     );
   }
@@ -393,7 +403,10 @@ class _RadialAnimationState extends State<RadialAnimation> {
                 ),
               ),
               backgroundColor: color,
-              onPressed: func,
+              onPressed: () {
+                HapticFeedback.vibrate();
+                func();
+              },
               elevation: 8)),
     );
   }
@@ -448,6 +461,12 @@ class _RadialAnimationState extends State<RadialAnimation> {
                                         '/' +
                                         'wallpaper.png',
                                     location);
+                            Fluttertoast.showToast(
+                                msg: "Wallpaper Applied Successfully!",
+                                toastLength: Toast.LENGTH_LONG,
+                                timeInSecForIosWeb: 1,
+                                textColor: Colors.white,
+                                fontSize: 16.0);
                           }
                         : index == 1
                             ? () async {
@@ -471,6 +490,12 @@ class _RadialAnimationState extends State<RadialAnimation> {
                                             '/' +
                                             'wallpaper.png',
                                         location);
+                                Fluttertoast.showToast(
+                                    msg: "Wallpaper Applied Successfully!",
+                                    toastLength: Toast.LENGTH_LONG,
+                                    timeInSecForIosWeb: 1,
+                                    textColor: Colors.white,
+                                    fontSize: 16.0);
                               }
                             : () async {
                                 HapticFeedback.vibrate();
@@ -501,12 +526,25 @@ class _RadialAnimationState extends State<RadialAnimation> {
                                             '/' +
                                             'wallpaper.png',
                                         location);
+                                Fluttertoast.showToast(
+                                    msg: "Wallpaper Applied Successfully!",
+                                    toastLength: Toast.LENGTH_LONG,
+                                    timeInSecForIosWeb: 1,
+                                    textColor: Colors.white,
+                                    fontSize: 16.0);
                               },
                   );
                 }),
           ),
         ),
       );
+    } else {
+      Fluttertoast.showToast(
+          msg: "Wallpaper not loaded yet!",
+          toastLength: Toast.LENGTH_LONG,
+          timeInSecForIosWeb: 1,
+          textColor: Colors.white,
+          fontSize: 16.0);
     }
   }
 }
