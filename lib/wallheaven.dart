@@ -20,6 +20,7 @@ class WallData {
       var fetchData = jsonDecode(response.body);
       int wallpPages;
       int currentPage;
+      List wallpapersId = [];
       List wallpapersLinks = [];
       List wallpapersThumbs = [];
       List wallpapersColors = [];
@@ -46,10 +47,11 @@ class WallData {
         wallpapersResolution.add(wallpapers[i]["resolution"].toString());
         wallpapersCreatedAt.add(wallpapers[i]["created_at"].toString());
         wallpapersFav.add(wallpapers[i]["favorites"].toString());
+        wallpapersId.add(wallpapers[i]["id"].toString());
         try {
           wallpapersColors
               .add(wallpapers[i]["colors"][0].toString().substring(1));
-              // print(wallpapersColors);
+          // print(wallpapersColors);
         } catch (e) {
           wallpapersColors.add("FFFFFF");
         }
@@ -59,9 +61,9 @@ class WallData {
           // HexColor complimentaryColor = CalculateComplimentaryColor.fromHex(givenColor);
           // wallpapersColors.add(complimentaryColor.toString());
           // print(wallpapersColors);
-        // }else{
+          // }else{
           // wallpapersColors.add("FFFFFF");
-        // }
+          // }
           wallpapersColors2
               .add(wallpapers[i]["colors"][2].toString().substring(1));
         } catch (e) {
@@ -70,9 +72,9 @@ class WallData {
           // HexColor complimentaryColor = CalculateComplimentaryColor.fromHex(givenColor);
           // wallpapersColors.add(complimentaryColor.toString());
           // print(wallpapersColors);
-        // }else{
+          // }else{
           wallpapersColors.add("000000");
-        // }
+          // }
         }
       }
       for (int i = 2; i <= 5; i++) {
@@ -102,6 +104,7 @@ class WallData {
               wallpapersResolution.add(wallpapers[i]["resolution"].toString());
               wallpapersCreatedAt.add(wallpapers[i]["created_at"].toString());
               wallpapersFav.add(wallpapers[i]["favorites"].toString());
+              wallpapersId.add(wallpapers[i]["id"].toString());
               try {
                 wallpapersColors
                     .add(wallpapers[i]["colors"][0].toString().substring(1));
@@ -122,6 +125,7 @@ class WallData {
         }
       }
       Map wallheavenData = {
+        "id": wallpapersId,
         "links": wallpapersLinks,
         "thumbs": wallpapersThumbs,
         "colors": wallpapersColors,

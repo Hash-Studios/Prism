@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cache_image/cache_image.dart';
+import 'package:wallpapers_app/likedimages.dart';
 import 'package:wallpapers_app/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -25,7 +26,7 @@ class _FeedState extends State<Feed> {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
     return DefaultTabController(
       initialIndex: 0,
-      length: 4,
+      length: 3,
       child: Scaffold(
         // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         // floatingActionButton: FloatingActionButton(onPressed: null),
@@ -110,15 +111,6 @@ class _FeedState extends State<Feed> {
                     color: Colors.deepPurple,
                   ),
                   title: new Text("Wallpapers"),
-                  onTap: () {
-                    Navigator.pop(context);
-                  }),
-              new ListTile(
-                  leading: Icon(
-                    Icons.photo,
-                    color: Colors.green,
-                  ),
-                  title: new Text("Photographs"),
                   onTap: () {
                     Navigator.pop(context);
                   }),
@@ -242,12 +234,8 @@ class _FeedState extends State<Feed> {
           children: [
             Wallpapers(ScreenUtil.screenWidth.round(),
                 ScreenUtil.screenHeight.round()),
-            new Container(
-              color: Colors.green,
-            ),
-            new Container(
-              color: Colors.pink,
-            ),
+            LikedImages(ScreenUtil.screenWidth.round(),
+                ScreenUtil.screenHeight.round()),
             new Container(
               color: Colors.blue,
             ),
@@ -257,9 +245,6 @@ class _FeedState extends State<Feed> {
           tabs: [
             Tab(
               icon: new Icon(Icons.format_paint),
-            ),
-            Tab(
-              icon: new Icon(Icons.photo),
             ),
             Tab(
               icon: new Icon(Icons.favorite),
