@@ -7,8 +7,8 @@ A new Flutter project.
 - [ ] double tap animation
 - [ ] saving favourites using files
 - [x] wallpaper display page buttons and ui
-- [ ] hex color to button accents
-- [ ] refresh indictor key
+- [x] hex color to button accents
+- [x] refresh indictor key
 - [x] toast/snackbar
 - [ ] search and favourites
 - [ ] primary swatch/themeing
@@ -20,7 +20,7 @@ A new Flutter project.
 - [ ] adder length dynamic
 - [x] refresh indicator delay
 - [ ] inkwell cards
-- [ ] fade in image and cache walpaper cards in feed
+- [x] fade in image and cache walpaper cards in feed
 - [x] hero animation
-- [ ] refractor
+- [ ] refactor
 - [x] back button closes radial menu
