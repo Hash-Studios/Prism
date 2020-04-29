@@ -40,6 +40,7 @@ class RadialMenu extends StatefulWidget {
   String createdAt = "";
   String favourites = "";
   double opacity;
+  Function changeIsOpen;
   RadialMenu(
       this.color,
       this.color2,
@@ -53,7 +54,8 @@ class RadialMenu extends StatefulWidget {
       this.url,
       this.createdAt,
       this.favourites,
-      this.opacity);
+      this.opacity,
+      this.changeIsOpen);
   createState() => _RadialMenuState();
 }
 
@@ -83,7 +85,8 @@ class _RadialMenuState extends State<RadialMenu>
         url: widget.url,
         createdAt: widget.createdAt,
         favourites: widget.favourites,
-        opacity: widget.opacity);
+        opacity: widget.opacity,
+        changeIsOpen: widget.changeIsOpen);
   }
 }
 
@@ -107,6 +110,7 @@ class RadialAnimation extends StatefulWidget {
   String createdAt = "";
   String favourites = "";
   double opacity;
+  Function changeIsOpen;
   RadialAnimation(
       {Key key,
       this.controller,
@@ -122,7 +126,8 @@ class RadialAnimation extends StatefulWidget {
       this.url,
       this.createdAt,
       this.favourites,
-      this.opacity})
+      this.opacity,
+      this.changeIsOpen})
       : scale = Tween<double>(
           begin: 1.3,
           end: 0.0,
@@ -327,6 +332,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                         ),
                         onPressed: () {
                           HapticFeedback.vibrate();
+                          widget.changeIsOpen();
                           _close();
                         },
                         backgroundColor: Colors.white),
@@ -342,6 +348,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                         backgroundColor: Colors.white,
                         onPressed: () {
                           HapticFeedback.vibrate();
+                          widget.changeIsOpen();
                           _open();
                         }),
                   )
@@ -378,6 +385,8 @@ class _RadialAnimationState extends State<RadialAnimation> {
               backgroundColor: color,
               onPressed: () {
                 HapticFeedback.vibrate();
+                widget.changeIsOpen();
+                _close();
                 func();
               },
               elevation: 8)),
@@ -405,6 +414,8 @@ class _RadialAnimationState extends State<RadialAnimation> {
               backgroundColor: color,
               onPressed: () {
                 HapticFeedback.vibrate();
+                widget.changeIsOpen();
+                _close();
                 func();
               },
               elevation: 8)),

@@ -60,6 +60,12 @@ class _DisplayState extends State<Display> {
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
+  void changeIsOpen() {
+    setState(() {
+      isOpen = isOpen ? false : true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIOverlays([]);
@@ -125,6 +131,7 @@ class _DisplayState extends State<Display> {
           widget.createdAt,
           widget.favourites,
           opacity,
+          changeIsOpen,
         )
         // ),
         // Stack(
