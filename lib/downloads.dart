@@ -4,7 +4,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:wallpapers_app/display.dart';
+import 'package:wallpapers_app/display2.dart';
 import 'package:image_gallery/image_gallery.dart';
 
 class Downloads extends StatefulWidget {
@@ -91,7 +91,7 @@ class _DownloadsState extends State<Downloads> {
                             clipBehavior: Clip.antiAliasWithSaveLayer,
                             child: new Container(
                               child: new Hero(
-                                tag: allNameList[index],
+                                tag: allImage[index],
                                 child: Image(
                                   image: FileImage(
                                     File(
@@ -106,25 +106,16 @@ class _DownloadsState extends State<Downloads> {
                         ),
                       ],
                     ),
-                    // onTap: () {
-                    //   Navigator.push(
-                    //     context,
-                    //     MaterialPageRoute(
-                    //       builder: (context) {
-                    //         return Display(
-                    //             data[index]["url"],
-                    //             data[index]["thumb"],
-                    //             data[index]["color"],
-                    //             data[index]["color2"],
-                    //             data[index]["views"],
-                    //             data[index]["resolution"],
-                    //             "https://whvn.cc/${data[index]["id"]}",
-                    //             data[index]["created"],
-                    //             data[index]["fav"]);
-                    //       },
-                    //     ),
-                    //   );
-                    // },
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return Display2(allImage[index].toString());
+                          },
+                        ),
+                      );
+                    },
                   );
                 },
               ),
