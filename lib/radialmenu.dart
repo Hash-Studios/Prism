@@ -40,6 +40,7 @@ class RadialMenu extends StatefulWidget {
   String url = "";
   String createdAt = "";
   String favourites = "";
+  String size = "";
   double opacity;
   Function changeIsOpen;
   RadialMenu(
@@ -55,6 +56,7 @@ class RadialMenu extends StatefulWidget {
       this.url,
       this.createdAt,
       this.favourites,
+      this.size,
       this.opacity,
       this.changeIsOpen);
   createState() => _RadialMenuState();
@@ -86,6 +88,7 @@ class _RadialMenuState extends State<RadialMenu>
         url: widget.url,
         createdAt: widget.createdAt,
         favourites: widget.favourites,
+        size: widget.size,
         opacity: widget.opacity,
         changeIsOpen: widget.changeIsOpen);
   }
@@ -110,6 +113,7 @@ class RadialAnimation extends StatefulWidget {
   String url = "";
   String createdAt = "";
   String favourites = "";
+  String size = "";
   double opacity;
   Function changeIsOpen;
   RadialAnimation(
@@ -127,6 +131,7 @@ class RadialAnimation extends StatefulWidget {
       this.url,
       this.createdAt,
       this.favourites,
+      this.size,
       this.opacity,
       this.changeIsOpen})
       : scale = Tween<double>(
@@ -281,11 +286,11 @@ class _RadialAnimationState extends State<RadialAnimation> {
                                           MainAxisAlignment.spaceBetween,
                                       children: <Widget>[
                                         Icon(
-                                          Icons.link,
+                                          Icons.file_download,
                                           color: widget.color2,
                                         ),
                                         Text(
-                                          "${widget.url}",
+                                          "${double.parse(((double.parse(widget.size) / 1000000).toString())).toStringAsFixed(2)} MB",
                                           style: TextStyle(
                                             color: widget.color2,
                                           ),
@@ -354,10 +359,12 @@ class _RadialAnimationState extends State<RadialAnimation> {
                     Transform.scale(
                       scale: widget.scale.value,
                       child: FloatingActionButton(
+                          mini: true,
                           heroTag: 2,
                           child: Icon(
                             Icons.info_outline,
                             color: Colors.black,
+                            size: 20,
                           ),
                           backgroundColor: Colors.white,
                           onPressed: () {

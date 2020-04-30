@@ -18,8 +18,9 @@ class Display extends StatefulWidget {
   String url = "";
   String createdAt = "";
   String favourites = "";
+  String size = "";
   Display(this.link, this.thumb, this.color, this.color2, this.views,
-      this.resolution, this.url, this.createdAt, this.favourites);
+      this.resolution, this.url, this.createdAt, this.favourites, this.size);
   @override
   _DisplayState createState() => _DisplayState();
 }
@@ -128,6 +129,7 @@ class _DisplayState extends State<Display> {
           widget.url,
           widget.createdAt,
           widget.favourites,
+          widget.size,
           opacity,
           changeIsOpen,
         )
