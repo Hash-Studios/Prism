@@ -19,7 +19,7 @@ class LikedImages extends StatefulWidget {
 class _LikedImagesState extends State<LikedImages> {
   final databaseReference = FirebaseDatabase.instance.reference().child("user");
   List liked = [];
-  final FlareControls flareControls = FlareControls();
+  List<FlareControls> flareControls;
   final Color loadingTextColor = Color(0xFF000000);
   final Color bgColor = Color(0xFFFFFFFF);
   String query = "";
@@ -60,6 +60,7 @@ class _LikedImagesState extends State<LikedImages> {
     // print(wallpapersColors.toString());
     items =
         List.generate(20, (number) => wallpapersLinks[int.parse('$number')]);
+    flareControls = List.generate(20, (number) => FlareControls());
     setState(() {
       fetchedData = true;
     });
@@ -109,6 +110,8 @@ class _LikedImagesState extends State<LikedImages> {
           adder = adder + 20;
           items.addAll(new List.generate(
               20, (number) => wallpapersLinks[int.parse('${number + adder}')]));
+          flareControls
+              .addAll(new List.generate(20, (number) => FlareControls()));
         });
       }
     }
@@ -156,11 +159,7 @@ class _LikedImagesState extends State<LikedImages> {
                                   child: new Container(
                                       child: new Hero(
                                           tag: data[index]["url"],
-                                          child: FadeInImage(
-                                            fadeInDuration:
-                                                Duration(milliseconds: 200),
-                                            placeholder: CacheImage(
-                                                "https://via.placeholder.com/300x400.jpg/${data[index]["color"]}/${data[index]["color"]}"),
+                                          child: Image(
                                             image: CacheImage(
                                               data[index]["thumb"],
                                             ),
@@ -174,7 +173,7 @@ class _LikedImagesState extends State<LikedImages> {
                                   height: 100,
                                   child: FlareActor(
                                     'assets/animations/like.flr',
-                                    controller: flareControls,
+                                    controller: flareControls[index],
                                     animation: 'idle',
                                   ),
                                 ),
@@ -219,7 +218,7 @@ class _LikedImagesState extends State<LikedImages> {
                                   data[index]["created"],
                                   data[index]["fav"]);
                             }
-                            flareControls.play("like");
+                            flareControls[index].play("like");
                             print(liked.toString());
                           },
                         );

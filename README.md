@@ -30,4 +30,6 @@ A new Flutter project.
 - [ ] animation fix
 - [x] remove extra tab
 - [x] like/dislike on fav page(related to local liked list)
+- [ ] clear cache button
+- [ ] dislike animation
  
