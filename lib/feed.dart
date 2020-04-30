@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cache_image/cache_image.dart';
+import 'package:wallpapers_app/downloads.dart';
 import 'package:wallpapers_app/likedimages.dart';
 import 'package:wallpapers_app/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -228,17 +229,12 @@ class _FeedState extends State<Feed> {
         ),
         body: TabBarView(
           children: [
-            Wallpapers(
-              ScreenUtil.screenWidth.round(),
-              ScreenUtil.screenHeight.round(),
-            ),
-            LikedImages(
-              ScreenUtil.screenWidth.round(),
-              ScreenUtil.screenHeight.round(),
-            ),
-            new Container(
-              color: Colors.blue,
-            ),
+            Wallpapers(ScreenUtil.screenWidth.round(),
+                ScreenUtil.screenHeight.round()),
+            LikedImages(ScreenUtil.screenWidth.round(),
+                ScreenUtil.screenHeight.round()),
+            Downloads(ScreenUtil.screenWidth.round(),
+                ScreenUtil.screenHeight.round()),
           ],
         ),
         bottomNavigationBar: new TabBar(

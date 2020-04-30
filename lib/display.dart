@@ -5,11 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hexcolor/hexcolor.dart';
-import 'package:wallpaper_manager/wallpaper_manager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image/image.dart' as IMG;
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:wallpapers_app/radialmenu.dart';
 
 class Display extends StatefulWidget {
@@ -61,9 +57,11 @@ class _DisplayState extends State<Display> {
   }
 
   void changeIsOpen() {
-    setState(() {
-      isOpen = isOpen ? false : true;
-    });
+    if (this.mounted) {
+      setState(() {
+        isOpen = isOpen ? false : true;
+      });
+    }
   }
 
   @override

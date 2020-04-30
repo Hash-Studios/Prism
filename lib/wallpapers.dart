@@ -39,9 +39,11 @@ class _WallpapersState extends State<Wallpapers> {
       20, (number) => "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF");
 
   void getwalls(String query, int width, int height) async {
-    setState(() {
-      fetchedData = false;
-    });
+    if (this.mounted) {
+      setState(() {
+        fetchedData = false;
+      });
+    }
     adder = 0;
     items = List.generate(20,
         (number) => "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF");
@@ -60,9 +62,11 @@ class _WallpapersState extends State<Wallpapers> {
     items =
         List.generate(20, (number) => wallpapersLinks[int.parse('$number')]);
     flareControls = List.generate(20, (number) => FlareControls());
-    setState(() {
-      fetchedData = true;
-    });
+    if (this.mounted) {
+      setState(() {
+        fetchedData = true;
+      });
+    }
   }
 
   Future<Null> refreshList() async {
@@ -105,13 +109,15 @@ class _WallpapersState extends State<Wallpapers> {
     // print(controller.position.extentAfter);
     if (controller.position.extentAfter < 500) {
       if (adder < 120) {
-        setState(() {
-          adder = adder + 20;
-          items.addAll(new List.generate(
-              20, (number) => wallpapersLinks[int.parse('${number + adder}')]));
-          flareControls
-              .addAll(new List.generate(20, (number) => FlareControls()));
-        });
+        if (this.mounted) {
+          setState(() {
+            adder = adder + 20;
+            items.addAll(new List.generate(20,
+                (number) => wallpapersLinks[int.parse('${number + adder}')]));
+            flareControls
+                .addAll(new List.generate(20, (number) => FlareControls()));
+          });
+        }
       }
     }
     // print(adder.toString());
