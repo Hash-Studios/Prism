@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   Future<void> getDefault() async {
     data = ThemeItem.getThemeItems();
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    dynTheme = prefs.getString("dynTheme") ?? 'light-purple-amber';
+    dynTheme = prefs.getString("dynTheme") ?? 'light-white-black';
   }
 
   @override

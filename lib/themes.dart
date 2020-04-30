@@ -12,69 +12,56 @@ class ThemeItem {
     return <ThemeItem>[
       ThemeItem(
           1,
-          'Dark Purple & Amber(Light)',
-          'light-purple-amber',
+          'Serene White',
+          'light-white-black',
           ThemeData(
             brightness: Brightness.light,
             primaryColor: Color(0xFFFFFFFF),
             secondaryHeaderColor: Color(0xFF000000),
             primarySwatch: Colors.grey,
-            textTheme: GoogleFonts.sourceSansProTextTheme(),
+            textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
+                title: TextStyle(color: Colors.black),
+                subtitle: TextStyle(color: Colors.black))),
           )),
       ThemeItem(
           2,
-          'Indigo & Pink(Light)',
-          'light-indigo-pink',
+          'Divine Black',
+          'dark-black-white',
           ThemeData(
-              brightness: Brightness.light,
-              primaryColor: Colors.indigo,
-              primarySwatch: Colors.pink,
-              iconTheme: IconThemeData(color: Colors.pink),
-              textTheme: TextTheme(
-                  title: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black),
-                  subtitle: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w300,
-                      color: Colors.black54)))),
+            brightness: Brightness.dark,
+            primaryColor: Color(0xFF272727),
+            secondaryHeaderColor: Color(0xFFFFFFFF),
+            primarySwatch: Colors.grey,
+            textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
+                title: TextStyle(color: Colors.white),
+                subtitle: TextStyle(color: Colors.white))),
+          )),
       ThemeItem(
           3,
-          'Pink & BlueGrey(Dark)',
-          'dark-pink-bluegrey',
+          'Amoled Blue',
+          'dark-black-blue',
           ThemeData(
-              brightness: Brightness.dark,
-              primarySwatch: Colors.blueGrey,
-              primaryColor: Colors.pink,
-              iconTheme: IconThemeData(color: Colors.blueGrey),
-              textTheme: TextTheme(
-                  title: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white),
-                  subtitle: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w300,
-                      color: Colors.white70)))),
+            brightness: Brightness.dark,
+            primaryColor: Color(0xFF000000),
+            secondaryHeaderColor: Color(0xFF025EFD),
+            primarySwatch: Colors.blue,
+            textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
+                title: TextStyle(color: Colors.white),
+                subtitle: TextStyle(color: Colors.white))),
+          )),
       ThemeItem(
           4,
-          'Purple & Green(Dark)',
-          'dark-purple-green',
+          'Monochrome Cyan',
+          'light-cyan-black',
           ThemeData(
-              brightness: Brightness.dark,
-              primaryColor: Colors.purple,
-              primarySwatch: Colors.green,
-              iconTheme: IconThemeData(color: Colors.green),
-              textTheme: TextTheme(
-                  title: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white),
-                  subtitle: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w300,
-                      color: Colors.white70)))),
+            brightness: Brightness.light,
+            primaryColor: Colors.cyan[100],
+            secondaryHeaderColor: Color(0xFF000000),
+            primarySwatch: Colors.cyan,
+            textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
+                title: TextStyle(color: Colors.black),
+                subtitle: TextStyle(color: Colors.black))),
+          )),
     ];
   }
 }

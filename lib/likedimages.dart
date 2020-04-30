@@ -241,14 +241,14 @@ class _LikedImagesState extends State<LikedImages> {
                     child: Text(
                       "Loading",
                       style: GoogleFonts.raleway(
-                          fontSize: 30, color: DynamicTheme.of(context).data.primaryColor),
+                          fontSize: 30, color: DynamicTheme.of(context).data.secondaryHeaderColor),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   Text(
                     "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
                     style: GoogleFonts.raleway(
-                        fontSize: 16, color: DynamicTheme.of(context).data.primaryColor),
+                        fontSize: 16, color: DynamicTheme.of(context).data.secondaryHeaderColor),
                     textAlign: TextAlign.center,
                   ),
                 ],
