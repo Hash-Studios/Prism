@@ -19,7 +19,7 @@ class Wallpapers extends StatefulWidget {
 class _WallpapersState extends State<Wallpapers> {
   final databaseReference = FirebaseDatabase.instance.reference().child("user");
   List liked = [];
-  final FlareControls flareControls = FlareControls();
+  List<FlareControls> flareControls;
   final Color loadingTextColor = Color(0xFF000000);
   final Color bgColor = Color(0xFFFFFFFF);
   String query = "";
@@ -60,6 +60,7 @@ class _WallpapersState extends State<Wallpapers> {
     // print(wallpapersColors.toString());
     items =
         List.generate(20, (number) => wallpapersLinks[int.parse('$number')]);
+    flareControls = List.generate(20, (number) => FlareControls());
     setState(() {
       fetchedData = true;
     });
@@ -109,6 +110,8 @@ class _WallpapersState extends State<Wallpapers> {
           adder = adder + 20;
           items.addAll(new List.generate(
               20, (number) => wallpapersLinks[int.parse('${number + adder}')]));
+          flareControls
+              .addAll(new List.generate(20, (number) => FlareControls()));
         });
       }
     }
@@ -168,7 +171,7 @@ class _WallpapersState extends State<Wallpapers> {
                                   height: 100,
                                   child: FlareActor(
                                     'assets/animations/like.flr',
-                                    controller: flareControls,
+                                    controller: flareControls[index],
                                     animation: 'idle',
                                   ),
                                 ),
@@ -242,7 +245,7 @@ class _WallpapersState extends State<Wallpapers> {
                                   wallpapersCreatedAt[index],
                                   wallpapersFav[index]);
                             }
-                            flareControls.play("like");
+                            flareControls[index].play("like");
                             print(liked.toString());
                           },
                         );
