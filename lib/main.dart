@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:wallpapers_app/feed.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import './themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,7 +32,6 @@ class MyApp extends StatelessWidget {
         themedWidgetBuilder: (context, theme) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            // debugShowMaterialGrid: true,
             title: 'Prism',
             theme: theme,
             home: Feed(),

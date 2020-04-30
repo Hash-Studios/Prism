@@ -5,13 +5,13 @@ A new Flutter project.
 ## To Do
 
 - [ ] double tap animation
-- [ ] saving favourites using files
+- [x] saving favourites using files
 - [x] wallpaper display page buttons and ui
 - [x] hex color to button accents
 - [x] refresh indictor key
 - [x] toast/snackbar
 - [ ] search and favourites
-- [ ] primary swatch/themeing
+- [x] primary swatch/themeing
 - [x] google fonts universal
 - [ ] navdrawer link to tabs
 - [ ] redesign navdrawer
@@ -32,4 +32,5 @@ A new Flutter project.
 - [x] like/dislike on fav page(related to local liked list)
 - [ ] clear cache button
 - [ ] dislike animation
+- [ ] internet connectivity
  

@@ -12,9 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
 
 class Feed extends StatefulWidget {
-  // Color iconColor;
-  // Color bgColor;
-  // Feed(this.iconColor, this.bgColor);
   @override
   _FeedState createState() => _FeedState();
 }
@@ -59,32 +56,6 @@ class _FeedState extends State<Feed> {
     setSharedPrefs();
   }
 
-  // void changeToTheme1() {
-  // setState(() {
-  //   DynamicTheme.of(context).data.secondaryHeaderColor = Color(0xFF000000);
-  //   DynamicTheme.of(context).data.primaryColor = Color(0xFFFFFFFF);
-  // });
-  // if (DynamicTheme.of(context).data.secondaryHeaderColor != Color(0xFF000000)) {
-  //   Navigator.of(context)
-  //       .push(new MaterialPageRoute(builder: (BuildContext context) {
-  //     return new Feed(Color(0xFF000000), Color(0xFFFFFFFF));
-  //   }));
-  // }
-  // }
-
-  // void changeToTheme2() {
-  // setState(() {
-  //   DynamicTheme.of(context).data.secondaryHeaderColor = Color(0xFFFFFFFF);
-  //   DynamicTheme.of(context).data.primaryColor = Color(0xFF000000);
-  // });
-  // if (DynamicTheme.of(context).data.secondaryHeaderColor != Color(0xFFFFFFFF)) {
-  //   Navigator.of(context)
-  //       .push(new MaterialPageRoute(builder: (BuildContext context) {
-  //     return new Feed(Color(0xFF000000), Color(0xFFFFFFFF));
-  //   }));
-  // }
-  // }
-
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
@@ -92,8 +63,6 @@ class _FeedState extends State<Feed> {
       initialIndex: 0,
       length: 3,
       child: Scaffold(
-        // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        // floatingActionButton: FloatingActionButton(onPressed: null),
         key: _scaffoldKey,
         appBar: AppBar(
           title: Text(
