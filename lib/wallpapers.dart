@@ -34,6 +34,7 @@ class _WallpapersState extends State<Wallpapers> {
   List wallpapersUrl = [];
   List wallpapersCreatedAt = [];
   List wallpapersFav = [];
+  List wallpapersSize = [];
   WallData wallheaven = WallData();
   List<String> items = List.generate(
       20, (number) => "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF");
@@ -58,6 +59,7 @@ class _WallpapersState extends State<Wallpapers> {
     wallpapersUrl = data["url"];
     wallpapersCreatedAt = data["created_at"];
     wallpapersFav = data["favourites"];
+    wallpapersSize = data["size"];
     // print(wallpapersColors.toString());
     items =
         List.generate(20, (number) => wallpapersLinks[int.parse('$number')]);
@@ -197,7 +199,8 @@ class _WallpapersState extends State<Wallpapers> {
                                       wallpapersResolution[index],
                                       wallpapersUrl[index],
                                       wallpapersCreatedAt[index],
-                                      wallpapersFav[index]);
+                                      wallpapersFav[index],
+                                      wallpapersSize[index]);
                                 },
                               ),
                             );
@@ -248,7 +251,8 @@ class _WallpapersState extends State<Wallpapers> {
                                   wallpapersViews[index],
                                   wallpapersResolution[index],
                                   wallpapersCreatedAt[index],
-                                  wallpapersFav[index]);
+                                  wallpapersFav[index],
+                                  wallpapersSize[index]);
                             }
                             flareControls[index].play("like");
                             // print(liked.toString());
@@ -272,14 +276,19 @@ class _WallpapersState extends State<Wallpapers> {
                     child: Text(
                       "Loading",
                       style: GoogleFonts.raleway(
-                          fontSize: 30, color: DynamicTheme.of(context).data.secondaryHeaderColor),
+                          fontSize: 30,
+                          color: DynamicTheme.of(context)
+                              .data
+                              .secondaryHeaderColor),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   Text(
                     "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
                     style: GoogleFonts.raleway(
-                        fontSize: 16, color: DynamicTheme.of(context).data.secondaryHeaderColor),
+                        fontSize: 16,
+                        color:
+                            DynamicTheme.of(context).data.secondaryHeaderColor),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -297,7 +306,8 @@ class _WallpapersState extends State<Wallpapers> {
       String views,
       String resolution,
       String created,
-      String fav) {
+      String fav,
+      String size) {
     databaseReference.child(id.toString()).set({
       "id": id,
       "url": url,
@@ -307,7 +317,8 @@ class _WallpapersState extends State<Wallpapers> {
       "views": views,
       "resolution": resolution,
       "created": created,
-      "fav": fav
+      "fav": fav,
+      "size": size
     });
   }
 

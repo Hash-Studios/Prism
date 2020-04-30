@@ -30,6 +30,7 @@ class WallData {
       List wallpapersCreatedAt = [];
       List wallpapersResolution = [];
       List wallpapersFav = [];
+      List wallpapersSize = [];
       List wallpapers = fetchData["data"];
       Map meta = fetchData["meta"];
       currentPage = meta["current_page"];
@@ -48,6 +49,7 @@ class WallData {
         wallpapersCreatedAt.add(wallpapers[i]["created_at"].toString());
         wallpapersFav.add(wallpapers[i]["favorites"].toString());
         wallpapersId.add(wallpapers[i]["id"].toString());
+        wallpapersSize.add(wallpapers[i]["file_size"].toString());
         try {
           wallpapersColors
               .add(wallpapers[i]["colors"][0].toString().substring(1));
@@ -105,6 +107,7 @@ class WallData {
               wallpapersCreatedAt.add(wallpapers[i]["created_at"].toString());
               wallpapersFav.add(wallpapers[i]["favorites"].toString());
               wallpapersId.add(wallpapers[i]["id"].toString());
+              wallpapersSize.add(wallpapers[i]["file_size"].toString());
               try {
                 wallpapersColors
                     .add(wallpapers[i]["colors"][0].toString().substring(1));
@@ -134,7 +137,8 @@ class WallData {
         "url": wallpapersUrl,
         "resolution": wallpapersResolution,
         "created_at": wallpapersCreatedAt,
-        "favourites": wallpapersFav
+        "favourites": wallpapersFav,
+        "size": wallpapersSize
       };
       // print(wallheavenData.toString());
       return wallheavenData;

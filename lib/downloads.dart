@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:wallpapers_app/display.dart';
 import 'package:image_gallery/image_gallery.dart';
 
@@ -130,7 +131,33 @@ class _DownloadsState extends State<Downloads> {
             ),
           )
         : Container(
-            child: Text("Loading"),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Image(
+                    image: AssetImage("assets/images/loading.png"),
+                    height: 600.h,
+                    width: 600.w,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      "Oops!",
+                      style: GoogleFonts.raleway(
+                          fontSize: 30, color: loadingTextColor),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Text(
+                    "Download some awesome\n wallpapers to add them here.",
+                    style: GoogleFonts.raleway(
+                        fontSize: 16, color: loadingTextColor),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
           );
   }
 }
