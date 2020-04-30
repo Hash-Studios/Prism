@@ -34,4 +34,6 @@ A new Flutter project.
 - [ ] dislike animation
 - [ ] check for internet connection
 - [ ] added more loading images
+- [ ] add pull to refresh to downloads
+- [ ] add pull to refresh to fav page
  

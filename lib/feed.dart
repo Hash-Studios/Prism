@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cache_image/cache_image.dart';
 import 'package:wallpapers_app/downloads.dart';
 import 'package:wallpapers_app/likedimages.dart';
+import 'package:wallpapers_app/settings.dart';
 import 'package:wallpapers_app/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -220,6 +221,14 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                 title: new Text("Settings"),
                 onTap: () {
                   Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return Settings();
+                      },
+                    ),
+                  );
                 }),
             new Divider(),
             new ListTile(
