@@ -128,9 +128,11 @@ class _LikedImagesState extends State<LikedImages> {
           if (snapshot.hasData) {
             data = [];
             liked = [];
+            flareControls = [];
             Map<dynamic, dynamic> values = snapshot.data.value;
             values.forEach((k, v) => data.add(v));
             values.forEach((k, v) => liked.add(k));
+            values.forEach((k, v) => flareControls.add(new FlareControls()));
             return new Container(
                 color: bgColor,
                 child: Scrollbar(
@@ -201,11 +203,11 @@ class _LikedImagesState extends State<LikedImages> {
                           },
                           onDoubleTap: () {
                             if (liked.contains(data[index]["id"])) {
-                              print("Dislike");
+                              // print("Dislike");
                               liked.remove(data[index]["id"]);
                               deleteData(data[index]["id"]);
                             } else {
-                              print("Like");
+                              // print("Like");
                               liked.add(data[index]["id"]);
                               createRecord(
                                   data[index]["id"],
@@ -219,7 +221,7 @@ class _LikedImagesState extends State<LikedImages> {
                                   data[index]["fav"]);
                             }
                             flareControls[index].play("like");
-                            print(liked.toString());
+                            // print(liked.toString());
                           },
                         );
                       }),
@@ -441,7 +443,7 @@ class _LikedImagesState extends State<LikedImages> {
 
   void getData() {
     databaseReference.once().then((DataSnapshot snapshot) {
-      print('Data : ${snapshot.value}');
+      // print('Data : ${snapshot.value}');
     });
   }
 

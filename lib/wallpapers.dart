@@ -228,11 +228,11 @@ class _WallpapersState extends State<Wallpapers> {
                           },
                           onDoubleTap: () {
                             if (liked.contains(wallpapersLinks[index])) {
-                              print("Dislike");
+                              // print("Dislike");
                               liked.remove(wallpapersLinks[index]);
                               deleteData(wallpapersId[index]);
                             } else {
-                              print("Like");
+                              // print("Like");
                               liked.add(wallpapersLinks[index]);
                               createRecord(
                                   wallpapersId[index],
@@ -246,7 +246,7 @@ class _WallpapersState extends State<Wallpapers> {
                                   wallpapersFav[index]);
                             }
                             flareControls[index].play("like");
-                            print(liked.toString());
+                            // print(liked.toString());
                           },
                         );
                       }),
@@ -308,7 +308,7 @@ class _WallpapersState extends State<Wallpapers> {
 
   void getData() {
     databaseReference.once().then((DataSnapshot snapshot) {
-      print('Data : ${snapshot.value}');
+      // print('Data : ${snapshot.value}');
     });
   }
 
