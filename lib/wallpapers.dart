@@ -7,6 +7,7 @@ import 'package:wallpapers_app/display.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:dynamic_theme/dynamic_theme.dart';
 
 class Wallpapers extends StatefulWidget {
   int width;
@@ -20,8 +21,6 @@ class _WallpapersState extends State<Wallpapers> {
   final databaseReference = FirebaseDatabase.instance.reference().child("user");
   List liked = [];
   List<FlareControls> flareControls;
-  final Color loadingTextColor = Color(0xFF000000);
-  final Color bgColor = Color(0xFFFFFFFF);
   String query = "";
   int adder = 0;
   bool fetchedData = false;
@@ -126,7 +125,7 @@ class _WallpapersState extends State<Wallpapers> {
             key: refreshKey,
             onRefresh: refreshList,
             child: new Container(
-                color: bgColor,
+                color: DynamicTheme.of(context).data.primaryColor,
                 child: Scrollbar(
                   child: GridView.builder(
                       shrinkWrap: true,
@@ -182,19 +181,19 @@ class _WallpapersState extends State<Wallpapers> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) {
-                                    return Display(
-                                        wallpapersLinks[index],
-                                        wallpapersThumbs[index],
-                                        wallpapersColors[index],
-                                        wallpapersColors2[index],
-                                        wallpapersViews[index],
-                                        wallpapersResolution[index],
-                                        wallpapersUrl[index],
-                                        wallpapersCreatedAt[index],
-                                        wallpapersFav[index]);
-                                  },
-                                  fullscreenDialog: true),
+                                builder: (context) {
+                                  return Display(
+                                      wallpapersLinks[index],
+                                      wallpapersThumbs[index],
+                                      wallpapersColors[index],
+                                      wallpapersColors2[index],
+                                      wallpapersViews[index],
+                                      wallpapersResolution[index],
+                                      wallpapersUrl[index],
+                                      wallpapersCreatedAt[index],
+                                      wallpapersFav[index]);
+                                },
+                              ),
                             );
                             // showDialog(
                             //   barrierDismissible: false,
@@ -267,14 +266,14 @@ class _WallpapersState extends State<Wallpapers> {
                     child: Text(
                       "Loading",
                       style: GoogleFonts.raleway(
-                          fontSize: 30, color: loadingTextColor),
+                          fontSize: 30, color: DynamicTheme.of(context).data.secondaryHeaderColor),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   Text(
                     "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
                     style: GoogleFonts.raleway(
-                        fontSize: 16, color: loadingTextColor),
+                        fontSize: 16, color: DynamicTheme.of(context).data.secondaryHeaderColor),
                     textAlign: TextAlign.center,
                   ),
                 ],
