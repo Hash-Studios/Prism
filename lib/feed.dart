@@ -60,29 +60,29 @@ class _FeedState extends State<Feed> {
   }
 
   // void changeToTheme1() {
-    // setState(() {
-    //   DynamicTheme.of(context).data.secondaryHeaderColor = Color(0xFF000000);
-    //   DynamicTheme.of(context).data.primaryColor = Color(0xFFFFFFFF);
-    // });
-    // if (DynamicTheme.of(context).data.secondaryHeaderColor != Color(0xFF000000)) {
-    //   Navigator.of(context)
-    //       .push(new MaterialPageRoute(builder: (BuildContext context) {
-    //     return new Feed(Color(0xFF000000), Color(0xFFFFFFFF));
-    //   }));
-    // }
+  // setState(() {
+  //   DynamicTheme.of(context).data.secondaryHeaderColor = Color(0xFF000000);
+  //   DynamicTheme.of(context).data.primaryColor = Color(0xFFFFFFFF);
+  // });
+  // if (DynamicTheme.of(context).data.secondaryHeaderColor != Color(0xFF000000)) {
+  //   Navigator.of(context)
+  //       .push(new MaterialPageRoute(builder: (BuildContext context) {
+  //     return new Feed(Color(0xFF000000), Color(0xFFFFFFFF));
+  //   }));
+  // }
   // }
 
   // void changeToTheme2() {
-    // setState(() {
-    //   DynamicTheme.of(context).data.secondaryHeaderColor = Color(0xFFFFFFFF);
-    //   DynamicTheme.of(context).data.primaryColor = Color(0xFF000000);
-    // });
-    // if (DynamicTheme.of(context).data.secondaryHeaderColor != Color(0xFFFFFFFF)) {
-    //   Navigator.of(context)
-    //       .push(new MaterialPageRoute(builder: (BuildContext context) {
-    //     return new Feed(Color(0xFF000000), Color(0xFFFFFFFF));
-    //   }));
-    // }
+  // setState(() {
+  //   DynamicTheme.of(context).data.secondaryHeaderColor = Color(0xFFFFFFFF);
+  //   DynamicTheme.of(context).data.primaryColor = Color(0xFF000000);
+  // });
+  // if (DynamicTheme.of(context).data.secondaryHeaderColor != Color(0xFFFFFFFF)) {
+  //   Navigator.of(context)
+  //       .push(new MaterialPageRoute(builder: (BuildContext context) {
+  //     return new Feed(Color(0xFF000000), Color(0xFFFFFFFF));
+  //   }));
+  // }
   // }
 
   @override
@@ -140,7 +140,8 @@ class _FeedState extends State<Feed> {
                       style: GoogleFonts.pacifico(
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
-                          backgroundColor: Colors.white54),
+                          backgroundColor: Colors.white54,
+                          color: Colors.black),
                     ),
                   ),
                 ),
@@ -150,7 +151,8 @@ class _FeedState extends State<Feed> {
                     borderRadius: BorderRadius.all(Radius.circular(5)),
                     child: new Text(
                       " Always on the colourful side! ",
-                      style: TextStyle(backgroundColor: Colors.white54),
+                      style: TextStyle(
+                          backgroundColor: Colors.white54, color: Colors.black),
                     ),
                   ),
                 ),
@@ -199,7 +201,10 @@ class _FeedState extends State<Feed> {
                     Navigator.pop(context);
                   }),
               ListTile(
-                leading: Icon(Icons.brightness_4,color: Colors.amber,),
+                leading: Icon(
+                  Icons.brightness_4,
+                  color: Colors.amber,
+                ),
                 title: Text(
                   ' ',
                   style: TextStyle(),
@@ -207,11 +212,26 @@ class _FeedState extends State<Feed> {
                 trailing: Tooltip(
                   message: "Themes",
                   waitDuration: Duration(seconds: 1),
-                  child: DropdownButton(hint: Text('Theme',style: TextStyle(color: Colors.black,fontSize: 14),),
-                    icon: Icon(Icons.more_vert, color: DynamicTheme.of(context).data.iconTheme.color),
-                    items: _dropDownMenuItems,
-                    onChanged: onChangeDropdownItem,
-                    underline: SizedBox(),
+                  child: Container(
+                    width: 390.w,
+                    child: DropdownButton(
+                      isExpanded: true,
+                      hint: Text(
+                        'Themes',
+                        style: TextStyle(
+                            color: DynamicTheme.of(context)
+                                .data
+                                .textTheme
+                                .subtitle
+                                .color,
+                            fontSize: 14),
+                      ),
+                      icon: Icon(Icons.more_vert,
+                          color: DynamicTheme.of(context).data.iconTheme.color),
+                      items: _dropDownMenuItems,
+                      onChanged: onChangeDropdownItem,
+                      underline: SizedBox(),
+                    ),
                   ),
                 ),
               ),
