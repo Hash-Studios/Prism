@@ -32,5 +32,6 @@ A new Flutter project.
 - [x] like/dislike on fav page(related to local liked list)
 - [ ] clear cache button
 - [ ] dislike animation
-- [ ] internet connectivity
+- [ ] check for internet connection
+- [ ] added more loading images
  

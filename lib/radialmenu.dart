@@ -439,10 +439,12 @@ class _RadialAnimationState extends State<RadialAnimation> {
 
   void onPaint() async {
     if (widget.isFile) {
-      setState(() {
-        widget.isOpen = false;
-        widget.opacity = 0.0;
-      });
+      if (this.mounted) {
+        setState(() {
+          widget.isOpen = false;
+          widget.opacity = 0.0;
+        });
+      }
       showDialog(
         context: context,
         child: AlertDialog(
@@ -575,10 +577,12 @@ class _RadialAnimationState extends State<RadialAnimation> {
   }
 
   void onDownload() async {
-    setState(() {
-      widget.isOpen = false;
-      widget.opacity = 0.0;
-    });
+    if (this.mounted) {
+      setState(() {
+        widget.isOpen = false;
+        widget.opacity = 0.0;
+      });
+    }
     GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) =>
         Fluttertoast.showToast(
             msg: "Downloaded image in Pictures/Prism!",
