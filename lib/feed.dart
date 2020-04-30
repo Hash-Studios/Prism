@@ -4,22 +4,86 @@ import 'package:wallpapers_app/likedimages.dart';
 import 'package:wallpapers_app/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import './themes.dart';
+import 'package:dynamic_theme/dynamic_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
 
 class Feed extends StatefulWidget {
+  // Color iconColor;
+  // Color bgColor;
+  // Feed(this.iconColor, this.bgColor);
   @override
   _FeedState createState() => _FeedState();
 }
 
 class _FeedState extends State<Feed> {
-  final Color iconColor = Color(0xFF000000);
-  final Color bgColor = Color(0xFFFFFFFF);
+  List<ThemeItem> _themeItems = ThemeItem.getThemeItems();
+
+  List<DropdownMenuItem<ThemeItem>> _dropDownMenuItems;
+
+  ThemeItem _selectedItem;
+
+  List<DropdownMenuItem<ThemeItem>> buildDropdownMenuItems() {
+    List<DropdownMenuItem<ThemeItem>> items = List();
+    for (ThemeItem themeItem in _themeItems) {
+      items
+          .add(DropdownMenuItem(value: themeItem, child: Text(themeItem.name)));
+    }
+    return items;
+  }
+
   @override
   void initState() {
+    _dropDownMenuItems = buildDropdownMenuItems();
+    _selectedItem = _dropDownMenuItems[0].value;
     super.initState();
   }
+
+  void changeColor() {
+    DynamicTheme.of(context).setThemeData(this._selectedItem.themeData);
+  }
+
+  setSharedPrefs() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('dynTheme', _selectedItem.slug);
+  }
+
+  onChangeDropdownItem(ThemeItem selectedItem) {
+    setState(() {
+      this._selectedItem = selectedItem;
+    });
+    changeColor();
+    setSharedPrefs();
+  }
+
+  // void changeToTheme1() {
+    // setState(() {
+    //   DynamicTheme.of(context).data.secondaryHeaderColor = Color(0xFF000000);
+    //   DynamicTheme.of(context).data.primaryColor = Color(0xFFFFFFFF);
+    // });
+    // if (DynamicTheme.of(context).data.secondaryHeaderColor != Color(0xFF000000)) {
+    //   Navigator.of(context)
+    //       .push(new MaterialPageRoute(builder: (BuildContext context) {
+    //     return new Feed(Color(0xFF000000), Color(0xFFFFFFFF));
+    //   }));
+    // }
+  // }
+
+  // void changeToTheme2() {
+    // setState(() {
+    //   DynamicTheme.of(context).data.secondaryHeaderColor = Color(0xFFFFFFFF);
+    //   DynamicTheme.of(context).data.primaryColor = Color(0xFF000000);
+    // });
+    // if (DynamicTheme.of(context).data.secondaryHeaderColor != Color(0xFFFFFFFF)) {
+    //   Navigator.of(context)
+    //       .push(new MaterialPageRoute(builder: (BuildContext context) {
+    //     return new Feed(Color(0xFF000000), Color(0xFFFFFFFF));
+    //   }));
+    // }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -35,32 +99,34 @@ class _FeedState extends State<Feed> {
           title: Text(
             'Prism',
             style: GoogleFonts.pacifico(
-                fontWeight: FontWeight.w600, fontSize: 30, color: iconColor),
+                fontWeight: FontWeight.w600,
+                fontSize: 30,
+                color: DynamicTheme.of(context).data.secondaryHeaderColor),
           ),
           actions: <Widget>[
             IconButton(
               icon: Icon(
                 Icons.search,
-                color: iconColor,
+                color: DynamicTheme.of(context).data.secondaryHeaderColor,
               ),
               onPressed: null,
             )
           ],
           centerTitle: true,
           elevation: 0,
-          backgroundColor: bgColor,
+          backgroundColor: DynamicTheme.of(context).data.primaryColor,
           brightness: Brightness.light,
           leading: IconButton(
             icon: Icon(
               Icons.menu,
-              color: iconColor,
+              color: DynamicTheme.of(context).data.secondaryHeaderColor,
             ),
             onPressed: () {
               _scaffoldKey.currentState.openDrawer();
             },
           ),
         ),
-        backgroundColor: bgColor,
+        backgroundColor: DynamicTheme.of(context).data.primaryColor,
         drawer: Drawer(
           child: new ListView(
             children: <Widget>[
@@ -126,87 +192,28 @@ class _FeedState extends State<Feed> {
               new ListTile(
                   leading: Icon(
                     Icons.arrow_downward,
-                    color: Colors.blue,
+                    color: Colors.green,
                   ),
                   title: new Text("Downloads"),
                   onTap: () {
                     Navigator.pop(context);
                   }),
-              ExpansionTile(
-                leading: Icon(Icons.brightness_4),
+              ListTile(
+                leading: Icon(Icons.brightness_4,color: Colors.amber,),
                 title: Text(
-                  'Themes',
+                  ' ',
                   style: TextStyle(),
                 ),
-                children: <Widget>[
-                  Tooltip(
-                    message: "Theme#1",
-                    waitDuration: Duration(seconds: 1),
-                    child: ListTile(
-                      title: Text(
-                        'Theme#1',
-                        style: TextStyle(),
-                      ),
-                      onTap: () {},
-                    ),
+                trailing: Tooltip(
+                  message: "Themes",
+                  waitDuration: Duration(seconds: 1),
+                  child: DropdownButton(hint: Text('Theme',style: TextStyle(color: Colors.black,fontSize: 14),),
+                    icon: Icon(Icons.more_vert, color: DynamicTheme.of(context).data.iconTheme.color),
+                    items: _dropDownMenuItems,
+                    onChanged: onChangeDropdownItem,
+                    underline: SizedBox(),
                   ),
-                  Divider(
-                    height: 2.0,
-                  ),
-                  Tooltip(
-                    message: "Theme#2",
-                    waitDuration: Duration(seconds: 1),
-                    child: ListTile(
-                      title: Text(
-                        'Theme#2',
-                        style: TextStyle(),
-                      ),
-                      onTap: () {},
-                    ),
-                  ),
-                  Divider(
-                    height: 2.0,
-                  ),
-                  Tooltip(
-                    message: "Theme#3",
-                    waitDuration: Duration(seconds: 1),
-                    child: ListTile(
-                      title: Text(
-                        'Theme#3',
-                        style: TextStyle(),
-                      ),
-                      onTap: () {},
-                    ),
-                  ),
-                  Divider(
-                    height: 2.0,
-                  ),
-                  Tooltip(
-                    message: "Theme#4",
-                    waitDuration: Duration(seconds: 1),
-                    child: ListTile(
-                      title: Text(
-                        'Theme#4',
-                        style: TextStyle(),
-                      ),
-                      onTap: () {},
-                    ),
-                  ),
-                  Divider(
-                    height: 2.0,
-                  ),
-                  Tooltip(
-                    message: "Theme#5",
-                    waitDuration: Duration(seconds: 1),
-                    child: ListTile(
-                      title: Text(
-                        'Theme#5',
-                        style: TextStyle(),
-                      ),
-                      onTap: () {},
-                    ),
-                  ),
-                ],
+                ),
               ),
               new ListTile(
                   leading: Icon(
@@ -232,10 +239,14 @@ class _FeedState extends State<Feed> {
         ),
         body: TabBarView(
           children: [
-            Wallpapers(ScreenUtil.screenWidth.round(),
-                ScreenUtil.screenHeight.round()),
-            LikedImages(ScreenUtil.screenWidth.round(),
-                ScreenUtil.screenHeight.round()),
+            Wallpapers(
+              ScreenUtil.screenWidth.round(),
+              ScreenUtil.screenHeight.round(),
+            ),
+            LikedImages(
+              ScreenUtil.screenWidth.round(),
+              ScreenUtil.screenHeight.round(),
+            ),
             new Container(
               color: Colors.blue,
             ),
@@ -253,11 +264,11 @@ class _FeedState extends State<Feed> {
               icon: new Icon(Icons.arrow_downward),
             )
           ],
-          labelColor: iconColor,
+          labelColor: DynamicTheme.of(context).data.secondaryHeaderColor,
           unselectedLabelColor: Colors.grey,
           indicatorSize: TabBarIndicatorSize.label,
           indicatorPadding: EdgeInsets.all(5.0),
-          indicatorColor: iconColor,
+          indicatorColor: DynamicTheme.of(context).data.secondaryHeaderColor,
         ),
       ),
     );
