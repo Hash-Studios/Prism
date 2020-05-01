@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:complimentary_colors/complimentary_colors.dart';
-import 'package:color/color.dart';
+// import 'package:complimentary_colors/complimentary_colors.dart';
+// import 'package:color/color.dart';
 
 class WallData {
   String fetchUrl;

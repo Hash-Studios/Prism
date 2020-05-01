@@ -36,4 +36,5 @@ A new Flutter project.
 - [ ] added more loading images
 - [ ] add pull to refresh to downloads
 - [ ] add pull to refresh to fav page
+- [ ] change icons
  
