@@ -44,4 +44,5 @@ A new Flutter project.
 - [ ] add drawer header images*
 - [ ] highlight listitem when clicked about*
 - [ ] clear downloaded images*
+- [ ] try catch FlutterGallaryPlugin errors*
  
