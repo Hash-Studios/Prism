@@ -51,6 +51,19 @@ class ThemeItem {
           )),
       ThemeItem(
           4,
+          'Classic Dark',
+          'dark-black-darkblue',
+          ThemeData(
+            brightness: Brightness.dark,
+            primaryColor: Color(0xFF263238),
+            secondaryHeaderColor: Color(0xFFEEEEEE),
+            primarySwatch: Colors.blueGrey,
+            textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
+                title: TextStyle(color: Colors.white70),
+                subtitle: TextStyle(color: Colors.white70))),
+          )),
+      ThemeItem(
+          5,
           'Monochrome Cyan',
           'light-cyan-black',
           ThemeData(

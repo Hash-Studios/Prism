@@ -195,7 +195,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                   child: DropdownButton(
                     isExpanded: true,
                     hint: Text(
-                      'Themes',
+                      '          Themes',
                       style: TextStyle(
                           color: DynamicTheme.of(context)
                               .data
