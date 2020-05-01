@@ -42,7 +42,8 @@ class RadialMenu extends StatefulWidget {
   String favourites = "";
   String size = "";
   double opacity;
-  Function changeIsOpen;
+  Function changeIsOpenTrue;
+  Function changeIsOpenFalse;
   RadialMenu(
       this.color,
       this.color2,
@@ -58,7 +59,8 @@ class RadialMenu extends StatefulWidget {
       this.favourites,
       this.size,
       this.opacity,
-      this.changeIsOpen);
+      this.changeIsOpenTrue,
+      this.changeIsOpenFalse);
   createState() => _RadialMenuState();
 }
 
@@ -75,22 +77,24 @@ class _RadialMenuState extends State<RadialMenu>
   @override
   Widget build(BuildContext context) {
     return RadialAnimation(
-        controller: controller,
-        color: widget.color,
-        color2: widget.color2,
-        isOpen: widget.isOpen,
-        isFile: widget.isFile,
-        file: widget.file,
-        link: widget.link,
-        thumb: widget.thumb,
-        views: widget.views,
-        resolution: widget.resolution,
-        url: widget.url,
-        createdAt: widget.createdAt,
-        favourites: widget.favourites,
-        size: widget.size,
-        opacity: widget.opacity,
-        changeIsOpen: widget.changeIsOpen);
+      controller: controller,
+      color: widget.color,
+      color2: widget.color2,
+      isOpen: widget.isOpen,
+      isFile: widget.isFile,
+      file: widget.file,
+      link: widget.link,
+      thumb: widget.thumb,
+      views: widget.views,
+      resolution: widget.resolution,
+      url: widget.url,
+      createdAt: widget.createdAt,
+      favourites: widget.favourites,
+      size: widget.size,
+      opacity: widget.opacity,
+      changeIsOpenTrue: widget.changeIsOpenTrue,
+      changeIsOpenFalse: widget.changeIsOpenFalse,
+    );
   }
 }
 
@@ -115,7 +119,8 @@ class RadialAnimation extends StatefulWidget {
   String favourites = "";
   String size = "";
   double opacity;
-  Function changeIsOpen;
+  Function changeIsOpenTrue;
+  Function changeIsOpenFalse;
   RadialAnimation(
       {Key key,
       this.controller,
@@ -133,7 +138,8 @@ class RadialAnimation extends StatefulWidget {
       this.favourites,
       this.size,
       this.opacity,
-      this.changeIsOpen})
+      this.changeIsOpenTrue,
+      this.changeIsOpenFalse})
       : scale = Tween<double>(
           begin: 1.3,
           end: 0.0,
@@ -175,7 +181,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
   Future<bool> _onBackPressed() {
     _close();
     if (widget.isOpen) {
-      widget.changeIsOpen();
+      widget.changeIsOpenFalse();
       Navigator.canPop(context);
     } else {
       Navigator.pop(context);
@@ -351,7 +357,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                           ),
                           onPressed: () {
                             HapticFeedback.vibrate();
-                            widget.changeIsOpen();
+                            widget.changeIsOpenFalse();
                             _close();
                           },
                           backgroundColor: Colors.white),
@@ -369,7 +375,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                           backgroundColor: Colors.white,
                           onPressed: () {
                             HapticFeedback.vibrate();
-                            widget.changeIsOpen();
+                            widget.changeIsOpenTrue();
                             _open();
                           }),
                     )
@@ -407,7 +413,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
               backgroundColor: color,
               onPressed: () {
                 HapticFeedback.vibrate();
-                widget.changeIsOpen();
+                widget.changeIsOpenFalse();
                 _close();
                 func();
               },

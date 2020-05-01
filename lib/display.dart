@@ -57,10 +57,17 @@ class _DisplayState extends State<Display> {
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
-  void changeIsOpen() {
+  void changeIsOpenTrue() {
     if (this.mounted) {
       setState(() {
-        isOpen = isOpen ? false : true;
+        isOpen = true;
+      });
+    }
+  }
+  void changeIsOpenFalse() {
+    if (this.mounted) {
+      setState(() {
+        isOpen = false;
       });
     }
   }
@@ -131,7 +138,8 @@ class _DisplayState extends State<Display> {
           widget.favourites,
           widget.size,
           opacity,
-          changeIsOpen,
+          changeIsOpenTrue,
+          changeIsOpenFalse,
         )
         // ),
         // Stack(
