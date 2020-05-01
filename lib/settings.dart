@@ -117,7 +117,7 @@ class _SettingsState extends State<Settings> {
                       ),
                     ],
                   ),
-                  icon: Icon(Icons.more_vert,
+                  icon: Icon(FontAwesomeIcons.angleDown,
                       color: DynamicTheme.of(context).data.iconTheme.color),
                   items: _dropDownMenuItems,
                   onChanged: onChangeDropdownItem,
@@ -164,7 +164,7 @@ class _SettingsState extends State<Settings> {
                       color: DynamicTheme.of(context).data.secondaryHeaderColor,
                     ),
                     title: new Text(
-                      "Clear App Directory",
+                      "Clear Downloads",
                       style: TextStyle(
                           color: DynamicTheme.of(context)
                               .data
@@ -227,6 +227,23 @@ class _SettingsState extends State<Settings> {
                           fontSize: 18),
                     ),
                     subtitle: Text("Remove all favorites"),
+                    onTap: () {}),
+                ListTile(
+                    leading: Icon(
+                      FontAwesomeIcons.search,
+                      color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                    ),
+                    title: new Text(
+                      "Clear Search History",
+                      style: TextStyle(
+                          color: DynamicTheme.of(context)
+                              .data
+                              .textTheme
+                              .subtitle
+                              .color,
+                          fontSize: 18),
+                    ),
+                    subtitle: Text("Delete search history data"),
                     onTap: () {}),
                 ListTile(
                     leading: Icon(
