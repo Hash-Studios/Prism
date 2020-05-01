@@ -267,7 +267,19 @@ class _WallpapersState extends State<Wallpapers> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Image(
-                    image: AssetImage("assets/images/loading.png"),
+                    image: DynamicTheme.of(context).data.primaryColor ==
+                            Color(0xFFFFFFFF)
+                        ? AssetImage("assets/images/loadingsw.png")
+                        : DynamicTheme.of(context).data.primaryColor ==
+                                Color(0xFF272727)
+                            ? AssetImage("assets/images/loadingdb.png")
+                            : DynamicTheme.of(context).data.primaryColor ==
+                                    Color(0xFF000000)
+                                ? AssetImage("assets/images/loadingab.png")
+                                : DynamicTheme.of(context).data.primaryColor ==
+                                        Color(0xFF263238)
+                                    ? AssetImage("assets/images/loadingcd.png")
+                                    : AssetImage("assets/images/loadingmc.png"),
                     height: 600.h,
                     width: 600.w,
                   ),

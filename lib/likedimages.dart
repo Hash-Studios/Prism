@@ -20,9 +20,6 @@ class _LikedImagesState extends State<LikedImages> {
   final databaseReference = FirebaseDatabase.instance.reference().child("user");
   List liked = [];
   List<FlareControls> flareControls;
-  final Color loadingTextColor = Color(0xFF000000);
-  final Color bgColor = Color(0xFFFFFFFF);
-
   @override
   void initState() {
     super.initState();
@@ -60,7 +57,7 @@ class _LikedImagesState extends State<LikedImages> {
               );
 
               return new Container(
-                  color: bgColor,
+                  color: DynamicTheme.of(context).data.primaryColor,
                   child: Scrollbar(
                     child: GridView.builder(
                         shrinkWrap: true,
@@ -160,7 +157,22 @@ class _LikedImagesState extends State<LikedImages> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Image(
-                        image: AssetImage("assets/images/loading.png"),
+                        image: DynamicTheme.of(context).data.primaryColor ==
+                                Color(0xFFFFFFFF)
+                            ? AssetImage("assets/images/oopssw.png")
+                            : DynamicTheme.of(context).data.primaryColor ==
+                                    Color(0xFF272727)
+                                ? AssetImage("assets/images/oopsdb.png")
+                                : DynamicTheme.of(context).data.primaryColor ==
+                                        Color(0xFF000000)
+                                    ? AssetImage("assets/images/oopsab.png")
+                                    : DynamicTheme.of(context)
+                                                .data
+                                                .primaryColor ==
+                                            Color(0xFF263238)
+                                        ? AssetImage("assets/images/oopscd.png")
+                                        : AssetImage(
+                                            "assets/images/oopsmc.png"),
                         height: 600.h,
                         width: 600.w,
                       ),
@@ -169,14 +181,14 @@ class _LikedImagesState extends State<LikedImages> {
                         child: Text(
                           "Oops!",
                           style: GoogleFonts.raleway(
-                              fontSize: 30, color: loadingTextColor),
+                              fontSize: 30, color: DynamicTheme.of(context).data.secondaryHeaderColor),
                           textAlign: TextAlign.center,
                         ),
                       ),
                       Text(
                         "Double tap some awesome\n wallpapers to add them here.",
                         style: GoogleFonts.raleway(
-                            fontSize: 16, color: loadingTextColor),
+                            fontSize: 16, color: DynamicTheme.of(context).data.secondaryHeaderColor),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -191,7 +203,19 @@ class _LikedImagesState extends State<LikedImages> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Image(
-                    image: AssetImage("assets/images/loading.png"),
+                    image: DynamicTheme.of(context).data.primaryColor ==
+                            Color(0xFFFFFFFF)
+                        ? AssetImage("assets/images/loadingsw.png")
+                        : DynamicTheme.of(context).data.primaryColor ==
+                                Color(0xFF272727)
+                            ? AssetImage("assets/images/loadingdb.png")
+                            : DynamicTheme.of(context).data.primaryColor ==
+                                    Color(0xFF000000)
+                                ? AssetImage("assets/images/loadingab.png")
+                                : DynamicTheme.of(context).data.primaryColor ==
+                                        Color(0xFF263238)
+                                    ? AssetImage("assets/images/loadingcd.png")
+                                    : AssetImage("assets/images/loadingmc.png"),
                     height: 600.h,
                     width: 600.w,
                   ),
