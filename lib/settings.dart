@@ -6,6 +6,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import './themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:io';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class Settings extends StatefulWidget {
   @override
@@ -157,7 +160,15 @@ class _SettingsState extends State<Settings> {
                           fontSize: 18),
                     ),
                     subtitle: Text("Clear locally cached images"),
-                    onTap: () {}),
+                    onTap: () {
+                      DefaultCacheManager().emptyCache();
+                      Fluttertoast.showToast(
+                            msg: "Cleared cache!",
+                            toastLength: Toast.LENGTH_LONG,
+                            timeInSecForIosWeb: 1,
+                            textColor: Colors.white,
+                            fontSize: 16.0);
+                    }),
                 ListTile(
                     leading: Icon(
                       Icons.storage,
@@ -174,7 +185,26 @@ class _SettingsState extends State<Settings> {
                           fontSize: 18),
                     ),
                     subtitle: Text("Clear downloaded images"),
-                    onTap: () {}),
+                    onTap: () {
+                      final dir = Directory("/storage/emulated/0/Prism/");
+                      try {
+                        dir.deleteSync(recursive: true);
+                        DefaultCacheManager().emptyCache();
+                        Fluttertoast.showToast(
+                            msg: "Deleted all downloads!",
+                            toastLength: Toast.LENGTH_LONG,
+                            timeInSecForIosWeb: 1,
+                            textColor: Colors.white,
+                            fontSize: 16.0);
+                      } catch (e) {
+                        Fluttertoast.showToast(
+                            msg: "No downloads!",
+                            toastLength: Toast.LENGTH_LONG,
+                            timeInSecForIosWeb: 1,
+                            textColor: Colors.white,
+                            fontSize: 16.0);
+                      }
+                    }),
                 ListTile(
                     leading: Icon(
                       Icons.share,
