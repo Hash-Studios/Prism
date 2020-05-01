@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cache_image/cache_image.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:wallpapers_app/downloads.dart';
 import 'package:wallpapers_app/likedimages.dart';
 import 'package:wallpapers_app/settings.dart';
@@ -123,6 +124,11 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage("assets/images/login.png"),fit: BoxFit.cover
+                ),
+              ),
               accountEmail: Padding(
                 padding: const EdgeInsets.only(left: 10),
                 child: ClipRRect(
@@ -134,49 +140,43 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
-              decoration: new BoxDecoration(
-                image: new DecorationImage(
-                  image: new CacheImage(
-                      'https://46.media.tumblr.com/85b3585957f0c810bf7f1f09dd8c7fe7/tumblr_p14hllwA221uzwgsuo1_400.gif'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              currentAccountPicture: CircleAvatar(
+              currentAccountPicture: Center(
                 child: Icon(
                   Icons.format_paint,
                   size: 48,
-                  color: Colors.white70,
+                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
                 ),
-                backgroundImage: CacheImage(
-                    "https://46.media.tumblr.com/85b3585957f0c810bf7f1f09dd8c7fe7/tumblr_p14hllwA221uzwgsuo1_400.gif"),
               ),
             ),
             new ListTile(
                 leading: Icon(
                   Icons.format_paint,
-                  color: Colors.deepPurple,
+                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
                 ),
                 title: new Text("Wallpapers"),
                 onTap: () {
                   Navigator.pop(context);
+                  _tabController.animateTo(0);
                 }),
             new ListTile(
                 leading: Icon(
                   Icons.favorite,
-                  color: Colors.pink,
+                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
                 ),
                 title: new Text("Favourites"),
                 onTap: () {
                   Navigator.pop(context);
+                  _tabController.animateTo(1);
                 }),
             new ListTile(
                 leading: Icon(
                   Icons.arrow_downward,
-                  color: Colors.green,
+                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
                 ),
                 title: new Text("Downloads"),
                 onTap: () {
                   Navigator.pop(context);
+                  _tabController.animateTo(2);
                 }),
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -192,10 +192,12 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                       children: [
                         Icon(
                           Icons.brightness_4,
-                          color: Colors.amber,
+                          color: DynamicTheme.of(context)
+                              .data
+                              .secondaryHeaderColor,
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(left:4.0),
+                          padding: const EdgeInsets.only(left: 4.0),
                           child: Text(
                             '          Themes',
                             style: TextStyle(
@@ -209,7 +211,8 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                         ),
                       ],
                     ),
-                    icon: Icon(Icons.more_vert,
+                    elevation: 6,
+                    icon: Icon(FontAwesomeIcons.angleDown,
                         color: DynamicTheme.of(context).data.iconTheme.color),
                     items: _dropDownMenuItems,
                     onChanged: onChangeDropdownItem,
@@ -221,7 +224,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
             new ListTile(
                 leading: Icon(
                   Icons.settings,
-                  color: Colors.deepOrange,
+                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
                 ),
                 title: new Text("Settings"),
                 onTap: () {
@@ -239,7 +242,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
             new ListTile(
                 leading: Icon(
                   Icons.info,
-                  color: Colors.amber[700],
+                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
                 ),
                 title: new Text("About"),
                 onTap: () {

@@ -13,7 +13,8 @@ A new Flutter project.
 - [ ] search and favourites
 - [x] primary swatch/themeing
 - [x] google fonts universal
-- [ ] navdrawer link to tabs
+- [x] navdrawer link to tabs
+- [ ] navdrawer active tab highlight
 - [ ] redesign navdrawer
 - [x] disable button (not needed)
 - [ ] sorting
@@ -33,8 +34,13 @@ A new Flutter project.
 - [ ] clear cache button
 - [ ] dislike animation
 - [ ] check for internet connection
-- [ ] added more loading images
+- [x] added more loading images
 - [ ] add pull to refresh to downloads
 - [ ] add pull to refresh to fav page
 - [ ] change icons
+- [ ] settings
+- [ ] fix downloads page lag
+- [ ] show user name in drawer
+- [ ] add drawer header images
+- [ ] highlight listitem when clicked about
  
