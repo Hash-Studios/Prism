@@ -14,11 +14,11 @@ class DownloadMenu extends StatefulWidget {
   Color color;
   Color color2;
   bool isOpen;
-  var file;
+  String url;
   double opacity;
   Function changeIsOpenTrue;
   Function changeIsOpenFalse;
-  DownloadMenu(this.color, this.color2, this.isOpen, this.file, this.opacity,
+  DownloadMenu(this.color, this.color2, this.isOpen, this.url, this.opacity,
       this.changeIsOpenTrue, this.changeIsOpenFalse);
   createState() => _DownloadMenuState();
 }
@@ -40,7 +40,7 @@ class _DownloadMenuState extends State<DownloadMenu>
         color: widget.color,
         color2: widget.color2,
         isOpen: widget.isOpen,
-        file: widget.file,
+        url: widget.url,
         opacity: widget.opacity,
         changeIsOpenTrue: widget.changeIsOpenTrue,
         changeIsOpenFalse: widget.changeIsOpenFalse);
@@ -56,7 +56,7 @@ class RadialAnimation extends StatefulWidget {
   Color color;
   Color color2;
   bool isOpen;
-  var file;
+  String url;
   double opacity;
   Function changeIsOpenTrue;
   Function changeIsOpenFalse;
@@ -66,7 +66,7 @@ class RadialAnimation extends StatefulWidget {
       this.color,
       this.color2,
       this.isOpen,
-      this.file,
+      this.url,
       this.opacity,
       this.changeIsOpenTrue,
       this.changeIsOpenFalse})
@@ -254,21 +254,12 @@ class _RadialAnimationState extends State<RadialAnimation> {
                       ? () async {
                           HapticFeedback.vibrate();
                           Navigator.of(context).pop();
-                          Directory appDocDirectory =
-                              await getApplicationDocumentsDirectory();
-                          IMG.Image image = IMG.decodeImage(
-                              File(widget.file.path).readAsBytesSync());
 
-                          IMG.Image newWall = IMG.copyResize(image,
-                              height: ScreenUtil.screenHeight.round());
-                          File(appDocDirectory.path + '/' + 'wallpaper.png')
-                            ..writeAsBytesSync(IMG.encodePng(newWall));
                           int location = WallpaperManager.HOME_SCREEN;
 
                           final String result1 =
                               await WallpaperManager.setWallpaperFromFile(
-                                  appDocDirectory.path + '/' + 'wallpaper.png',
-                                  location);
+                                  widget.url, location);
                           Fluttertoast.showToast(
                               msg: "Wallpaper Applied Successfully!",
                               toastLength: Toast.LENGTH_LONG,
@@ -280,22 +271,11 @@ class _RadialAnimationState extends State<RadialAnimation> {
                           ? () async {
                               HapticFeedback.vibrate();
                               Navigator.of(context).pop();
-                              Directory appDocDirectory =
-                                  await getApplicationDocumentsDirectory();
-                              IMG.Image image = IMG.decodeImage(
-                                  File(widget.file.path).readAsBytesSync());
 
-                              IMG.Image newWall = IMG.copyResize(image,
-                                  height: ScreenUtil.screenHeight.round());
-                              File(appDocDirectory.path + '/' + 'wallpaper.png')
-                                ..writeAsBytesSync(IMG.encodePng(newWall));
                               int location = WallpaperManager.LOCK_SCREEN;
                               final String result2 =
                                   await WallpaperManager.setWallpaperFromFile(
-                                      appDocDirectory.path +
-                                          '/' +
-                                          'wallpaper.png',
-                                      location);
+                                      widget.url, location);
                               Fluttertoast.showToast(
                                   msg: "Wallpaper Applied Successfully!",
                                   toastLength: Toast.LENGTH_LONG,
@@ -306,30 +286,15 @@ class _RadialAnimationState extends State<RadialAnimation> {
                           : () async {
                               HapticFeedback.vibrate();
                               Navigator.of(context).pop();
-                              Directory appDocDirectory =
-                                  await getApplicationDocumentsDirectory();
-                              IMG.Image image = IMG.decodeImage(
-                                  File(widget.file.path).readAsBytesSync());
-
-                              IMG.Image newWall = IMG.copyResize(image,
-                                  height: ScreenUtil.screenHeight.round());
-                              File(appDocDirectory.path + '/' + 'wallpaper.png')
-                                ..writeAsBytesSync(IMG.encodePng(newWall));
                               int location = WallpaperManager.HOME_SCREEN;
 
                               final String result1 =
                                   await WallpaperManager.setWallpaperFromFile(
-                                      appDocDirectory.path +
-                                          '/' +
-                                          'wallpaper.png',
-                                      location);
+                                      widget.url, location);
                               location = WallpaperManager.LOCK_SCREEN;
                               final String result2 =
                                   await WallpaperManager.setWallpaperFromFile(
-                                      appDocDirectory.path +
-                                          '/' +
-                                          'wallpaper.png',
-                                      location);
+                                      widget.url, location);
                               Fluttertoast.showToast(
                                   msg: "Wallpaper Applied Successfully!",
                                   toastLength: Toast.LENGTH_LONG,

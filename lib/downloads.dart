@@ -19,8 +19,8 @@ class Downloads extends StatefulWidget {
 class _DownloadsState extends State<Downloads> {
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = new HashMap();
-  List allImage = new List();
-  List allNameList = new List();
+  List allImage;
+  List allNameList;
 
   Future<void> loadImageList() async {
     Map<dynamic, dynamic> allImageTemp;
@@ -28,7 +28,7 @@ class _DownloadsState extends State<Downloads> {
 
     setState(() {
       for (int i = 0; i < allImageTemp['URIList'].length; i++) {
-        if (allImageTemp['URIList'][i].toString().contains("wallhaven")) {
+        if (allImageTemp['URIList'][i].toString().contains("Prism")) {
           this.allImage.add(allImageTemp['URIList'][i].toString());
           this.allNameList.add(allImageTemp['DISPLAY_NAME'][i].toString());
         }
@@ -49,6 +49,8 @@ class _DownloadsState extends State<Downloads> {
   void initState() {
     super.initState();
     dataFetched = false;
+    allImage = new List();
+    allNameList = new List();
     loadImageList();
   }
 
@@ -126,7 +128,7 @@ class _DownloadsState extends State<Downloads> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Image(
-                    image:DynamicTheme.of(context).data.primaryColor ==
+                    image: DynamicTheme.of(context).data.primaryColor ==
                             Color(0xFFFFFFFF)
                         ? AssetImage("assets/images/loadingsw.png")
                         : DynamicTheme.of(context).data.primaryColor ==
@@ -147,14 +149,19 @@ class _DownloadsState extends State<Downloads> {
                     child: Text(
                       "Oops!",
                       style: GoogleFonts.raleway(
-                          fontSize: 30, color: DynamicTheme.of(context).data.secondaryHeaderColor),
+                          fontSize: 30,
+                          color: DynamicTheme.of(context)
+                              .data
+                              .secondaryHeaderColor),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   Text(
                     "Download some awesome\n wallpapers to add them here.",
                     style: GoogleFonts.raleway(
-                        fontSize: 16, color: DynamicTheme.of(context).data.secondaryHeaderColor),
+                        fontSize: 16,
+                        color:
+                            DynamicTheme.of(context).data.secondaryHeaderColor),
                     textAlign: TextAlign.center,
                   ),
                 ],

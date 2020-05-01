@@ -31,16 +31,17 @@ A new Flutter project.
 - [ ] animation fix
 - [x] remove extra tab
 - [x] like/dislike on fav page(related to local liked list)
-- [ ] clear cache button
+- [ ] clear cache button*
 - [ ] dislike animation
 - [ ] check for internet connection
 - [x] added more loading images
 - [ ] add pull to refresh to downloads
 - [ ] add pull to refresh to fav page
 - [ ] change icons
-- [ ] settings
-- [ ] fix downloads page lag
+- [ ] settings*
+- [ ] fix downloads page lag*
 - [ ] show user name in drawer
-- [ ] add drawer header images
-- [ ] highlight listitem when clicked about
+- [ ] add drawer header images*
+- [ ] highlight listitem when clicked about*
+- [ ] clear downloaded images*
  

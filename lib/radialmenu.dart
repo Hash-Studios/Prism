@@ -485,23 +485,11 @@ class _RadialAnimationState extends State<RadialAnimation> {
                         ? () async {
                             HapticFeedback.vibrate();
                             Navigator.of(context).pop();
-                            Directory appDocDirectory =
-                                await getApplicationDocumentsDirectory();
-                            IMG.Image image = IMG.decodeImage(
-                                File(widget.file.path).readAsBytesSync());
-
-                            IMG.Image newWall = IMG.copyResize(image,
-                                height: ScreenUtil.screenHeight.round());
-                            File(appDocDirectory.path + '/' + 'wallpaper.png')
-                              ..writeAsBytesSync(IMG.encodePng(newWall));
                             int location = WallpaperManager.HOME_SCREEN;
 
                             final String result1 =
                                 await WallpaperManager.setWallpaperFromFile(
-                                    appDocDirectory.path +
-                                        '/' +
-                                        'wallpaper.png',
-                                    location);
+                                    widget.file.path, location);
                             Fluttertoast.showToast(
                                 msg: "Wallpaper Applied Successfully!",
                                 toastLength: Toast.LENGTH_LONG,
@@ -513,24 +501,11 @@ class _RadialAnimationState extends State<RadialAnimation> {
                             ? () async {
                                 HapticFeedback.vibrate();
                                 Navigator.of(context).pop();
-                                Directory appDocDirectory =
-                                    await getApplicationDocumentsDirectory();
-                                IMG.Image image = IMG.decodeImage(
-                                    File(widget.file.path).readAsBytesSync());
 
-                                IMG.Image newWall = IMG.copyResize(image,
-                                    height: ScreenUtil.screenHeight.round());
-                                File(appDocDirectory.path +
-                                    '/' +
-                                    'wallpaper.png')
-                                  ..writeAsBytesSync(IMG.encodePng(newWall));
                                 int location = WallpaperManager.LOCK_SCREEN;
                                 final String result2 =
                                     await WallpaperManager.setWallpaperFromFile(
-                                        appDocDirectory.path +
-                                            '/' +
-                                            'wallpaper.png',
-                                        location);
+                                        widget.file.path, location);
                                 Fluttertoast.showToast(
                                     msg: "Wallpaper Applied Successfully!",
                                     toastLength: Toast.LENGTH_LONG,
@@ -541,32 +516,16 @@ class _RadialAnimationState extends State<RadialAnimation> {
                             : () async {
                                 HapticFeedback.vibrate();
                                 Navigator.of(context).pop();
-                                Directory appDocDirectory =
-                                    await getApplicationDocumentsDirectory();
-                                IMG.Image image = IMG.decodeImage(
-                                    File(widget.file.path).readAsBytesSync());
 
-                                IMG.Image newWall = IMG.copyResize(image,
-                                    height: ScreenUtil.screenHeight.round());
-                                File(appDocDirectory.path +
-                                    '/' +
-                                    'wallpaper.png')
-                                  ..writeAsBytesSync(IMG.encodePng(newWall));
                                 int location = WallpaperManager.HOME_SCREEN;
 
                                 final String result1 =
                                     await WallpaperManager.setWallpaperFromFile(
-                                        appDocDirectory.path +
-                                            '/' +
-                                            'wallpaper.png',
-                                        location);
+                                        widget.file.path, location);
                                 location = WallpaperManager.LOCK_SCREEN;
                                 final String result2 =
                                     await WallpaperManager.setWallpaperFromFile(
-                                        appDocDirectory.path +
-                                            '/' +
-                                            'wallpaper.png',
-                                        location);
+                                        widget.file.path, location);
                                 Fluttertoast.showToast(
                                     msg: "Wallpaper Applied Successfully!",
                                     toastLength: Toast.LENGTH_LONG,
@@ -596,6 +555,12 @@ class _RadialAnimationState extends State<RadialAnimation> {
         widget.opacity = 0.0;
       });
     }
+    Fluttertoast.showToast(
+        msg: "Starting Download",
+        toastLength: Toast.LENGTH_LONG,
+        timeInSecForIosWeb: 1,
+        textColor: Colors.white,
+        fontSize: 16.0);
     GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) =>
         Fluttertoast.showToast(
             msg: "Downloaded image in Pictures/Prism!",

@@ -17,7 +17,6 @@ class _Display2State extends State<Display2> {
   final GlobalKey<FabCircularMenuState> fabKey = GlobalKey();
   bool isOpen = false;
   double opacity = 0.0;
-  var file;
   bool isFile = false;
 
   @override
@@ -109,7 +108,7 @@ class _Display2State extends State<Display2> {
           Color(0xFFFFFFFF),
           Color(0xFF000000),
           isOpen,
-          file,
+          widget.url,
           opacity,
           changeIsOpenTrue,
           changeIsOpenFalse,
