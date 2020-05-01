@@ -143,7 +143,7 @@ class WallData {
       // print(wallheavenData.toString());
       return wallheavenData;
     } else {
-      print(response.statusCode);
+      // print(response.statusCode);
       throw 'Cannot Fetch Data';
     }
   }
