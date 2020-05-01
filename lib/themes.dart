@@ -57,7 +57,7 @@ class ThemeItem {
             brightness: Brightness.dark,
             primaryColor: Color(0xFF263238),
             secondaryHeaderColor: Color(0xFFEEEEEE),
-            primarySwatch: Colors.blueGrey,
+            primarySwatch: Colors.blue,
             textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
                 title: TextStyle(color: Colors.white70),
                 subtitle: TextStyle(color: Colors.white70))),
