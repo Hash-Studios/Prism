@@ -16,7 +16,7 @@ A new Flutter project.
 - [x] navdrawer link to tabs
 - [ ] navdrawer active tab highlight
 - [ ] redesign navdrawer
-- [x] disable button (not needed)
+- [x] disable radial button (not needed)
 - [ ] sorting
 - [ ] adder length dynamic
 - [x] refresh indicator delay
@@ -27,7 +27,7 @@ A new Flutter project.
 - [x] back button closes radial menu
 - [ ] google signin
 - [ ] refresh fix fav
-- [ ] downloads
+- [x] downloads
 - [ ] animation fix
 - [x] remove extra tab
 - [x] like/dislike on fav page(related to local liked list)

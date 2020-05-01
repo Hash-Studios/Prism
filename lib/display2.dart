@@ -4,7 +4,7 @@ import 'package:fab_circular_menu/fab_circular_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:wallpapers_app/radialmenu.dart';
+import 'package:wallpapers_app/downloadmenu.dart';
 
 class Display2 extends StatefulWidget {
   String url;
@@ -35,14 +35,21 @@ class _Display2State extends State<Display2> {
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
-  void changeIsOpen() {
+  void changeIsOpenTrue() {
     if (this.mounted) {
       setState(() {
-        isOpen = isOpen ? false : true;
+        isOpen = true;
       });
     }
   }
 
+  void changeIsOpenFalse() {
+    if (this.mounted) {
+      setState(() {
+        isOpen = false;
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIOverlays([]);
@@ -98,23 +105,15 @@ class _Display2State extends State<Display2> {
         //   child:
         // SizedBox.expand(
         //     child:
-        // RadialMenu(
-        //   Hexcolor("#${widget.color}"),
-        //   Hexcolor("#${widget.color2}"),
-        //   isOpen,
-        //   isFile,
-        //   file,
-        //   widget.link,
-        //   widget.thumb,
-        //   widget.views,
-        //   widget.resolution,
-        //   widget.url,
-        //   widget.createdAt,
-        //   widget.favourites,
-        //   widget.size,
-        //   opacity,
-        //   changeIsOpen,
-        // )
+        DownloadMenu(
+          Color(0xFFFFFFFF),
+          Color(0xFF000000),
+          isOpen,
+          file,
+          opacity,
+          changeIsOpenTrue,
+          changeIsOpenFalse,
+        )
         // ),
         // Stack(
         //   alignment: Alignment.center,
