@@ -13,10 +13,10 @@ class Downloads extends StatefulWidget {
   int height;
   Downloads(this.width, this.height);
   @override
-  _DownloadsState createState() => _DownloadsState();
+  DownloadsState createState() => DownloadsState();
 }
 
-class _DownloadsState extends State<Downloads> {
+class DownloadsState extends State<Downloads> {
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = new HashMap();
   List allImage;
@@ -28,7 +28,7 @@ class _DownloadsState extends State<Downloads> {
 
     setState(() {
       for (int i = 0; i < allImageTemp['URIList'].length; i++) {
-        if (allImageTemp['URIList'][i].toString().contains("Prism")) {
+        if (allImageTemp['URIList'][i].toString().contains("storage/emulated/0/Prism")) {
           this.allImage.add(allImageTemp['URIList'][i].toString());
           this.allNameList.add(allImageTemp['DISPLAY_NAME'][i].toString());
         }
@@ -40,17 +40,14 @@ class _DownloadsState extends State<Downloads> {
     setState(() {
       dataFetched = true;
     });
-    print(this.allImage.length);
-    print(this.allImage);
-    print(this.allNameList);
   }
 
   @override
   void initState() {
     super.initState();
     dataFetched = false;
-    allImage = new List();
-    allNameList = new List();
+    allImage = [];
+    allNameList = [];
     loadImageList();
   }
 
@@ -58,6 +55,12 @@ class _DownloadsState extends State<Downloads> {
   void dispose() {
     super.dispose();
   }
+  // set nullAllImage(List all){
+  //   setState(() {
+  //     allImage = all;
+  //     allNameList = all;
+  //   });
+  // }
 
   // List data = [];
   @override
