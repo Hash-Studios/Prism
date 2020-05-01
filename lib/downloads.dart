@@ -21,8 +21,6 @@ class _DownloadsState extends State<Downloads> {
   Map<dynamic, dynamic> allImageInfo = new HashMap();
   List allImage = new List();
   List allNameList = new List();
-  final Color loadingTextColor = Color(0xFF000000);
-  final Color bgColor = Color(0xFFFFFFFF);
 
   Future<void> loadImageList() async {
     Map<dynamic, dynamic> allImageTemp;
@@ -66,7 +64,7 @@ class _DownloadsState extends State<Downloads> {
 
     return dataFetched
         ? new Container(
-            color: bgColor,
+            color: DynamicTheme.of(context).data.primaryColor,
             child: Scrollbar(
               child: GridView.builder(
                 shrinkWrap: true,
@@ -128,7 +126,19 @@ class _DownloadsState extends State<Downloads> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Image(
-                    image: AssetImage("assets/images/loading.png"),
+                    image:DynamicTheme.of(context).data.primaryColor ==
+                            Color(0xFFFFFFFF)
+                        ? AssetImage("assets/images/loadingsw.png")
+                        : DynamicTheme.of(context).data.primaryColor ==
+                                Color(0xFF272727)
+                            ? AssetImage("assets/images/loadingdb.png")
+                            : DynamicTheme.of(context).data.primaryColor ==
+                                    Color(0xFF000000)
+                                ? AssetImage("assets/images/loadingab.png")
+                                : DynamicTheme.of(context).data.primaryColor ==
+                                        Color(0xFF263238)
+                                    ? AssetImage("assets/images/loadingcd.png")
+                                    : AssetImage("assets/images/loadingmc.png"),
                     height: 600.h,
                     width: 600.w,
                   ),
@@ -137,14 +147,14 @@ class _DownloadsState extends State<Downloads> {
                     child: Text(
                       "Oops!",
                       style: GoogleFonts.raleway(
-                          fontSize: 30, color: loadingTextColor),
+                          fontSize: 30, color: DynamicTheme.of(context).data.secondaryHeaderColor),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   Text(
                     "Download some awesome\n wallpapers to add them here.",
                     style: GoogleFonts.raleway(
-                        fontSize: 16, color: loadingTextColor),
+                        fontSize: 16, color: DynamicTheme.of(context).data.secondaryHeaderColor),
                     textAlign: TextAlign.center,
                   ),
                 ],

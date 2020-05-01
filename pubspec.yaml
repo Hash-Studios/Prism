@@ -59,7 +59,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/loading.png
+    - assets/images/
     - assets/animations/like.flr
 
 
