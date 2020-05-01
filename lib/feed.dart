@@ -178,31 +178,36 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                 onTap: () {
                   Navigator.pop(context);
                 }),
-            ListTile(
-              leading: Icon(
-                Icons.brightness_4,
-                color: Colors.amber,
-              ),
-              title: Text(
-                ' ',
-                style: TextStyle(),
-              ),
-              trailing: Tooltip(
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Tooltip(
                 message: "Themes",
                 waitDuration: Duration(seconds: 1),
                 child: Container(
                   width: 390.w,
                   child: DropdownButton(
+                    isDense: true,
                     isExpanded: true,
-                    hint: Text(
-                      '          Themes',
-                      style: TextStyle(
-                          color: DynamicTheme.of(context)
-                              .data
-                              .textTheme
-                              .subtitle
-                              .color,
-                          fontSize: 14),
+                    hint: Row(
+                      children: [
+                        Icon(
+                          Icons.brightness_4,
+                          color: Colors.amber,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left:4.0),
+                          child: Text(
+                            '          Themes',
+                            style: TextStyle(
+                                color: DynamicTheme.of(context)
+                                    .data
+                                    .textTheme
+                                    .subtitle
+                                    .color,
+                                fontSize: 14),
+                          ),
+                        ),
+                      ],
                     ),
                     icon: Icon(Icons.more_vert,
                         color: DynamicTheme.of(context).data.iconTheme.color),
