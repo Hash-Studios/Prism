@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:wallpapers_app/display2.dart';
 import 'package:image_gallery/image_gallery.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Downloads extends StatefulWidget {
   int width;
@@ -19,36 +20,40 @@ class Downloads extends StatefulWidget {
 class DownloadsState extends State<Downloads> {
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = new HashMap();
-  List allImage;
-  List allNameList;
+  List files = new List();
 
-  Future<void> loadImageList() async {
-    Map<dynamic, dynamic> allImageTemp;
-    allImageTemp = await FlutterGallaryPlugin.getAllImages;
+  Future<String> get localpath async {
+    Directory dir = await getExternalStorageDirectory();
+    return dir.path;
+  }
 
-    setState(() {
-      for (int i = 0; i < allImageTemp['URIList'].length; i++) {
-        if (allImageTemp['URIList'][i].toString().contains("storage/emulated/0/Prism")) {
-          this.allImage.add(allImageTemp['URIList'][i].toString());
-          this.allNameList.add(allImageTemp['DISPLAY_NAME'][i].toString());
-        }
-      }
-      // this.allImage = allImageTemp['URIList'] as List;
-      // this.allNameList = allImageTemp['DISPLAY_NAME'] as List;
-    });
+  Future<String> get localfile async {
+    String path = await localpath;
+    print('$path/Prism');
+    return '$path/Prism';
+  }
 
+  Future<void> readData() async {
+    final file = await localfile;
+    files = Directory(file).listSync();
+    // for (int i = 0; i < files.length; i++) {
+    //   files[i] = files[i].replaceAll('File: \'', '');
+    //   files[i] = files[i].replaceAll('\'', '');
+    // }
     setState(() {
       dataFetched = true;
     });
+    // String imagePath = await file.readAsString();
+    print('Images : $files');
   }
 
   @override
   void initState() {
     super.initState();
     dataFetched = false;
-    allImage = [];
-    allNameList = [];
-    loadImageList();
+    files = [];
+    // loadImageList();
+    readData();
   }
 
   @override
@@ -74,7 +79,7 @@ class DownloadsState extends State<Downloads> {
               child: GridView.builder(
                 shrinkWrap: true,
                 padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
-                itemCount: allImage.length,
+                itemCount: files.length,
                 gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2, childAspectRatio: 0.75),
                 itemBuilder: (BuildContext context, int index) {
@@ -95,12 +100,10 @@ class DownloadsState extends State<Downloads> {
                             clipBehavior: Clip.antiAliasWithSaveLayer,
                             child: new Container(
                               child: new Hero(
-                                tag: allImage[index],
+                                tag: files[index].path.toString(),
                                 child: Image(
                                   image: FileImage(
-                                    File(
-                                      allImage[index].toString(),
-                                    ),
+                                    files[index],
                                   ),
                                   fit: BoxFit.cover,
                                 ),
@@ -115,7 +118,7 @@ class DownloadsState extends State<Downloads> {
                         context,
                         MaterialPageRoute(
                           builder: (context) {
-                            return Display2(allImage[index].toString());
+                            return Display2(files[index]);
                           },
                         ),
                       );
