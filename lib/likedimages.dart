@@ -21,6 +21,7 @@ class _LikedImagesState extends State<LikedImages> {
   Future<DataSnapshot> dbr;
   List liked = [];
   List<FlareControls> flareControls;
+  List<FlareControls> flareControls2;
   @override
   void initState() {
     super.initState();
@@ -64,6 +65,7 @@ class _LikedImagesState extends State<LikedImages> {
               data = [];
               liked = [];
               flareControls = [];
+              flareControls2 = [];
               Map<dynamic, dynamic> values = {};
               values = snapshot.data.value;
               if (values != null) {
@@ -75,6 +77,11 @@ class _LikedImagesState extends State<LikedImages> {
                 );
                 values.forEach(
                   (k, v) => flareControls.add(
+                    new FlareControls(),
+                  ),
+                );
+                values.forEach(
+                  (k, v) => flareControls2.add(
                     new FlareControls(),
                   ),
                 );
@@ -125,6 +132,17 @@ class _LikedImagesState extends State<LikedImages> {
                                       ),
                                     ),
                                   ),
+                                  Positioned(
+                                    child: SizedBox(
+                                      width: 100,
+                                      height: 100,
+                                      child: FlareActor(
+                                        'assets/animations/dislike.flr',
+                                        controller: flareControls2[index],
+                                        animation: 'idle',
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                               onTap: () {
@@ -149,10 +167,25 @@ class _LikedImagesState extends State<LikedImages> {
                               },
                               onDoubleTap: () {
                                 if (liked.contains(data[index]["id"])) {
+                                  // print("Dislike");
                                   liked.remove(data[index]["id"]);
+                                  final snackBar = SnackBar(
+                                    content: Text(
+                                        'Wallpaper removed from favorites!'),
+                                    duration: Duration(milliseconds: 2000),
+                                  );
+                                  Scaffold.of(context).showSnackBar(snackBar);
                                   deleteData(data[index]["id"]);
+                                  flareControls2[index].play("dislike");
                                 } else {
+                                  // print("Like");
                                   liked.add(data[index]["id"]);
+                                  final snackBar = SnackBar(
+                                    content:
+                                        Text('Wallpaper added to favorites!'),
+                                    duration: Duration(milliseconds: 2000),
+                                  );
+                                  Scaffold.of(context).showSnackBar(snackBar);
                                   createRecord(
                                       data[index]["id"],
                                       data[index]["url"],
@@ -164,8 +197,10 @@ class _LikedImagesState extends State<LikedImages> {
                                       data[index]["created"],
                                       data[index]["fav"],
                                       data[index]["size"]);
+                                  flareControls[index].play("like");
                                 }
-                                flareControls[index].play("like");
+
+                                // print(liked.toString());
                               },
                             );
                           }),
@@ -212,7 +247,7 @@ class _LikedImagesState extends State<LikedImages> {
                           ),
                         ),
                         Text(
-                          "Double tap some awesome\n wallpapers to add them here.",
+                          "Double tap some awesome\nwallpapers to add them here.",
                           style: GoogleFonts.raleway(
                               fontSize: 16,
                               color: DynamicTheme.of(context)
