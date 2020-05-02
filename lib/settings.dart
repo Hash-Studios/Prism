@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:share/share.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Settings extends StatefulWidget {
   @override
@@ -330,7 +331,10 @@ class _SettingsState extends State<Settings> {
                           fontSize: 18),
                     ),
                     subtitle: Text("Check out the code or contribute yourself"),
-                    onTap: () {}),
+                    onTap: () async {
+                      launch(
+                          "https://github.com/LiquidatorCoder/wallpapers_app");
+                    }),
                 ListTile(
                     leading: Icon(
                       Icons.code,
