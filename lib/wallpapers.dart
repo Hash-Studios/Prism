@@ -10,10 +10,9 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 
 class Wallpapers extends StatefulWidget {
-  int width;
-  int height;
+  String query;
   // Key scaffoldKey;
-  Wallpapers(this.width, this.height);
+  Wallpapers(this.query);
   @override
   _WallpapersState createState() => _WallpapersState();
 }
@@ -23,7 +22,6 @@ class _WallpapersState extends State<Wallpapers> {
   List liked = [];
   List<FlareControls> flareControls;
   List<FlareControls> flareControls2;
-  String query = "";
   int adder = 0;
   bool fetchedData = false;
   List wallpapersId = [];
@@ -41,7 +39,7 @@ class _WallpapersState extends State<Wallpapers> {
   List<String> items = List.generate(
       20, (number) => "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF");
 
-  void getwalls(String query, int width, int height) async {
+  void getwalls(String query) async {
     if (this.mounted) {
       setState(() {
         fetchedData = false;
@@ -50,7 +48,7 @@ class _WallpapersState extends State<Wallpapers> {
     adder = 0;
     items = List.generate(20,
         (number) => "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF");
-    Map data = await wallheaven.getData(query, width, height);
+    Map data = await wallheaven.getData(query);
     wallpapersId = data["id"];
     wallpapersLinks = data["links"];
     wallpapersThumbs = data["thumbs"];
@@ -76,7 +74,7 @@ class _WallpapersState extends State<Wallpapers> {
   Future<Null> refreshList() async {
     refreshKey.currentState?.show(atTop: true);
     await Future.delayed(Duration(seconds: 1));
-    getwalls(query, widget.width, widget.height);
+    getwalls(widget.query);
     return null;
   }
 
@@ -86,7 +84,7 @@ class _WallpapersState extends State<Wallpapers> {
   @override
   void initState() {
     super.initState();
-    getwalls(query, widget.width, widget.height);
+    getwalls(widget.query);
     controller = new ScrollController()..addListener(_scrollListener);
   }
 
