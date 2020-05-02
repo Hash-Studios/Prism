@@ -5,8 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:wallpapers_app/display.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LikedImages extends StatefulWidget {
   int width;
@@ -17,17 +18,31 @@ class LikedImages extends StatefulWidget {
 }
 
 class _LikedImagesState extends State<LikedImages> {
-  final databaseReference = FirebaseDatabase.instance.reference().child("user");
-  Future<DataSnapshot> dbr;
+  final databaseReference2 = Firestore.instance;
+  Future<QuerySnapshot> dbr2;
   List liked = [];
   List<FlareControls> flareControls;
   List<FlareControls> flareControls2;
+  SharedPreferences prefs;
+  String userId = '';
   @override
   void initState() {
     super.initState();
-    setState(() {
-      dbr = databaseReference.once();
+    readLocal().then((value) {
+      dbr2 = databaseReference2
+          .collection("users")
+          .document(value)
+          .collection("images")
+          .getDocuments();
     });
+    setState(() {});
+  }
+
+  Future<String> readLocal() async {
+    prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('id');
+    setState(() {});
+    return userId;
   }
 
   Future<Null> refreshList() async {
@@ -37,7 +52,11 @@ class _LikedImagesState extends State<LikedImages> {
       liked = [];
     });
     setState(() {
-      dbr = databaseReference.once();
+      dbr2 = databaseReference2
+          .collection("users")
+          .document(userId)
+          .collection("images")
+          .getDocuments();
     });
 
     return null;
@@ -59,34 +78,31 @@ class _LikedImagesState extends State<LikedImages> {
       key: refreshKey3,
       onRefresh: refreshList,
       child: FutureBuilder(
-          future: dbr,
-          builder: (context, AsyncSnapshot<DataSnapshot> snapshot) {
+          future: dbr2,
+          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
             if (snapshot.hasData) {
               data = [];
               liked = [];
               flareControls = [];
               flareControls2 = [];
-              Map<dynamic, dynamic> values = {};
-              values = snapshot.data.value;
-              if (values != null) {
-                values.forEach(
-                  (k, v) => data.add(v),
+              snapshot.data.documents.forEach((f) => data.add(f.data));
+              if (data.toString() != '[]') {
+                data.forEach(
+                  (v) => liked.add(v["id"]),
                 );
-                values.forEach(
-                  (k, v) => liked.add(k),
-                );
-                values.forEach(
-                  (k, v) => flareControls.add(
+                data.forEach(
+                  (k) => flareControls.add(
                     new FlareControls(),
                   ),
                 );
-                values.forEach(
-                  (k, v) => flareControls2.add(
+                data.forEach(
+                  (k) => flareControls2.add(
                     new FlareControls(),
                   ),
                 );
 
                 return new Container(
+                  height: double.infinity,
                     color: DynamicTheme.of(context).data.primaryColor,
                     child: Scrollbar(
                       child: GridView.builder(
@@ -175,7 +191,7 @@ class _LikedImagesState extends State<LikedImages> {
                                     duration: Duration(milliseconds: 2000),
                                   );
                                   Scaffold.of(context).showSnackBar(snackBar);
-                                  deleteData(data[index]["id"]);
+                                  deleteData2(data[index]["id"]);
                                   flareControls2[index].play("dislike");
                                 } else {
                                   // print("Like");
@@ -186,7 +202,7 @@ class _LikedImagesState extends State<LikedImages> {
                                     duration: Duration(milliseconds: 2000),
                                   );
                                   Scaffold.of(context).showSnackBar(snackBar);
-                                  createRecord(
+                                  createRecord2(
                                       data[index]["id"],
                                       data[index]["url"],
                                       data[index]["thumb"],
@@ -315,8 +331,7 @@ class _LikedImagesState extends State<LikedImages> {
           }),
     );
   }
-
-  void createRecord(
+  void createRecord2(
       String id,
       String url,
       String thumb,
@@ -326,8 +341,13 @@ class _LikedImagesState extends State<LikedImages> {
       String resolution,
       String created,
       String fav,
-      String size) {
-    databaseReference.child(id.toString()).set({
+      String size) async {
+    await databaseReference2
+        .collection("users")
+        .document(userId)
+        .collection("images")
+        .document(id)
+        .setData({
       "id": id,
       "url": url,
       "thumb": thumb,
@@ -340,12 +360,26 @@ class _LikedImagesState extends State<LikedImages> {
       "size": size,
     });
   }
-
-  void getData() {
-    databaseReference.once().then((DataSnapshot snapshot) {});
+  void getData2() {
+    databaseReference2
+        .collection("users")
+        .document(userId)
+        .collection("images")
+        .getDocuments()
+        .then((QuerySnapshot snapshot) {
+      snapshot.documents.forEach((f) => print('${f.data}}'));
+    });
   }
-
-  void deleteData(String id) {
-    databaseReference.child(id.toString()).remove();
+  void deleteData2(String id) {
+    try {
+      databaseReference2
+          .collection("users")
+          .document(userId)
+          .collection("images")
+          .document(id)
+          .delete();
+    } catch (e) {
+      print(e.toString());
+    }
   }
 }

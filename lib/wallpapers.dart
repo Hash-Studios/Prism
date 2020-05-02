@@ -8,6 +8,8 @@ import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Wallpapers extends StatefulWidget {
   String query;
@@ -19,9 +21,16 @@ class Wallpapers extends StatefulWidget {
 
 class _WallpapersState extends State<Wallpapers> {
   final databaseReference = FirebaseDatabase.instance.reference().child("user");
+  final databaseReference2 = Firestore.instance;
   List liked = [];
   List<FlareControls> flareControls;
   List<FlareControls> flareControls2;
+<<<<<<< HEAD
+=======
+  SharedPreferences prefs;
+  String userId = '';
+  String query = "";
+>>>>>>> liked images transferred to cloud firstore
   int adder = 0;
   bool fetchedData = false;
   List wallpapersId = [];
@@ -78,13 +87,25 @@ class _WallpapersState extends State<Wallpapers> {
     return null;
   }
 
+  Future<String> readLocal() async {
+    prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('id');
+    setState(() {});
+    return userId;
+  }
+
   ScrollController controller;
   var refreshKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     getwalls(widget.query);
+=======
+    getwalls(query, widget.width, widget.height);
+    readLocal();
+>>>>>>> liked images transferred to cloud firstore
     controller = new ScrollController()..addListener(_scrollListener);
   }
 
@@ -212,7 +233,7 @@ class _WallpapersState extends State<Wallpapers> {
                                 duration: Duration(milliseconds: 2000),
                               );
                               Scaffold.of(context).showSnackBar(snackBar);
-                              deleteData(wallpapersId[index]);
+                              deleteData2(wallpapersId[index]);
                               flareControls2[index].play("dislike");
                             } else {
                               // print("Like");
@@ -222,7 +243,7 @@ class _WallpapersState extends State<Wallpapers> {
                               );
                               Scaffold.of(context).showSnackBar(snackBar);
                               liked.add(wallpapersLinks[index]);
-                              createRecord(
+                              createRecord2(
                                   wallpapersId[index],
                                   wallpapersLinks[index],
                                   wallpapersThumbs[index],
@@ -315,11 +336,66 @@ class _WallpapersState extends State<Wallpapers> {
     });
   }
 
+  void createRecord2(
+      String id,
+      String url,
+      String thumb,
+      String color,
+      String color2,
+      String views,
+      String resolution,
+      String created,
+      String fav,
+      String size) async {
+    await databaseReference2
+        .collection("users")
+        .document(userId)
+        .collection("images")
+        .document(id)
+        .setData({
+      "id": id,
+      "url": url,
+      "thumb": thumb,
+      "color": color,
+      "color2": color2,
+      "views": views,
+      "resolution": resolution,
+      "created": created,
+      "fav": fav,
+      "size": size,
+    });
+    print('You fav');
+  }
+
   void getData() {
     databaseReference.once().then((DataSnapshot snapshot) {});
   }
 
+  void getData2() {
+    databaseReference2
+        .collection("users")
+        .document(userId)
+        .collection("images")
+        .getDocuments()
+        .then((QuerySnapshot snapshot) {
+      snapshot.documents.forEach((f) => print('${f.data}}'));
+    });
+  }
+
   void deleteData(String id) {
     databaseReference.child(id.toString()).remove();
+  }
+
+  void deleteData2(String id) {
+    try {
+      databaseReference2
+          .collection("users")
+          .document(userId)
+          .collection("images")
+          .document(id)
+          .delete();
+    } catch (e) {
+      print(e.toString());
+    }
   }
 }
