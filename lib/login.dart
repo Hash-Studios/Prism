@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -24,98 +25,98 @@ class _LoginScreen3State extends State<LoginScreen3>
     super.initState();
   }
 
-  Widget HomePage() {
-    return Scaffold(
-      body: new Container(
-        height: MediaQuery.of(context).size.height,
-        decoration: BoxDecoration(
-          color: Colors.blueAccent[100],
-          image: DecorationImage(
-            colorFilter: new ColorFilter.mode(
-                Colors.black.withOpacity(0.1), BlendMode.dstATop),
-            image: AssetImage('assets/images/Bg-Blue.jpg'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: new Column(
-          children: <Widget>[
-            Container(
-              padding: EdgeInsets.only(top: 250.0),
-              child: Center(
-                child: Icon(
-                  Icons.chat,
-                  color: Colors.white,
-                  size: 40.0,
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.only(top: 20.0),
-              child: Text(
-                "ChatMe",
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontSize: 50,
-                ),
-              ),
-            ),
-            new Container(
-              width: MediaQuery.of(context).size.width,
-              margin:
-                  const EdgeInsets.only(left: 60.0, right: 60.0, top: 200.0),
-              alignment: Alignment.center,
-              child: new Row(
-                children: <Widget>[
-                  new Expanded(
-                    child: new FlatButton(
-                      shape: new RoundedRectangleBorder(
-                          borderRadius: new BorderRadius.circular(30.0)),
-                      color: Colors.white70,
-                      onPressed: () => gotoSignup(),
-                      splashColor: Colors.blueAccent[100],
-                      child: new Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 20.0,
-                          horizontal: 20.0,
-                        ),
-                        child: new Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            new Expanded(
-                              child: Text(
-                                "Start Chatting",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: Colors.blueAccent[100],
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget HomePage() {
+  //   return Scaffold(
+  //     body: new Container(
+  //       height: MediaQuery.of(context).size.height,
+  //       decoration: BoxDecoration(
+  //         color: Colors.blueAccent[100],
+  //         image: DecorationImage(
+  //           colorFilter: new ColorFilter.mode(
+  //               Colors.black.withOpacity(0.1), BlendMode.dstATop),
+  //           image: AssetImage('assets/images/Bg-Blue.jpg'),
+  //           fit: BoxFit.cover,
+  //         ),
+  //       ),
+  //       child: new Column(
+  //         children: <Widget>[
+  //           Container(
+  //             padding: EdgeInsets.only(top: 250.0),
+  //             child: Center(
+  //               child: Icon(
+  //                 Icons.chat,
+  //                 color: Colors.white,
+  //                 size: 40.0,
+  //               ),
+  //             ),
+  //           ),
+  //           Container(
+  //             padding: EdgeInsets.only(top: 20.0),
+  //             child: Text(
+  //               "ChatMe",
+  //               style: GoogleFonts.montserrat(
+  //                 color: Colors.white,
+  //                 fontSize: 50,
+  //               ),
+  //             ),
+  //           ),
+  //           new Container(
+  //             width: MediaQuery.of(context).size.width,
+  //             margin:
+  //                 const EdgeInsets.only(left: 60.0, right: 60.0, top: 200.0),
+  //             alignment: Alignment.center,
+  //             child: new Row(
+  //               children: <Widget>[
+  //                 new Expanded(
+  //                   child: new FlatButton(
+  //                     shape: new RoundedRectangleBorder(
+  //                         borderRadius: new BorderRadius.circular(30.0)),
+  //                     color: Colors.white70,
+  //                     onPressed: () => gotoSignup(),
+  //                     splashColor: Colors.blueAccent[100],
+  //                     child: new Container(
+  //                       padding: const EdgeInsets.symmetric(
+  //                         vertical: 20.0,
+  //                         horizontal: 20.0,
+  //                       ),
+  //                       child: new Row(
+  //                         mainAxisAlignment: MainAxisAlignment.center,
+  //                         children: <Widget>[
+  //                           new Expanded(
+  //                             child: Text(
+  //                               "Start Chatting",
+  //                               textAlign: TextAlign.center,
+  //                               style: TextStyle(
+  //                                   color: Colors.blueAccent[100],
+  //                                   fontWeight: FontWeight.bold,
+  //                                   fontSize: 18),
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  gotoSignup() {
-    //controller_minus1To0.reverse(from: 0.0);
-    _controller.animateToPage(
-      2,
-      duration: Duration(milliseconds: 800),
-      curve: Curves.bounceOut,
-    );
-  }
+  // gotoSignup() {
+  //   //controller_minus1To0.reverse(from: 0.0);
+  //   _controller.animateToPage(
+  //     2,
+  //     duration: Duration(milliseconds: 800),
+  //     curve: Curves.bounceOut,
+  //   );
+  // }
 
-  PageController _controller =
-      new PageController(initialPage: 0, viewportFraction: 1.0);
+  // PageController _controller =
+  //     new PageController(initialPage: 0, viewportFraction: 1.0);
   SharedPreferences prefs;
   Future<String> getLogin() async {
     prefs = await SharedPreferences.getInstance();
@@ -124,32 +125,35 @@ class _LoginScreen3State extends State<LoginScreen3>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-        height: MediaQuery.of(context).size.height,
-        child: PageView(
-          controller: _controller,
-          physics: new AlwaysScrollableScrollPhysics(),
-          children: getLogin() == null
-              ? <Widget>[
-                  HomePage(),
-                  LoginScreen(
-                    title: "ChatMe",
-                  )
-                ]
-              : getLogin() == true
-                  ? <Widget>[
-                      LoginScreen(
-                        title: "ChatMe",
-                      )
-                    ]
-                  : <Widget>[
-                      HomePage(),
-                      LoginScreen(
-                        title: "ChatMe",
-                      )
-                    ],
-          scrollDirection: Axis.horizontal,
-        ));
+    return
+        // Container(
+        //     height: MediaQuery.of(context).size.height,
+        //     child:
+        // child: PageView(
+        //   controller: _controller,
+        //   physics: new AlwaysScrollableScrollPhysics(),
+        //   children: getLogin() == null
+        //       ? <Widget>[
+        //           HomePage(),
+        //           LoginScreen(
+        //             title: "ChatMe",
+        //           )
+        //         ]
+        //       : getLogin() == true
+        //           ? <Widget>[
+        //               LoginScreen(
+        //                 title: "ChatMe",
+        //               )
+        //             ]
+        //           : <Widget>[
+        //               HomePage(),
+        LoginScreen(
+      title: "ChatMe",
+      // )
+      //             ],
+      //   scrollDirection: Axis.horizontal,
+      // )
+    );
   }
 }
 
@@ -268,51 +272,56 @@ class LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        height: MediaQuery.of(context).size.height,
         decoration: BoxDecoration(
-          color: Colors.blueAccent[100],
-          image: DecorationImage(
-            colorFilter: new ColorFilter.mode(
-                Colors.black.withOpacity(1), BlendMode.dstATop),
-            image: AssetImage('assets/images/login.jpg'),
-            fit: BoxFit.cover,
-          ),
+          color: DynamicTheme.of(context).data.primaryColor,
         ),
         child: Stack(
           children: <Widget>[
+            Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Image.asset("assets/images/login.png"),
+              ],
+            ),
             new Container(
               margin: EdgeInsets.only(left: 60.0, right: 60),
-              alignment: Alignment.center,
-              child: new Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  new FlatButton(
-                    shape: new RoundedRectangleBorder(
-                      borderRadius: new BorderRadius.circular(30.0),
-                    ),
-                    color: Color(0Xffdb3236),
-                    onPressed: () => handleSignIn(),
-                    child: new Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: <Widget>[
-                        FaIcon(
-                          FontAwesomeIcons.googlePlusG,
-                          color: Colors.redAccent[100],
+              alignment: Alignment.bottomCenter,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  SizedBox(height: 140, width: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      new FlatButton(
+                        shape: new RoundedRectangleBorder(
+                          borderRadius: new BorderRadius.circular(30.0),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              top: 20, bottom: 20, left: 10),
-                          child: Text(
-                            "Login with Google",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20),
-                          ),
+                        color: Color(0Xffdb3236),
+                        onPressed: () => handleSignIn(),
+                        child: new Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: <Widget>[
+                            FaIcon(
+                              FontAwesomeIcons.googlePlusG,
+                              color: Colors.redAccent[100],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  top: 20, bottom: 20, left: 10),
+                              child: Text(
+                                "Login with Google",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
