@@ -25,12 +25,9 @@ class _WallpapersState extends State<Wallpapers> {
   List liked = [];
   List<FlareControls> flareControls;
   List<FlareControls> flareControls2;
-<<<<<<< HEAD
-=======
   SharedPreferences prefs;
   String userId = '';
   String query = "";
->>>>>>> liked images transferred to cloud firstore
   int adder = 0;
   bool fetchedData = false;
   List wallpapersId = [];
@@ -100,12 +97,8 @@ class _WallpapersState extends State<Wallpapers> {
   @override
   void initState() {
     super.initState();
-<<<<<<< HEAD
     getwalls(widget.query);
-=======
-    getwalls(query, widget.width, widget.height);
     readLocal();
->>>>>>> liked images transferred to cloud firstore
     controller = new ScrollController()..addListener(_scrollListener);
   }
 
