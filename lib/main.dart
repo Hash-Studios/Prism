@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wallpapers_app/feed.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
+import 'package:wallpapers_app/login.dart';
 import './themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'Prism',
             theme: theme,
-            home: Feed(),
+            home: LoginScreen3(),
           );
         });
   }
