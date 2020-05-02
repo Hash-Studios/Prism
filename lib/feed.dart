@@ -10,7 +10,7 @@ import './themes.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
+final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey();
 TabController _tabController;
 
 class Feed extends StatefulWidget {
@@ -69,7 +69,13 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
     return Scaffold(
+<<<<<<< HEAD
       key: _scaffoldKey,
+=======
+      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      // floatingActionButton: FloatingActionButton(onPressed: null),
+      key: scaffoldKey,
+>>>>>>> dislike animations plus snckbar done
       appBar: AppBar(
         title: Text(
           'Prism',
@@ -97,7 +103,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
             color: DynamicTheme.of(context).data.secondaryHeaderColor,
           ),
           onPressed: () {
-            _scaffoldKey.currentState.openDrawer();
+            scaffoldKey.currentState.openDrawer();
           },
         ),
       ),

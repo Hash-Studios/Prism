@@ -12,6 +12,7 @@ import 'package:dynamic_theme/dynamic_theme.dart';
 class Wallpapers extends StatefulWidget {
   int width;
   int height;
+  // Key scaffoldKey;
   Wallpapers(this.width, this.height);
   @override
   _WallpapersState createState() => _WallpapersState();
@@ -21,6 +22,7 @@ class _WallpapersState extends State<Wallpapers> {
   final databaseReference = FirebaseDatabase.instance.reference().child("user");
   List liked = [];
   List<FlareControls> flareControls;
+  List<FlareControls> flareControls2;
   String query = "";
   int adder = 0;
   bool fetchedData = false;
@@ -63,6 +65,7 @@ class _WallpapersState extends State<Wallpapers> {
     items =
         List.generate(20, (number) => wallpapersLinks[int.parse('$number')]);
     flareControls = List.generate(20, (number) => FlareControls());
+    flareControls2 = List.generate(20, (number) => FlareControls());
     if (this.mounted) {
       setState(() {
         fetchedData = true;
@@ -102,6 +105,8 @@ class _WallpapersState extends State<Wallpapers> {
             items.addAll(new List.generate(20,
                 (number) => wallpapersLinks[int.parse('${number + adder}')]));
             flareControls
+                .addAll(new List.generate(20, (number) => FlareControls()));
+            flareControls2
                 .addAll(new List.generate(20, (number) => FlareControls()));
           });
         }
@@ -167,6 +172,17 @@ class _WallpapersState extends State<Wallpapers> {
                                   ),
                                 ),
                               ),
+                              Positioned(
+                                child: SizedBox(
+                                  width: 100,
+                                  height: 100,
+                                  child: FlareActor(
+                                    'assets/animations/dislike.flr',
+                                    controller: flareControls2[index],
+                                    animation: 'idle',
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                           onTap: () {
@@ -192,8 +208,21 @@ class _WallpapersState extends State<Wallpapers> {
                           onDoubleTap: () {
                             if (liked.contains(wallpapersLinks[index])) {
                               liked.remove(wallpapersLinks[index]);
+                              final snackBar = SnackBar(
+                                content:
+                                    Text('Wallpaper removed from favorites!'),
+                                duration: Duration(milliseconds: 2000),
+                              );
+                              Scaffold.of(context).showSnackBar(snackBar);
                               deleteData(wallpapersId[index]);
+                              flareControls2[index].play("dislike");
                             } else {
+                              // print("Like");
+                              final snackBar = SnackBar(
+                                content: Text('Wallpaper added to favorites!'),
+                                duration: Duration(milliseconds: 2000),
+                              );
+                              Scaffold.of(context).showSnackBar(snackBar);
                               liked.add(wallpapersLinks[index]);
                               createRecord(
                                   wallpapersId[index],
@@ -206,8 +235,10 @@ class _WallpapersState extends State<Wallpapers> {
                                   wallpapersCreatedAt[index],
                                   wallpapersFav[index],
                                   wallpapersSize[index]);
+                              flareControls[index].play("like");
                             }
-                            flareControls[index].play("like");
+
+                            // print(liked.toString());
                           },
                         );
                       }),

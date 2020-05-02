@@ -64,6 +64,7 @@ flutter:
   assets:
     - assets/images/
     - assets/animations/like.flr
+    - assets/animations/dislike.flr
 
 
   # To add assets to your application, add an assets section, like this:
