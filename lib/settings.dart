@@ -337,6 +337,25 @@ class _SettingsState extends State<Settings> {
                     }),
                 ListTile(
                     leading: Icon(
+                      Icons.wallpaper,
+                      color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                    ),
+                    title: new Text(
+                      "API",
+                      style: TextStyle(
+                          color: DynamicTheme.of(context)
+                              .data
+                              .textTheme
+                              .subtitle
+                              .color,
+                          fontSize: 18),
+                    ),
+                    subtitle: Text("Prism uses Wallhaven API for wallpapers"),
+                    onTap: () async {
+                      launch("https://wallhaven.cc/help/api");
+                    }),
+                ListTile(
+                    leading: Icon(
                       Icons.code,
                       color: DynamicTheme.of(context).data.secondaryHeaderColor,
                     ),
@@ -384,7 +403,9 @@ class _SettingsState extends State<Settings> {
                               fontSize: 18),
                         ),
                         subtitle: Text("Abhay Maurya"),
-                        onTap: () {}),
+                        onTap: () async {
+                          launch("https://github.com/LiquidatorCoder");
+                        }),
                     ListTile(
                         leading: CircleAvatar(
                           backgroundImage: AssetImage("assets/images/AK.jpg"),
@@ -400,7 +421,9 @@ class _SettingsState extends State<Settings> {
                               fontSize: 18),
                         ),
                         subtitle: Text("Akshay Maurya"),
-                        onTap: () {}),
+                        onTap: () async {
+                          launch("https://github.com/codenameakshay");
+                        }),
                   ],
                 ),
               ],
