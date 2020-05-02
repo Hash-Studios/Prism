@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:wallpapers_app/downloads.dart';
 import 'package:wallpapers_app/likedimages.dart';
+import 'package:wallpapers_app/search.dart';
 import 'package:wallpapers_app/settings.dart';
 import 'package:wallpapers_app/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -69,13 +70,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
     return Scaffold(
-<<<<<<< HEAD
-      key: _scaffoldKey,
-=======
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      // floatingActionButton: FloatingActionButton(onPressed: null),
       key: scaffoldKey,
->>>>>>> dislike animations plus snckbar done
       appBar: AppBar(
         title: Text(
           'Prism',
@@ -85,13 +80,29 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
               color: DynamicTheme.of(context).data.secondaryHeaderColor),
         ),
         actions: <Widget>[
-          IconButton(
-            icon: Icon(
-              Icons.search,
-              color: DynamicTheme.of(context).data.secondaryHeaderColor,
+          Hero(
+            tag: 'search',
+            child: Card(
+              elevation: 0,
+              color: Colors.transparent,
+              child: IconButton(
+                icon: Icon(
+                  Icons.search,
+                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return Search();
+                      },
+                    ),
+                  );
+                },
+              ),
             ),
-            onPressed: null,
-          )
+          ),
         ],
         centerTitle: true,
         elevation: 0,
@@ -264,8 +275,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
       body: TabBarView(
         controller: _tabController,
         children: [
-          Wallpapers(
-              ScreenUtil.screenWidth.round(), ScreenUtil.screenHeight.round()),
+          Wallpapers(''),
           LikedImages(
               ScreenUtil.screenWidth.round(), ScreenUtil.screenHeight.round()),
           Downloads(
