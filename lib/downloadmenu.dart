@@ -5,9 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'package:wallpaper_manager/wallpaper_manager.dart';
-import 'package:image/image.dart' as IMG;
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class DownloadMenu extends StatefulWidget {
@@ -145,9 +143,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                         icon: Icons.format_paint,
                         func: onPaint),
                     Transform.scale(
-                      scale: 1.3 -
-                          widget.scale
-                              .value, // subtract the beginning value to run the opposite animation
+                      scale: 1.3 - widget.scale.value,
                       child: FloatingActionButton(
                           heroTag: 1,
                           child: Icon(

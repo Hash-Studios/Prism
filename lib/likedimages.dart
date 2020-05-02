@@ -39,12 +39,6 @@ class _LikedImagesState extends State<LikedImages> {
       dbr = databaseReference.once();
     });
 
-    // setState(() {
-    //   items = List.generate(
-    //       20, (number) => "https://picsum.photos/id/${number + 5}/600/800");
-    // }
-    // );
-
     return null;
   }
 
@@ -155,11 +149,9 @@ class _LikedImagesState extends State<LikedImages> {
                               },
                               onDoubleTap: () {
                                 if (liked.contains(data[index]["id"])) {
-                                  // print("Dislike");
                                   liked.remove(data[index]["id"]);
                                   deleteData(data[index]["id"]);
                                 } else {
-                                  // print("Like");
                                   liked.add(data[index]["id"]);
                                   createRecord(
                                       data[index]["id"],
@@ -174,7 +166,6 @@ class _LikedImagesState extends State<LikedImages> {
                                       data[index]["size"]);
                                 }
                                 flareControls[index].play("like");
-                                // print(liked.toString());
                               },
                             );
                           }),
@@ -316,9 +307,7 @@ class _LikedImagesState extends State<LikedImages> {
   }
 
   void getData() {
-    databaseReference.once().then((DataSnapshot snapshot) {
-      // print('Data : ${snapshot.value}');
-    });
+    databaseReference.once().then((DataSnapshot snapshot) {});
   }
 
   void deleteData(String id) {

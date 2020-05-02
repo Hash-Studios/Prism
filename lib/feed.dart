@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cache_image/cache_image.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:wallpapers_app/downloads.dart';
 import 'package:wallpapers_app/likedimages.dart';
@@ -10,7 +9,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import './themes.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
 TabController _tabController;
@@ -71,8 +69,6 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
     return Scaffold(
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      // floatingActionButton: FloatingActionButton(onPressed: null),
       key: _scaffoldKey,
       appBar: AppBar(
         title: Text(
@@ -105,7 +101,6 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
           },
         ),
       ),
-
       drawer: Drawer(
         child: new ListView(
           children: <Widget>[

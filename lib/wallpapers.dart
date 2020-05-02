@@ -60,7 +60,6 @@ class _WallpapersState extends State<Wallpapers> {
     wallpapersCreatedAt = data["created_at"];
     wallpapersFav = data["favourites"];
     wallpapersSize = data["size"];
-    // print(wallpapersColors.toString());
     items =
         List.generate(20, (number) => wallpapersLinks[int.parse('$number')]);
     flareControls = List.generate(20, (number) => FlareControls());
@@ -75,21 +74,8 @@ class _WallpapersState extends State<Wallpapers> {
     refreshKey.currentState?.show(atTop: true);
     await Future.delayed(Duration(seconds: 1));
     getwalls(query, widget.width, widget.height);
-
-    // setState(() {
-    //   items = List.generate(
-    //       20, (number) => "https://picsum.photos/id/${number + 5}/600/800");
-    // }
-    // );
-
     return null;
   }
-
-  // Future<Null> refreshLoad() async {
-  //   refreshKey.currentState?.show(atTop: true);
-  //   await Future.delayed(Duration(seconds: 5));
-  //   return null;
-  // }
 
   ScrollController controller;
   var refreshKey = GlobalKey<RefreshIndicatorState>();
@@ -108,7 +94,6 @@ class _WallpapersState extends State<Wallpapers> {
   }
 
   void _scrollListener() {
-    // print(controller.position.extentAfter);
     if (controller.position.extentAfter < 500) {
       if (adder < 120) {
         if (this.mounted) {
@@ -122,7 +107,6 @@ class _WallpapersState extends State<Wallpapers> {
         }
       }
     }
-    // print(adder.toString());
   }
 
   @override
@@ -204,43 +188,12 @@ class _WallpapersState extends State<Wallpapers> {
                                 },
                               ),
                             );
-                            // showDialog(
-                            //   barrierDismissible: false,
-                            //   context: context,
-                            //   child: new AlertDialog(
-                            //     shape: RoundedRectangleBorder(
-                            //         borderRadius:
-                            //             BorderRadius.all(Radius.circular(24))),
-                            //     title: new Column(
-                            //       children: <Widget>[
-                            //         new Text("Image $index"),
-                            //       ],
-                            //     ),
-                            //     content: new FadeInImage(
-                            //       image: CacheImage(fetchedData
-                            //           ? wallpapersLinks[index]
-                            //           : items[index]),
-                            //       placeholder: CacheImage(fetchedData
-                            //           ? wallpapersThumbs[index]
-                            //           : "https://via.placeholder.com/300x400.jpg/FFFFFF/FFFFFF"),
-                            //     ),
-                            //     actions: <Widget>[
-                            //       new FlatButton(
-                            //           onPressed: () {
-                            //             Navigator.of(context).pop();
-                            //           },
-                            //           child: new Text("OK"))
-                            //     ],
-                            //   ),
-                            // );
                           },
                           onDoubleTap: () {
                             if (liked.contains(wallpapersLinks[index])) {
-                              // print("Dislike");
                               liked.remove(wallpapersLinks[index]);
                               deleteData(wallpapersId[index]);
                             } else {
-                              // print("Like");
                               liked.add(wallpapersLinks[index]);
                               createRecord(
                                   wallpapersId[index],
@@ -255,7 +208,6 @@ class _WallpapersState extends State<Wallpapers> {
                                   wallpapersSize[index]);
                             }
                             flareControls[index].play("like");
-                            // print(liked.toString());
                           },
                         );
                       }),
@@ -335,9 +287,7 @@ class _WallpapersState extends State<Wallpapers> {
   }
 
   void getData() {
-    databaseReference.once().then((DataSnapshot snapshot) {
-      // print('Data : ${snapshot.value}');
-    });
+    databaseReference.once().then((DataSnapshot snapshot) {});
   }
 
   void deleteData(String id) {
