@@ -10,16 +10,29 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import './themes.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import './main.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey();
 TabController _tabController;
 
 class Feed extends StatefulWidget {
+  String currentUserId;
+  Feed({this.currentUserId});
   @override
   _FeedState createState() => _FeedState();
 }
 
 class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
+  bool isLoading = false;
+  final GoogleSignIn googleSignIn = GoogleSignIn();
+
+  SharedPreferences prefs;
+  String id = '';
+  String name = '';
+  String email = '';
+
   List<ThemeItem> _themeItems = ThemeItem.getThemeItems();
 
   List<DropdownMenuItem<ThemeItem>> _dropDownMenuItems;
@@ -41,6 +54,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
     _selectedItem = _dropDownMenuItems[0].value;
     super.initState();
     _tabController = new TabController(vsync: this, length: 3);
+    readLocal();
   }
 
   @override
@@ -58,12 +72,39 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
     prefs.setString('dynTheme', _selectedItem.slug);
   }
 
+  void readLocal() async {
+    prefs = await SharedPreferences.getInstance();
+    id = prefs.getString('id');
+    name = prefs.getString('name');
+    email = prefs.getString('email');
+    // Force refresh input
+    setState(() {});
+  }
+
   onChangeDropdownItem(ThemeItem selectedItem) {
     setState(() {
       this._selectedItem = selectedItem;
     });
     changeColor();
     setSharedPrefs();
+  }
+
+  Future<Null> handleSignOut() async {
+    this.setState(() {
+      isLoading = true;
+    });
+
+    await FirebaseAuth.instance.signOut();
+    await googleSignIn.disconnect();
+    await googleSignIn.signOut();
+
+    this.setState(() {
+      isLoading = false;
+    });
+
+    Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => MyApp()),
+        (Route<dynamic> route) => false);
   }
 
   @override
@@ -127,10 +168,10 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                 child: ClipRRect(
                   borderRadius: BorderRadius.all(Radius.circular(5)),
                   child: new Text(
-                    " Prism ",
-                    style: GoogleFonts.pacifico(
+                    " " + name + " ",
+                    style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        fontSize: 16,
+                        fontSize: 18,
                         backgroundColor: Colors.white54,
                         color: Colors.black),
                   ),
@@ -146,7 +187,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                 child: ClipRRect(
                   borderRadius: BorderRadius.all(Radius.circular(5)),
                   child: new Text(
-                    " Always on the colourful side! ",
+                    " " + email + " ",
                     style: TextStyle(
                         backgroundColor: Colors.white54, color: Colors.black),
                   ),
@@ -258,6 +299,15 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                       },
                     ),
                   );
+                }),
+            ListTile(
+                leading: Icon(
+                  Icons.exit_to_app,
+                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                ),
+                title: new Text("Sign out"),
+                onTap: () {
+                  handleSignOut();
                 }),
             new Divider(),
             new ListTile(
