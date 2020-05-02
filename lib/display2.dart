@@ -7,8 +7,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wallpapers_app/downloadmenu.dart';
 
 class Display2 extends StatefulWidget {
-  String url;
-  Display2(this.url);
+  File image;
+  Display2(this.image);
   @override
   _Display2State createState() => _Display2State();
 }
@@ -49,6 +49,7 @@ class _Display2State extends State<Display2> {
       });
     }
   }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIOverlays([]);
@@ -57,16 +58,14 @@ class _Display2State extends State<Display2> {
       alignment: Alignment.center,
       children: <Widget>[
         new Hero(
-            tag: widget.url,
+            tag: widget.image.path.toString(),
             child: Container(
               width: 720.w,
               height: 1440.h,
               decoration: BoxDecoration(
                   image: DecorationImage(
                 image: FileImage(
-                  File(
-                    widget.url,
-                  ),
+                  widget.image,
                 ),
                 fit: BoxFit.cover,
               )),
@@ -108,7 +107,7 @@ class _Display2State extends State<Display2> {
           Color(0xFFFFFFFF),
           Color(0xFF000000),
           isOpen,
-          widget.url,
+          widget.image,
           opacity,
           changeIsOpenTrue,
           changeIsOpenFalse,

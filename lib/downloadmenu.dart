@@ -14,11 +14,11 @@ class DownloadMenu extends StatefulWidget {
   Color color;
   Color color2;
   bool isOpen;
-  String url;
+  File image;
   double opacity;
   Function changeIsOpenTrue;
   Function changeIsOpenFalse;
-  DownloadMenu(this.color, this.color2, this.isOpen, this.url, this.opacity,
+  DownloadMenu(this.color, this.color2, this.isOpen, this.image, this.opacity,
       this.changeIsOpenTrue, this.changeIsOpenFalse);
   createState() => _DownloadMenuState();
 }
@@ -40,7 +40,7 @@ class _DownloadMenuState extends State<DownloadMenu>
         color: widget.color,
         color2: widget.color2,
         isOpen: widget.isOpen,
-        url: widget.url,
+        url: widget.image,
         opacity: widget.opacity,
         changeIsOpenTrue: widget.changeIsOpenTrue,
         changeIsOpenFalse: widget.changeIsOpenFalse);
@@ -56,7 +56,7 @@ class RadialAnimation extends StatefulWidget {
   Color color;
   Color color2;
   bool isOpen;
-  String url;
+  File image;
   double opacity;
   Function changeIsOpenTrue;
   Function changeIsOpenFalse;
@@ -66,7 +66,7 @@ class RadialAnimation extends StatefulWidget {
       this.color,
       this.color2,
       this.isOpen,
-      this.url,
+      this.image,
       this.opacity,
       this.changeIsOpenTrue,
       this.changeIsOpenFalse})
@@ -259,7 +259,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
 
                           final String result1 =
                               await WallpaperManager.setWallpaperFromFile(
-                                  widget.url, location);
+                                  widget.image.path, location);
                           Fluttertoast.showToast(
                               msg: "Wallpaper Applied Successfully!",
                               toastLength: Toast.LENGTH_LONG,
@@ -275,7 +275,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                               int location = WallpaperManager.LOCK_SCREEN;
                               final String result2 =
                                   await WallpaperManager.setWallpaperFromFile(
-                                      widget.url, location);
+                                      widget.image.path, location);
                               Fluttertoast.showToast(
                                   msg: "Wallpaper Applied Successfully!",
                                   toastLength: Toast.LENGTH_LONG,
@@ -290,11 +290,11 @@ class _RadialAnimationState extends State<RadialAnimation> {
 
                               final String result1 =
                                   await WallpaperManager.setWallpaperFromFile(
-                                      widget.url, location);
+                                      widget.url.path, location);
                               location = WallpaperManager.LOCK_SCREEN;
                               final String result2 =
                                   await WallpaperManager.setWallpaperFromFile(
-                                      widget.url, location);
+                                      widget.image.path, location);
                               Fluttertoast.showToast(
                                   msg: "Wallpaper Applied Successfully!",
                                   toastLength: Toast.LENGTH_LONG,
