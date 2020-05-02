@@ -35,10 +35,7 @@ class DownloadsState extends State<Downloads> {
   Future<void> readData() async {
     final file = await localfile;
     files = Directory(file).listSync();
-    // for (int i = 0; i < files.length; i++) {
-    //   files[i] = files[i].replaceAll('File: \'', '');
-    //   files[i] = files[i].replaceAll('\'', '');
-    // }
+
     if (files.length == 0) {
       setState(() {
         dataFetched = false;
@@ -47,7 +44,6 @@ class DownloadsState extends State<Downloads> {
     setState(() {
       dataFetched = true;
     });
-    // String imagePath = await file.readAsString();
     print('Images : $files');
   }
 
@@ -56,7 +52,6 @@ class DownloadsState extends State<Downloads> {
     super.initState();
     dataFetched = false;
     files = [];
-    // loadImageList();
     readData();
   }
 
@@ -64,12 +59,6 @@ class DownloadsState extends State<Downloads> {
   void dispose() {
     super.dispose();
   }
-  // set nullAllImage(List all){
-  //   setState(() {
-  //     allImage = all;
-  //     allNameList = all;
-  //   });
-  // }
 
   Future<Null> refreshList() async {
     refreshKey2.currentState?.show(atTop: true);
@@ -80,19 +69,12 @@ class DownloadsState extends State<Downloads> {
     });
     readData();
 
-    // setState(() {
-    //   items = List.generate(
-    //       20, (number) => "https://picsum.photos/id/${number + 5}/600/800");
-    // }
-    // );
-
     return null;
   }
 
   ScrollController controller;
   var refreshKey2 = GlobalKey<RefreshIndicatorState>();
 
-  // List data = [];
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);

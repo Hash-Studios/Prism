@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:vector_math/vector_math.dart' show radians;
-// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
-import 'package:hexcolor/hexcolor.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:cache_image/cache_image.dart';
 import 'dart:ui';
 import 'package:wallpaper_manager/wallpaper_manager.dart';
 import 'package:image/image.dart' as IMG;
@@ -15,18 +11,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 
-// void main() => runApp(MyApp());
-
-// // The parent Material App
-// class MyApp extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//         home: Scaffold(body: SizedBox.expand(child: RadialMenu())));
-//   }
-// }
-
-// The stateful widget + animation controller
 class RadialMenu extends StatefulWidget {
   Color color;
   Color color2;
@@ -346,9 +330,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                         icon: Icons.favorite,
                         func: _close),
                     Transform.scale(
-                      scale: 1.3 -
-                          widget.scale
-                              .value, // subtract the beginning value to run the opposite animation
+                      scale: 1.3 - widget.scale.value,
                       child: FloatingActionButton(
                           heroTag: 1,
                           child: Icon(
@@ -420,35 +402,6 @@ class _RadialAnimationState extends State<RadialAnimation> {
               elevation: 8)),
     );
   }
-
-  // _buildButtonR(double angle,
-  //     {Color color, Color color2, IconData icon, Function func}) {
-  //   final double rad = radians(angle);
-  //   return Transform.scale(
-  //     scale: 0.9 - widget.scale2.value,
-  //     child: Transform(
-  //         transform: Matrix4.identity()
-  //           ..translate((widget.translation.value) * cos(rad) * 1.2,
-  //               (widget.translation.value) * sin(rad) * 1.2),
-  //         child: FloatingActionButton(
-  //             heroTag: 5 * angle,
-  //             child: Transform.rotate(
-  //               angle: 45 * pi / 180,
-  //               child: Icon(
-  //                 icon,
-  //                 color: color2,
-  //               ),
-  //             ),
-  //             backgroundColor: color,
-  //             onPressed: () {
-  //               HapticFeedback.vibrate();
-  //               widget.changeIsOpen();
-  //               _close();
-  //               func();
-  //             },
-  //             elevation: 8)),
-  //   );
-  // }
 
   void onPaint() async {
     if (widget.isFile) {
