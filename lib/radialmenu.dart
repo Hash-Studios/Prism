@@ -7,6 +7,9 @@ import 'dart:ui';
 import 'package:wallpaper_manager/wallpaper_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gallery_saver/gallery_saver.dart';
+import 'package:image/image.dart' as IMG;
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 class RadialMenu extends StatefulWidget {
   Color color;
@@ -499,6 +502,18 @@ class _RadialAnimationState extends State<RadialAnimation> {
   }
 
   void onDownload() async {
+    Future<File> moveFile(File sourceFile, String newPath) async {
+      try {
+        // prefer using rename as it is probably faster
+        return await sourceFile.rename(newPath);
+      } on FileSystemException catch (e) {
+        // if rename fails, copy the source file and then delete it
+        final newFile = await sourceFile.copy(newPath);
+        await sourceFile.delete();
+        return newFile;
+      }
+    }
+
     if (this.mounted) {
       setState(() {
         widget.isOpen = false;
@@ -511,12 +526,36 @@ class _RadialAnimationState extends State<RadialAnimation> {
         timeInSecForIosWeb: 1,
         textColor: Colors.white,
         fontSize: 16.0);
-    GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) =>
-        Fluttertoast.showToast(
-            msg: "Downloaded image in Pictures/Prism!",
-            toastLength: Toast.LENGTH_LONG,
-            timeInSecForIosWeb: 1,
-            textColor: Colors.white,
-            fontSize: 16.0));
+    Directory appDocDirectory = await getExternalStorageDirectory();
+    // IMG.Image image = IMG.decodeImage(File(widget.file.path).readAsBytesSync());
+
+    // File(appDocDirectory.path +
+    //     '/' +
+    //     'Prism' +
+    //     '/' +
+    //     'wallhaven-' +
+    //     widget.url.substring(16))
+    //   ..writeAsBytesSync(IMG.encodePng(image));
+    GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
+      Fluttertoast.showToast(
+          msg: "Downloaded image in Pictures/Prism!",
+          toastLength: Toast.LENGTH_LONG,
+          timeInSecForIosWeb: 1,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      var myFile = File('storage/emulated/0/Prism/' +
+          'wallhaven-' +
+          widget.url.substring(16) +
+          widget.link.substring(widget.link.length-4));
+      moveFile(
+          myFile,
+          appDocDirectory.path +
+              '/' +
+              'Prism' +
+              '/' +
+              'wallhaven-' +
+              widget.url.substring(16) +
+              widget.link.substring(widget.link.length-4));
+    });
   }
 }
