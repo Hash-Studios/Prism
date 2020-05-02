@@ -14,7 +14,7 @@ A new Flutter project.
 - [x] primary swatch/themeing
 - [x] google fonts universal
 - [x] navdrawer link to tabs
-- [ ] navdrawer active tab highlight
+- [x] navdrawer active tab highlight
 - [ ] redesign navdrawer
 - [x] disable radial button (not needed)
 - [ ] sorting

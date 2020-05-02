@@ -126,8 +126,8 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
               ),
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("assets/images/login.png"),fit: BoxFit.cover
-                ),
+                    image: AssetImage("assets/images/login.png"),
+                    fit: BoxFit.cover),
               ),
               accountEmail: Padding(
                 padding: const EdgeInsets.only(left: 10),
@@ -149,6 +149,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
               ),
             ),
             new ListTile(
+                selected: _tabController.index == 0 ? true : false,
                 leading: Icon(
                   Icons.format_paint,
                   color: DynamicTheme.of(context).data.secondaryHeaderColor,
@@ -156,9 +157,12 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                 title: new Text("Wallpapers"),
                 onTap: () {
                   Navigator.pop(context);
-                  _tabController.animateTo(0);
+                  setState(() {
+                    _tabController.animateTo(0);
+                  });
                 }),
             new ListTile(
+                selected: _tabController.index == 1 ? true : false,
                 leading: Icon(
                   Icons.favorite,
                   color: DynamicTheme.of(context).data.secondaryHeaderColor,
@@ -166,9 +170,12 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                 title: new Text("Favourites"),
                 onTap: () {
                   Navigator.pop(context);
-                  _tabController.animateTo(1);
+                  setState(() {
+                    _tabController.animateTo(1);
+                  });
                 }),
             new ListTile(
+                selected: _tabController.index == 2 ? true : false,
                 leading: Icon(
                   Icons.arrow_downward,
                   color: DynamicTheme.of(context).data.secondaryHeaderColor,
@@ -176,7 +183,9 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                 title: new Text("Downloads"),
                 onTap: () {
                   Navigator.pop(context);
-                  _tabController.animateTo(2);
+                  setState(() {
+                    _tabController.animateTo(2);
+                  });
                 }),
             Padding(
               padding: const EdgeInsets.all(16.0),
