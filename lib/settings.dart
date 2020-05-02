@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:io';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:share/share.dart';
 
 class Settings extends StatefulWidget {
   @override
@@ -222,7 +223,10 @@ class _SettingsState extends State<Settings> {
                     ),
                     subtitle: Text(
                         "Quick link to pass on to your friends and enemies"),
-                    onTap: () {}),
+                    onTap: () {
+                      Share.share(
+                          'Hey check out this amazing wallpaper app Prism https://github.com/LiquidatorCoder/wallpapers_app');
+                    }),
               ],
             ),
           ),
