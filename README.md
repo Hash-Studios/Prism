@@ -17,16 +17,16 @@ A new Flutter project.
 - [x] navdrawer active tab highlight
 - [ ] redesign navdrawer
 - [x] disable radial button (not needed)
-- [ ] sorting
+- [x] sorting (cancelled)
 - [ ] adder length dynamic
 - [x] refresh indicator delay
-- [ ] inkwell cards
+- [x] inkwell cards (cancelled)
 - [x] fade in image and cache walpaper cards in feed
 - [x] hero animation
 - [ ] refactor
 - [x] back button closes radial menu
-- [ ] google signin
-- [ ] refresh fix fav
+- [x] google signin
+- [x] refresh fix fav
 - [x] downloads
 - [x] animation fix
 - [x] remove extra tab
@@ -37,12 +37,14 @@ A new Flutter project.
 - [x] added more loading images
 - [x] add pull to refresh to downloads
 - [x] add pull to refresh to fav page
-- [ ] change icons
-- [ ] settings*
+- [ ] change app icon and name
+- [ ] settings (user)
 - [x] fix downloads page lag*
-- [ ] show user name in drawer
+- [x] show user name in drawer
 - [ ] add drawer header images*
-- [ ] highlight listitem when clicked about*
+- [x] highlight listitem when clicked about* (cancelled)
 - [x] clear downloaded images*
 - [x] try catch FlutterGallaryPlugin errors*
+- [ ] search page ui advanced
+- [ ] login page ui advanced (remove google sign in button)
  
