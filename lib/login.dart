@@ -192,7 +192,8 @@ class LoginScreenState extends State<LoginScreen> {
     if (isLoggedIn) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => Feed()),
+        MaterialPageRoute(
+            builder: (context) => Feed(currentUserId: prefs.getString('id'))),
       );
     }
 
@@ -232,7 +233,8 @@ class LoginScreenState extends State<LoginScreen> {
             .collection('users')
             .document(firebaseUser.uid)
             .setData({
-          'nickname': firebaseUser.displayName,
+          'name': firebaseUser.displayName,
+          'email': firebaseUser.email,
           // 'photoUrl': firebaseUser.photoUrl,
           'id': firebaseUser.uid,
           // 'createdAt': DateTime.now().millisecondsSinceEpoch.toString(),
@@ -240,17 +242,20 @@ class LoginScreenState extends State<LoginScreen> {
           // 'online' : false,
           // 'lastSeen': DateTime.now().millisecondsSinceEpoch.toString(),
         });
+        // Firestore.instance.collection('users').document(firebaseUser.uid).collection('images').
 
         // Write data to local
         currentUser = firebaseUser;
         await prefs.setString('id', currentUser.uid);
-        // await prefs.setString('nickname', currentUser.displayName);
+        await prefs.setString('name', currentUser.displayName);
+        await prefs.setString('email', currentUser.email);
         // await prefs.setString('photoUrl', currentUser.photoUrl);
         await prefs.setString('logged', isLoggedIn.toString());
       } else {
         // Write data to local
         await prefs.setString('id', documents[0]['id']);
-        // await prefs.setString('nickname', documents[0]['nickname']);
+        await prefs.setString('name', documents[0]['name']);
+        await prefs.setString('email', documents[0]['email']);
         // await prefs.setString('photoUrl', documents[0]['photoUrl']);
         // await prefs.setString('aboutMe', documents[0]['aboutMe']);
         await prefs.setString('logged', isLoggedIn.toString());
@@ -259,7 +264,10 @@ class LoginScreenState extends State<LoginScreen> {
       this.setState(() {
         isLoading = false;
       });
-      Navigator.push(context, MaterialPageRoute(builder: (context) => Feed()));
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => Feed(currentUserId: firebaseUser.uid)));
     } else {
       Fluttertoast.showToast(msg: "Sign in fail");
       this.setState(() {
