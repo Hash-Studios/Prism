@@ -31,7 +31,7 @@ A new Flutter project.
 - [x] animation fix
 - [x] remove extra tab
 - [x] like/dislike on fav page(related to local liked list)
-- [ ] clear cache button*
+- [x] clear cache button*
 - [ ] dislike animation
 - [ ] check for internet connection
 - [x] added more loading images
