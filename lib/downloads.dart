@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:wallpapers_app/display2.dart';
-import 'package:image_gallery/image_gallery.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -40,6 +39,11 @@ class DownloadsState extends State<Downloads> {
     //   files[i] = files[i].replaceAll('File: \'', '');
     //   files[i] = files[i].replaceAll('\'', '');
     // }
+    if (files.length == 0) {
+      setState(() {
+        dataFetched = false;
+      });
+    }
     setState(() {
       dataFetched = true;
     });
@@ -67,64 +71,89 @@ class DownloadsState extends State<Downloads> {
   //   });
   // }
 
+  Future<Null> refreshList() async {
+    refreshKey2.currentState?.show(atTop: true);
+    await Future.delayed(Duration(milliseconds: 500));
+    setState(() {
+      files = [];
+      dataFetched = false;
+    });
+    readData();
+
+    // setState(() {
+    //   items = List.generate(
+    //       20, (number) => "https://picsum.photos/id/${number + 5}/600/800");
+    // }
+    // );
+
+    return null;
+  }
+
+  ScrollController controller;
+  var refreshKey2 = GlobalKey<RefreshIndicatorState>();
+
   // List data = [];
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
 
     return dataFetched
-        ? new Container(
-            color: DynamicTheme.of(context).data.primaryColor,
-            child: Scrollbar(
-              child: GridView.builder(
-                shrinkWrap: true,
-                padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
-                itemCount: files.length,
-                gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, childAspectRatio: 0.75),
-                itemBuilder: (BuildContext context, int index) {
-                  return new GestureDetector(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: <Widget>[
-                        Positioned.fill(
-                          child: new Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(24),
+        ? RefreshIndicator(
+            key: refreshKey2,
+            onRefresh: refreshList,
+            child: new Container(
+              color: DynamicTheme.of(context).data.primaryColor,
+              child: Scrollbar(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                  itemCount: files.length,
+                  gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, childAspectRatio: 0.75),
+                  itemBuilder: (BuildContext context, int index) {
+                    return new GestureDetector(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: <Widget>[
+                          Positioned.fill(
+                            child: new Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(24),
+                                ),
                               ),
-                            ),
-                            elevation: 0.0,
-                            semanticContainer: true,
-                            margin: EdgeInsets.fromLTRB(4, 4, 4, 4),
-                            clipBehavior: Clip.antiAliasWithSaveLayer,
-                            child: new Container(
-                              child: new Hero(
-                                tag: files[index].path.toString(),
-                                child: Image(
-                                  image: FileImage(
-                                    files[index],
+                              elevation: 0.0,
+                              semanticContainer: true,
+                              margin: EdgeInsets.fromLTRB(4, 4, 4, 4),
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              child: new Container(
+                                child: new Hero(
+                                  tag: files[index].path.toString(),
+                                  child: Image(
+                                    image: FileImage(
+                                      files[index],
+                                    ),
+                                    fit: BoxFit.cover,
                                   ),
-                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return Display2(files[index]);
-                          },
-                        ),
-                      );
-                    },
-                  );
-                },
+                        ],
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return Display2(files[index]);
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           )

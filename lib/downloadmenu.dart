@@ -40,7 +40,7 @@ class _DownloadMenuState extends State<DownloadMenu>
         color: widget.color,
         color2: widget.color2,
         isOpen: widget.isOpen,
-        url: widget.image,
+        image: widget.image,
         opacity: widget.opacity,
         changeIsOpenTrue: widget.changeIsOpenTrue,
         changeIsOpenFalse: widget.changeIsOpenFalse);
@@ -290,7 +290,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
 
                               final String result1 =
                                   await WallpaperManager.setWallpaperFromFile(
-                                      widget.url.path, location);
+                                      widget.image.path, location);
                               location = WallpaperManager.LOCK_SCREEN;
                               final String result2 =
                                   await WallpaperManager.setWallpaperFromFile(

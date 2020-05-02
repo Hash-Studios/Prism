@@ -73,7 +73,7 @@ class _WallpapersState extends State<Wallpapers> {
 
   Future<Null> refreshList() async {
     refreshKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(Duration(seconds: 1));
     getwalls(query, widget.width, widget.height);
 
     // setState(() {

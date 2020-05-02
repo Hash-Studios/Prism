@@ -18,11 +18,34 @@ class LikedImages extends StatefulWidget {
 
 class _LikedImagesState extends State<LikedImages> {
   final databaseReference = FirebaseDatabase.instance.reference().child("user");
+  Future<DataSnapshot> dbr;
   List liked = [];
   List<FlareControls> flareControls;
   @override
   void initState() {
     super.initState();
+    setState(() {
+      dbr = databaseReference.once();
+    });
+  }
+
+  Future<Null> refreshList() async {
+    refreshKey3.currentState?.show(atTop: true);
+    await Future.delayed(Duration(milliseconds: 500));
+    setState(() {
+      liked = [];
+    });
+    setState(() {
+      dbr = databaseReference.once();
+    });
+
+    // setState(() {
+    //   items = List.generate(
+    //       20, (number) => "https://picsum.photos/id/${number + 5}/600/800");
+    // }
+    // );
+
+    return null;
   }
 
   @override
@@ -30,220 +53,241 @@ class _LikedImagesState extends State<LikedImages> {
     super.dispose();
   }
 
+  ScrollController controller;
+  var refreshKey3 = GlobalKey<RefreshIndicatorState>();
+
   List data = [];
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
-    return FutureBuilder(
-        future: databaseReference.once(),
-        builder: (context, AsyncSnapshot<DataSnapshot> snapshot) {
-          if (snapshot.hasData) {
-            data = [];
-            liked = [];
-            flareControls = [];
-            Map<dynamic, dynamic> values = {};
-            values = snapshot.data.value;
-            if (values != null) {
-              values.forEach(
-                (k, v) => data.add(v),
-              );
-              values.forEach(
-                (k, v) => liked.add(k),
-              );
-              values.forEach(
-                (k, v) => flareControls.add(
-                  new FlareControls(),
-                ),
-              );
+    return RefreshIndicator(
+      key: refreshKey3,
+      onRefresh: refreshList,
+      child: FutureBuilder(
+          future: dbr,
+          builder: (context, AsyncSnapshot<DataSnapshot> snapshot) {
+            if (snapshot.hasData) {
+              data = [];
+              liked = [];
+              flareControls = [];
+              Map<dynamic, dynamic> values = {};
+              values = snapshot.data.value;
+              if (values != null) {
+                values.forEach(
+                  (k, v) => data.add(v),
+                );
+                values.forEach(
+                  (k, v) => liked.add(k),
+                );
+                values.forEach(
+                  (k, v) => flareControls.add(
+                    new FlareControls(),
+                  ),
+                );
 
-              return new Container(
-                  color: DynamicTheme.of(context).data.primaryColor,
-                  child: Scrollbar(
-                    child: GridView.builder(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
-                        itemCount: data.length,
-                        gridDelegate:
-                            new SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2, childAspectRatio: 0.75),
-                        itemBuilder: (BuildContext context, int index) {
-                          return new GestureDetector(
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: <Widget>[
-                                Positioned.fill(
-                                  child: new Card(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(24))),
-                                    elevation: 0.0,
-                                    semanticContainer: true,
-                                    margin: EdgeInsets.fromLTRB(4, 4, 4, 4),
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    child: new Container(
-                                        child: new Hero(
-                                            tag: data[index]["url"],
-                                            child: Image(
-                                              image: CacheImage(
-                                                data[index]["thumb"],
-                                              ),
-                                              fit: BoxFit.cover,
-                                            ))),
-                                  ),
-                                ),
-                                Positioned(
-                                  child: SizedBox(
-                                    width: 100,
-                                    height: 100,
-                                    child: FlareActor(
-                                      'assets/animations/like.flr',
-                                      controller: flareControls[index],
-                                      animation: 'idle',
+                return new Container(
+                    color: DynamicTheme.of(context).data.primaryColor,
+                    child: Scrollbar(
+                      child: GridView.builder(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                          itemCount: data.length,
+                          gridDelegate:
+                              new SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2, childAspectRatio: 0.75),
+                          itemBuilder: (BuildContext context, int index) {
+                            return new GestureDetector(
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: <Widget>[
+                                  Positioned.fill(
+                                    child: new Card(
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(24))),
+                                      elevation: 0.0,
+                                      semanticContainer: true,
+                                      margin: EdgeInsets.fromLTRB(4, 4, 4, 4),
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                                      child: new Container(
+                                          child: new Hero(
+                                              tag: data[index]["url"],
+                                              child: Image(
+                                                image: CacheImage(
+                                                  data[index]["thumb"],
+                                                ),
+                                                fit: BoxFit.cover,
+                                              ))),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return Display(
-                                        data[index]["url"],
-                                        data[index]["thumb"],
-                                        data[index]["color"],
-                                        data[index]["color2"],
-                                        data[index]["views"],
-                                        data[index]["resolution"],
-                                        "https://whvn.cc/${data[index]["id"]}",
-                                        data[index]["created"],
-                                        data[index]["fav"],
-                                        data[index]["size"]);
-                                  },
-                                ),
-                              );
-                            },
-                            onDoubleTap: () {
-                              if (liked.contains(data[index]["id"])) {
-                                // print("Dislike");
-                                liked.remove(data[index]["id"]);
-                                deleteData(data[index]["id"]);
-                              } else {
-                                // print("Like");
-                                liked.add(data[index]["id"]);
-                                createRecord(
-                                    data[index]["id"],
-                                    data[index]["url"],
-                                    data[index]["thumb"],
-                                    data[index]["color"],
-                                    data[index]["color2"],
-                                    data[index]["views"],
-                                    data[index]["resolution"],
-                                    data[index]["created"],
-                                    data[index]["fav"],
-                                    data[index]["size"]);
-                              }
-                              flareControls[index].play("like");
-                              // print(liked.toString());
-                            },
-                          );
-                        }),
-                  ));
-            } else {
-              return Container(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Image(
-                        image: DynamicTheme.of(context).data.primaryColor ==
-                                Color(0xFFFFFFFF)
-                            ? AssetImage("assets/images/oopssw.png")
-                            : DynamicTheme.of(context).data.primaryColor ==
-                                    Color(0xFF272727)
-                                ? AssetImage("assets/images/oopsdb.png")
-                                : DynamicTheme.of(context).data.primaryColor ==
-                                        Color(0xFF000000)
-                                    ? AssetImage("assets/images/oopsab.png")
-                                    : DynamicTheme.of(context)
-                                                .data
-                                                .primaryColor ==
-                                            Color(0xFF263238)
-                                        ? AssetImage("assets/images/oopscd.png")
-                                        : AssetImage(
-                                            "assets/images/oopsmc.png"),
-                        height: 600.h,
-                        width: 600.w,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          "Oops!",
+                                  Positioned(
+                                    child: SizedBox(
+                                      width: 100,
+                                      height: 100,
+                                      child: FlareActor(
+                                        'assets/animations/like.flr',
+                                        controller: flareControls[index],
+                                        animation: 'idle',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return Display(
+                                          data[index]["url"],
+                                          data[index]["thumb"],
+                                          data[index]["color"],
+                                          data[index]["color2"],
+                                          data[index]["views"],
+                                          data[index]["resolution"],
+                                          "https://whvn.cc/${data[index]["id"]}",
+                                          data[index]["created"],
+                                          data[index]["fav"],
+                                          data[index]["size"]);
+                                    },
+                                  ),
+                                );
+                              },
+                              onDoubleTap: () {
+                                if (liked.contains(data[index]["id"])) {
+                                  // print("Dislike");
+                                  liked.remove(data[index]["id"]);
+                                  deleteData(data[index]["id"]);
+                                } else {
+                                  // print("Like");
+                                  liked.add(data[index]["id"]);
+                                  createRecord(
+                                      data[index]["id"],
+                                      data[index]["url"],
+                                      data[index]["thumb"],
+                                      data[index]["color"],
+                                      data[index]["color2"],
+                                      data[index]["views"],
+                                      data[index]["resolution"],
+                                      data[index]["created"],
+                                      data[index]["fav"],
+                                      data[index]["size"]);
+                                }
+                                flareControls[index].play("like");
+                                // print(liked.toString());
+                              },
+                            );
+                          }),
+                    ));
+              } else {
+                return Container(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Image(
+                          image: DynamicTheme.of(context).data.primaryColor ==
+                                  Color(0xFFFFFFFF)
+                              ? AssetImage("assets/images/oopssw.png")
+                              : DynamicTheme.of(context).data.primaryColor ==
+                                      Color(0xFF272727)
+                                  ? AssetImage("assets/images/oopsdb.png")
+                                  : DynamicTheme.of(context)
+                                              .data
+                                              .primaryColor ==
+                                          Color(0xFF000000)
+                                      ? AssetImage("assets/images/oopsab.png")
+                                      : DynamicTheme.of(context)
+                                                  .data
+                                                  .primaryColor ==
+                                              Color(0xFF263238)
+                                          ? AssetImage(
+                                              "assets/images/oopscd.png")
+                                          : AssetImage(
+                                              "assets/images/oopsmc.png"),
+                          height: 600.h,
+                          width: 600.w,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            "Oops!",
+                            style: GoogleFonts.raleway(
+                                fontSize: 30,
+                                color: DynamicTheme.of(context)
+                                    .data
+                                    .secondaryHeaderColor),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Text(
+                          "Double tap some awesome\n wallpapers to add them here.",
                           style: GoogleFonts.raleway(
-                              fontSize: 30, color: DynamicTheme.of(context).data.secondaryHeaderColor),
+                              fontSize: 16,
+                              color: DynamicTheme.of(context)
+                                  .data
+                                  .secondaryHeaderColor),
                           textAlign: TextAlign.center,
                         ),
-                      ),
-                      Text(
-                        "Double tap some awesome\n wallpapers to add them here.",
+                      ],
+                    ),
+                  ),
+                );
+              }
+            }
+            return Container(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Image(
+                      image: DynamicTheme.of(context).data.primaryColor ==
+                              Color(0xFFFFFFFF)
+                          ? AssetImage("assets/images/loadingsw.png")
+                          : DynamicTheme.of(context).data.primaryColor ==
+                                  Color(0xFF272727)
+                              ? AssetImage("assets/images/loadingdb.png")
+                              : DynamicTheme.of(context).data.primaryColor ==
+                                      Color(0xFF000000)
+                                  ? AssetImage("assets/images/loadingab.png")
+                                  : DynamicTheme.of(context)
+                                              .data
+                                              .primaryColor ==
+                                          Color(0xFF263238)
+                                      ? AssetImage(
+                                          "assets/images/loadingcd.png")
+                                      : AssetImage(
+                                          "assets/images/loadingmc.png"),
+                      height: 600.h,
+                      width: 600.w,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        "Loading",
                         style: GoogleFonts.raleway(
-                            fontSize: 16, color: DynamicTheme.of(context).data.secondaryHeaderColor),
+                            fontSize: 30,
+                            color: DynamicTheme.of(context)
+                                .data
+                                .secondaryHeaderColor),
                         textAlign: TextAlign.center,
                       ),
-                    ],
-                  ),
-                ),
-              );
-            }
-          }
-          return Container(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Image(
-                    image: DynamicTheme.of(context).data.primaryColor ==
-                            Color(0xFFFFFFFF)
-                        ? AssetImage("assets/images/loadingsw.png")
-                        : DynamicTheme.of(context).data.primaryColor ==
-                                Color(0xFF272727)
-                            ? AssetImage("assets/images/loadingdb.png")
-                            : DynamicTheme.of(context).data.primaryColor ==
-                                    Color(0xFF000000)
-                                ? AssetImage("assets/images/loadingab.png")
-                                : DynamicTheme.of(context).data.primaryColor ==
-                                        Color(0xFF263238)
-                                    ? AssetImage("assets/images/loadingcd.png")
-                                    : AssetImage("assets/images/loadingmc.png"),
-                    height: 600.h,
-                    width: 600.w,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      "Loading",
+                    ),
+                    Text(
+                      "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
                       style: GoogleFonts.raleway(
-                          fontSize: 30,
+                          fontSize: 16,
                           color: DynamicTheme.of(context)
                               .data
                               .secondaryHeaderColor),
                       textAlign: TextAlign.center,
                     ),
-                  ),
-                  Text(
-                    "Sit Back and wait a few seconds\nas your favourite wallpapers are\nloading.",
-                    style: GoogleFonts.raleway(
-                        fontSize: 16,
-                        color:
-                            DynamicTheme.of(context).data.secondaryHeaderColor),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        });
+            );
+          }),
+    );
   }
 
   void createRecord(

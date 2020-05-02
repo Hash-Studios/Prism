@@ -4,7 +4,7 @@ A new Flutter project.
 
 ## To Do
 
-- [ ] double tap animation
+- [x] double tap animation
 - [x] saving favourites using files
 - [x] wallpaper display page buttons and ui
 - [x] hex color to button accents
@@ -28,21 +28,21 @@ A new Flutter project.
 - [ ] google signin
 - [ ] refresh fix fav
 - [x] downloads
-- [ ] animation fix
+- [x] animation fix
 - [x] remove extra tab
 - [x] like/dislike on fav page(related to local liked list)
 - [ ] clear cache button*
 - [ ] dislike animation
 - [ ] check for internet connection
 - [x] added more loading images
-- [ ] add pull to refresh to downloads
-- [ ] add pull to refresh to fav page
+- [x] add pull to refresh to downloads
+- [x] add pull to refresh to fav page
 - [ ] change icons
 - [ ] settings*
-- [ ] fix downloads page lag*
+- [x] fix downloads page lag*
 - [ ] show user name in drawer
 - [ ] add drawer header images*
 - [ ] highlight listitem when clicked about*
-- [ ] clear downloaded images*
-- [ ] try catch FlutterGallaryPlugin errors*
+- [x] clear downloaded images*
+- [x] try catch FlutterGallaryPlugin errors*
  
