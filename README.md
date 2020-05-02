@@ -32,7 +32,7 @@ A new Flutter project.
 - [x] remove extra tab
 - [x] like/dislike on fav page(related to local liked list)
 - [x] clear cache button*
-- [ ] dislike animation
+- [x] dislike animation
 - [ ] check for internet connection
 - [x] added more loading images
 - [x] add pull to refresh to downloads
