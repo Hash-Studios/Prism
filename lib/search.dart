@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:wallpapers_app/wallpapers.dart';
+import 'package:dynamic_theme/dynamic_theme.dart';
+import 'package:cache_image/cache_image.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:wallpapers_app/wallheaven.dart';
+import 'package:wallpapers_app/display.dart';
+import 'package:flare_flutter/flare_actor.dart';
+import 'package:flare_flutter/flare_controls.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class Search extends StatefulWidget {
   @override
@@ -11,6 +20,7 @@ class _SearchState extends State<Search> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
         leading: Hero(
           tag: 'search',
           child: Card(
@@ -30,9 +40,11 @@ class _SearchState extends State<Search> {
             }));
           },
           decoration: InputDecoration(
-            hintText: "Search",
+            hintText: "Search Wallpapers",
             border: InputBorder.none,
-            hintStyle: TextStyle(color: Colors.grey),
+            hintStyle: TextStyle(
+              color: DynamicTheme.of(context).data.secondaryHeaderColor,
+            ),
           ),
         ),
       ),
