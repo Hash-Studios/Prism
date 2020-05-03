@@ -148,7 +148,7 @@ class _LoginScreen3State extends State<LoginScreen3>
         //           : <Widget>[
         //               HomePage(),
         LoginScreen(
-      title: "ChatMe",
+      title: "Prism",
       // )
       //             ],
       //   scrollDirection: Axis.horizontal,
@@ -174,11 +174,19 @@ class LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   bool isLoggedIn = false;
   FirebaseUser currentUser;
+  GoogleSignInAccount googleUser;
+  GoogleSignInAuthentication googleAuth;
 
   @override
   void initState() {
     super.initState();
     isSignedIn();
+  }
+
+  Future delay() async {
+    await new Future.delayed(new Duration(milliseconds: 1500), () {
+      handleSignIn();
+    });
   }
 
   void isSignedIn() async {
@@ -209,17 +217,19 @@ class LoginScreenState extends State<LoginScreen> {
       isLoading = true;
     });
 
-    GoogleSignInAccount googleUser = await googleSignIn.signIn();
-    GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
+    try {
+      googleUser = await googleSignIn.signIn();
+      googleAuth = await googleUser.authentication;
+    } catch (e) {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => LoginScreen3()));
+    }
     final AuthCredential credential = GoogleAuthProvider.getCredential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
-
     FirebaseUser firebaseUser =
         (await firebaseAuth.signInWithCredential(credential)).user;
-
     if (firebaseUser != null) {
       // Check is already sign up
       final QuerySnapshot result = await Firestore.instance
