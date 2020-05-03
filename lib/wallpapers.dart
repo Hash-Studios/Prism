@@ -29,6 +29,7 @@ class _WallpapersState extends State<Wallpapers> {
   String userId = '';
   String query = "";
   int adder = 0;
+  int wallpapers = 0;
   bool fetchedData = false;
   List wallpapersId = [];
   List wallpapersLinks = [];
@@ -66,10 +67,19 @@ class _WallpapersState extends State<Wallpapers> {
     wallpapersCreatedAt = data["created_at"];
     wallpapersFav = data["favourites"];
     wallpapersSize = data["size"];
-    items =
-        List.generate(20, (number) => wallpapersLinks[int.parse('$number')]);
-    flareControls = List.generate(20, (number) => FlareControls());
-    flareControls2 = List.generate(20, (number) => FlareControls());
+    wallpapers = wallpapersLinks.length;
+    if (wallpapers < 20) {
+      items = List.generate(
+          wallpapers, (number) => wallpapersLinks[int.parse('$number')]);
+      flareControls = List.generate(wallpapers, (number) => FlareControls());
+      flareControls2 = List.generate(wallpapers, (number) => FlareControls());
+    } else {
+      items =
+          List.generate(20, (number) => wallpapersLinks[int.parse('$number')]);
+      flareControls = List.generate(20, (number) => FlareControls());
+      flareControls2 = List.generate(20, (number) => FlareControls());
+    }
+
     if (this.mounted) {
       setState(() {
         fetchedData = true;
@@ -110,17 +120,19 @@ class _WallpapersState extends State<Wallpapers> {
 
   void _scrollListener() {
     if (controller.position.extentAfter < 500) {
-      if (adder < 120) {
-        if (this.mounted) {
-          setState(() {
-            adder = adder + 20;
-            items.addAll(new List.generate(20,
-                (number) => wallpapersLinks[int.parse('${number + adder}')]));
-            flareControls
-                .addAll(new List.generate(20, (number) => FlareControls()));
-            flareControls2
-                .addAll(new List.generate(20, (number) => FlareControls()));
-          });
+      if (wallpapers > 20) {
+        if (adder < 120 && adder + 20 < wallpapers) {
+          if (this.mounted) {
+            setState(() {
+              adder = adder + 20;
+              items.addAll(new List.generate(20,
+                  (number) => wallpapersLinks[int.parse('${number + adder}')]));
+              flareControls
+                  .addAll(new List.generate(20, (number) => FlareControls()));
+              flareControls2
+                  .addAll(new List.generate(20, (number) => FlareControls()));
+            });
+          }
         }
       }
     }
@@ -130,132 +142,184 @@ class _WallpapersState extends State<Wallpapers> {
   Widget build(BuildContext context) {
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
     return fetchedData
-        ? RefreshIndicator(
-            key: refreshKey,
-            onRefresh: refreshList,
-            child: new Container(
-                color: DynamicTheme.of(context).data.primaryColor,
-                child: Scrollbar(
-                  child: GridView.builder(
-                      shrinkWrap: true,
-                      controller: controller,
-                      padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
-                      itemCount: items.length,
-                      gridDelegate:
-                          new SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2, childAspectRatio: 0.75),
-                      itemBuilder: (BuildContext context, int index) {
-                        return new GestureDetector(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: <Widget>[
-                              Positioned.fill(
-                                child: new Card(
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.all(
-                                          Radius.circular(24))),
-                                  elevation: 0.0,
-                                  semanticContainer: true,
-                                  margin: EdgeInsets.fromLTRB(4, 4, 4, 4),
-                                  clipBehavior: Clip.antiAliasWithSaveLayer,
-                                  child: new Container(
-                                      child: new Hero(
-                                          tag: wallpapersUrl[index],
-                                          child: FadeInImage(
-                                            fadeInDuration:
-                                                Duration(milliseconds: 200),
-                                            placeholder: CacheImage(
-                                                "https://via.placeholder.com/300x400.jpg/${wallpapersColors[index]}/${wallpapersColors[index]}"),
-                                            image: CacheImage(
-                                              wallpapersThumbs[index],
-                                            ),
-                                            fit: BoxFit.cover,
-                                          ))),
-                                ),
-                              ),
-                              Positioned(
-                                child: SizedBox(
-                                  width: 100,
-                                  height: 100,
-                                  child: FlareActor(
-                                    'assets/animations/like.flr',
-                                    controller: flareControls[index],
-                                    animation: 'idle',
+        ? wallpapers != 0
+            ? RefreshIndicator(
+                key: refreshKey,
+                onRefresh: refreshList,
+                child: new Container(
+                    color: DynamicTheme.of(context).data.primaryColor,
+                    child: Scrollbar(
+                      child: GridView.builder(
+                          shrinkWrap: true,
+                          controller: controller,
+                          padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                          itemCount: items.length,
+                          gridDelegate:
+                              new SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2, childAspectRatio: 0.75),
+                          itemBuilder: (BuildContext context, int index) {
+                            return new GestureDetector(
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: <Widget>[
+                                  Positioned.fill(
+                                    child: new Card(
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(24))),
+                                      elevation: 0.0,
+                                      semanticContainer: true,
+                                      margin: EdgeInsets.fromLTRB(4, 4, 4, 4),
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                                      child: new Container(
+                                          child: new Hero(
+                                              tag: wallpapersUrl[index],
+                                              child: FadeInImage(
+                                                fadeInDuration:
+                                                    Duration(milliseconds: 200),
+                                                placeholder: CacheImage(
+                                                    "https://via.placeholder.com/300x400.jpg/${wallpapersColors[index]}/${wallpapersColors[index]}"),
+                                                image: CacheImage(
+                                                  wallpapersThumbs[index],
+                                                ),
+                                                fit: BoxFit.cover,
+                                              ))),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              Positioned(
-                                child: SizedBox(
-                                  width: 100,
-                                  height: 100,
-                                  child: FlareActor(
-                                    'assets/animations/dislike.flr',
-                                    controller: flareControls2[index],
-                                    animation: 'idle',
+                                  Positioned(
+                                    child: SizedBox(
+                                      width: 100,
+                                      height: 100,
+                                      child: FlareActor(
+                                        'assets/animations/like.flr',
+                                        controller: flareControls[index],
+                                        animation: 'idle',
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  Positioned(
+                                    child: SizedBox(
+                                      width: 100,
+                                      height: 100,
+                                      child: FlareActor(
+                                        'assets/animations/dislike.flr',
+                                        controller: flareControls2[index],
+                                        animation: 'idle',
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return Display(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return Display(
+                                          wallpapersLinks[index],
+                                          wallpapersThumbs[index],
+                                          wallpapersColors[index],
+                                          wallpapersColors2[index],
+                                          wallpapersViews[index],
+                                          wallpapersResolution[index],
+                                          wallpapersUrl[index],
+                                          wallpapersCreatedAt[index],
+                                          wallpapersFav[index],
+                                          wallpapersSize[index]);
+                                    },
+                                  ),
+                                );
+                              },
+                              onDoubleTap: () {
+                                if (liked.contains(wallpapersLinks[index])) {
+                                  liked.remove(wallpapersLinks[index]);
+                                  final snackBar = SnackBar(
+                                    content: Text(
+                                        'Wallpaper removed from favorites!'),
+                                    duration: Duration(milliseconds: 2000),
+                                  );
+                                  Scaffold.of(context).showSnackBar(snackBar);
+                                  deleteData2(wallpapersId[index]);
+                                  flareControls2[index].play("dislike");
+                                } else {
+                                  // print("Like");
+                                  final snackBar = SnackBar(
+                                    content:
+                                        Text('Wallpaper added to favorites!'),
+                                    duration: Duration(milliseconds: 2000),
+                                  );
+                                  Scaffold.of(context).showSnackBar(snackBar);
+                                  liked.add(wallpapersLinks[index]);
+                                  createRecord2(
+                                      wallpapersId[index],
                                       wallpapersLinks[index],
                                       wallpapersThumbs[index],
                                       wallpapersColors[index],
                                       wallpapersColors2[index],
                                       wallpapersViews[index],
                                       wallpapersResolution[index],
-                                      wallpapersUrl[index],
                                       wallpapersCreatedAt[index],
                                       wallpapersFav[index],
                                       wallpapersSize[index]);
-                                },
-                              ),
-                            );
-                          },
-                          onDoubleTap: () {
-                            if (liked.contains(wallpapersLinks[index])) {
-                              liked.remove(wallpapersLinks[index]);
-                              final snackBar = SnackBar(
-                                content:
-                                    Text('Wallpaper removed from favorites!'),
-                                duration: Duration(milliseconds: 2000),
-                              );
-                              Scaffold.of(context).showSnackBar(snackBar);
-                              deleteData2(wallpapersId[index]);
-                              flareControls2[index].play("dislike");
-                            } else {
-                              // print("Like");
-                              final snackBar = SnackBar(
-                                content: Text('Wallpaper added to favorites!'),
-                                duration: Duration(milliseconds: 2000),
-                              );
-                              Scaffold.of(context).showSnackBar(snackBar);
-                              liked.add(wallpapersLinks[index]);
-                              createRecord2(
-                                  wallpapersId[index],
-                                  wallpapersLinks[index],
-                                  wallpapersThumbs[index],
-                                  wallpapersColors[index],
-                                  wallpapersColors2[index],
-                                  wallpapersViews[index],
-                                  wallpapersResolution[index],
-                                  wallpapersCreatedAt[index],
-                                  wallpapersFav[index],
-                                  wallpapersSize[index]);
-                              flareControls[index].play("like");
-                            }
+                                  flareControls[index].play("like");
+                                }
 
-                            // print(liked.toString());
-                          },
-                        );
-                      }),
-                )),
-          )
+                                // print(liked.toString());
+                              },
+                            );
+                          }),
+                    )),
+              )
+            : Container(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Image(
+                        image: DynamicTheme.of(context).data.primaryColor ==
+                                Color(0xFFFFFFFF)
+                            ? AssetImage("assets/images/oopssw.png")
+                            : DynamicTheme.of(context).data.primaryColor ==
+                                    Color(0xFF272727)
+                                ? AssetImage("assets/images/oopsdb.png")
+                                : DynamicTheme.of(context).data.primaryColor ==
+                                        Color(0xFF000000)
+                                    ? AssetImage("assets/images/oopsab.png")
+                                    : DynamicTheme.of(context)
+                                                .data
+                                                .primaryColor ==
+                                            Color(0xFF263238)
+                                        ? AssetImage("assets/images/oopscd.png")
+                                        : AssetImage(
+                                            "assets/images/oopsmc.png"),
+                        height: 600.h,
+                        width: 600.w,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          "Sorry!",
+                          style: GoogleFonts.raleway(
+                              fontSize: 30,
+                              color: DynamicTheme.of(context)
+                                  .data
+                                  .secondaryHeaderColor),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Text(
+                        "Unfortunately, we cannot find\nany wallpapers related\nto your search.",
+                        style: GoogleFonts.raleway(
+                            fontSize: 16,
+                            color: DynamicTheme.of(context)
+                                .data
+                                .secondaryHeaderColor),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              )
         : Container(
             child: Center(
               child: Column(
