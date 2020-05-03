@@ -10,6 +10,8 @@ import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image/image.dart' as IMG;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RadialMenu extends StatefulWidget {
   Color color;
@@ -54,6 +56,7 @@ class _RadialMenuState extends State<RadialMenu>
   @override
   void initState() {
     super.initState();
+
     controller =
         AnimationController(duration: Duration(milliseconds: 300), vsync: this);
   }
@@ -162,6 +165,25 @@ class RadialAnimation extends StatefulWidget {
 }
 
 class _RadialAnimationState extends State<RadialAnimation> {
+  final databaseReference2 = Firestore.instance;
+  List liked = [];
+  List data = [];
+  SharedPreferences prefs;
+  String userId = '';
+  Future<String> readLocal() async {
+    prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('id');
+    setState(() {});
+    getData2();
+    return userId;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    readLocal();
+  }
+
   Future<bool> _onBackPressed() {
     _close();
     if (widget.isOpen) {
@@ -328,7 +350,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
                         color: widget.color,
                         color2: widget.color2,
                         icon: Icons.favorite,
-                        func: _close),
+                        func: onFavorite),
                     Transform.scale(
                       scale: 1.3 - widget.scale.value,
                       child: FloatingActionButton(
@@ -558,5 +580,106 @@ class _RadialAnimationState extends State<RadialAnimation> {
       //         widget.url.substring(16) +
       //         widget.link.substring(widget.link.length - 4));
     });
+  }
+
+  void createRecord2(
+      String id,
+      String url,
+      String thumb,
+      String color,
+      String color2,
+      String views,
+      String resolution,
+      String created,
+      String fav,
+      String size) async {
+    await databaseReference2
+        .collection("users")
+        .document(userId)
+        .collection("images")
+        .document(id)
+        .setData({
+      "id": id,
+      "url": url,
+      "thumb": thumb,
+      "color": color,
+      "color2": color2,
+      "views": views,
+      "resolution": resolution,
+      "created": created,
+      "fav": fav,
+      "size": size,
+    });
+  }
+
+  void getData2() {
+    databaseReference2
+        .collection("users")
+        .document(userId)
+        .collection("images")
+        .getDocuments()
+        .then((QuerySnapshot snapshot) {
+      data = [];
+      liked = [];
+      snapshot.documents.forEach((f) => data.add(f.data));
+      if (data.toString() != '[]') {
+        data.forEach(
+          (v) => liked.add(v["id"]),
+        );
+      }
+    });
+  }
+
+  void deleteData2(String id) {
+    try {
+      databaseReference2
+          .collection("users")
+          .document(userId)
+          .collection("images")
+          .document(id)
+          .delete();
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
+  void onFavorite() async {
+    if (this.mounted) {
+      setState(() {
+        widget.isOpen = false;
+        widget.opacity = 0.0;
+      });
+    }
+
+    if (liked.contains(widget.url.substring(16))) {
+      liked.remove(widget.url.substring(16));
+      Fluttertoast.showToast(
+          msg: "Wallpaper removed from favorites!",
+          toastLength: Toast.LENGTH_LONG,
+          timeInSecForIosWeb: 1,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      deleteData2(widget.url.substring(16));
+    } else {
+      // print("Like");
+      Fluttertoast.showToast(
+          msg: "Wallpaper added from favorites!",
+          toastLength: Toast.LENGTH_LONG,
+          timeInSecForIosWeb: 1,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      liked.add(widget.url.substring(16));
+      createRecord2(
+          widget.url.substring(16),
+          widget.url,
+          widget.thumb,
+          widget.color.toString(),
+          widget.color2.toString(),
+          widget.views,
+          widget.resolution,
+          widget.createdAt,
+          widget.favourites,
+          widget.size);
+    }
   }
 }
