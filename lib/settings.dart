@@ -10,6 +10,11 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import './main.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings extends StatefulWidget {
   @override
@@ -17,6 +22,11 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
+  bool isLoading = false;
+  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final databaseReference2 = Firestore.instance;
+  SharedPreferences prefs;
+  String userId = '';
   List<ThemeItem> _themeItems = ThemeItem.getThemeItems();
 
   List<DropdownMenuItem<ThemeItem>> _dropDownMenuItems;
@@ -36,7 +46,15 @@ class _SettingsState extends State<Settings> {
   void initState() {
     _dropDownMenuItems = buildDropdownMenuItems();
     _selectedItem = _dropDownMenuItems[0].value;
+    readLocal();
     super.initState();
+  }
+
+  Future<String> readLocal() async {
+    prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('id');
+    setState(() {});
+    return userId;
   }
 
   void changeColor() {
@@ -54,6 +72,43 @@ class _SettingsState extends State<Settings> {
     });
     changeColor();
     setSharedPrefs();
+  }
+
+  Future<Null> handleSignOut() async {
+    this.setState(() {
+      isLoading = true;
+    });
+
+    await FirebaseAuth.instance.signOut();
+    await googleSignIn.disconnect();
+    await googleSignIn.signOut();
+
+    this.setState(() {
+      isLoading = false;
+    });
+
+    Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => MyApp()),
+        (Route<dynamic> route) => false);
+  }
+
+  void deleteData() {
+    try {
+      databaseReference2
+          .collection("users")
+          .document(userId)
+          .collection("images")
+          .getDocuments()
+          .then(
+        (snapshot) {
+          for (DocumentSnapshot ds in snapshot.documents) {
+            ds.reference.delete();
+          }
+        },
+      );
+    } catch (e) {
+      print(e.toString());
+    }
   }
 
   @override
@@ -261,24 +316,15 @@ class _SettingsState extends State<Settings> {
                           fontSize: 18),
                     ),
                     subtitle: Text("Remove all favorites"),
-                    onTap: () {}),
-                ListTile(
-                    leading: Icon(
-                      FontAwesomeIcons.search,
-                      color: DynamicTheme.of(context).data.secondaryHeaderColor,
-                    ),
-                    title: new Text(
-                      "Clear Search History",
-                      style: TextStyle(
-                          color: DynamicTheme.of(context)
-                              .data
-                              .textTheme
-                              .subtitle
-                              .color,
-                          fontSize: 18),
-                    ),
-                    subtitle: Text("Delete search history data"),
-                    onTap: () {}),
+                    onTap: () {
+                      Fluttertoast.showToast(
+                          msg: "Cleared all favorites!",
+                          toastLength: Toast.LENGTH_LONG,
+                          timeInSecForIosWeb: 1,
+                          textColor: Colors.white,
+                          fontSize: 16.0);
+                      deleteData();
+                    }),
                 ListTile(
                     leading: Icon(
                       FontAwesomeIcons.signOutAlt,
@@ -295,7 +341,9 @@ class _SettingsState extends State<Settings> {
                           fontSize: 18),
                     ),
                     subtitle: Text("Sign out from your account"),
-                    onTap: () {}),
+                    onTap: () {
+                      handleSignOut();
+                    }),
               ],
             ),
           ),
