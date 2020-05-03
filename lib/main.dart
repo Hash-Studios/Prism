@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'Prism',
             theme: theme,
-            home: Feed(),
+            home: LoginScreen3(),
           );
         });
   }
