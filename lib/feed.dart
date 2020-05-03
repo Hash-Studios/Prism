@@ -336,15 +336,6 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                     ),
                   );
                 }),
-            ListTile(
-                leading: Icon(
-                  Icons.exit_to_app,
-                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
-                ),
-                title: new Text("Sign out"),
-                onTap: () {
-                  handleSignOut();
-                }),
             new Divider(),
             new ListTile(
                 leading: Icon(
@@ -354,6 +345,35 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                 title: new Text("About"),
                 onTap: () {
                   Navigator.pop(context);
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      // return object of type Dialog
+                      return AlertDialog(
+                        title: new Text("About"),
+                        content: new Text(
+                            "Prism is a collection of random but beautiful 16:9 high quality wallpapers, with robust back-end and beautiful UI. This app has been developed with WallHaven API."),
+                        actions: <Widget>[
+                          // usually buttons at the bottom of the dialog
+                          new FlatButton(
+                            child: new Text("Close"),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }),
+            ListTile(
+                leading: Icon(
+                  Icons.exit_to_app,
+                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                ),
+                title: new Text("Sign out"),
+                onTap: () {
+                  handleSignOut();
                 }),
           ],
         ),
