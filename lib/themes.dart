@@ -18,6 +18,7 @@ class ThemeItem {
             brightness: Brightness.light,
             primaryColor: Color(0xFFFFFFFF),
             secondaryHeaderColor: Color(0xFF000000),
+            hoverColor: Colors.grey[600],
             primarySwatch: Colors.grey,
             textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
                 title: TextStyle(color: Colors.black),
@@ -31,6 +32,7 @@ class ThemeItem {
             brightness: Brightness.dark,
             primaryColor: Color(0xFF272727),
             secondaryHeaderColor: Color(0xFFFFFFFF),
+            hoverColor: Colors.indigo[300],
             primarySwatch: Colors.grey,
             textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
                 title: TextStyle(color: Colors.white),
@@ -44,6 +46,7 @@ class ThemeItem {
             brightness: Brightness.dark,
             primaryColor: Color(0xFF000000),
             secondaryHeaderColor: Color(0xFF025EFD),
+            hoverColor: Colors.grey,
             primarySwatch: Colors.blue,
             textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
                 title: TextStyle(color: Colors.white),
@@ -57,6 +60,7 @@ class ThemeItem {
             brightness: Brightness.dark,
             primaryColor: Color(0xFF263238),
             secondaryHeaderColor: Color(0xFFEEEEEE),
+            hoverColor: Colors.teal,
             primarySwatch: Colors.blue,
             textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
                 title: TextStyle(color: Colors.white),
@@ -70,6 +74,7 @@ class ThemeItem {
             brightness: Brightness.light,
             primaryColor: Colors.cyan[100],
             secondaryHeaderColor: Color(0xFF000000),
+            hoverColor: Colors.cyan[800],
             primarySwatch: Colors.cyan,
             textTheme: GoogleFonts.sourceSansProTextTheme(TextTheme(
                 title: TextStyle(color: Colors.black),

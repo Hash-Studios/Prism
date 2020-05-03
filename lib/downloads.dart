@@ -40,10 +40,11 @@ class DownloadsState extends State<Downloads> {
       setState(() {
         dataFetched = false;
       });
+    } else {
+      setState(() {
+        dataFetched = true;
+      });
     }
-    setState(() {
-      dataFetched = true;
-    });
     print('Images : $files');
   }
 
