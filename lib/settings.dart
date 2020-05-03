@@ -187,8 +187,7 @@ class _SettingsState extends State<Settings> {
                     ),
                     subtitle: Text("Clear downloaded images"),
                     onTap: () {
-                      final dir = Directory(
-                          "/storage/emulated/0/Android/data/com.example.wallpapers_app/files/Prism/");
+                      final dir = Directory("storage/emulated/0/Prism/");
                       try {
                         dir.deleteSync(recursive: true);
                         DefaultCacheManager().emptyCache();

@@ -13,6 +13,7 @@ class WallData {
       fetchUrl =
           "https://wallhaven.cc/api/v1/search?q=$query&categories=100&purity=100&ratios=9x16&sorting=random&order=desc&page=1";
     }
+    // print(fetchUrl);
     http.Response response = await http.get(fetchUrl);
     if (response.statusCode == 200) {
       var fetchData = jsonDecode(response.body);

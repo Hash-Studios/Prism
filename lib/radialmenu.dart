@@ -504,6 +504,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
   void onDownload() async {
     Future<File> moveFile(File sourceFile, String newPath) async {
       try {
+        // print(sourceFile.toString());
         // prefer using rename as it is probably faster
         return await sourceFile.rename(newPath);
       } on FileSystemException catch (e) {
@@ -526,7 +527,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
         timeInSecForIosWeb: 1,
         textColor: Colors.white,
         fontSize: 16.0);
-    Directory appDocDirectory = await getExternalStorageDirectory();
+    // Directory appDocDirectory = await getExternalStorageDirectory();
     // IMG.Image image = IMG.decodeImage(File(widget.file.path).readAsBytesSync());
 
     // File(appDocDirectory.path +
@@ -543,19 +544,19 @@ class _RadialAnimationState extends State<RadialAnimation> {
           timeInSecForIosWeb: 1,
           textColor: Colors.white,
           fontSize: 16.0);
-      var myFile = File('storage/emulated/0/Prism/' +
-          'wallhaven-' +
-          widget.url.substring(16) +
-          widget.link.substring(widget.link.length-4));
-      moveFile(
-          myFile,
-          appDocDirectory.path +
-              '/' +
-              'Prism' +
-              '/' +
-              'wallhaven-' +
-              widget.url.substring(16) +
-              widget.link.substring(widget.link.length-4));
+      // var myFile = File('storage/emulated/0/Prism/' +
+      //     'wallhaven-' +
+      //     widget.url.substring(16) +
+      //     widget.link.substring(widget.link.length - 4));
+      // moveFile(
+      //     myFile,
+      //     appDocDirectory.path +
+      //         '/' +
+      //         'Prism' +
+      //         '/' +
+      //         'wallhaven-' +
+      //         widget.url.substring(16) +
+      //         widget.link.substring(widget.link.length - 4));
     });
   }
 }
