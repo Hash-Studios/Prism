@@ -23,7 +23,7 @@ class DownloadsState extends State<Downloads> {
 
   Future<String> get localpath async {
     Directory dir = await getExternalStorageDirectory();
-    return dir.path;
+    return 'storage/emulated/0/';
   }
 
   Future<String> get localfile async {
