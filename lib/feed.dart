@@ -178,10 +178,10 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                 ),
               ),
               decoration: BoxDecoration(
-                image: DecorationImage(
-                    image: AssetImage("assets/images/login.png"),
-                    fit: BoxFit.cover),
-              ),
+                  gradient: LinearGradient(colors: [
+                DynamicTheme.of(context).data.backgroundColor,
+                DynamicTheme.of(context).data.primaryColor
+              ], begin: Alignment.bottomCenter, end: Alignment.topCenter)),
               accountEmail: Padding(
                 padding: const EdgeInsets.only(left: 10),
                 child: ClipRRect(
@@ -202,12 +202,24 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
               ),
             ),
             new ListTile(
-                selected: _tabController.index == 0 ? true : false,
                 leading: Icon(
                   Icons.format_paint,
-                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                  color: _tabController.index == 0
+                      ? DynamicTheme.of(context).data.hoverColor
+                      : DynamicTheme.of(context).data.secondaryHeaderColor,
                 ),
-                title: new Text("Wallpapers"),
+                title: new Text(
+                  "Wallpapers",
+                  style: TextStyle(
+                    color: _tabController.index == 0
+                        ? DynamicTheme.of(context).data.hoverColor
+                        : DynamicTheme.of(context)
+                            .data
+                            .primaryTextTheme
+                            .title
+                            .color,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() {
@@ -215,12 +227,24 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                   });
                 }),
             new ListTile(
-                selected: _tabController.index == 1 ? true : false,
                 leading: Icon(
                   Icons.favorite,
-                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                  color: _tabController.index == 1
+                      ? DynamicTheme.of(context).data.hoverColor
+                      : DynamicTheme.of(context).data.secondaryHeaderColor,
                 ),
-                title: new Text("Favourites"),
+                title: new Text(
+                  "Favourites",
+                  style: TextStyle(
+                    color: _tabController.index == 1
+                        ? DynamicTheme.of(context).data.hoverColor
+                        : DynamicTheme.of(context)
+                            .data
+                            .primaryTextTheme
+                            .title
+                            .color,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() {
@@ -228,12 +252,24 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                   });
                 }),
             new ListTile(
-                selected: _tabController.index == 2 ? true : false,
                 leading: Icon(
                   Icons.arrow_downward,
-                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                  color: _tabController.index == 2
+                      ? DynamicTheme.of(context).data.hoverColor
+                      : DynamicTheme.of(context).data.secondaryHeaderColor,
                 ),
-                title: new Text("Downloads"),
+                title: new Text(
+                  "Downloads",
+                  style: TextStyle(
+                    color: _tabController.index == 2
+                        ? DynamicTheme.of(context).data.hoverColor
+                        : DynamicTheme.of(context)
+                            .data
+                            .primaryTextTheme
+                            .title
+                            .color,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() {

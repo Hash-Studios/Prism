@@ -10,7 +10,7 @@ A new Flutter project.
 - [x] hex color to button accents
 - [x] refresh indictor key
 - [x] toast/snackbar
-- [ ] search and favourites
+- [x] search and favourites
 - [x] primary swatch/themeing
 - [x] google fonts universal
 - [x] navdrawer link to tabs
@@ -18,7 +18,7 @@ A new Flutter project.
 - [ ] redesign navdrawer
 - [x] disable radial button (not needed)
 - [x] sorting (cancelled)
-- [ ] adder length dynamic
+- [x] adder length dynamic
 - [x] refresh indicator delay
 - [x] inkwell cards (cancelled)
 - [x] fade in image and cache walpaper cards in feed
@@ -33,18 +33,18 @@ A new Flutter project.
 - [x] like/dislike on fav page(related to local liked list)
 - [x] clear cache button*
 - [x] dislike animation
-- [ ] check for internet connection
+- [x] check for internet connection (cancelled)
 - [x] added more loading images
 - [x] add pull to refresh to downloads
 - [x] add pull to refresh to fav page
 - [ ] change app icon and name
-- [ ] settings (user)
+- [x] settings (user)
 - [x] fix downloads page lag*
 - [x] show user name in drawer
 - [ ] add drawer header images*
 - [x] highlight listitem when clicked about* (cancelled)
 - [x] clear downloaded images*
 - [x] try catch FlutterGallaryPlugin errors*
-- [ ] search page ui advanced
-- [ ] login page ui advanced (remove google sign in button)
- 
+- [x] search page ui advanced
+- [x] login page ui advanced (remove google sign in button)
+- [ ] login page ui
