@@ -20,7 +20,6 @@ class Wallpapers extends StatefulWidget {
 }
 
 class _WallpapersState extends State<Wallpapers> {
-  final databaseReference = FirebaseDatabase.instance.reference().child("user");
   final databaseReference2 = Firestore.instance;
   List liked = [];
   List<FlareControls> flareControls;
@@ -368,31 +367,6 @@ class _WallpapersState extends State<Wallpapers> {
           );
   }
 
-  void createRecord(
-      String id,
-      String url,
-      String thumb,
-      String color,
-      String color2,
-      String views,
-      String resolution,
-      String created,
-      String fav,
-      String size) {
-    databaseReference.child(id.toString()).set({
-      "id": id,
-      "url": url,
-      "thumb": thumb,
-      "color": color,
-      "color2": color2,
-      "views": views,
-      "resolution": resolution,
-      "created": created,
-      "fav": fav,
-      "size": size
-    });
-  }
-
   void createRecord2(
       String id,
       String url,
@@ -421,11 +395,6 @@ class _WallpapersState extends State<Wallpapers> {
       "fav": fav,
       "size": size,
     });
-    print('You fav');
-  }
-
-  void getData() {
-    databaseReference.once().then((DataSnapshot snapshot) {});
   }
 
   void getData2() {
@@ -437,10 +406,6 @@ class _WallpapersState extends State<Wallpapers> {
         .then((QuerySnapshot snapshot) {
       snapshot.documents.forEach((f) => print('${f.data}}'));
     });
-  }
-
-  void deleteData(String id) {
-    databaseReference.child(id.toString()).remove();
   }
 
   void deleteData2(String id) {
