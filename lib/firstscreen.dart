@@ -57,8 +57,8 @@ class _LoginScreen3State extends State<LoginScreen3> {
         body: Stack(
       children: [
         Container(
-          color: DynamicTheme.of(context).data.primaryColor,
-        ),
+            color: DynamicTheme.of(context).data.primaryColor,
+            child: Center(child: Image.asset("assets/images/icon.png"))),
         Positioned(
           child: isLoading
               ? Container(
