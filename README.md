@@ -49,3 +49,6 @@ A new Flutter project.
 - [x] login page ui advanced (remove google sign in button)
 - [x] login page ui
 - [x] change package name
+- [ ] notifications (timed, random)
+- [ ] likedimages hero implementation
+- [ ] merge liked list of wallpapers and likedimages
