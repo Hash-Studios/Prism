@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
-import 'package:Prism/firstscreen.dart';
-import './themes.dart';
+import 'package:Prism/screens/firstscreen.dart';
+import 'package:Prism/data/themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
-
 
 void main() => runApp(MyApp());
 

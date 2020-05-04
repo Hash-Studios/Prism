@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:Prism/downloads.dart';
-import 'package:Prism/likedimages.dart';
-import 'package:Prism/search.dart';
-import 'package:Prism/settings.dart';
-import 'package:Prism/wallpapers.dart';
+import 'package:Prism/screens/tabs/downloads.dart';
+import 'package:Prism/screens/tabs/likedimages.dart';
+import 'package:Prism/screens/search.dart';
+import 'package:Prism/screens/settings.dart';
+import 'package:Prism/screens/tabs/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import './themes.dart';
+import 'package:Prism/data/themes.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import './main.dart';
+import 'package:Prism/main.dart';
 import 'package:flutter/services.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey();
@@ -111,6 +111,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
   Future<bool> _onBackPressed() {
     SystemChannels.platform.invokeMethod('SystemNavigator.pop');
   }
+
   Future<bool> _onBackPressedDrawer() {
     Navigator.pop(context);
   }
@@ -174,7 +175,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
       ),
       drawer: WillPopScope(
         onWillPop: _onBackPressedDrawer,
-              child: Drawer(
+        child: Drawer(
           child: new ListView(
             children: <Widget>[
               new UserAccountsDrawerHeader(
@@ -209,8 +210,8 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                   ),
                 ),
                 currentAccountPicture: Center(
-                  child: ClipOval(child: Image.asset("assets/images/icon1.png"))
-                ),
+                    child: ClipOval(
+                        child: Image.asset("assets/images/icon1.png"))),
               ),
               new ListTile(
                   leading: Icon(
@@ -392,7 +393,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
       ),
       body: WillPopScope(
         onWillPop: _onBackPressed,
-              child: TabBarView(
+        child: TabBarView(
           controller: _tabController,
           children: [
             Wallpapers(''),
