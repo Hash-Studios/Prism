@@ -25,9 +25,7 @@ dependencies:
   flutter_cache_manager: ^1.2.1
   wallpaper_manager: ^1.0.7
   hexcolor: ^1.0.1
-  fab_circular_menu: ^1.0.0
   font_awesome_flutter: ^8.8.1
-  complimentary_colors: ^1.0.3
   fluttertoast: ^4.0.1
   gallery_saver: ^2.0.1
   flare_flutter: ^2.0.3

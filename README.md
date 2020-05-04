@@ -48,4 +48,4 @@ A new Flutter project.
 - [x] search page ui advanced
 - [x] login page ui advanced (remove google sign in button)
 - [x] login page ui
-- [ ] change package name
+- [x] change package name
