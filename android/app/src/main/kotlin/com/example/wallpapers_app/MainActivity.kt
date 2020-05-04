@@ -1,4 +1,4 @@
-package com.example.wallpapers_app
+package com.hash.prism
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity

@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:cache_image/cache_image.dart';
-import 'package:fab_circular_menu/fab_circular_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -26,7 +25,6 @@ class Display extends StatefulWidget {
 }
 
 class _DisplayState extends State<Display> {
-  final GlobalKey<FabCircularMenuState> fabKey = GlobalKey();
   bool isOpen = false;
   double opacity = 0.0;
   var file;
