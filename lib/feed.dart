@@ -108,6 +108,13 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
         (Route<dynamic> route) => false);
   }
 
+  Future<bool> _onBackPressed() {
+    SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+  }
+  Future<bool> _onBackPressedDrawer() {
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (DynamicTheme.of(context).data.brightness == Brightness.light) {
@@ -165,234 +172,240 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
           },
         ),
       ),
-      drawer: Drawer(
-        child: new ListView(
-          children: <Widget>[
-            new UserAccountsDrawerHeader(
-              accountName: Padding(
-                padding: const EdgeInsets.only(left: 10),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(5)),
-                  child: new Text(
-                    " " + name + " ",
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                        backgroundColor: Colors.white54,
-                        color: Colors.black),
+      drawer: WillPopScope(
+        onWillPop: _onBackPressedDrawer,
+              child: Drawer(
+          child: new ListView(
+            children: <Widget>[
+              new UserAccountsDrawerHeader(
+                accountName: Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(5)),
+                    child: new Text(
+                      " " + name + " ",
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 18,
+                          backgroundColor: Colors.white54,
+                          color: Colors.black),
+                    ),
+                  ),
+                ),
+                decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [
+                  DynamicTheme.of(context).data.backgroundColor,
+                  DynamicTheme.of(context).data.primaryColor
+                ], begin: Alignment.bottomCenter, end: Alignment.topCenter)),
+                accountEmail: Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(5)),
+                    child: new Text(
+                      " " + email + " ",
+                      style: TextStyle(
+                          backgroundColor: Colors.white54, color: Colors.black),
+                    ),
+                  ),
+                ),
+                currentAccountPicture: Center(
+                  child: Icon(
+                    Icons.format_paint,
+                    size: 48,
+                    color: DynamicTheme.of(context).data.secondaryHeaderColor,
                   ),
                 ),
               ),
-              decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [
-                DynamicTheme.of(context).data.backgroundColor,
-                DynamicTheme.of(context).data.primaryColor
-              ], begin: Alignment.bottomCenter, end: Alignment.topCenter)),
-              accountEmail: Padding(
-                padding: const EdgeInsets.only(left: 10),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(5)),
-                  child: new Text(
-                    " " + email + " ",
-                    style: TextStyle(
-                        backgroundColor: Colors.white54, color: Colors.black),
-                  ),
-                ),
-              ),
-              currentAccountPicture: Center(
-                child: Icon(
-                  Icons.format_paint,
-                  size: 48,
-                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
-                ),
-              ),
-            ),
-            new ListTile(
-                leading: Icon(
-                  Icons.format_paint,
-                  color: _tabController.index == 0
-                      ? DynamicTheme.of(context).data.hoverColor
-                      : DynamicTheme.of(context).data.secondaryHeaderColor,
-                ),
-                title: new Text(
-                  "Wallpapers",
-                  style: TextStyle(
+              new ListTile(
+                  leading: Icon(
+                    Icons.format_paint,
                     color: _tabController.index == 0
                         ? DynamicTheme.of(context).data.hoverColor
-                        : DynamicTheme.of(context)
-                            .data
-                            .primaryTextTheme
-                            .title
-                            .color,
+                        : DynamicTheme.of(context).data.secondaryHeaderColor,
                   ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _tabController.animateTo(0);
-                  });
-                }),
-            new ListTile(
-                leading: Icon(
-                  Icons.favorite,
-                  color: _tabController.index == 1
-                      ? DynamicTheme.of(context).data.hoverColor
-                      : DynamicTheme.of(context).data.secondaryHeaderColor,
-                ),
-                title: new Text(
-                  "Favourites",
-                  style: TextStyle(
+                  title: new Text(
+                    "Wallpapers",
+                    style: TextStyle(
+                      color: _tabController.index == 0
+                          ? DynamicTheme.of(context).data.hoverColor
+                          : DynamicTheme.of(context)
+                              .data
+                              .primaryTextTheme
+                              .title
+                              .color,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _tabController.animateTo(0);
+                    });
+                  }),
+              new ListTile(
+                  leading: Icon(
+                    Icons.favorite,
                     color: _tabController.index == 1
                         ? DynamicTheme.of(context).data.hoverColor
-                        : DynamicTheme.of(context)
-                            .data
-                            .primaryTextTheme
-                            .title
-                            .color,
+                        : DynamicTheme.of(context).data.secondaryHeaderColor,
                   ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _tabController.animateTo(1);
-                  });
-                }),
-            new ListTile(
-                leading: Icon(
-                  Icons.arrow_downward,
-                  color: _tabController.index == 2
-                      ? DynamicTheme.of(context).data.hoverColor
-                      : DynamicTheme.of(context).data.secondaryHeaderColor,
-                ),
-                title: new Text(
-                  "Downloads",
-                  style: TextStyle(
+                  title: new Text(
+                    "Favourites",
+                    style: TextStyle(
+                      color: _tabController.index == 1
+                          ? DynamicTheme.of(context).data.hoverColor
+                          : DynamicTheme.of(context)
+                              .data
+                              .primaryTextTheme
+                              .title
+                              .color,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _tabController.animateTo(1);
+                    });
+                  }),
+              new ListTile(
+                  leading: Icon(
+                    Icons.arrow_downward,
                     color: _tabController.index == 2
                         ? DynamicTheme.of(context).data.hoverColor
-                        : DynamicTheme.of(context)
-                            .data
-                            .primaryTextTheme
-                            .title
-                            .color,
+                        : DynamicTheme.of(context).data.secondaryHeaderColor,
                   ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _tabController.animateTo(2);
-                  });
-                }),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Tooltip(
-                message: "Themes",
-                waitDuration: Duration(seconds: 1),
-                child: Container(
-                  width: 390.w,
-                  child: DropdownButton(
-                    isDense: true,
-                    isExpanded: true,
-                    hint: Row(
-                      children: [
-                        Icon(
-                          Icons.brightness_4,
-                          color: DynamicTheme.of(context)
+                  title: new Text(
+                    "Downloads",
+                    style: TextStyle(
+                      color: _tabController.index == 2
+                          ? DynamicTheme.of(context).data.hoverColor
+                          : DynamicTheme.of(context)
                               .data
-                              .secondaryHeaderColor,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4.0),
-                          child: Text(
-                            '          Themes',
-                            style: TextStyle(
-                                color: DynamicTheme.of(context)
-                                    .data
-                                    .textTheme
-                                    .subtitle
-                                    .color,
-                                fontSize: 14),
-                          ),
-                        ),
-                      ],
+                              .primaryTextTheme
+                              .title
+                              .color,
                     ),
-                    elevation: 6,
-                    icon: Icon(FontAwesomeIcons.angleDown,
-                        color: DynamicTheme.of(context).data.iconTheme.color),
-                    items: _dropDownMenuItems,
-                    onChanged: onChangeDropdownItem,
-                    underline: SizedBox(),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _tabController.animateTo(2);
+                    });
+                  }),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Tooltip(
+                  message: "Themes",
+                  waitDuration: Duration(seconds: 1),
+                  child: Container(
+                    width: 390.w,
+                    child: DropdownButton(
+                      isDense: true,
+                      isExpanded: true,
+                      hint: Row(
+                        children: [
+                          Icon(
+                            Icons.brightness_4,
+                            color: DynamicTheme.of(context)
+                                .data
+                                .secondaryHeaderColor,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4.0),
+                            child: Text(
+                              '          Themes',
+                              style: TextStyle(
+                                  color: DynamicTheme.of(context)
+                                      .data
+                                      .textTheme
+                                      .subtitle
+                                      .color,
+                                  fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                      elevation: 6,
+                      icon: Icon(FontAwesomeIcons.angleDown,
+                          color: DynamicTheme.of(context).data.iconTheme.color),
+                      items: _dropDownMenuItems,
+                      onChanged: onChangeDropdownItem,
+                      underline: SizedBox(),
+                    ),
                   ),
                 ),
               ),
-            ),
-            new ListTile(
-                leading: Icon(
-                  Icons.settings,
-                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
-                ),
-                title: new Text("Settings"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return Settings();
+              new ListTile(
+                  leading: Icon(
+                    Icons.settings,
+                    color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                  ),
+                  title: new Text("Settings"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return Settings();
+                        },
+                      ),
+                    );
+                  }),
+              new Divider(),
+              new ListTile(
+                  leading: Icon(
+                    Icons.info,
+                    color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                  ),
+                  title: new Text("About"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        // return object of type Dialog
+                        return AlertDialog(
+                          title: new Text("About"),
+                          content: new Text(
+                              "Prism is a collection of random but beautiful 16:9 high quality wallpapers, with robust back-end and beautiful UI. This app has been developed with WallHaven API."),
+                          actions: <Widget>[
+                            // usually buttons at the bottom of the dialog
+                            new FlatButton(
+                              child: new Text("Close"),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
                       },
-                    ),
-                  );
-                }),
-            new Divider(),
-            new ListTile(
-                leading: Icon(
-                  Icons.info,
-                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
-                ),
-                title: new Text("About"),
-                onTap: () {
-                  Navigator.pop(context);
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      // return object of type Dialog
-                      return AlertDialog(
-                        title: new Text("About"),
-                        content: new Text(
-                            "Prism is a collection of random but beautiful 16:9 high quality wallpapers, with robust back-end and beautiful UI. This app has been developed with WallHaven API."),
-                        actions: <Widget>[
-                          // usually buttons at the bottom of the dialog
-                          new FlatButton(
-                            child: new Text("Close"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                }),
-            ListTile(
-                leading: Icon(
-                  Icons.exit_to_app,
-                  color: DynamicTheme.of(context).data.secondaryHeaderColor,
-                ),
-                title: new Text("Sign out"),
-                onTap: () {
-                  handleSignOut();
-                }),
-          ],
+                    );
+                  }),
+              ListTile(
+                  leading: Icon(
+                    Icons.exit_to_app,
+                    color: DynamicTheme.of(context).data.secondaryHeaderColor,
+                  ),
+                  title: new Text("Sign out"),
+                  onTap: () {
+                    handleSignOut();
+                  }),
+            ],
+          ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          Wallpapers(''),
-          LikedImages(
-              ScreenUtil.screenWidth.round(), ScreenUtil.screenHeight.round()),
-          Downloads(
-              ScreenUtil.screenWidth.round(), ScreenUtil.screenHeight.round()),
-        ],
+      body: WillPopScope(
+        onWillPop: _onBackPressed,
+              child: TabBarView(
+          controller: _tabController,
+          children: [
+            Wallpapers(''),
+            LikedImages(ScreenUtil.screenWidth.round(),
+                ScreenUtil.screenHeight.round()),
+            Downloads(ScreenUtil.screenWidth.round(),
+                ScreenUtil.screenHeight.round()),
+          ],
+        ),
       ),
       bottomNavigationBar: new TabBar(
         controller: _tabController,

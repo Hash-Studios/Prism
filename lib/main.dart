@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:wallpapers_app/feed.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:wallpapers_app/firstscreen.dart';
 import './themes.dart';
