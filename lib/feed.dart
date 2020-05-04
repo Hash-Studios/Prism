@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import './main.dart';
+import 'package:flutter/services.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey();
 TabController _tabController;
@@ -109,6 +110,11 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    if (DynamicTheme.of(context).data.brightness == Brightness.light) {
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    } else {
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+    }
     ScreenUtil.init(context, width: 720, height: 1440, allowFontScaling: true);
     return Scaffold(
       key: scaffoldKey,
