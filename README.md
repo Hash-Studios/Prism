@@ -47,5 +47,5 @@ A new Flutter project.
 - [x] try catch FlutterGallaryPlugin errors*
 - [x] search page ui advanced
 - [x] login page ui advanced (remove google sign in button)
-- [ ] login page ui
+- [x] login page ui
 - [ ] change package name

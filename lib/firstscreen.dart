@@ -54,22 +54,30 @@ class _LoginScreen3State extends State<LoginScreen3> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: Colors.white,
         body: Stack(
-      children: [
-        Container(
-            color: DynamicTheme.of(context).data.primaryColor,
-            child: Center(child: Image.asset("assets/images/icon.png"))),
-        Positioned(
-          child: isLoading
-              ? Container(
-                  child: Center(
-                    child: CircularProgressIndicator(),
+          children: [
+            Container(
+              child: Center(
+                child: Container(
+                  child: Image.asset(
+                    "assets/images/icon.png",
+                    fit: BoxFit.fitWidth,
                   ),
-                  color: Colors.white.withOpacity(0.8),
-                )
-              : Container(),
-        ),
-      ],
-    ));
+                ),
+              ),
+            ),
+            Positioned(
+              child: isLoading
+                  ? Container(
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      color: Colors.white.withOpacity(0.8),
+                    )
+                  : Container(),
+            ),
+          ],
+        ));
   }
 }
