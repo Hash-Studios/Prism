@@ -4,6 +4,8 @@ import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:wallpapers_app/firstscreen.dart';
 import './themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
+
 
 void main() => runApp(MyApp());
 
@@ -31,6 +33,7 @@ class MyApp extends StatelessWidget {
           return data[0].themeData;
         },
         themedWidgetBuilder: (context, theme) {
+          FlutterStatusbarcolor.setStatusBarColor(Color(0x50FFFFFF));
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Prism',
