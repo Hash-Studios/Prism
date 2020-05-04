@@ -209,11 +209,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
                   ),
                 ),
                 currentAccountPicture: Center(
-                  child: Icon(
-                    Icons.format_paint,
-                    size: 48,
-                    color: DynamicTheme.of(context).data.secondaryHeaderColor,
-                  ),
+                  child: ClipOval(child: Image.asset("assets/images/icon1.png"))
                 ),
               ),
               new ListTile(
