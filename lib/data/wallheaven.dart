@@ -4,8 +4,6 @@ import 'package:http/http.dart' as http;
 class WallData {
   String fetchUrl;
   Future getData(String query) async {
-    int width = 1080;
-    int height = 1920;
     if (query == "") {
       fetchUrl =
           "https://wallhaven.cc/api/v1/search?categories=100&purity=100&ratios=9x16&sorting=random&order=desc&page=1";
