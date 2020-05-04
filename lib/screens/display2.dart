@@ -1,44 +1,23 @@
+import 'dart:io';
 import 'dart:ui';
-import 'package:cache_image/cache_image.dart';
 import 'package:fab_circular_menu/fab_circular_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:Prism/radialmenu.dart';
+import 'package:Prism/ui/downloadmenu.dart';
 
-class Display extends StatefulWidget {
-  String link = "";
-  String thumb = "";
-  String color = "";
-  String color2 = "";
-  String views = "";
-  String resolution = "";
-  String url = "";
-  String createdAt = "";
-  String favourites = "";
-  String size = "";
-  Display(this.link, this.thumb, this.color, this.color2, this.views,
-      this.resolution, this.url, this.createdAt, this.favourites, this.size);
+class Display2 extends StatefulWidget {
+  File image;
+  Display2(this.image);
   @override
-  _DisplayState createState() => _DisplayState();
+  _Display2State createState() => _Display2State();
 }
 
-class _DisplayState extends State<Display> {
+class _Display2State extends State<Display2> {
   final GlobalKey<FabCircularMenuState> fabKey = GlobalKey();
   bool isOpen = false;
   double opacity = 0.0;
-  var file;
   bool isFile = false;
-  void getFile() async {
-    file = await DefaultCacheManager().getSingleFile(widget.link);
-    if (this.mounted) {
-      setState(() {
-        isFile = true;
-      });
-    }
-  }
 
   @override
   void initState() {
@@ -46,7 +25,6 @@ class _DisplayState extends State<Display> {
     isFile = false;
     isOpen = false;
     opacity = 0.0;
-    getFile();
   }
 
   @override
@@ -80,13 +58,15 @@ class _DisplayState extends State<Display> {
       alignment: Alignment.center,
       children: <Widget>[
         new Hero(
-            tag: widget.url,
+            tag: widget.image.path.toString(),
             child: Container(
               width: 720.w,
               height: 1440.h,
               decoration: BoxDecoration(
                   image: DecorationImage(
-                image: isFile ? FileImage(file) : CacheImage(widget.thumb),
+                image: FileImage(
+                  widget.image,
+                ),
                 fit: BoxFit.cover,
               )),
             )),
@@ -99,20 +79,11 @@ class _DisplayState extends State<Display> {
                     child: Container(color: Colors.transparent),
                   )
                 : Container()),
-        RadialMenu(
-          Hexcolor("#${widget.color}"),
-          Hexcolor("#${widget.color2}"),
+        DownloadMenu(
+          Color(0xFFFFFFFF),
+          Color(0xFF000000),
           isOpen,
-          isFile,
-          file,
-          widget.link,
-          widget.thumb,
-          widget.views,
-          widget.resolution,
-          widget.url,
-          widget.createdAt,
-          widget.favourites,
-          widget.size,
+          widget.image,
           opacity,
           changeIsOpenTrue,
           changeIsOpenFalse,

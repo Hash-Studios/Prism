@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sticky_headers/sticky_headers.dart';
-import './themes.dart';
+import 'package:Prism/data/themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:io';
@@ -12,7 +12,7 @@ import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import './main.dart';
+import 'package:Prism/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Settings extends StatefulWidget {

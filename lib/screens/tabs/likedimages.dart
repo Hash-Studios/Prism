@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cache_image/cache_image.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:Prism/display.dart';
+import 'package:Prism/screens/display.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
@@ -102,7 +102,7 @@ class _LikedImagesState extends State<LikedImages> {
                 );
 
                 return new Container(
-                  height: double.infinity,
+                    height: double.infinity,
                     color: DynamicTheme.of(context).data.primaryColor,
                     child: Scrollbar(
                       child: GridView.builder(
@@ -331,6 +331,7 @@ class _LikedImagesState extends State<LikedImages> {
           }),
     );
   }
+
   void createRecord2(
       String id,
       String url,
@@ -360,6 +361,7 @@ class _LikedImagesState extends State<LikedImages> {
       "size": size,
     });
   }
+
   void getData2() {
     databaseReference2
         .collection("users")
@@ -370,6 +372,7 @@ class _LikedImagesState extends State<LikedImages> {
       snapshot.documents.forEach((f) => print('${f.data}}'));
     });
   }
+
   void deleteData2(String id) {
     try {
       databaseReference2
