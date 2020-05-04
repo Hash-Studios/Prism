@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:wallpapers_app/downloads.dart';
-import 'package:wallpapers_app/likedimages.dart';
-import 'package:wallpapers_app/search.dart';
-import 'package:wallpapers_app/settings.dart';
-import 'package:wallpapers_app/wallpapers.dart';
+import 'package:Prism/downloads.dart';
+import 'package:Prism/likedimages.dart';
+import 'package:Prism/search.dart';
+import 'package:Prism/settings.dart';
+import 'package:Prism/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import './themes.dart';
