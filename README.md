@@ -15,7 +15,7 @@ A new Flutter project.
 - [x] google fonts universal
 - [x] navdrawer link to tabs
 - [x] navdrawer active tab highlight
-- [ ] redesign navdrawer
+- [x] redesign navdrawer
 - [x] disable radial button (not needed)
 - [x] sorting (cancelled)
 - [x] adder length dynamic
@@ -37,14 +37,15 @@ A new Flutter project.
 - [x] added more loading images
 - [x] add pull to refresh to downloads
 - [x] add pull to refresh to fav page
-- [ ] change app icon and name
+- [x] change app icon and name
 - [x] settings (user)
 - [x] fix downloads page lag*
 - [x] show user name in drawer
-- [ ] add drawer header images*
+- [x] add drawer header images*
 - [x] highlight listitem when clicked about* (cancelled)
 - [x] clear downloaded images*
 - [x] try catch FlutterGallaryPlugin errors*
 - [x] search page ui advanced
 - [x] login page ui advanced (remove google sign in button)
 - [ ] login page ui
+- [ ] change package name
