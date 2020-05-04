@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:Prism/feed.dart';
+
 class LoginScreen extends StatefulWidget {
   LoginScreen({Key key, this.title}) : super(key: key);
   final String title;
@@ -31,6 +32,7 @@ class LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
   }
+
   Future<Null> handleSignIn() async {
     prefs = await SharedPreferences.getInstance();
 
@@ -96,73 +98,56 @@ class LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          color: DynamicTheme.of(context).data.primaryColor,
-        ),
-        child: Stack(
-          children: <Widget>[
-            Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Image.asset("assets/images/login.png"),
-              ],
-            ),
-            new Container(
-              margin: EdgeInsets.only(left: 60.0, right: 60),
-              alignment: Alignment.bottomCenter,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  SizedBox(height: 140, width: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      new FlatButton(
-                        shape: new RoundedRectangleBorder(
-                          borderRadius: new BorderRadius.circular(30.0),
-                        ),
-                        color: Color(0Xffdb3236),
-                        onPressed: () => handleSignIn(),
-                        child: new Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: <Widget>[
-                            FaIcon(
-                              FontAwesomeIcons.googlePlusG,
-                              color: Colors.redAccent[100],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 20, bottom: 20, left: 10),
-                              child: Text(
-                                "Login with Google",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: <Widget>[
+          Container(
+            child: Center(
+              child: Container(
+                child: Image.asset(
+                  "assets/images/icon.png",
+                  fit: BoxFit.fitWidth,
+                ),
               ),
             ),
-            Positioned(
-              child: isLoading
-                  ? Container(
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      color: Colors.white.withOpacity(0.8),
-                    )
-                  : Container(),
+          ),
+          new Container(
+            margin: EdgeInsets.only(left: 60.0, right: 60),
+            alignment: Alignment.bottomCenter,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                SizedBox(height: 200, width: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    new FlatButton(
+                        hoverColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        focusColor: Colors.transparent,
+                        splashColor: Colors.transparent,
+                        color: Colors.white,
+                        onPressed: () => handleSignIn(),
+                        child: Image(
+                            width: 220,
+                            image: AssetImage(
+                                "assets/images/btn_google_signin.png"))),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            child: isLoading
+                ? Container(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    color: Colors.white.withOpacity(0.8),
+                  )
+                : Container(),
+          ),
+        ],
       ),
     );
   }
