@@ -23,7 +23,7 @@ A new Flutter project.
 - [x] inkwell cards (cancelled)
 - [x] fade in image and cache walpaper cards in feed
 - [x] hero animation
-- [ ] refactor
+- [x] refactor
 - [x] back button closes radial menu
 - [x] google signin
 - [x] refresh fix fav

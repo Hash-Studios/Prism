@@ -7,9 +7,6 @@ import 'dart:ui';
 import 'package:wallpaper_manager/wallpaper_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gallery_saver/gallery_saver.dart';
-import 'package:image/image.dart' as IMG;
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -524,19 +521,6 @@ class _RadialAnimationState extends State<RadialAnimation> {
   }
 
   void onDownload() async {
-    Future<File> moveFile(File sourceFile, String newPath) async {
-      try {
-        // print(sourceFile.toString());
-        // prefer using rename as it is probably faster
-        return await sourceFile.rename(newPath);
-      } on FileSystemException catch (e) {
-        // if rename fails, copy the source file and then delete it
-        final newFile = await sourceFile.copy(newPath);
-        await sourceFile.delete();
-        return newFile;
-      }
-    }
-
     if (this.mounted) {
       setState(() {
         widget.isOpen = false;
@@ -673,8 +657,8 @@ class _RadialAnimationState extends State<RadialAnimation> {
           widget.url.substring(16),
           widget.url,
           widget.thumb,
-          widget.color.toString().substring(8,16),
-          widget.color2.toString().substring(8,16),
+          widget.color.toString().substring(8, 16),
+          widget.color2.toString().substring(8, 16),
           widget.views,
           widget.resolution,
           widget.createdAt,
