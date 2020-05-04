@@ -6,7 +6,6 @@ import 'package:Prism/data/wallheaven.dart';
 import 'package:Prism/screens/display.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
