@@ -4,7 +4,7 @@ import 'package:fab_circular_menu/fab_circular_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:wallpapers_app/downloadmenu.dart';
+import 'package:Prism/downloadmenu.dart';
 
 class Display2 extends StatefulWidget {
   File image;

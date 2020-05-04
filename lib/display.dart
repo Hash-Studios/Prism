@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:wallpapers_app/radialmenu.dart';
+import 'package:Prism/radialmenu.dart';
 
 class Display extends StatefulWidget {
   String link = "";
