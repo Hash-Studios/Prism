@@ -663,7 +663,7 @@ class _RadialAnimationState extends State<RadialAnimation> {
     } else {
       // print("Like");
       Fluttertoast.showToast(
-          msg: "Wallpaper added from favorites!",
+          msg: "Wallpaper added to favorites!",
           toastLength: Toast.LENGTH_LONG,
           timeInSecForIosWeb: 1,
           textColor: Colors.white,
