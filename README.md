@@ -14,6 +14,16 @@ Prism is a beautiful open-source wallpapers app for Android. It is built with Da
 
 Prism gets its source of images from Wallhaven. By utilising their [API](https://wallhaven.cc/help/api), it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to provide the user with a minimalist app to quickly find their next favourite wallpaper. It also uses Google Firebase for user authentication (Google Sign In), Shared Preferences for local settings, and Flare animations.
 
+## List of Contents
+
+1. [Features](#features)
+2. [Demo](#demo)
+3. [Dependencies](#dependencies)
+4. [Usage](#usage)
+5. [Development](#development)
+6. [License](#license)
+7. [To-Do](#to-do)
+
 ## Features
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api)
@@ -128,6 +138,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+![Prism UI Mockup](demo/Prism_Mockup2.jpg)
 
 ## To Do
 
