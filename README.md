@@ -32,6 +32,9 @@ Prism gets its source of images from Wallhaven. By utilising their [API](https:/
 
 ## Demo
 
+| ![](demo/3.jpg) | ![](demo/4.jpg) | ![](demo/5.jpg) | ![](demo/6.jpg) | ![](demo/7.jpg) |
+| :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
+|    Serene White |  Divine Black   |  Amoled Blue    | Classic Dark    | Monochrome Cyan |
 
 ## Dependencies
 
