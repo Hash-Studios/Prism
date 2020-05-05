@@ -279,7 +279,7 @@ class _SettingsState extends State<Settings> {
                         "Quick link to pass on to your friends and enemies"),
                     onTap: () {
                       Share.share(
-                          'Hey check out this amazing wallpaper app Prism https://github.com/LiquidatorCoder/wallpapers_app');
+                          'Hey check out this amazing wallpaper app Prism https://github.com/LiquidatorCoder/Prism');
                     }),
               ],
             ),
@@ -378,8 +378,7 @@ class _SettingsState extends State<Settings> {
                     ),
                     subtitle: Text("Check out the code or contribute yourself"),
                     onTap: () async {
-                      launch(
-                          "https://github.com/LiquidatorCoder/wallpapers_app");
+                      launch("https://github.com/LiquidatorCoder/Prism");
                     }),
                 ListTile(
                     leading: Icon(
