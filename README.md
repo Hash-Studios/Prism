@@ -7,7 +7,7 @@ Prism is a beautiful open-source wallpapers app for Android. It is built with Da
 ![APK](https://img.shields.io/github/size/LiquidatorCoder/Prism/bin/app-x86_64-release.apk)
 ![Release](https://img.shields.io/github/v/release/LiquidatorCoder/Prism)
 ![License](https://img.shields.io/github/license/LiquidatorCoder/Prism)
-![Quality](https://img.shields.io/scrutinizer/quality/g/LiquidatorCoder/Prism)
+![Stars](https://img.shields.io/github/stars/LiquidatorCoder/Prism)
 
 
 ![Prism UI Mockup](demo/Prism_Mockup.jpg)
@@ -22,7 +22,8 @@ Prism gets its source of images from Wallhaven. By utilising their [API](https:/
 4. [Usage](#usage)
 5. [Development](#development)
 6. [License](#license)
-7. [To-Do](#to-do)
+7. [Contributors](#contributors)
+8. [To-Do](#to-do)
 
 ## Features
 
@@ -105,6 +106,8 @@ The application files for Android devices can be found under the [`bin`](https:/
 - [`app-armeabi-v7a-release`](/bin/app-armeabi-v7a-release.apk) It is for ARM-based devices.
 - [`app-x86_64-release`](/bin/app-x86_64-release.apk) It is for x86 based devices.
 
+More information about the releases can be found in the [Release](https://github.com/LiquidatorCoder/Prism/releases) tab.
+
 ## Development
 
 Start by forking the repository, and then run `flutter pub get` in the local repository. You are now ready to modify, fix, update, or remove any feature in the app. If you want, you can create pull requests, we will be happy to welcome them.
@@ -138,6 +141,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Contributors
+
+<a href="https://github.com/LiquidatorCoder/Prism/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=LiquidatorCoder/Prism" />
+</a>
 
 ![Prism UI Mockup](demo/Prism_Mockup2.jpg)
 
