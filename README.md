@@ -1,6 +1,76 @@
-# wallpapers_app
+# Prism
 
-A new Flutter project.
+Prism is a beautiful open-source wallpapers app for Android. It is built with Dart on top of Google's Flutter Framework.
+
+![flutter](https://img.shields.io/badge/Flutter-Framework-brightgreen?logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
+![](https://img.shields.io/github/size/LiquidatorCoder/Prism/bin/app-x86_64-release.apk)
+![](https://img.shields.io/github/v/release/LiquidatorCoder/Prism)
+![](https://img.shields.io/github/license/LiquidatorCoder/Prism)
+![](https://img.shields.io/scrutinizer/quality/g/LiquidatorCoder/Prism)
+
+
+![Prism UI Mockup](demo/Prism_Mockup.jpg)
+
+Prism gets its source of images from Wallhaven. By utilising their [API](https://wallhaven.cc/help/api), it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to provide the user with a minimalist app to quickly find his/her next favourite wallpaper.
+
+## Features
+
+- High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api)
+- Multiple Themes supported (including dark and light themes)
+- Sign in with Google Support
+- Save Liked Images for later (works even after uninstalling the app)
+- Download any wallpaper to Gallery
+- Search for Wallpapers by keyword
+- Search for Wallpapers by colour
+- Set any wallpaper on the home screen, lock screen or both
+- Subtle Animations
+- Minimal design with smooth transitions
+- Clear Cache, Downloads and Favourites with one-tap
+- Application size under 10 MB
+- Adaptive UI (changes colour based on wallpaper)
+
+## Demo
+
+
+## Dependencies
+
+- `cache_image: ^1.0.5` for caching wallpapers
+- `flutter_cache_manager: ^1.2.1` for managing cache
+- `flutter_screenutil: ^1.0.2` for responsive UI
+- `google_fonts: ^0.4.1` for beautiful fonts
+- `wallpaper_manager: ^1.0.7` for setting wallpapers
+- `hexcolor: ^1.0.1` for using hex colors with Flutter
+- `font_awesome_flutter: ^8.8.1` for beautiful icons
+- `fluttertoast: ^4.0.1` for toast notifications
+- `gallery_saver: ^2.0.1` for saving wallpapers to gallery
+- `flare_flutter: ^2.0.3` for beautiful animations
+- `dynamic_theme: ^1.0.1` for dynamic themes
+- `shared_preferences: ^0.5.7` for storing settings
+- `sticky_headers: ^0.1.8+1` for settings' listview headers
+- `path_provider: ^1.6.7` for working with storage
+- `share: ^0.6.4` for sharing the app link
+- `url_launcher: ^5.4.5` for launching urls
+- `cloud_firestore: ^0.13.5` for storing liked images
+- `firebase_core: ^0.4.4+3` for firebase support
+- `firebase_auth: ^0.16.0` for user authentication
+- `google_sign_in: ^4.4.4` for Google sign in support
+- `flutter_statusbarcolor: ^0.2.3` for changing statusbar colour
+- `flutter_launcher_icons: ^0.7.5` for generating app icons
+
+## Usage
+
+The application files for Android devices can be found under the [`bin`](https://github.com/LiquidatorCoder/Prism/tree/master/bin) folder.
+
+## Development
+
+Start by forking the repository, and then run `flutter pub get` in the local repository. You are now ready to modify, fix, update, or remove any feature in the app. If you want, you can create a pull request, we will be happy to welcome them.
+>Note: This project requires Flutter Framework to be installed on your machine.
+
+## License
+
+This app is licensed under the MIT License.
+Any Usage of the source code must follow the above license.
 
 ## To Do
 
@@ -50,5 +120,5 @@ A new Flutter project.
 - [x] login page ui
 - [x] change package name
 - [ ] notifications (timed, random)
-- [ ] likedimages hero implementation
+- [x] likedimages hero implementation
 - [ ] merge liked list of wallpapers and likedimages
