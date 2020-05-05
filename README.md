@@ -21,7 +21,7 @@ Prism gets its source of images from Wallhaven. By utilising their [API](https:/
 - Sign in with Google support
 - Save Liked Images for later (works even after uninstalling the app)
 - Download any wallpaper to Gallery
-- Secure data and favorites storage on Google Firebase
+- Secure data and favourites storage on Google Firebase
 - Search for Wallpapers by keyword
 - Search for Wallpapers by colour
 - Set any wallpaper on the home screen, lock screen or both
@@ -55,9 +55,9 @@ Prism gets its source of images from Wallhaven. By utilising their [API](https:/
 |  Sign-in Page    |    Drawer       |  Wallpaper Display    | Wallpaper Info   | Loading Screen  |
 
 
-| ![](demo/21.jpg) | ![](demo/22.jpg)| ![](demo/17.jpg)       | ![](demo/9.jpg)  | ![](demo/16.jpg)|
-| :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------: |
-|  Like Animation  |    Dislike Animation      |  Search Page    | Wallpaper Info   | Loading Screen  |
+| ![](demo/21.jpg) | ![](demo/22.jpg)| ![](demo/17.jpg)| ![](demo/23.jpg) | ![](demo/24.jpg)|
+| :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
+|  Like Animation  |Dislike Animation|  Search Page    |      Example 1   |      Example 2  |
 
 ## Dependencies
 
@@ -92,7 +92,7 @@ More details about these can be found in the [`pubspec.yaml`](https://github.com
 
 The application files for Android devices can be found under the [`bin`](https://github.com/LiquidatorCoder/Prism/tree/master/bin) folder.
 - [`app-arm64-v8a-release`](/bin/app-arm64-v8a-release.apk) For most users, this will work. It is for ARM x64 based devices.
-- [`app-armeabi-v7a-release`](/bin/app-armeabi-v7a-release.apk) It is for ARM based devices.
+- [`app-armeabi-v7a-release`](/bin/app-armeabi-v7a-release.apk) It is for ARM-based devices.
 - [`app-x86_64-release`](/bin/app-x86_64-release.apk) It is for x86 based devices.
 
 ## Development
