@@ -1,32 +1,37 @@
-# Prism
+# <img src="android/app/src/main/res/mipmap-xxhdpi/launcher_icon.png" alt="icon" width=30> Prism
 
 Prism is a beautiful open-source wallpapers app for Android. It is built with Dart on top of Google's Flutter Framework.
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-brightgreen?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
-![](https://img.shields.io/github/size/LiquidatorCoder/Prism/bin/app-x86_64-release.apk)
-![](https://img.shields.io/github/v/release/LiquidatorCoder/Prism)
-![](https://img.shields.io/github/license/LiquidatorCoder/Prism)
-![](https://img.shields.io/scrutinizer/quality/g/LiquidatorCoder/Prism)
+![APK](https://img.shields.io/github/size/LiquidatorCoder/Prism/bin/app-x86_64-release.apk)
+![Release](https://img.shields.io/github/v/release/LiquidatorCoder/Prism)
+![License](https://img.shields.io/github/license/LiquidatorCoder/Prism)
+![Quality](https://img.shields.io/scrutinizer/quality/g/LiquidatorCoder/Prism)
 
 
 ![Prism UI Mockup](demo/Prism_Mockup.jpg)
 
-Prism gets its source of images from Wallhaven. By utilising their [API](https://wallhaven.cc/help/api), it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to provide the user with a minimalist app to quickly find his/her next favourite wallpaper.
+Prism gets its source of images from Wallhaven. By utilising their [API](https://wallhaven.cc/help/api), it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to provide the user with a minimalist app to quickly find their next favourite wallpaper. It also uses Google Firebase for user authentication (Google Sign In), Shared Preferences for local settings, and Flare animations.
 
 ## Features
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api)
 - Multiple Themes supported (including dark and light themes)
-- Sign in with Google Support
+- Sign in with Google support
 - Save Liked Images for later (works even after uninstalling the app)
 - Download any wallpaper to Gallery
+- Secure data and favorites storage on Google Firebase
 - Search for Wallpapers by keyword
 - Search for Wallpapers by colour
 - Set any wallpaper on the home screen, lock screen or both
-- Subtle Animations
+- Subtle Animations with Flare
+- Extensive settings menu with various options
+- Toast/Snackbar supported buttons
+- Supports Google Fonts universally
 - Minimal design with smooth transitions
 - Clear Cache, Downloads and Favourites with one-tap
+- Optimised storage using minimal packages
 - Application size under 10 MB
 - Adaptive UI (changes colour based on wallpaper)
 
@@ -49,7 +54,14 @@ Prism gets its source of images from Wallhaven. By utilising their [API](https:/
 | :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------: |
 |  Sign-in Page    |    Drawer       |  Wallpaper Display    | Wallpaper Info   | Loading Screen  |
 
+
+| ![](demo/21.jpg) | ![](demo/22.jpg)| ![](demo/17.jpg)       | ![](demo/9.jpg)  | ![](demo/16.jpg)|
+| :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------: |
+|  Like Animation  |    Dislike Animation      |  Search Page    | Wallpaper Info   | Loading Screen  |
+
 ## Dependencies
+
+The following packages are needed for the development of this application.
 
 - `cache_image: ^1.0.5` for caching wallpapers
 - `flutter_cache_manager: ^1.2.1` for managing cache
@@ -74,19 +86,48 @@ Prism gets its source of images from Wallhaven. By utilising their [API](https:/
 - `flutter_statusbarcolor: ^0.2.3` for changing statusbar colour
 - `flutter_launcher_icons: ^0.7.5` for generating app icons
 
+More details about these can be found in the [`pubspec.yaml`](https://github.com/LiquidatorCoder/Prism/tree/master/pubspec.yaml) file.
+
 ## Usage
 
 The application files for Android devices can be found under the [`bin`](https://github.com/LiquidatorCoder/Prism/tree/master/bin) folder.
+- [`app-arm64-v8a-release`](/bin/app-arm64-v8a-release.apk) For most users, this will work. It is for ARM x64 based devices.
+- [`app-armeabi-v7a-release`](/bin/app-armeabi-v7a-release.apk) It is for ARM based devices.
+- [`app-x86_64-release`](/bin/app-x86_64-release.apk) It is for x86 based devices.
 
 ## Development
 
-Start by forking the repository, and then run `flutter pub get` in the local repository. You are now ready to modify, fix, update, or remove any feature in the app. If you want, you can create a pull request, we will be happy to welcome them.
+Start by forking the repository, and then run `flutter pub get` in the local repository. You are now ready to modify, fix, update, or remove any feature in the app. If you want, you can create pull requests, we will be happy to welcome them.
 >Note: This project requires Flutter Framework to be installed on your machine.
 
 ## License
 
-This app is licensed under the MIT License.
-Any Usage of the source code must follow the above license.
+This app is licensed under the [`MIT License`](https://github.com/LiquidatorCoder/Prism/tree/master/LICENSE.txt).
+Any Usage of the source code must follow the below license.
+
+```
+MIT License
+
+Copyright (c) 2020 Abhay Maurya
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## To Do
 
