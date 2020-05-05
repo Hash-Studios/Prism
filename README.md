@@ -44,6 +44,11 @@ Prism gets its source of images from Wallhaven. By utilising their [API](https:/
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Explore     |    Favourites    |    Downloads     |     Search       |     Settings     |
 
+
+| ![](demo/15.jpg) | ![](demo/13.jpg)| ![](demo/8.jpg)       | ![](demo/9.jpg)  | ![](demo/16.jpg)|
+| :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------: |
+|  Sign in Page    |    Drawer       |  Wallpaper Display    | Wallpaper Info   | Loading Screen  |
+
 ## Dependencies
 
 - `cache_image: ^1.0.5` for caching wallpapers
