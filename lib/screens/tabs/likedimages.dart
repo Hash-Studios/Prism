@@ -128,7 +128,8 @@ class _LikedImagesState extends State<LikedImages> {
                                       clipBehavior: Clip.antiAliasWithSaveLayer,
                                       child: new Container(
                                           child: new Hero(
-                                              tag: data[index]["url"],
+                                              tag:
+                                                  "https://whvn.cc/${data[index]["url"].substring(16)}",
                                               child: Image(
                                                 image: CacheImage(
                                                   data[index]["thumb"],
