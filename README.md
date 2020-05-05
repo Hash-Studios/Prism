@@ -2,9 +2,9 @@
 
 Prism is a beautiful open-source wallpapers app for Android. It is built with Dart on top of Google's Flutter Framework.
 
-![flutter](https://img.shields.io/badge/Flutter-Framework-brightgreen?logo=flutter)
+![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
-![APK](https://img.shields.io/github/size/LiquidatorCoder/Prism/bin/app-x86_64-release.apk)
+![Size](https://img.shields.io/github/repo-size/LiquidatorCoder/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/LiquidatorCoder/Prism)
 ![License](https://img.shields.io/github/license/LiquidatorCoder/Prism)
 ![Stars](https://img.shields.io/github/stars/LiquidatorCoder/Prism)
