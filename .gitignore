@@ -29,7 +29,9 @@
 .pub-cache/
 .pub/
 /build/
-
+/keys/
+android/key.properties
+keytool.exe
 
 # Web related
 lib/generated_plugin_registrant.dart
