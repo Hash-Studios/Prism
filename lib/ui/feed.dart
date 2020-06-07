@@ -1,3 +1,4 @@
+import 'package:Prism/data/notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:Prism/screens/tabs/downloads.dart';
@@ -104,7 +105,7 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
     });
 
     Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => MyApp()),
+        MaterialPageRoute(builder: (context) => NotificationHandler()),
         (Route<dynamic> route) => false);
   }
 

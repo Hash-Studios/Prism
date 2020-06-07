@@ -1,3 +1,4 @@
+import 'package:Prism/data/notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -87,7 +88,7 @@ class _SettingsState extends State<Settings> {
     });
 
     Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => MyApp()),
+        MaterialPageRoute(builder: (context) => NotificationHandler()),
         (Route<dynamic> route) => false);
   }
 
