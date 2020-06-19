@@ -208,3 +208,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [ ] notifications (timed, random)
 - [x] likedimages hero implementation
 - [ ] merge liked list of wallpapers and likedimages
+- [ ] liked list to shared prefs
+- [ ] named routing
+- [ ] code refactoring
+- [ ] add more themes and remove dumb ones
+- [ ] liked images can't be opened (shows black screen)
+- [ ] improve the wall cards (tap and hold feature) (look at pinterest app)
+- [ ] replace all loading screens with some animated things, it feels it got stuck
+- [ ] fix dynamic color cards (looks really bad on 60% images)
+- [ ] change info icon, and simplify applying steps
+- [ ] add fourth tab for homescreen setups
+- [ ] glitch effect fix in downloads (while opening)
+- [ ] improve drawer header UI as well as overall drawer
+- [ ] improve app icon and use it throughout the app
+- [ ] change the onboarding layout / route
+- [ ] community walls + collections (add users to upload there own walls in the app)
+- [ ] include other APIs too like pexels
+- [ ] create sections like abstract, photos and others, other than the random feed
+- [ ] improve the overall tab UI (make it simplified)
