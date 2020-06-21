@@ -1,19 +1,27 @@
+import 'package:Prism/ui/widgets/categoriesBar.dart';
 import 'package:flutter/material.dart';
 
 class MainWidget extends StatelessWidget {
-  const MainWidget({
+  MainWidget({
     Key key,
   }) : super(key: key);
+
+  final categories = [
+    'Home',
+    'Abstract',
+    'Nature',
+    'Comics',
+    'Cars',
+    'Community'
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: AppBar(
         backgroundColor: Theme.of(context).primaryColor,
-        title: Text('Material App Bar'),
-        elevation: 0,
-      ),
-    );
+        appBar: PreferredSize(
+          child: CategoriesBar(categories: categories),
+          preferredSize: Size(double.infinity, 60),
+        ));
   }
 }
