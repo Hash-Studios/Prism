@@ -42,6 +42,7 @@ dependencies:
   flutter_statusbarcolor: ^0.2.3
   flutter_launcher_icons: ^0.7.5
   firebase_messaging: ^6.0.16
+  flare_splash_screen: ^3.0.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
