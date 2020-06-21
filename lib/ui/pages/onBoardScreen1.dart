@@ -4,7 +4,7 @@ import 'package:Prism/ui/widgets/onboardCaption.dart';
 import 'package:Prism/ui/widgets/onboardHeading.dart';
 import 'package:Prism/ui/widgets/onboardPageIndicator.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/ui/theme/config.dart' as config;
+import 'package:Prism/theme/config.dart' as config;
 
 class OnboardScreen1 extends StatefulWidget {
   @override
