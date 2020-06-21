@@ -15,7 +15,7 @@ class MainWidget extends StatelessWidget {
         backgroundColor: Theme.of(context).primaryColor,
         appBar: PreferredSize(
           child: CategoriesBar(),
-          preferredSize: Size(double.infinity, 60),
+          preferredSize: Size(double.infinity, 55),
         ),
         body: BottomBar(
           child: GridLoader(),
