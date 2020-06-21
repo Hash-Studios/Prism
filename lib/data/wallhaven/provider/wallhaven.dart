@@ -95,4 +95,32 @@ class WallHavenProvider extends ChangeNotifier {
     );
     notifyListeners();
   }
+
+  void getWallsbyTag(String tagname) async {
+    http.get("https://wallhaven.cc/api/v1/search?query=$tagname").then(
+      (http.Response response) {
+        var resp = json.decode(response.body)["data"];
+        for (int i = 0; i < resp.length; i++) {
+          this.walls.add(
+                WallPaper(
+                  id: resp[i]["id"],
+                  url: resp[i]["url"],
+                  short_url: resp[i]["short_url"],
+                  views: resp[i]["views"],
+                  favorites: resp[i]["favorites"],
+                  category: resp[i]["category"],
+                  dimension_x: resp[i]["dimension_x"],
+                  dimension_y: resp[i]["dimension_y"],
+                  resolution: resp[i]["id"],
+                  file_size: resp[i]["file_size"],
+                  colors: resp[i]["colors"],
+                  path: resp[i]["path"],
+                  thumbs: resp[i]["thumbs"],
+                ),
+              );
+        }
+      },
+    );
+    notifyListeners();
+  }
 }
