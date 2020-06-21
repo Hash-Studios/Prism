@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Prism/ui/theme/config.dart' as config;
+import 'package:Prism/theme/config.dart' as config;
 
 class OnboardButton extends StatelessWidget {
   const OnboardButton({
