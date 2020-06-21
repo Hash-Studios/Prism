@@ -1,7 +1,18 @@
+import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:flare_splash_screen/flare_splash_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<WallHavenProvider>(
+            create: (context) => WallHavenProvider(),
+          ),
+        ],
+        child: MyApp(),
+      ),
+    );
 
 class MyApp extends StatelessWidget {
   @override
