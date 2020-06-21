@@ -1,8 +1,8 @@
 import 'package:Prism/routing_constants.dart';
-import 'package:Prism/ui/widgets/onboardButton.dart';
-import 'package:Prism/ui/widgets/onboardCaption.dart';
-import 'package:Prism/ui/widgets/onboardHeading.dart';
-import 'package:Prism/ui/widgets/onboardPageIndicator.dart';
+import 'package:Prism/ui/widgets/onBoardButton.dart';
+import 'package:Prism/ui/widgets/onBoardCaption.dart';
+import 'package:Prism/ui/widgets/onBoardHeading.dart';
+import 'package:Prism/ui/widgets/onBoardPageIndicator.dart';
 import 'package:flutter/material.dart';
 
 import 'package:Prism/theme/config.dart' as config;
