@@ -1,6 +1,10 @@
+import 'package:Prism/data/wallhaven/model/wallpaper.dart';
+import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/widgets/homeGrid.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class GridLoader extends StatefulWidget {
   @override
@@ -72,23 +76,74 @@ class _GridLoaderState extends State<GridLoader>
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
-    return GridView.builder(
-      controller: controller,
-      padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
-      itemCount: 24,
-      shrinkWrap: true,
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 400,
-          childAspectRatio: 0.830,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8),
-      itemBuilder: (context, index) {
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        );
+    return FutureBuilder<List<WallPaper>>(
+      future: Provider.of<WallHavenProvider>(context, listen: false).getData(),
+      builder: (context, snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+            return GridView.builder(
+              controller: controller,
+              padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+              itemCount: 24,
+              shrinkWrap: true,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 300,
+                  childAspectRatio: 0.830,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8),
+              itemBuilder: (context, index) {
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: animation.value,
+                  ),
+                );
+              },
+            );
+
+          case ConnectionState.waiting:
+            return GridView.builder(
+              controller: controller,
+              padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+              itemCount: 24,
+              shrinkWrap: true,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 300,
+                  childAspectRatio: 0.830,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8),
+              itemBuilder: (context, index) {
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: animation.value,
+                  ),
+                );
+              },
+            );
+          case ConnectionState.done:
+            return HomeGrid();
+          default:
+            return GridView.builder(
+              controller: controller,
+              padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+              itemCount: 24,
+              shrinkWrap: true,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 300,
+                  childAspectRatio: 0.830,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8),
+              itemBuilder: (context, index) {
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: animation.value,
+                  ),
+                );
+              },
+            );
+        }
       },
     );
   }

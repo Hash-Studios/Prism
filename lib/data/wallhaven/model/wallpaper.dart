@@ -11,9 +11,9 @@ class WallPaper {
   final String dimension_y;
   final String resolution;
   final String file_size;
-  final List<String> colors;
+  final List colors;
   final String path;
-  final Map<String, String> thumbs;
+  final Map thumbs;
   final List<Tag> tags;
   final int current_page;
   WallPaper({
