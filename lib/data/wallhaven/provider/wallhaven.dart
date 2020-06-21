@@ -7,29 +7,35 @@ import 'package:http/http.dart' as http;
 
 class WallHavenProvider extends ChangeNotifier {
   List<WallPaper> walls = [];
+  int pageGetData = 1;
+  int pageGetQuery = 1;
+  int pageGetTag = 1;
   void getData() async {
-    http.get("https://wallhaven.cc/api/v1/search").then(
+    http
+        .get("https://wallhaven.cc/api/v1/search?page=${this.pageGetData}")
+        .then(
       (http.Response response) {
-        var resp = json.decode(response.body)["data"];
+        var resp = json.decode(response.body);
         for (int i = 0; i < resp.length; i++) {
           this.walls.add(
                 WallPaper(
-                  id: resp[i]["id"],
-                  url: resp[i]["url"],
-                  short_url: resp[i]["short_url"],
-                  views: resp[i]["views"],
-                  favorites: resp[i]["favorites"],
-                  category: resp[i]["category"],
-                  dimension_x: resp[i]["dimension_x"],
-                  dimension_y: resp[i]["dimension_y"],
-                  resolution: resp[i]["id"],
-                  file_size: resp[i]["file_size"],
-                  colors: resp[i]["colors"],
-                  path: resp[i]["path"],
-                  thumbs: resp[i]["thumbs"],
-                ),
+                    id: resp["data"][i]["id"],
+                    url: resp["data"][i]["url"],
+                    short_url: resp["data"][i]["short_url"],
+                    views: resp["data"][i]["views"],
+                    favorites: resp["data"][i]["favorites"],
+                    category: resp["data"][i]["category"],
+                    dimension_x: resp["data"][i]["dimension_x"],
+                    dimension_y: resp["data"][i]["dimension_y"],
+                    resolution: resp["data"][i]["id"],
+                    file_size: resp["data"][i]["file_size"],
+                    colors: resp["data"][i]["colors"],
+                    path: resp["data"][i]["path"],
+                    thumbs: resp["data"][i]["thumbs"],
+                    current_page: resp["meta"]["current_page"]),
               );
         }
+        this.pageGetData += 1;
       },
     );
     notifyListeners();
@@ -69,56 +75,64 @@ class WallHavenProvider extends ChangeNotifier {
   }
 
   void getWallsbyQuery(String query) async {
-    http.get("https://wallhaven.cc/api/v1/search?query=$query").then(
+    http
+        .get(
+            "https://wallhaven.cc/api/v1/search?query=$query&page=${this.pageGetQuery}")
+        .then(
       (http.Response response) {
-        var resp = json.decode(response.body)["data"];
+        var resp = json.decode(response.body);
         for (int i = 0; i < resp.length; i++) {
           this.walls.add(
                 WallPaper(
-                  id: resp[i]["id"],
-                  url: resp[i]["url"],
-                  short_url: resp[i]["short_url"],
-                  views: resp[i]["views"],
-                  favorites: resp[i]["favorites"],
-                  category: resp[i]["category"],
-                  dimension_x: resp[i]["dimension_x"],
-                  dimension_y: resp[i]["dimension_y"],
-                  resolution: resp[i]["id"],
-                  file_size: resp[i]["file_size"],
-                  colors: resp[i]["colors"],
-                  path: resp[i]["path"],
-                  thumbs: resp[i]["thumbs"],
-                ),
+                    id: resp["data"][i]["id"],
+                    url: resp["data"][i]["url"],
+                    short_url: resp["data"][i]["short_url"],
+                    views: resp["data"][i]["views"],
+                    favorites: resp["data"][i]["favorites"],
+                    category: resp["data"][i]["category"],
+                    dimension_x: resp["data"][i]["dimension_x"],
+                    dimension_y: resp["data"][i]["dimension_y"],
+                    resolution: resp["data"][i]["id"],
+                    file_size: resp["data"][i]["file_size"],
+                    colors: resp["data"][i]["colors"],
+                    path: resp["data"][i]["path"],
+                    thumbs: resp["data"][i]["thumbs"],
+                    current_page: resp["meta"]["current_page"]),
               );
         }
+        this.pageGetQuery += 1;
       },
     );
     notifyListeners();
   }
 
   void getWallsbyTag(String tagname) async {
-    http.get("https://wallhaven.cc/api/v1/search?query=$tagname").then(
+    http
+        .get(
+            "https://wallhaven.cc/api/v1/search?q=$tagname&page=${this.pageGetTag}")
+        .then(
       (http.Response response) {
-        var resp = json.decode(response.body)["data"];
+        var resp = json.decode(response.body);
         for (int i = 0; i < resp.length; i++) {
           this.walls.add(
                 WallPaper(
-                  id: resp[i]["id"],
-                  url: resp[i]["url"],
-                  short_url: resp[i]["short_url"],
-                  views: resp[i]["views"],
-                  favorites: resp[i]["favorites"],
-                  category: resp[i]["category"],
-                  dimension_x: resp[i]["dimension_x"],
-                  dimension_y: resp[i]["dimension_y"],
-                  resolution: resp[i]["id"],
-                  file_size: resp[i]["file_size"],
-                  colors: resp[i]["colors"],
-                  path: resp[i]["path"],
-                  thumbs: resp[i]["thumbs"],
-                ),
+                    id: resp["data"][i]["id"],
+                    url: resp["data"][i]["url"],
+                    short_url: resp["data"][i]["short_url"],
+                    views: resp["data"][i]["views"],
+                    favorites: resp["data"][i]["favorites"],
+                    category: resp["data"][i]["category"],
+                    dimension_x: resp["data"][i]["dimension_x"],
+                    dimension_y: resp["data"][i]["dimension_y"],
+                    resolution: resp["data"][i]["id"],
+                    file_size: resp["data"][i]["file_size"],
+                    colors: resp["data"][i]["colors"],
+                    path: resp["data"][i]["path"],
+                    thumbs: resp["data"][i]["thumbs"],
+                    current_page: resp["meta"]["current_page"]),
               );
         }
+        this.pageGetTag += 1;
       },
     );
     notifyListeners();

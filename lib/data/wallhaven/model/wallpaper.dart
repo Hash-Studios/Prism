@@ -15,6 +15,7 @@ class WallPaper {
   final String path;
   final Map<String, String> thumbs;
   final List<Tag> tags;
+  final int current_page;
   WallPaper({
     this.id,
     this.url,
@@ -30,5 +31,6 @@ class WallPaper {
     this.path,
     this.thumbs,
     this.tags,
+    this.current_page,
   });
 }
