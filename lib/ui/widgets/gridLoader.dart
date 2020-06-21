@@ -1,4 +1,5 @@
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 
 class GridLoader extends StatefulWidget {
@@ -69,7 +70,10 @@ class _GridLoaderState extends State<GridLoader>
 
   @override
   Widget build(BuildContext context) {
+    final ScrollController controller =
+        InheritedDataProvider.of(context).scrollController;
     return GridView.count(
+      controller: controller,
       crossAxisCount: 2,
       children: <Widget>[
         Container(
