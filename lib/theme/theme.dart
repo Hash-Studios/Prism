@@ -5,6 +5,8 @@ var kLightTheme = ThemeData(
   primaryColor: Colors.white,
   brightness: Brightness.light,
   accentColor: config.Colors().accentColor(1),
+  focusColor: config.Colors().mainColor(1),
+  hintColor: config.Colors().secondColor(1),
   accentTextTheme: TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
@@ -75,6 +77,8 @@ var kDarkTheme = ThemeData(
   primaryColor: Color(0xFF181818),
   brightness: Brightness.dark,
   accentColor: config.Colors().accentDarkColor(1),
+  focusColor: config.Colors().mainDarkColor(1),
+  hintColor: config.Colors().secondDarkColor(1),
   accentTextTheme: TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
