@@ -5,7 +5,7 @@ enum ThemeType { Light, Dark }
 
 class ThemeModel extends ChangeNotifier {
   ThemeData currentTheme = kLightTheme;
-  ThemeType _themeType = ThemeType.Dark;
+  ThemeType _themeType = ThemeType.Light;
 
   toggleTheme() {
     if (_themeType == ThemeType.Dark) {
