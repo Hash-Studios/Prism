@@ -72,81 +72,24 @@ class _GridLoaderState extends State<GridLoader>
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
-    return GridView.count(
+    return GridView.builder(
       controller: controller,
-      crossAxisCount: 2,
-      children: <Widget>[
-        Container(
-          margin: EdgeInsets.all(5),
+      padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+      itemCount: 24,
+      shrinkWrap: true,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 400,
+          childAspectRatio: 0.830,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8),
+      itemBuilder: (context, index) {
+        return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: animation.value,
           ),
-        ),
-        Container(
-          margin: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: animation.value,
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
