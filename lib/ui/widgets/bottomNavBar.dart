@@ -24,35 +24,45 @@ class BottomNavBar extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
               child: IconButton(
-                icon: Icon(JamIcons.home_f),
+                icon:
+                    Icon(JamIcons.home_f, color: Theme.of(context).accentColor),
                 onPressed: () {},
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                icon: Icon(JamIcons.search),
+                icon:
+                    Icon(JamIcons.search, color: Theme.of(context).accentColor),
                 onPressed: () {},
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                icon: Icon(JamIcons.heart_f),
+                icon: Icon(JamIcons.heart_f,
+                    color: Theme.of(context).accentColor),
                 onPressed: () {},
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                icon: Icon(JamIcons.instant_picture_f),
+                icon: Icon(JamIcons.instant_picture_f,
+                    color: Theme.of(context).accentColor),
                 onPressed: () {},
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
               child: IconButton(
-                icon: Icon(JamIcons.user_circle),
+                icon: Container(
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(500),
+                      color: Theme.of(context).accentColor),
+                  child: Icon(JamIcons.user_circle,
+                      color: Theme.of(context).primaryColor),
+                ),
                 onPressed: () {},
               ),
             ),
