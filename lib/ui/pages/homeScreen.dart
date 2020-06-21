@@ -6,22 +6,14 @@ class MainWidget extends StatelessWidget {
     Key key,
   }) : super(key: key);
 
-  final categories = [
-    'Home',
-    'Abstract',
-    'Nature',
-    'Comics',
-    'Cars',
-    'Community'
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: PreferredSize(
-          child: CategoriesBar(categories: categories),
-          preferredSize: Size(double.infinity, 60),
-        ));
+      backgroundColor: Theme.of(context).primaryColor,
+      appBar: PreferredSize(
+        child: CategoriesBar(),
+        preferredSize: Size(double.infinity, 60),
+      ),
+    );
   }
 }
