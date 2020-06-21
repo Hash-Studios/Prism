@@ -4,7 +4,7 @@ import 'package:Prism/theme/theme.dart';
 enum ThemeType { Light, Dark }
 
 class ThemeModel extends ChangeNotifier {
-  ThemeData currentTheme = kLightTheme;
+  ThemeData currentTheme = kDarkTheme;
   ThemeType _themeType = ThemeType.Dark;
 
   toggleTheme() {
@@ -19,5 +19,9 @@ class ThemeModel extends ChangeNotifier {
       _themeType = ThemeType.Dark;
       return notifyListeners();
     }
+  }
+
+  returnTheme() {
+    return _themeType;
   }
 }
