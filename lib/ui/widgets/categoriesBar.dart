@@ -8,10 +8,10 @@ class CategoriesBar extends StatelessWidget {
   final List<String> categories = [
     'Home',
     'Abstract',
+    'Community',
     'Nature',
-    'Comics',
     'Cars',
-    'Community'
+    'Comics',
   ];
 
   @override
