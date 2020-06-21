@@ -17,7 +17,7 @@ class PexelsProvider extends ChangeNotifier {
         }).then(
       (http.Response response) {
         var resp = json.decode(response.body);
-        for (int i = 0; i < resp.length; i++) {
+        for (int i = 0; i < resp["photos"].length; i++) {
           this.wallsP.add(
                 WallPaperP(
                     id: resp["photos"][i]["id"],
@@ -57,7 +57,7 @@ class PexelsProvider extends ChangeNotifier {
         .then(
       (http.Response response) {
         var resp = json.decode(response.body);
-        for (int i = 0; i < resp.length; i++) {
+        for (int i = 0; i < resp["photos"].length; i++) {
           this.wallsP.add(
                 WallPaperP(
                     id: resp["photos"][i]["id"],

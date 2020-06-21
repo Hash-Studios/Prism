@@ -11,36 +11,37 @@ class WallHavenProvider extends ChangeNotifier {
   int pageGetQuery = 1;
   int pageGetTag = 1;
   int pageGetPeople = 1;
-  void getData() async {
+  Future<List<WallPaper>> getData() async {
     http
         .get(
             "https://wallhaven.cc/api/v1/search?page=${this.pageGetData}&categories=100&purity=100&ratios=9x16&sorting=random&order=des")
         .then(
       (http.Response response) {
         var resp = json.decode(response.body);
-        for (int i = 0; i < resp.length; i++) {
+        print(resp["data"].length);
+        for (int i = 0; i < resp["data"].length; i++) {
           this.walls.add(
                 WallPaper(
                     id: resp["data"][i]["id"],
                     url: resp["data"][i]["url"],
                     short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"],
-                    favorites: resp["data"][i]["favorites"],
+                    views: resp["data"][i]["views"].toString(),
+                    favorites: resp["data"][i]["favorites"].toString(),
                     category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"],
-                    dimension_y: resp["data"][i]["dimension_y"],
+                    dimension_x: resp["data"][i]["dimension_x"].toString(),
+                    dimension_y: resp["data"][i]["dimension_y"].toString(),
                     resolution: resp["data"][i]["id"],
-                    file_size: resp["data"][i]["file_size"],
+                    file_size: resp["data"][i]["file_size"].toString(),
                     colors: resp["data"][i]["colors"],
                     path: resp["data"][i]["path"],
                     thumbs: resp["data"][i]["thumbs"],
                     current_page: resp["meta"]["current_page"]),
               );
         }
-        this.pageGetData += 1;
+        this.pageGetData = resp["meta"]["current_page"] + 1;
       },
     );
-    notifyListeners();
+    return this.walls;
   }
 
   Future<WallPaper> getWallbyID(String id) async {
@@ -76,14 +77,14 @@ class WallHavenProvider extends ChangeNotifier {
     );
   }
 
-  void getWallsbyQuery(String query) async {
+  Future<List<WallPaper>> getWallsbyQuery(String query) async {
     http
         .get(
             "https://wallhaven.cc/api/v1/search?query=$query&page=${this.pageGetQuery}&categories=100&purity=100&sorting=random&order=des")
         .then(
       (http.Response response) {
         var resp = json.decode(response.body);
-        for (int i = 0; i < resp.length; i++) {
+        for (int i = 0; i < resp["data"].length; i++) {
           this.walls.add(
                 WallPaper(
                     id: resp["data"][i]["id"],
@@ -102,20 +103,20 @@ class WallHavenProvider extends ChangeNotifier {
                     current_page: resp["meta"]["current_page"]),
               );
         }
-        this.pageGetQuery += 1;
+        this.pageGetQuery = resp["meta"]["current_page"] + 1;
       },
-    );
-    notifyListeners();
+    ).whenComplete(() => notifyListeners());
+    return this.walls;
   }
 
-  void getWallsbyTag(String tagname) async {
+  Future<List<WallPaper>> getWallsbyTag(String tagname) async {
     http
         .get(
             "https://wallhaven.cc/api/v1/search?q=$tagname&page=${this.pageGetTag}&categories=100&purity=100&sorting=random&order=des")
         .then(
       (http.Response response) {
         var resp = json.decode(response.body);
-        for (int i = 0; i < resp.length; i++) {
+        for (int i = 0; i < resp["data"].length; i++) {
           this.walls.add(
                 WallPaper(
                     id: resp["data"][i]["id"],
@@ -134,20 +135,20 @@ class WallHavenProvider extends ChangeNotifier {
                     current_page: resp["meta"]["current_page"]),
               );
         }
-        this.pageGetTag += 1;
+        this.pageGetTag = resp["meta"]["current_page"] + 1;
       },
-    );
-    notifyListeners();
+    ).whenComplete(() => notifyListeners());
+    return this.walls;
   }
 
-  void getDataPeople() async {
+  Future<List<WallPaper>> getDataPeople() async {
     http
         .get(
             "https://wallhaven.cc/api/v1/search?page=${this.pageGetPeople}&categories=111&purity=100&ratios=9x16&sorting=random&order=des")
         .then(
       (http.Response response) {
         var resp = json.decode(response.body);
-        for (int i = 0; i < resp.length; i++) {
+        for (int i = 0; i < resp["data"].length; i++) {
           this.walls.add(
                 WallPaper(
                     id: resp["data"][i]["id"],
@@ -166,9 +167,9 @@ class WallHavenProvider extends ChangeNotifier {
                     current_page: resp["meta"]["current_page"]),
               );
         }
-        this.pageGetPeople += 1;
+        this.pageGetPeople = resp["meta"]["current_page"] + 1;
       },
-    );
-    notifyListeners();
+    ).whenComplete(() => notifyListeners());
+    return this.walls;
   }
 }
