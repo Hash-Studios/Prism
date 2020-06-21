@@ -1,5 +1,101 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+
+class BottomBar extends StatefulWidget {
+  final Widget child;
+  const BottomBar({
+    this.child,
+    Key key,
+  }) : super(key: key);
+
+  @override
+  _BottomBarState createState() => _BottomBarState();
+}
+
+class _BottomBarState extends State<BottomBar>
+    with SingleTickerProviderStateMixin {
+  ScrollController scrollBottomBarController = new ScrollController();
+  AnimationController _controller;
+  Animation<Offset> _offsetAnimation;
+  bool isScrollingDown = false;
+
+  @override
+  void initState() {
+    myScroll();
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _offsetAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0, 2),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    ));
+  }
+
+  void showBottomBar() {
+    setState(() {
+      _controller.reverse();
+    });
+  }
+
+  void hideBottomBar() {
+    setState(() {
+      _controller.forward();
+    });
+  }
+
+  void myScroll() async {
+    scrollBottomBarController.addListener(() {
+      if (scrollBottomBarController.position.userScrollDirection ==
+          ScrollDirection.reverse) {
+        if (!isScrollingDown) {
+          isScrollingDown = true;
+          hideBottomBar();
+        }
+      }
+      if (scrollBottomBarController.position.userScrollDirection ==
+          ScrollDirection.forward) {
+        if (isScrollingDown) {
+          isScrollingDown = false;
+          showBottomBar();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    scrollBottomBarController.removeListener(() {});
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        InheritedDataProvider(
+          scrollController: scrollBottomBarController,
+          child: widget.child,
+        ),
+        Positioned(
+          bottom: 10,
+          child: SlideTransition(
+            position: _offsetAnimation,
+            child: BottomNavBar(),
+          ),
+        )
+      ],
+    );
+  }
+}
 
 class BottomNavBar extends StatelessWidget {
   @override
