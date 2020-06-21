@@ -99,6 +99,10 @@ flutter:
           weight: 800
         - asset: assets/fonts/Proxima Nova Black.otf
           weight: 900
+
+    - family:  JamIcons
+      fonts:
+        - asset: assets/fonts/JamIcons.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
