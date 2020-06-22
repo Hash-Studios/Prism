@@ -3,6 +3,7 @@ import 'package:Prism/ui/pages/favouriteScreen.dart';
 import 'package:Prism/ui/pages/searchScreen.dart';
 import 'package:Prism/ui/pages/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
+import 'package:Prism/ui/pages/wallpaperScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -14,6 +15,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(builder: (context) => SearchScreen());
     case FavRoute:
       return CupertinoPageRoute(builder: (context) => FavouriteScreen());
+    case WallpaperRoute:
+      return CupertinoPageRoute(
+          builder: (context) =>
+              WallpaperScreen(arguements: settings.arguments));
     default:
       return CupertinoPageRoute(
         builder: (context) => UndefinedScreen(
