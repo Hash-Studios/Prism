@@ -15,9 +15,6 @@ class MainWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        floatingActionButton: FloatingActionButton(onPressed: () {
-          Provider.of<WallHavenProvider>(context, listen: false).getData();
-        }),
         backgroundColor: Theme.of(context).primaryColor,
         appBar: PreferredSize(
           child: CategoriesBar(),
