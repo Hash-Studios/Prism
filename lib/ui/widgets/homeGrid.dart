@@ -87,6 +87,16 @@ class _HomeGridState extends State<HomeGrid>
           mainAxisSpacing: 8,
           crossAxisSpacing: 8),
       itemBuilder: (context, index) {
+        if (index == Provider.of<WallHavenProvider>(context).walls.length - 1) {
+          return FlatButton(color: Colors.white10,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              onPressed: () {
+                Provider.of<WallHavenProvider>(context, listen: false)
+                    .getData();
+              },
+              child: Text("See more"));
+        }
         return Container(
           decoration: Provider.of<WallHavenProvider>(context).walls.length == 0
               ? BoxDecoration(
