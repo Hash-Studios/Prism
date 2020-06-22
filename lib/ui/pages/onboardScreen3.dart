@@ -1,4 +1,3 @@
-import 'package:Prism/routing_constants.dart';
 import 'package:Prism/ui/widgets/onBoardButton.dart';
 import 'package:Prism/ui/widgets/onBoardCaption.dart';
 import 'package:Prism/ui/widgets/onBoardHeading.dart';
