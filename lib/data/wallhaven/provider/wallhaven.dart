@@ -18,7 +18,6 @@ class WallHavenProvider extends ChangeNotifier {
         .then(
       (http.Response response) {
         var resp = json.decode(response.body);
-        print(resp["data"].length);
         for (int i = 0; i < resp["data"].length; i++) {
           this.walls.add(
                 WallPaper(
@@ -39,9 +38,13 @@ class WallHavenProvider extends ChangeNotifier {
               );
         }
         this.pageGetData = resp["meta"]["current_page"] + 1;
+        print("data done");
+        return this.walls;
       },
-    );
-    return this.walls;
+    ).catchError((e) {
+      print("data done with error");
+      return this.walls;
+    });
   }
 
   Future<WallPaper> getWallbyID(String id) async {
