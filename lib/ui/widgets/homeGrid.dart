@@ -85,7 +85,10 @@ class _HomeGridState extends State<HomeGrid>
           : Provider.of<WallHavenProvider>(context).walls.length,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 300,
+          maxCrossAxisExtent:
+              MediaQuery.of(context).orientation == Orientation.portrait
+                  ? 300
+                  : 250,
           childAspectRatio: 0.830,
           mainAxisSpacing: 8,
           crossAxisSpacing: 8),
