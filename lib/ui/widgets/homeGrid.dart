@@ -1,5 +1,6 @@
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/widgets/focusedMenu.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -111,21 +112,25 @@ class _HomeGridState extends State<HomeGrid>
                   ? Text("See more")
                   : CircularProgressIndicator());
         }
-        return Container(
-          decoration: Provider.of<WallHavenProvider>(context).walls.length == 0
-              ? BoxDecoration(
-                  color: animation.value,
-                  borderRadius: BorderRadius.circular(20),
-                )
-              : BoxDecoration(
-                  color: animation.value,
-                  borderRadius: BorderRadius.circular(20),
-                  image: DecorationImage(
-                      image: NetworkImage(
-                          Provider.of<WallHavenProvider>(context)
-                              .walls[index]
-                              .thumbs["small"]),
-                      fit: BoxFit.cover)),
+        return FocusedMenuHolder(
+          index: index,
+          child: Container(
+            decoration:
+                Provider.of<WallHavenProvider>(context).walls.length == 0
+                    ? BoxDecoration(
+                        color: animation.value,
+                        borderRadius: BorderRadius.circular(20),
+                      )
+                    : BoxDecoration(
+                        color: animation.value,
+                        borderRadius: BorderRadius.circular(20),
+                        image: DecorationImage(
+                            image: NetworkImage(
+                                Provider.of<WallHavenProvider>(context)
+                                    .walls[index]
+                                    .thumbs["small"]),
+                            fit: BoxFit.cover)),
+          ),
         );
       },
     );
