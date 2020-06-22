@@ -1,3 +1,4 @@
+import 'package:Prism/ui/widgets/focusedMenu.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -69,109 +70,97 @@ class _FavouriteGridState extends State<FavouriteGrid> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      key: refreshFavKey,
-      onRefresh: refreshList,
-      child: FutureBuilder(
-          future: dbr,
-          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-            if (snapshot.hasData) {
-              data = [];
-              liked = [];
-              snapshot.data.documents.forEach((f) => data.add(f.data));
-              if (data.toString() != '[]') {
-                data.forEach(
-                  (v) => liked.add(v["id"]),
-                );
-                return new Container(
-                    height: double.infinity,
-                    color: Theme.of(context).primaryColor,
-                    child: Scrollbar(
-                      child: GridView.builder(
-                          shrinkWrap: true,
-                          padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
-                          itemCount: data.length,
-                          gridDelegate:
-                              new SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2, childAspectRatio: 0.75),
-                          itemBuilder: (BuildContext context, int index) {
-                            return new GestureDetector(
-                              child: new Card(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(24))),
-                                elevation: 0.0,
-                                semanticContainer: true,
-                                margin: EdgeInsets.fromLTRB(4, 4, 4, 4),
-                                clipBehavior: Clip.antiAliasWithSaveLayer,
-                                child: new Container(
-                                    child: Image.network(data[index]["thumb"])
-                                    // new Hero(
-                                    //     tag:
-                                    //         "https://whvn.cc/${data[index]["url"].substring(16)}",
-                                    //     child: Image(
-                                    //       image: CacheImage(
-                                    //         data[index]["thumb"],
-                                    //       ),
-                                    //       fit: BoxFit.cover,
-                                    //     ))
-                                    ),
-                              ),
-                              onTap: () {},
-                            );
-                          }),
-                    ));
-              } else {
-                return Container(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Image(
-                          image: Theme.of(context).primaryColor ==
-                                  Color(0xFFFFFFFF)
-                              ? AssetImage("assets/images/oopssw.png")
-                              : Theme.of(context).primaryColor ==
-                                      Color(0xFF272727)
-                                  ? AssetImage("assets/images/oopsdb.png")
-                                  : Theme.of(context).primaryColor ==
-                                          Color(0xFF000000)
-                                      ? AssetImage("assets/images/oopsab.png")
-                                      : Theme.of(context).primaryColor ==
-                                              Color(0xFF263238)
-                                          ? AssetImage(
-                                              "assets/images/oopscd.png")
-                                          : AssetImage(
-                                              "assets/images/oopsmc.png"),
-                          height: 600,
-                          width: 600,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            "Oops!",
+    return SafeArea(
+      child: RefreshIndicator(
+        key: refreshFavKey,
+        onRefresh: refreshList,
+        child: FutureBuilder(
+            future: dbr,
+            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (snapshot.hasData) {
+                data = [];
+                liked = [];
+                snapshot.data.documents.forEach((f) => data.add(f.data));
+                if (data.toString() != '[]') {
+                  data.forEach(
+                    (v) => liked.add(v["id"]),
+                  );
+                  return GridView.builder(
+                      controller: widget.controller,
+                      shrinkWrap: true,
+                      padding: EdgeInsets.fromLTRB(8, 0, 8, 0),
+                      itemCount: data.length,
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 300,
+                          childAspectRatio: 0.830,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8),
+                      itemBuilder: (context, index) {
+                        return FocusedMenuHolder(
+                          index: index,
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: widget.animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                    image: NetworkImage(data[index]["thumb"]),
+                                    fit: BoxFit.cover)),
+                          ),
+                        );
+                      });
+                } else {
+                  return Container(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Image(
+                            image: Theme.of(context).primaryColor ==
+                                    Color(0xFFFFFFFF)
+                                ? AssetImage("assets/images/oopssw.png")
+                                : Theme.of(context).primaryColor ==
+                                        Color(0xFF272727)
+                                    ? AssetImage("assets/images/oopsdb.png")
+                                    : Theme.of(context).primaryColor ==
+                                            Color(0xFF000000)
+                                        ? AssetImage("assets/images/oopsab.png")
+                                        : Theme.of(context).primaryColor ==
+                                                Color(0xFF263238)
+                                            ? AssetImage(
+                                                "assets/images/oopscd.png")
+                                            : AssetImage(
+                                                "assets/images/oopsmc.png"),
+                            height: 600,
+                            width: 600,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              "Oops!",
+                              style: TextStyle(
+                                  fontSize: 30,
+                                  color:
+                                      Theme.of(context).secondaryHeaderColor),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Text(
+                            "Double tap some awesome\nwallpapers to add them here.",
                             style: TextStyle(
-                                fontSize: 30,
+                                fontSize: 16,
                                 color: Theme.of(context).secondaryHeaderColor),
                             textAlign: TextAlign.center,
                           ),
-                        ),
-                        Text(
-                          "Double tap some awesome\nwallpapers to add them here.",
-                          style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).secondaryHeaderColor),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
+                  );
+                }
               }
-            }
-            return LoadingCards(
-                controller: widget.controller, animation: widget.animation);
-          }),
+              return LoadingCards(
+                  controller: widget.controller, animation: widget.animation);
+            }),
+      ),
     );
   }
 
