@@ -70,97 +70,94 @@ class _FavouriteGridState extends State<FavouriteGrid> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: RefreshIndicator(
-        key: refreshFavKey,
-        onRefresh: refreshList,
-        child: FutureBuilder(
-            future: dbr,
-            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-              if (snapshot.hasData) {
-                data = [];
-                liked = [];
-                snapshot.data.documents.forEach((f) => data.add(f.data));
-                if (data.toString() != '[]') {
-                  data.forEach(
-                    (v) => liked.add(v["id"]),
-                  );
-                  return GridView.builder(
-                      controller: widget.controller,
-                      shrinkWrap: true,
-                      padding: EdgeInsets.fromLTRB(8, 0, 8, 0),
-                      itemCount: data.length,
-                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 300,
-                          childAspectRatio: 0.830,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8),
-                      itemBuilder: (context, index) {
-                        return FocusedMenuHolder(
-                          index: index,
-                          child: Container(
-                            decoration: BoxDecoration(
-                                color: widget.animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                    image: NetworkImage(data[index]["thumb"]),
-                                    fit: BoxFit.cover)),
-                          ),
-                        );
-                      });
-                } else {
-                  return Container(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Image(
-                            image: Theme.of(context).primaryColor ==
-                                    Color(0xFFFFFFFF)
-                                ? AssetImage("assets/images/oopssw.png")
-                                : Theme.of(context).primaryColor ==
-                                        Color(0xFF272727)
-                                    ? AssetImage("assets/images/oopsdb.png")
-                                    : Theme.of(context).primaryColor ==
-                                            Color(0xFF000000)
-                                        ? AssetImage("assets/images/oopsab.png")
-                                        : Theme.of(context).primaryColor ==
-                                                Color(0xFF263238)
-                                            ? AssetImage(
-                                                "assets/images/oopscd.png")
-                                            : AssetImage(
-                                                "assets/images/oopsmc.png"),
-                            height: 600,
-                            width: 600,
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              "Oops!",
-                              style: TextStyle(
-                                  fontSize: 30,
-                                  color:
-                                      Theme.of(context).secondaryHeaderColor),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          Text(
-                            "Double tap some awesome\nwallpapers to add them here.",
+    return RefreshIndicator(
+      key: refreshFavKey,
+      onRefresh: refreshList,
+      child: FutureBuilder(
+          future: dbr,
+          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.hasData) {
+              data = [];
+              liked = [];
+              snapshot.data.documents.forEach((f) => data.add(f.data));
+              if (data.toString() != '[]') {
+                data.forEach(
+                  (v) => liked.add(v["id"]),
+                );
+                return GridView.builder(
+                    controller: widget.controller,
+                    shrinkWrap: true,
+                    padding: EdgeInsets.fromLTRB(8, 0, 8, 0),
+                    itemCount: data.length,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 300,
+                        childAspectRatio: 0.830,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8),
+                    itemBuilder: (context, index) {
+                      return FocusedMenuHolder(
+                        index: index,
+                        child: Container(
+                          decoration: BoxDecoration(
+                              color: widget.animation.value,
+                              borderRadius: BorderRadius.circular(20),
+                              image: DecorationImage(
+                                  image: NetworkImage(data[index]["thumb"]),
+                                  fit: BoxFit.cover)),
+                        ),
+                      );
+                    });
+              } else {
+                return Container(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Image(
+                          image: Theme.of(context).primaryColor ==
+                                  Color(0xFFFFFFFF)
+                              ? AssetImage("assets/images/oopssw.png")
+                              : Theme.of(context).primaryColor ==
+                                      Color(0xFF272727)
+                                  ? AssetImage("assets/images/oopsdb.png")
+                                  : Theme.of(context).primaryColor ==
+                                          Color(0xFF000000)
+                                      ? AssetImage("assets/images/oopsab.png")
+                                      : Theme.of(context).primaryColor ==
+                                              Color(0xFF263238)
+                                          ? AssetImage(
+                                              "assets/images/oopscd.png")
+                                          : AssetImage(
+                                              "assets/images/oopsmc.png"),
+                          height: 600,
+                          width: 600,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            "Oops!",
                             style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 30,
                                 color: Theme.of(context).secondaryHeaderColor),
                             textAlign: TextAlign.center,
                           ),
-                        ],
-                      ),
+                        ),
+                        Text(
+                          "Double tap some awesome\nwallpapers to add them here.",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).secondaryHeaderColor),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                  );
-                }
+                  ),
+                );
               }
-              return LoadingCards(
-                  controller: widget.controller, animation: widget.animation);
-            }),
-      ),
+            }
+            return LoadingCards(
+                controller: widget.controller, animation: widget.animation);
+          }),
     );
   }
 
