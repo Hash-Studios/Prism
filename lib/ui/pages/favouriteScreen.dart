@@ -12,7 +12,9 @@ class FavouriteScreen extends StatelessWidget {
     return Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         body: BottomBar(
-          child: FavLoader(),
+          child: SafeArea(
+            child: FavLoader(),
+          ),
         ));
   }
 }
