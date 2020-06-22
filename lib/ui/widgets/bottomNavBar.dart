@@ -1,3 +1,4 @@
+import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
@@ -138,7 +139,9 @@ class BottomNavBar extends StatelessWidget {
               child: IconButton(
                 icon: Icon(JamIcons.heart_f,
                     color: Theme.of(context).accentColor),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(context, FavRoute);
+                },
               ),
             ),
             Padding(
