@@ -1,4 +1,5 @@
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/widgets/favGrid.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/signInPopUp.dart';
@@ -91,6 +92,11 @@ class _FavLoaderState extends State<FavLoader>
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
 
-    return LoadingCards(controller: controller, animation: animation);
+    return isLoggedin
+        ? FavouriteGrid(
+            controller: controller,
+            animation: animation,
+          )
+        : LoadingCards(controller: controller, animation: animation);
   }
 }
