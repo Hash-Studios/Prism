@@ -13,6 +13,8 @@ class _HomeGridState extends State<HomeGrid>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
+
+  bool seeMoreLoader = false;
   @override
   void initState() {
     super.initState();
@@ -44,7 +46,7 @@ class _HomeGridState extends State<HomeGrid>
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.black12.withOpacity(.1),
+                  begin: Colors.black.withOpacity(.1),
                   end: Colors.black.withOpacity(.14),
                 ),
               ),
@@ -88,14 +90,26 @@ class _HomeGridState extends State<HomeGrid>
           crossAxisSpacing: 8),
       itemBuilder: (context, index) {
         if (index == Provider.of<WallHavenProvider>(context).walls.length - 1) {
-          return FlatButton(color: Colors.white10,
+          return FlatButton(
+              color: ThemeModel().returnTheme() == ThemeType.Dark
+                  ? Colors.white10
+                  : Colors.black.withOpacity(.1),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
               onPressed: () {
-                Provider.of<WallHavenProvider>(context, listen: false)
-                    .getData();
+                if (!seeMoreLoader) {
+                  Provider.of<WallHavenProvider>(context, listen: false)
+                      .getData();
+                  setState(() {
+                    seeMoreLoader = true;
+                    Future.delayed(Duration(seconds: 3))
+                        .then((value) => seeMoreLoader = false);
+                  });
+                }
               },
-              child: Text("See more"));
+              child: !seeMoreLoader
+                  ? Text("See more")
+                  : CircularProgressIndicator());
         }
         return Container(
           decoration: Provider.of<WallHavenProvider>(context).walls.length == 0
