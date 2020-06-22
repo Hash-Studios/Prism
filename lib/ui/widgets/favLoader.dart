@@ -1,6 +1,7 @@
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:Prism/globals.dart' as globals;
@@ -78,6 +79,10 @@ class _FavLoaderState extends State<FavLoader>
         print(value);
         isLoggedin = value;
       });
+      if (isLoggedin) {
+      } else {
+        googleSignInPopUp(context);
+      }
     });
   }
 
@@ -85,11 +90,7 @@ class _FavLoaderState extends State<FavLoader>
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
-    return
-        // isLoggedin
-        // ?
-        LoadingCards(controller: controller, animation: animation)
-        // : Text("No")
-        ;
+
+    return LoadingCards(controller: controller, animation: animation);
   }
 }
