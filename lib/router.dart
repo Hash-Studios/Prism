@@ -1,4 +1,5 @@
 import 'package:Prism/routing_constants.dart';
+import 'package:Prism/ui/pages/favouriteScreen.dart';
 import 'package:Prism/ui/pages/searchScreen.dart';
 import 'package:Prism/ui/pages/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
@@ -11,6 +12,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(builder: (context) => SplashWidget());
     case SearchRoute:
       return CupertinoPageRoute(builder: (context) => SearchScreen());
+    case FavRoute:
+      return CupertinoPageRoute(builder: (context) => FavouriteScreen());
     default:
       return CupertinoPageRoute(
         builder: (context) => UndefinedScreen(
