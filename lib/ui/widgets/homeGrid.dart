@@ -79,7 +79,7 @@ class _HomeGridState extends State<HomeGrid>
     // print("building home grid");
     return GridView.builder(
       controller: controller,
-      padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+      padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
       itemCount: Provider.of<WallHavenProvider>(context).walls.length == 0
           ? 24
           : Provider.of<WallHavenProvider>(context).walls.length,
