@@ -15,9 +15,11 @@ class _GridLoaderState extends State<GridLoader>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
+  Future<List<WallPaper>> _future;
 
   @override
   void initState() {
+    _future = Provider.of<WallHavenProvider>(context, listen: false).getData();
     super.initState();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -77,73 +79,54 @@ class _GridLoaderState extends State<GridLoader>
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
     return FutureBuilder<List<WallPaper>>(
-      future: Provider.of<WallHavenProvider>(context, listen: false).getData(),
-      builder: (context, snapshot) {
-        switch (snapshot.connectionState) {
-          case ConnectionState.none:
-            return GridView.builder(
-              controller: controller,
-              padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
-              itemCount: 24,
-              shrinkWrap: true,
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 300,
-                  childAspectRatio: 0.830,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8),
-              itemBuilder: (context, index) {
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: animation.value,
-                  ),
-                );
-              },
-            );
-
-          case ConnectionState.waiting:
-            return GridView.builder(
-              controller: controller,
-              padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
-              itemCount: 24,
-              shrinkWrap: true,
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 300,
-                  childAspectRatio: 0.830,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8),
-              itemBuilder: (context, index) {
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: animation.value,
-                  ),
-                );
-              },
-            );
-          case ConnectionState.done:
-            return HomeGrid();
-          default:
-            return GridView.builder(
-              controller: controller,
-              padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
-              itemCount: 24,
-              shrinkWrap: true,
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 300,
-                  childAspectRatio: 0.830,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8),
-              itemBuilder: (context, index) {
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: animation.value,
-                  ),
-                );
-              },
-            );
+      future: _future,
+      builder: (ctx, snapshot) {
+        if (snapshot == null) {
+          print("snapshot null");
+          return LoadingCards(controller: controller, animation: animation);
         }
+        if (snapshot.connectionState == ConnectionState.waiting ||
+            snapshot.connectionState == ConnectionState.none) {
+          print("snapshot none, waiting");
+          return LoadingCards(controller: controller, animation: animation);
+        } else {
+          // print("snapshot done");
+          return HomeGrid();
+        }
+      },
+    );
+  }
+}
+
+class LoadingCards extends StatelessWidget {
+  const LoadingCards({
+    Key key,
+    @required this.controller,
+    @required this.animation,
+  }) : super(key: key);
+
+  final ScrollController controller;
+  final Animation<Color> animation;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      controller: controller,
+      padding: EdgeInsets.fromLTRB(8, 0, 8, 8),
+      itemCount: 24,
+      shrinkWrap: true,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 300,
+          childAspectRatio: 0.830,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8),
+      itemBuilder: (context, index) {
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: animation.value,
+          ),
+        );
       },
     );
   }
