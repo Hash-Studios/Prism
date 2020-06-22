@@ -1,18 +1,11 @@
+import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class CategoriesBar extends StatelessWidget {
   CategoriesBar({
     Key key,
   }) : super(key: key);
-
-  final List<String> categories = [
-    'Home',
-    'Abstract',
-    'Community',
-    'Nature',
-    'Cars',
-    'Comics',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +19,7 @@ class CategoriesBar extends StatelessWidget {
         height: 100,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
-          itemCount: categories.length,
+          itemCount: Provider.of<CategoryProvider>(context).categories.length,
           itemBuilder: (context, index) {
             return Align(
               alignment: Alignment.center,
@@ -40,7 +33,9 @@ class CategoriesBar extends StatelessWidget {
                         backgroundColor: index == 0
                             ? Theme.of(context).accentColor
                             : Theme.of(context).hintColor,
-                        label: Text(categories[index],
+                        label: Text(
+                            Provider.of<CategoryProvider>(context)
+                                .categories[index],
                             style: index == 0
                                 ? Theme.of(context)
                                     .textTheme

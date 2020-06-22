@@ -1,3 +1,4 @@
+import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/splashScreen.dart';
@@ -11,6 +12,9 @@ void main() => runApp(
         providers: [
           ChangeNotifierProvider<WallHavenProvider>(
             create: (context) => WallHavenProvider(),
+          ),
+          ChangeNotifierProvider<CategoryProvider>(
+            create: (context) => CategoryProvider(),
           ),
           ChangeNotifierProvider<ThemeModel>(
             create: (context) => ThemeModel(),
