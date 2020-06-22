@@ -17,7 +17,7 @@ var kLightTheme = ThemeData(
     ),
     headline5: TextStyle(
       fontSize: 16.0,
-      color: config.Colors().accentColor(1),
+      color: Colors.white.withOpacity(1),
       fontFamily: "Proxima Nova",
     ),
     headline4: TextStyle(
@@ -48,8 +48,8 @@ var kLightTheme = ThemeData(
       fontFamily: "Roboto",
     ),
     headline6: TextStyle(
-      fontSize: 14.0,
-      color: config.Colors().accentColor(.85),
+      fontSize: 13.0,
+      color: Colors.white.withOpacity(.85),
       fontFamily: "Proxima Nova",
     ),
     bodyText2: TextStyle(
