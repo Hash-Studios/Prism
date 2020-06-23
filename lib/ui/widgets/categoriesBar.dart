@@ -82,43 +82,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         color: Theme.of(context).primaryColor)
                                 : Theme.of(context).textTheme.headline4),
                         onPressed: () {
-                          if (Provider.of<CategoryProvider>(context,
-                                      listen: false)
-                                  .categories[index] ==
-                              "Colors") {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text('Select a color'),
-                                  content: SingleChildScrollView(
-                                    child: BlockPicker(
-                                      availableColors: colors,
-                                      pickerColor: currentColor,
-                                      onColorChanged: (Color color) =>
-                                          setState(() {
-                                        currentColor = color;
-                                        Navigator.pop(context);
-                                        Navigator.pushNamed(
-                                          context,
-                                          ColorRoute,
-                                          arguments: [
-                                            currentColor
-                                                .toString()
-                                                .replaceAll(
-                                                    "MaterialColor(primary value: Color(0xff",
-                                                    "")
-                                                .replaceAll("Color(0xff", "")
-                                                .replaceAll(")", ""),
-                                          ],
-                                        );
-                                      }),
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          }
                           if (widget.current == "Home") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
@@ -142,18 +105,39 @@ class _CategoriesBarState extends State<CategoriesBar> {
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
-                                "Red") {
-                              Navigator.pushNamed(context, RedRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Blue") {
-                              Navigator.pushNamed(context, BlueRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Green") {
-                              Navigator.pushNamed(context, GreenRoute);
+                                "Colors") {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('Select a color'),
+                                    content: SingleChildScrollView(
+                                      child: BlockPicker(
+                                        availableColors: colors,
+                                        pickerColor: currentColor,
+                                        onColorChanged: (Color color) =>
+                                            setState(() {
+                                          currentColor = color;
+                                          Navigator.pop(context);
+                                          Navigator.pushNamed(
+                                            context,
+                                            ColorRoute,
+                                            arguments: [
+                                              currentColor
+                                                  .toString()
+                                                  .replaceAll(
+                                                      "MaterialColor(primary value: Color(0xff",
+                                                      "")
+                                                  .replaceAll("Color(0xff", "")
+                                                  .replaceAll(")", ""),
+                                            ],
+                                          );
+                                        }),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
                             }
                           } else if (widget.current == "Curated") {
                             if (Provider.of<CategoryProvider>(context,
@@ -180,20 +164,39 @@ class _CategoriesBarState extends State<CategoriesBar> {
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
-                                "Red") {
-                              Navigator.pushReplacementNamed(context, RedRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Blue") {
-                              Navigator.pushReplacementNamed(
-                                  context, BlueRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Green") {
-                              Navigator.pushReplacementNamed(
-                                  context, GreenRoute);
+                                "Colors") {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('Select a color'),
+                                    content: SingleChildScrollView(
+                                      child: BlockPicker(
+                                        availableColors: colors,
+                                        pickerColor: currentColor,
+                                        onColorChanged: (Color color) =>
+                                            setState(() {
+                                          currentColor = color;
+                                          Navigator.pop(context);
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            ColorRoute,
+                                            arguments: [
+                                              currentColor
+                                                  .toString()
+                                                  .replaceAll(
+                                                      "MaterialColor(primary value: Color(0xff",
+                                                      "")
+                                                  .replaceAll("Color(0xff", "")
+                                                  .replaceAll(")", ""),
+                                            ],
+                                          );
+                                        }),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
                             }
                           } else if (widget.current == "Abstract") {
                             if (Provider.of<CategoryProvider>(context,
@@ -220,20 +223,39 @@ class _CategoriesBarState extends State<CategoriesBar> {
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
-                                "Red") {
-                              Navigator.pushReplacementNamed(context, RedRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Blue") {
-                              Navigator.pushReplacementNamed(
-                                  context, BlueRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Green") {
-                              Navigator.pushReplacementNamed(
-                                  context, GreenRoute);
+                                "Colors") {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('Select a color'),
+                                    content: SingleChildScrollView(
+                                      child: BlockPicker(
+                                        availableColors: colors,
+                                        pickerColor: currentColor,
+                                        onColorChanged: (Color color) =>
+                                            setState(() {
+                                          currentColor = color;
+                                          Navigator.pop(context);
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            ColorRoute,
+                                            arguments: [
+                                              currentColor
+                                                  .toString()
+                                                  .replaceAll(
+                                                      "MaterialColor(primary value: Color(0xff",
+                                                      "")
+                                                  .replaceAll("Color(0xff", "")
+                                                  .replaceAll(")", ""),
+                                            ],
+                                          );
+                                        }),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
                             }
                           } else if (widget.current == "Nature") {
                             if (Provider.of<CategoryProvider>(context,
@@ -260,22 +282,41 @@ class _CategoriesBarState extends State<CategoriesBar> {
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
-                                "Red") {
-                              Navigator.pushReplacementNamed(context, RedRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Green") {
-                              Navigator.pushReplacementNamed(
-                                  context, GreenRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Blue") {
-                              Navigator.pushReplacementNamed(
-                                  context, BlueRoute);
+                                "Colors") {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('Select a color'),
+                                    content: SingleChildScrollView(
+                                      child: BlockPicker(
+                                        availableColors: colors,
+                                        pickerColor: currentColor,
+                                        onColorChanged: (Color color) =>
+                                            setState(() {
+                                          currentColor = color;
+                                          Navigator.pop(context);
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            ColorRoute,
+                                            arguments: [
+                                              currentColor
+                                                  .toString()
+                                                  .replaceAll(
+                                                      "MaterialColor(primary value: Color(0xff",
+                                                      "")
+                                                  .replaceAll("Color(0xff", "")
+                                                  .replaceAll(")", ""),
+                                            ],
+                                          );
+                                        }),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
                             }
-                          } else if (widget.current == "Red") {
+                          } else if (widget.current == "Colors") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -302,99 +343,40 @@ class _CategoriesBarState extends State<CategoriesBar> {
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
-                                "Red") {
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Blue") {
-                              Navigator.pushReplacementNamed(
-                                  context, BlueRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Green") {
-                              Navigator.pushReplacementNamed(
-                                  context, GreenRoute);
+                                "Colors") {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('Select a color'),
+                                    content: SingleChildScrollView(
+                                      child: BlockPicker(
+                                        availableColors: colors,
+                                        pickerColor: currentColor,
+                                        onColorChanged: (Color color) =>
+                                            setState(() {
+                                          currentColor = color;
+                                          Navigator.pop(context);
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            ColorRoute,
+                                            arguments: [
+                                              currentColor
+                                                  .toString()
+                                                  .replaceAll(
+                                                      "MaterialColor(primary value: Color(0xff",
+                                                      "")
+                                                  .replaceAll("Color(0xff", "")
+                                                  .replaceAll(")", ""),
+                                            ],
+                                          );
+                                        }),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
                             }
-                          } else if (widget.current == "Blue") {
-                            if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Home") {
-                              Navigator.pop(context);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Curated") {
-                              Navigator.pushReplacementNamed(
-                                  context, CuratedRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Abstract") {
-                              Navigator.pushReplacementNamed(
-                                  context, AbstractRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Nature") {
-                              Navigator.pushReplacementNamed(
-                                  context, NatureRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Red") {
-                              Navigator.pushReplacementNamed(context, RedRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Blue") {
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Green") {
-                              Navigator.pushReplacementNamed(
-                                  context, GreenRoute);
-                            }
-                          } else if (widget.current == "Green") {
-                            if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Home") {
-                              Navigator.pop(context);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Curated") {
-                              Navigator.pushReplacementNamed(
-                                  context, CuratedRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Abstract") {
-                              Navigator.pushReplacementNamed(
-                                  context, AbstractRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Nature") {
-                              Navigator.pushReplacementNamed(
-                                  context, NatureRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Red") {
-                              Navigator.pushReplacementNamed(context, RedRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Blue") {
-                              Navigator.pushReplacementNamed(
-                                  context, BlueRoute);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Green") {}
                           }
                         }),
                   ),

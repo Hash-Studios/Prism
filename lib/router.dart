@@ -1,13 +1,10 @@
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/ui/pages/abstractScreen.dart';
-import 'package:Prism/ui/pages/blueScreen.dart';
 import 'package:Prism/ui/pages/colorScreen.dart';
 import 'package:Prism/ui/pages/curatedScreen.dart';
 import 'package:Prism/ui/pages/favouriteScreen.dart';
-import 'package:Prism/ui/pages/greenScreen.dart';
 import 'package:Prism/ui/pages/homeScreen.dart';
 import 'package:Prism/ui/pages/natureScreen.dart';
-import 'package:Prism/ui/pages/redScreen.dart';
 import 'package:Prism/ui/pages/searchScreen.dart';
 import 'package:Prism/ui/pages/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
@@ -34,15 +31,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case NatureRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => NatureScreen());
-    case RedRoute:
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => RedScreen());
-    case BlueRoute:
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => BlueScreen());
-    case GreenRoute:
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => GreenScreen());
     case ColorRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) =>
