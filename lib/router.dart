@@ -3,6 +3,7 @@ import 'package:Prism/ui/pages/abstractScreen.dart';
 import 'package:Prism/ui/pages/curatedScreen.dart';
 import 'package:Prism/ui/pages/favouriteScreen.dart';
 import 'package:Prism/ui/pages/homeScreen.dart';
+import 'package:Prism/ui/pages/natureScreen.dart';
 import 'package:Prism/ui/pages/searchScreen.dart';
 import 'package:Prism/ui/pages/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
@@ -27,6 +28,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case AbstractRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => AbstractScreen());
+    case NatureRoute:
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => NatureScreen());
     case WallpaperRoute:
       return CupertinoPageRoute(
           builder: (context) =>

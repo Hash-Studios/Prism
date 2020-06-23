@@ -26,7 +26,7 @@ class AbstractScreen extends StatelessWidget {
         body: BottomBar(
           child: GridLoader(
             future: Provider.of<PexelsProvider>(context, listen: false)
-                .getWallsPbyQuery("abstract"),
+                .getAbstractWalls(),
             provider: "Pexels",
           ),
         ));

@@ -9,3 +9,4 @@ const String WallpaperRouteP = '/wallpaperp';
 const String HomeRoute = '/home';
 const String CuratedRoute = '/curated';
 const String AbstractRoute = '/abstract';
+const String NatureRoute = '/nature';

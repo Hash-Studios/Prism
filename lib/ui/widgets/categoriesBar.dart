@@ -49,24 +49,117 @@ class CategoriesBar extends StatelessWidget {
                                         color: Theme.of(context).primaryColor)
                                 : Theme.of(context).textTheme.headline4),
                         onPressed: () {
-                          Provider.of<CategoryProvider>(context, listen: false)
-                                          .categories[index] ==
-                                      "Home" &&
-                                  current != "Home"
-                              ? Navigator.pop(context)
-                              : Provider.of<CategoryProvider>(context,
-                                                  listen: false)
-                                              .categories[index] ==
-                                          "Curated" &&
-                                      current != "Curated"
-                                  ? Navigator.pushNamed(context, CuratedRoute)
-                                  :  Provider.of<CategoryProvider>(context,
-                                                  listen: false)
-                                              .categories[index] ==
-                                          "Abstract" &&
-                                      current != "Abstract"
-                                  ? Navigator.pushNamed(context, AbstractRoute)
-                                  : print("No route defined");
+                          // Provider.of<CategoryProvider>(context, listen: false).categories[index] == "Home" &&
+                          //         current != "Home"
+                          //     ? Navigator.pop(context)
+                          //     : Provider.of<CategoryProvider>(context, listen: false)
+                          //                     .categories[index] ==
+                          //                 "Curated" &&
+                          //             current != "Curated"
+                          //         ? Navigator.pushNamed(context, CuratedRoute)
+                          //         : Provider.of<CategoryProvider>(context, listen: false)
+                          //                         .categories[index] ==
+                          //                     "Abstract" &&
+                          //                 current != "Abstract"
+                          //             ? Navigator.pushNamed(
+                          //                 context, AbstractRoute)
+                          //             : Provider.of<CategoryProvider>(context,
+                          //                                 listen: false)
+                          //                             .categories[index] ==
+                          //                         "Nature" &&
+                          //                     current != "Nature"
+                          //                 ? Navigator.pushNamed(context, NatureRoute)
+                          //                 : print("No route defined");
+                          if (current == "Home") {
+                            if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Home") {
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Curated") {
+                              Navigator.pushNamed(context, CuratedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Abstract") {
+                              Navigator.pushNamed(context, AbstractRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Nature") {
+                              Navigator.pushNamed(context, NatureRoute);
+                            }
+                          } else if (current == "Curated") {
+                            if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Home") {
+                              Navigator.pop(context);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Curated") {
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Abstract") {
+                              Navigator.pushReplacementNamed(
+                                  context, AbstractRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Nature") {
+                              Navigator.pushReplacementNamed(
+                                  context, NatureRoute);
+                            }
+                          } else if (current == "Abstract") {
+                            if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Home") {
+                              Navigator.pop(context);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Curated") {
+                              Navigator.pushReplacementNamed(
+                                  context, CuratedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Abstract") {
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Nature") {
+                              Navigator.pushReplacementNamed(
+                                  context, NatureRoute);
+                            }
+                          } else if (current == "Nature") {
+                            if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Home") {
+                              Navigator.pop(context);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Curated") {
+                              Navigator.pushReplacementNamed(
+                                  context, CuratedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Abstract") {
+                              Navigator.pushReplacementNamed(
+                                  context, AbstractRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Nature") {}
+                          }
                         }),
                   ),
                 ],
