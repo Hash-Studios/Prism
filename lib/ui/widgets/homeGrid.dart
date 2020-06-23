@@ -197,8 +197,12 @@ class _HomeGridState extends State<HomeGrid>
                                 fit: BoxFit.cover)),
               ),
               onTap: () {
-                Navigator.pushNamed(context, WallpaperRouteP,
-                    arguments: [index]);
+                Navigator.pushNamed(context, WallpaperRouteP, arguments: [
+                  index,
+                  Provider.of<PexelsProvider>(context, listen: false)
+                      .wallsP[index]
+                      .src["small"]
+                ]);
               },
             ),
           );
