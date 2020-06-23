@@ -2,7 +2,6 @@ import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/ui/widgets/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/categoriesBar.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
-import 'package:Prism/ui/widgets/homeGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';

@@ -1,4 +1,3 @@
-import 'package:Prism/main.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/homeScreen.dart';
 import 'package:flutter/material.dart';
