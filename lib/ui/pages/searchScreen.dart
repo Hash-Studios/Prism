@@ -78,36 +78,36 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
-          bottom: PreferredSize(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: 60,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: tags.length,
-                  itemBuilder: (context, index) {
-                    return Align(
-                      alignment: Alignment.center,
-                      child: Stack(
-                        children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.all(5),
-                            child: ActionChip(
-                                pressElevation: 5,
-                                padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                backgroundColor: Theme.of(context).hintColor,
-                                label: Text(tags[index],
-                                    style:
-                                        Theme.of(context).textTheme.headline4),
-                                onPressed: () {}),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              preferredSize: Size(double.infinity, 55)),
+          // bottom: PreferredSize(
+          //     child: SizedBox(
+          //       width: MediaQuery.of(context).size.width,
+          //       height: 60,
+          //       child: ListView.builder(
+          //         scrollDirection: Axis.horizontal,
+          //         itemCount: tags.length,
+          //         itemBuilder: (context, index) {
+          //           return Align(
+          //             alignment: Alignment.center,
+          //             child: Stack(
+          //               children: <Widget>[
+          //                 Padding(
+          //                   padding: const EdgeInsets.all(5),
+          //                   child: ActionChip(
+          //                       pressElevation: 5,
+          //                       padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+          //                       backgroundColor: Theme.of(context).hintColor,
+          //                       label: Text(tags[index],
+          //                           style:
+          //                               Theme.of(context).textTheme.headline4),
+          //                       onPressed: () {}),
+          //                 ),
+          //               ],
+          //             ),
+          //           );
+          //         },
+          //       ),
+          //     ),
+          //     preferredSize: Size(double.infinity, 55)),
         ),
         body: BottomBar(
           child: isSubmitted
