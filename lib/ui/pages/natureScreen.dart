@@ -8,8 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
-class AbstractScreen extends StatelessWidget {
-  AbstractScreen({
+class NatureScreen extends StatelessWidget {
+  NatureScreen({
     Key key,
   }) : super(key: key);
 
@@ -19,14 +19,14 @@ class AbstractScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).primaryColor,
         appBar: PreferredSize(
           child: CategoriesBar(
-            current: "Abstract",
+            current: "Nature",
           ),
           preferredSize: Size(double.infinity, 55),
         ),
         body: BottomBar(
           child: GridLoader(
             future: Provider.of<PexelsProvider>(context, listen: false)
-                .getAbstractWalls(),
+                .getNatureWalls(),
             provider: "Pexels",
           ),
         ));
