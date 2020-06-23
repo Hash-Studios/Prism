@@ -53,7 +53,7 @@ class CategoriesBar extends StatelessWidget {
                                           .categories[index] ==
                                       "Home" &&
                                   current != "Home"
-                              ? Navigator.pushNamed(context, HomeRoute)
+                              ? Navigator.pop(context)
                               : Provider.of<CategoryProvider>(context,
                                                   listen: false)
                                               .categories[index] ==

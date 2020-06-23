@@ -79,7 +79,7 @@ class _BottomBarState extends State<BottomBar>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return Stack(fit: StackFit.expand,
       alignment: Alignment.bottomCenter,
       children: [
         InheritedDataProvider(
