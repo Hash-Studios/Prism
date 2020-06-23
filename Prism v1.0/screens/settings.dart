@@ -1,9 +1,7 @@
-import 'package:Prism/data/notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sticky_headers/sticky_headers.dart';
-import 'package:Prism/data/themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:io';
@@ -15,6 +13,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:Prism/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../data/notifications.dart';
+import '../data/themes.dart';
 
 class Settings extends StatefulWidget {
   @override

@@ -1,20 +1,22 @@
-import 'package:Prism/data/notifications.dart';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:Prism/screens/tabs/downloads.dart';
-import 'package:Prism/screens/tabs/likedimages.dart';
-import 'package:Prism/screens/search.dart';
-import 'package:Prism/screens/settings.dart';
-import 'package:Prism/screens/tabs/wallpapers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:Prism/data/themes.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:Prism/main.dart';
 import 'package:flutter/services.dart';
+
+import '../data/notifications.dart';
+import '../data/themes.dart';
+import '../screens/search.dart';
+import '../screens/settings.dart';
+import '../screens/tabs/downloads.dart';
+import '../screens/tabs/likedimages.dart';
+import '../screens/tabs/wallpapers.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey();
 TabController _tabController;

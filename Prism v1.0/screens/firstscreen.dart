@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:Prism/ui/feed.dart';
-import 'package:Prism/screens/login.dart';
+
+import '../ui/feed.dart';
+import 'login.dart';
 
 class LoginScreen3 extends StatefulWidget {
   @override

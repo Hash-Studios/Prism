@@ -1,4 +1,4 @@
-import 'package:Prism/data/notifications.dart';
 import 'package:flutter/material.dart';
+import 'data/notifications.dart';
 void main() => runApp(NotificationHandler());
 

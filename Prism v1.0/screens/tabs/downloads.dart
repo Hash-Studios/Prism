@@ -4,8 +4,9 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:Prism/screens/display2.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
+
+import '../display2.dart';
 
 class Downloads extends StatefulWidget {
   int width;

@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:cache_image/cache_image.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:Prism/screens/display.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../display.dart';
 
 class LikedImages extends StatefulWidget {
   int width;

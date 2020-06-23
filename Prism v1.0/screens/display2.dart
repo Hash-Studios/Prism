@@ -3,7 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:Prism/ui/downloadmenu.dart';
+
+import '../ui/downloadmenu.dart';
 
 class Display2 extends StatefulWidget {
   File image;
