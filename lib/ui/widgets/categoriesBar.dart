@@ -49,27 +49,6 @@ class CategoriesBar extends StatelessWidget {
                                         color: Theme.of(context).primaryColor)
                                 : Theme.of(context).textTheme.headline4),
                         onPressed: () {
-                          // Provider.of<CategoryProvider>(context, listen: false).categories[index] == "Home" &&
-                          //         current != "Home"
-                          //     ? Navigator.pop(context)
-                          //     : Provider.of<CategoryProvider>(context, listen: false)
-                          //                     .categories[index] ==
-                          //                 "Curated" &&
-                          //             current != "Curated"
-                          //         ? Navigator.pushNamed(context, CuratedRoute)
-                          //         : Provider.of<CategoryProvider>(context, listen: false)
-                          //                         .categories[index] ==
-                          //                     "Abstract" &&
-                          //                 current != "Abstract"
-                          //             ? Navigator.pushNamed(
-                          //                 context, AbstractRoute)
-                          //             : Provider.of<CategoryProvider>(context,
-                          //                                 listen: false)
-                          //                             .categories[index] ==
-                          //                         "Nature" &&
-                          //                     current != "Nature"
-                          //                 ? Navigator.pushNamed(context, NatureRoute)
-                          //                 : print("No route defined");
                           if (current == "Home") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
@@ -90,6 +69,21 @@ class CategoriesBar extends StatelessWidget {
                                     .categories[index] ==
                                 "Nature") {
                               Navigator.pushNamed(context, NatureRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Red") {
+                              Navigator.pushNamed(context, RedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Blue") {
+                              Navigator.pushNamed(context, BlueRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Green") {
+                              Navigator.pushNamed(context, GreenRoute);
                             }
                           } else if (current == "Curated") {
                             if (Provider.of<CategoryProvider>(context,
@@ -113,6 +107,23 @@ class CategoriesBar extends StatelessWidget {
                                 "Nature") {
                               Navigator.pushReplacementNamed(
                                   context, NatureRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Red") {
+                              Navigator.pushReplacementNamed(context, RedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Blue") {
+                              Navigator.pushReplacementNamed(
+                                  context, BlueRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Green") {
+                              Navigator.pushReplacementNamed(
+                                  context, GreenRoute);
                             }
                           } else if (current == "Abstract") {
                             if (Provider.of<CategoryProvider>(context,
@@ -136,6 +147,23 @@ class CategoriesBar extends StatelessWidget {
                                 "Nature") {
                               Navigator.pushReplacementNamed(
                                   context, NatureRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Red") {
+                              Navigator.pushReplacementNamed(context, RedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Blue") {
+                              Navigator.pushReplacementNamed(
+                                  context, BlueRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Green") {
+                              Navigator.pushReplacementNamed(
+                                  context, GreenRoute);
                             }
                           } else if (current == "Nature") {
                             if (Provider.of<CategoryProvider>(context,
@@ -158,7 +186,145 @@ class CategoriesBar extends StatelessWidget {
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
-                                "Nature") {}
+                                "Nature") {
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Red") {
+                              Navigator.pushReplacementNamed(context, RedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Green") {
+                              Navigator.pushReplacementNamed(
+                                  context, GreenRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Blue") {
+                              Navigator.pushReplacementNamed(
+                                  context, BlueRoute);
+                            }
+                          } else if (current == "Red") {
+                            if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Home") {
+                              Navigator.pop(context);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Curated") {
+                              Navigator.pushReplacementNamed(
+                                  context, CuratedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Abstract") {
+                              Navigator.pushReplacementNamed(
+                                  context, AbstractRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Nature") {
+                              Navigator.pushReplacementNamed(
+                                  context, NatureRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Red") {
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Blue") {
+                              Navigator.pushReplacementNamed(
+                                  context, BlueRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Green") {
+                              Navigator.pushReplacementNamed(
+                                  context, GreenRoute);
+                            }
+                          } else if (current == "Blue") {
+                            if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Home") {
+                              Navigator.pop(context);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Curated") {
+                              Navigator.pushReplacementNamed(
+                                  context, CuratedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Abstract") {
+                              Navigator.pushReplacementNamed(
+                                  context, AbstractRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Nature") {
+                              Navigator.pushReplacementNamed(
+                                  context, NatureRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Red") {
+                              Navigator.pushReplacementNamed(context, RedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Blue") {
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Green") {
+                              Navigator.pushReplacementNamed(
+                                  context, GreenRoute);
+                            }
+                          } else if (current == "Green") {
+                            if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Home") {
+                              Navigator.pop(context);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Curated") {
+                              Navigator.pushReplacementNamed(
+                                  context, CuratedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Abstract") {
+                              Navigator.pushReplacementNamed(
+                                  context, AbstractRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Nature") {
+                              Navigator.pushReplacementNamed(
+                                  context, NatureRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Red") {
+                              Navigator.pushReplacementNamed(context, RedRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Blue") {
+                              Navigator.pushReplacementNamed(
+                                  context, BlueRoute);
+                            } else if (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index] ==
+                                "Green") {}
                           }
                         }),
                   ),
