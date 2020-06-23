@@ -1,3 +1,4 @@
+import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -18,11 +19,17 @@ class _GridLoaderState extends State<GridLoader>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
-  // Future<List<WallPaper>> _future;
+  Future _future;
 
   @override
   void initState() {
-    // _future = Provider.of<WallHavenProvider>(context, listen: false).getData();
+    if (widget.provider == "WallHaven") {
+      Provider.of<WallHavenProvider>(context, listen: false).walls = [];
+    } else if (widget.provider == "Pexels") {
+      Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
+      // Provider.of<PexelsProvider>(context, listen: false).pageGetDataP = 1;
+    }
+    _future = widget.future;
     super.initState();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -82,7 +89,7 @@ class _GridLoaderState extends State<GridLoader>
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
     return FutureBuilder(
-      future: widget.future,
+      future: _future,
       builder: (ctx, snapshot) {
         if (snapshot == null) {
           print("snapshot null");
