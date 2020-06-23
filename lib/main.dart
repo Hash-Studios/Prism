@@ -7,7 +7,10 @@ import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/router.dart' as router;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:Prism/globals.dart' as globals;
 
+SharedPreferences prefs;
 void main() => runApp(
       MultiProvider(
         providers: [
@@ -28,7 +31,25 @@ void main() => runApp(
       ),
     );
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  void getLoginStatus() async {
+    prefs = await SharedPreferences.getInstance();
+    globals.gAuth.googleSignIn.isSignedIn().then((value) {
+      prefs.setBool("isLoggedin", value);
+    });
+  }
+
+  @override
+  void initState() {
+    getLoginStatus();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
