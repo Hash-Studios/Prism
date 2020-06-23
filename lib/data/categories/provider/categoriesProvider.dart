@@ -5,10 +5,7 @@ class CategoryProvider extends ChangeNotifier {
     'Home',
     'Curated',
     'Abstract',
-    'Community',
     'Nature',
-    'Cars',
-    'Comics',
   ];
   String selectedCategory = 'Home';
   void updateSelectedCategory(String newCategory) {
