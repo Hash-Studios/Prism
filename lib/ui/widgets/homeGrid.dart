@@ -87,13 +87,18 @@ class _HomeGridState extends State<HomeGrid>
           ? Provider.of<WallHavenProvider>(context).walls.length == 0
               ? 24
               : Provider.of<WallHavenProvider>(context).walls.length
-          : widget.provider == "WallHaven"
+          : widget.provider == "Pexels"
               ? Provider.of<PexelsProvider>(context).wallsP.length == 0
                   ? 24
                   : Provider.of<PexelsProvider>(context).wallsP.length
-              : Provider.of<WallHavenProvider>(context).wallsS.length == 0
-                  ? 24
-                  : Provider.of<WallHavenProvider>(context).wallsS.length,
+              : widget.provider.length > 6 &&
+                      widget.provider.substring(0, 6) == "Colors"
+                  ? Provider.of<PexelsProvider>(context).wallsC.length == 0
+                      ? 24
+                      : Provider.of<PexelsProvider>(context).wallsC.length
+                  : Provider.of<WallHavenProvider>(context).wallsS.length == 0
+                      ? 24
+                      : Provider.of<WallHavenProvider>(context).wallsS.length,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent:
@@ -151,6 +156,30 @@ class _HomeGridState extends State<HomeGrid>
                     ? Text("See more")
                     : CircularProgressIndicator());
           }
+        } else if (widget.provider.length > 6 &&
+            widget.provider.substring(0, 6) == "Colors") {
+          if (index == Provider.of<PexelsProvider>(context).wallsC.length - 1) {
+            return FlatButton(
+                color: ThemeModel().returnTheme() == ThemeType.Dark
+                    ? Colors.white10
+                    : Colors.black.withOpacity(.1),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                onPressed: () {
+                  if (!seeMoreLoader) {
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getWallsPbyColorPage(widget.provider.substring(9));
+                    setState(() {
+                      seeMoreLoader = true;
+                      Future.delayed(Duration(seconds: 3))
+                          .then((value) => seeMoreLoader = false);
+                    });
+                  }
+                },
+                child: !seeMoreLoader
+                    ? Text("See more")
+                    : CircularProgressIndicator());
+          }
         } else {
           if (index ==
               Provider.of<WallHavenProvider>(context).wallsS.length - 1) {
@@ -191,10 +220,9 @@ class _HomeGridState extends State<HomeGrid>
                           color: animation.value,
                           borderRadius: BorderRadius.circular(20),
                           image: DecorationImage(
-                              image: NetworkImage(
-                                  Provider.of<WallHavenProvider>(context)
-                                      .walls[index]
-                                      .thumbs["original"]),
+                              image: NetworkImage(Provider.of<WallHavenProvider>(context)
+                                  .walls[index]
+                                  .thumbs["original"]),
                               fit: BoxFit.cover))
                   : widget.provider == "Pexels"
                       ? Provider.of<PexelsProvider>(context).wallsP.length == 0
@@ -211,21 +239,29 @@ class _HomeGridState extends State<HomeGrid>
                                           .wallsP[index]
                                           .src["medium"]),
                                   fit: BoxFit.cover))
-                      : Provider.of<WallHavenProvider>(context).wallsS.length ==
-                              0
-                          ? BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                            )
-                          : BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                              image: DecorationImage(
-                                  image: NetworkImage(
-                                      Provider.of<WallHavenProvider>(context)
-                                          .wallsS[index]
-                                          .thumbs["original"]),
-                                  fit: BoxFit.cover)),
+                      : widget.provider.length > 6 &&
+                              widget.provider.substring(0, 6) == "Colors"
+                          ? Provider.of<PexelsProvider>(context).wallsC.length ==
+                                  0
+                              ? BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                )
+                              : BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: NetworkImage(
+                                          Provider.of<PexelsProvider>(context)
+                                              .wallsC[index]
+                                              .src["medium"]),
+                                      fit: BoxFit.cover))
+                          : Provider.of<WallHavenProvider>(context).wallsS.length == 0
+                              ? BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                )
+                              : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<WallHavenProvider>(context).wallsS[index].thumbs["original"]), fit: BoxFit.cover)),
             ),
             onTap: () {
               if (widget.provider == "WallHaven") {
@@ -251,6 +287,20 @@ class _HomeGridState extends State<HomeGrid>
                     index,
                     Provider.of<PexelsProvider>(context, listen: false)
                         .wallsP[index]
+                        .src["small"]
+                  ]);
+                }
+              } else if (widget.provider.length > 6 &&
+                  widget.provider.substring(0, 6) == "Colors") {
+                if (Provider.of<PexelsProvider>(context, listen: false)
+                        .wallsC ==
+                    []) {
+                } else {
+                  Navigator.pushNamed(context, WallpaperRoute, arguments: [
+                    widget.provider,
+                    index,
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .wallsC[index]
                         .src["small"]
                   ]);
                 }
