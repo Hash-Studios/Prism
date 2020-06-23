@@ -21,7 +21,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case HomeRoute:
       return CupertinoPageRoute(builder: (context) => HomeScreen());
     case CuratedRoute:
-      return CupertinoPageRoute(builder: (context) => CuratedScreen());
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => CuratedScreen());
     case WallpaperRoute:
       return CupertinoPageRoute(
           builder: (context) =>
