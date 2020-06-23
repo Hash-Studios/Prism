@@ -11,7 +11,6 @@ import 'package:Prism/ui/pages/searchScreen.dart';
 import 'package:Prism/ui/pages/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/pages/wallpaperScreen.dart';
-import 'package:Prism/ui/pages/wallpaperScreenP.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -37,20 +36,16 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case RedRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => RedScreen());
-     case BlueRoute:
+    case BlueRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => BlueScreen());
-     case GreenRoute:
+    case GreenRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => GreenScreen());
     case WallpaperRoute:
       return CupertinoPageRoute(
           builder: (context) =>
               WallpaperScreen(arguements: settings.arguments));
-    case WallpaperRouteP:
-      return CupertinoPageRoute(
-          builder: (context) =>
-              WallpaperScreenP(arguements: settings.arguments));
     default:
       return CupertinoPageRoute(
         builder: (context) => UndefinedScreen(

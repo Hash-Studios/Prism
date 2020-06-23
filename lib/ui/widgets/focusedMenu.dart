@@ -1,7 +1,6 @@
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/focusedMenuDetails.dart';
-import 'package:Prism/ui/widgets/focusedMenuDetailsP.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -41,7 +40,7 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
       key: containerKey,
       children: <Widget>[
         widget.child,
-        Provider.of<WallHavenProvider>(context,listen: false).walls == []
+        Provider.of<WallHavenProvider>(context, listen: false).walls == []
             ? Container()
             : Align(
                 alignment: Alignment.bottomRight,
@@ -73,19 +72,13 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
                                   .animate(animation);
                               return FadeTransition(
                                   opacity: animation,
-                                  child: widget.provider == "WallHaven"
-                                      ? FocusedMenuDetails(
-                                          child: widget.child,
-                                          childOffset: childOffset,
-                                          childSize: childSize,
-                                          index: widget.index,
-                                        )
-                                      : FocusedMenuDetailsP(
-                                          child: widget.child,
-                                          childOffset: childOffset,
-                                          childSize: childSize,
-                                          index: widget.index,
-                                        ));
+                                  child: FocusedMenuDetails(
+                                    provider: widget.provider,
+                                    child: widget.child,
+                                    childOffset: childOffset,
+                                    childSize: childSize,
+                                    index: widget.index,
+                                  ));
                             },
                             fullscreenDialog: true,
                             opaque: false));
