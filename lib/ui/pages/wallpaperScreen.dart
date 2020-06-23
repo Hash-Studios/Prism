@@ -1,5 +1,6 @@
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:optimized_cached_image/widgets.dart';
@@ -70,12 +71,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
-                      child: Hero(
-                        tag: "BottomSheet",
-                        child: Icon(
-                          JamIcons.chevron_down,
-                          color: Colors.white,
-                        ),
+                      child: Icon(
+                        JamIcons.chevron_down,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -87,14 +85,28 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                     children: List.generate(
                       colors.length,
                       (color) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: colors[color],
-                            borderRadius: BorderRadius.circular(500),
-                          ),
-                          height: MediaQuery.of(context).size.width / 8,
-                          width: MediaQuery.of(context).size.width / 8,
-                        );
+                        return GestureDetector(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: colors[color],
+                                borderRadius: BorderRadius.circular(500),
+                              ),
+                              height: MediaQuery.of(context).size.width / 8,
+                              width: MediaQuery.of(context).size.width / 8,
+                            ),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(
+                                context,
+                                ColorRoute,
+                                arguments: [
+                                  colors[color]
+                                      .toString()
+                                      .replaceAll("Color(0xff", "")
+                                      .replaceAll(")", ""),
+                                ],
+                              );
+                            });
                       },
                     ),
                   ),
@@ -323,7 +335,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                               ),
                             ),
                           )
-                        : provider.length > 6 && provider.substring(0, 6) == "Colors"
+                        : provider.length > 6 &&
+                                provider.substring(0, 6) == "Colors"
                             ? Expanded(
                                 flex: 4,
                                 child: Padding(
@@ -716,12 +729,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                           width: MediaQuery.of(context).size.width,
                           height: MediaQuery.of(context).size.height / 20,
                           child: Center(
-                            child: Hero(
-                              tag: "BottomSheet",
-                              child: Icon(
-                                JamIcons.chevron_up,
-                                color: Colors.white,
-                              ),
+                            child: Icon(
+                              JamIcons.chevron_up,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -1062,11 +1072,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         0.5
                                     ? Colors.black
                                     : Colors.white,
-                                icon: Hero(
-                                  tag: "BottomSheet",
-                                  child: Icon(
-                                    JamIcons.chevron_left,
-                                  ),
+                                icon: Icon(
+                                  JamIcons.chevron_left,
                                 ),
                               ),
                             ),
