@@ -1,6 +1,7 @@
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/ui/pages/abstractScreen.dart';
 import 'package:Prism/ui/pages/blueScreen.dart';
+import 'package:Prism/ui/pages/colorScreen.dart';
 import 'package:Prism/ui/pages/curatedScreen.dart';
 import 'package:Prism/ui/pages/favouriteScreen.dart';
 import 'package:Prism/ui/pages/greenScreen.dart';
@@ -42,6 +43,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case GreenRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => GreenScreen());
+    case ColorRoute:
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) =>
+              ColorScreen(arguements: settings.arguments));
     case WallpaperRoute:
       return CupertinoPageRoute(
           builder: (context) =>
