@@ -121,8 +121,9 @@ class _BottomNavBarState extends State<BottomNavBar> {
   }
 
   void showGooglePopUp(Function func) {
+    print(isLoggedin);
     if (!isLoggedin) {
-      googleSignInPopUp(context);
+      googleSignInPopUp(context,func);
     } else {
       func();
     }
@@ -130,6 +131,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
   @override
   Widget build(BuildContext context) {
+    checkSignIn();
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
@@ -197,7 +199,9 @@ class _BottomNavBarState extends State<BottomNavBar> {
                   child: Icon(JamIcons.user_circle,
                       color: Theme.of(context).primaryColor),
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).pushNamedIfNotCurrent(ProfileRoute);
+                },
               ),
             ),
           ],

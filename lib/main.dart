@@ -12,22 +12,24 @@ import 'package:Prism/globals.dart' as globals;
 
 SharedPreferences prefs;
 void main() => runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<WallHavenProvider>(
-            create: (context) => WallHavenProvider(),
-          ),
-          ChangeNotifierProvider<PexelsProvider>(
-            create: (context) => PexelsProvider(),
-          ),
-          ChangeNotifierProvider<CategoryProvider>(
-            create: (context) => CategoryProvider(),
-          ),
-          ChangeNotifierProvider<ThemeModel>(
-            create: (context) => ThemeModel(),
-          )
-        ],
-        child: MyApp(),
+      RestartWidget(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<WallHavenProvider>(
+              create: (context) => WallHavenProvider(),
+            ),
+            ChangeNotifierProvider<PexelsProvider>(
+              create: (context) => PexelsProvider(),
+            ),
+            ChangeNotifierProvider<CategoryProvider>(
+              create: (context) => CategoryProvider(),
+            ),
+            ChangeNotifierProvider<ThemeModel>(
+              create: (context) => ThemeModel(),
+            )
+          ],
+          child: MyApp(),
+        ),
       ),
     );
 
@@ -61,6 +63,37 @@ class _MyAppState extends State<MyApp> {
       theme: Provider.of<ThemeModel>(context).currentTheme,
       debugShowCheckedModeBanner: false,
       home: SplashWidget(),
+    );
+  }
+}
+
+class RestartWidget extends StatefulWidget {
+  RestartWidget({this.child});
+
+  final Widget child;
+
+  static void restartApp(BuildContext context) {
+    context.findAncestorStateOfType<_RestartWidgetState>().restartApp();
+  }
+
+  @override
+  _RestartWidgetState createState() => _RestartWidgetState();
+}
+
+class _RestartWidgetState extends State<RestartWidget> {
+  Key key = UniqueKey();
+
+  void restartApp() {
+    setState(() {
+      key = UniqueKey();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: key,
+      child: widget.child,
     );
   }
 }

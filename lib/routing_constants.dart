@@ -10,3 +10,5 @@ const String CuratedRoute = '/curated';
 const String AbstractRoute = '/abstract';
 const String NatureRoute = '/nature';
 const String ColorRoute = '/color';
+const String ProfileRoute = '/profile';
+const String DownloadRoute = '/downloads';

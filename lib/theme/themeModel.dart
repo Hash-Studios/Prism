@@ -8,15 +8,15 @@ class ThemeModel extends ChangeNotifier {
   ThemeType _themeType = ThemeType.Dark;
 
   toggleTheme() {
-    if (_themeType == ThemeType.Dark) {
-      currentTheme = kLightTheme;
-      _themeType = ThemeType.Light;
+    if (this._themeType == ThemeType.Dark) {
+      this.currentTheme = kLightTheme;
+      this._themeType = ThemeType.Light;
       return notifyListeners();
     }
 
-    if (_themeType == ThemeType.Light) {
-      currentTheme = kDarkTheme;
-      _themeType = ThemeType.Dark;
+    if (this._themeType == ThemeType.Light) {
+      this.currentTheme = kDarkTheme;
+      this._themeType = ThemeType.Dark;
       return notifyListeners();
     }
   }
