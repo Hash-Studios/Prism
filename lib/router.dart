@@ -1,4 +1,5 @@
 import 'package:Prism/routing_constants.dart';
+import 'package:Prism/ui/pages/abstractScreen.dart';
 import 'package:Prism/ui/pages/curatedScreen.dart';
 import 'package:Prism/ui/pages/favouriteScreen.dart';
 import 'package:Prism/ui/pages/homeScreen.dart';
@@ -23,6 +24,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case CuratedRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => CuratedScreen());
+    case AbstractRoute:
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => AbstractScreen());
     case WallpaperRoute:
       return CupertinoPageRoute(
           builder: (context) =>
