@@ -116,7 +116,10 @@ class LoadingCards extends StatelessWidget {
       itemCount: 24,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 300,
+          maxCrossAxisExtent:
+              MediaQuery.of(context).orientation == Orientation.portrait
+                  ? 300
+                  : 250,
           childAspectRatio: 0.830,
           mainAxisSpacing: 8,
           crossAxisSpacing: 8),

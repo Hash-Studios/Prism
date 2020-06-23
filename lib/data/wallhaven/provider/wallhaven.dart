@@ -29,7 +29,7 @@ class WallHavenProvider extends ChangeNotifier {
                     category: resp["data"][i]["category"],
                     dimension_x: resp["data"][i]["dimension_x"].toString(),
                     dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["id"],
+                    resolution: resp["data"][i]["resolution"],
                     file_size: resp["data"][i]["file_size"].toString(),
                     colors: resp["data"][i]["colors"],
                     path: resp["data"][i]["path"],
