@@ -126,13 +126,13 @@ var kDarkTheme = ThemeData(
     ),
     bodyText2: TextStyle(
       fontFamily: 'Proxima Nova',
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: FontWeight.w500,
       color: config.Colors().accentDarkColor(.85),
     ),
     bodyText1: TextStyle(
       fontFamily: 'Proxima Nova',
-      fontSize: 24,
+      fontSize: 22,
       fontWeight: FontWeight.w500,
       color: config.Colors().accentDarkColor(1),
     ),

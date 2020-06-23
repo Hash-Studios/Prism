@@ -29,7 +29,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
             color: Color(0xFF2F2F2F),
           ),
           child: SizedBox(
-            height: MediaQuery.of(context).size.height * .4,
+            height: MediaQuery.of(context).size.height * .42,
             width: MediaQuery.of(context).size.width,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,9 +41,12 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
-                      child: Icon(
-                        JamIcons.chevron_down,
-                        color: Colors.white,
+                      child: Hero(
+                        tag: "BottomSheet",
+                        child: Icon(
+                          JamIcons.chevron_down,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -334,9 +337,12 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                   width: MediaQuery.of(context).size.width,
                   height: MediaQuery.of(context).size.height / 20,
                   child: Center(
-                    child: Icon(
-                      JamIcons.chevron_up,
-                      color: Colors.white,
+                    child: Hero(
+                      tag: "BottomSheet",
+                      child: Icon(
+                        JamIcons.chevron_up,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
