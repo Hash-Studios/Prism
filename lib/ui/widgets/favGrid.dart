@@ -96,6 +96,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
                       return FocusedMenuHolder(
+                        provider: "WallHaven",
                         index: index,
                         child: Container(
                           decoration: BoxDecoration(

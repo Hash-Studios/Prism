@@ -80,7 +80,6 @@ class _HomeGridState extends State<HomeGrid>
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
-    // print("building home grid");
     return GridView.builder(
       controller: controller,
       padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
@@ -125,38 +124,6 @@ class _HomeGridState extends State<HomeGrid>
                     ? Text("See more")
                     : CircularProgressIndicator());
           }
-          return FocusedMenuHolder(
-            provider: "WallHaven",
-            index: index,
-            child: GestureDetector(
-              child: Container(
-                decoration:
-                    Provider.of<WallHavenProvider>(context).walls.length == 0
-                        ? BoxDecoration(
-                            color: animation.value,
-                            borderRadius: BorderRadius.circular(20),
-                          )
-                        : BoxDecoration(
-                            color: animation.value,
-                            borderRadius: BorderRadius.circular(20),
-                            image: DecorationImage(
-                                image: NetworkImage(
-                                    Provider.of<WallHavenProvider>(context)
-                                        .walls[index]
-                                        .thumbs["original"]),
-                                fit: BoxFit.cover)),
-              ),
-              onTap: () {
-                if (Provider.of<WallHavenProvider>(context, listen: false)
-                        .walls ==
-                    []) {
-                } else {
-                  Navigator.pushNamed(context, WallpaperRoute,
-                      arguments: [index]);
-                }
-              },
-            ),
-          );
         } else {
           if (index == Provider.of<PexelsProvider>(context).wallsP.length - 1) {
             return FlatButton(
@@ -180,43 +147,73 @@ class _HomeGridState extends State<HomeGrid>
                     ? Text("See more")
                     : CircularProgressIndicator());
           }
-          return FocusedMenuHolder(
-            provider: widget.provider,
-            index: index,
-            child: GestureDetector(
-              child: Container(
-                decoration:
-                    Provider.of<PexelsProvider>(context).wallsP.length == 0
-                        ? BoxDecoration(
-                            color: animation.value,
-                            borderRadius: BorderRadius.circular(20),
-                          )
-                        : BoxDecoration(
-                            color: animation.value,
-                            borderRadius: BorderRadius.circular(20),
-                            image: DecorationImage(
-                                image: NetworkImage(
-                                    Provider.of<PexelsProvider>(context)
-                                        .wallsP[index]
-                                        .src["medium"]),
-                                fit: BoxFit.cover)),
-              ),
-              onTap: () {
+        }
+        return FocusedMenuHolder(
+          provider: widget.provider,
+          index: index,
+          child: GestureDetector(
+            child: Container(
+              decoration: widget.provider == "WallHaven"
+                  ? Provider.of<WallHavenProvider>(context).walls.length == 0
+                      ? BoxDecoration(
+                          color: animation.value,
+                          borderRadius: BorderRadius.circular(20),
+                        )
+                      : BoxDecoration(
+                          color: animation.value,
+                          borderRadius: BorderRadius.circular(20),
+                          image: DecorationImage(
+                              image: NetworkImage(
+                                  Provider.of<WallHavenProvider>(context)
+                                      .walls[index]
+                                      .thumbs["original"]),
+                              fit: BoxFit.cover))
+                  : Provider.of<PexelsProvider>(context).wallsP.length == 0
+                      ? BoxDecoration(
+                          color: animation.value,
+                          borderRadius: BorderRadius.circular(20),
+                        )
+                      : BoxDecoration(
+                          color: animation.value,
+                          borderRadius: BorderRadius.circular(20),
+                          image: DecorationImage(
+                              image: NetworkImage(
+                                  Provider.of<PexelsProvider>(context)
+                                      .wallsP[index]
+                                      .src["medium"]),
+                              fit: BoxFit.cover)),
+            ),
+            onTap: () {
+              if (widget.provider == "WallHaven") {
+                if (Provider.of<WallHavenProvider>(context, listen: false)
+                        .walls ==
+                    []) {
+                } else {
+                  Navigator.pushNamed(context, WallpaperRoute, arguments: [
+                    widget.provider,
+                    index,
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .walls[index]
+                        .thumbs["small"],
+                  ]);
+                }
+              } else if (widget.provider == "Pexels") {
                 if (Provider.of<PexelsProvider>(context, listen: false)
                         .wallsP ==
                     []) {
                 } else {
-                  Navigator.pushNamed(context, WallpaperRouteP, arguments: [
+                  Navigator.pushNamed(context, WallpaperRoute, arguments: [
+                    widget.provider,
                     index,
                     Provider.of<PexelsProvider>(context, listen: false)
                         .wallsP[index]
                         .src["small"]
                   ]);
                 }
-              },
-            ),
-          );
-        }
+              }
+            },
+          ),
+        );
       },
     );
   }
