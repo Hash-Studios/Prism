@@ -1,11 +1,12 @@
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/routing_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class CategoriesBar extends StatelessWidget {
-  CategoriesBar({
-    Key key,
-  }) : super(key: key);
+  final String current;
+  CategoriesBar({Key key, @required this.current}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -30,20 +31,37 @@ class CategoriesBar extends StatelessWidget {
                     child: ActionChip(
                         pressElevation: 5,
                         padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-                        backgroundColor: index == 0
+                        backgroundColor: Provider.of<CategoryProvider>(context)
+                                    .categories[index] ==
+                                current
                             ? Theme.of(context).accentColor
                             : Theme.of(context).hintColor,
                         label: Text(
                             Provider.of<CategoryProvider>(context)
                                 .categories[index],
-                            style: index == 0
+                            style: Provider.of<CategoryProvider>(context)
+                                        .categories[index] ==
+                                    current
                                 ? Theme.of(context)
                                     .textTheme
                                     .headline4
                                     .copyWith(
                                         color: Theme.of(context).primaryColor)
                                 : Theme.of(context).textTheme.headline4),
-                        onPressed: () {}),
+                        onPressed: () {
+                          Provider.of<CategoryProvider>(context, listen: false)
+                                          .categories[index] ==
+                                      "Home" &&
+                                  current != "Home"
+                              ? Navigator.pushNamed(context, HomeRoute)
+                              : Provider.of<CategoryProvider>(context,
+                                                  listen: false)
+                                              .categories[index] ==
+                                          "Curated" &&
+                                      current != "Curated"
+                                  ? Navigator.pushNamed(context, CuratedRoute)
+                                  : print("No route defined");
+                        }),
                   ),
                 ],
               ),
