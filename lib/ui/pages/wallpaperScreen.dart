@@ -247,34 +247,67 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      body: Stack(
-        children: <Widget>[
-          OptimizedCacheImage(
-            imageUrl: Provider.of<WallHavenProvider>(context).walls[index].path,
-            imageBuilder: (context, imageProvider) => Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: imageProvider,
-                  fit: BoxFit.cover,
+    try {
+      return Scaffold(
+        key: _scaffoldKey,
+        body: Stack(
+          children: <Widget>[
+            OptimizedCacheImage(
+              imageUrl:
+                  Provider.of<WallHavenProvider>(context).walls[index].path,
+              imageBuilder: (context, imageProvider) => Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: imageProvider,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            ),
-            placeholder: (context, url) => Container(
-              color: HexColor(
-                  Provider.of<WallHavenProvider>(context, listen: false)
-                          .walls[index]
-                          .colors[
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                              .walls[index]
-                              .colors
-                              .length -
-                          2]),
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(
-                    HexColor(Provider.of<WallHavenProvider>(context,
+              placeholder: (context, url) => Container(
+                color: HexColor(
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                            .walls[index]
+                            .colors[
+                        Provider.of<WallHavenProvider>(context, listen: false)
+                                .walls[index]
+                                .colors
+                                .length -
+                            2]),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation(
+                      HexColor(Provider.of<WallHavenProvider>(context,
+                                          listen: false)
+                                      .walls[index]
+                                      .colors[Provider.of<WallHavenProvider>(
+                                              context,
+                                              listen: false)
+                                          .walls[index]
+                                          .colors
+                                          .length -
+                                      1])
+                                  .computeLuminance() >
+                              0.5
+                          ? Colors.black
+                          : Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: HexColor(
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                            .walls[index]
+                            .colors[
+                        Provider.of<WallHavenProvider>(context, listen: false)
+                                .walls[index]
+                                .colors
+                                .length -
+                            2]),
+                child: Center(
+                  child: Icon(
+                    JamIcons.close_circle_f,
+                    color: HexColor(Provider.of<WallHavenProvider>(context,
                                         listen: false)
                                     .walls[index]
                                     .colors[Provider.of<WallHavenProvider>(
@@ -292,19 +325,38 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                 ),
               ),
             ),
-            errorWidget: (context, url, error) => Container(
-              color: HexColor(
-                  Provider.of<WallHavenProvider>(context, listen: false)
-                          .walls[index]
-                          .colors[
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                              .walls[index]
-                              .colors
-                              .length -
-                          2]),
-              child: Center(
-                child: Icon(
-                  JamIcons.close_circle_f,
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: GestureDetector(
+                child: Container(
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                      color: Color(0xFF2F2F2F)),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height / 20,
+                    child: Center(
+                      child: Icon(
+                        JamIcons.chevron_up,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                onTap: _showBottomSheetCallback,
+              ),
+            ),
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
                   color: HexColor(Provider.of<WallHavenProvider>(context,
                                       listen: false)
                                   .walls[index]
@@ -319,67 +371,23 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                           0.5
                       ? Colors.black
                       : Colors.white,
-                ),
-              ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: GestureDetector(
-              child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    color: Color(0xFF2F2F2F)),
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height / 20,
-                  child: Center(
-                    child: Hero(
-                      tag: "BottomSheet",
-                      child: Icon(
-                        JamIcons.chevron_up,
-                        color: Colors.white,
-                      ),
+                  icon: Hero(
+                    tag: "BottomSheet",
+                    child: Icon(
+                      JamIcons.chevron_left,
                     ),
                   ),
                 ),
               ),
-              onTap: _showBottomSheetCallback,
-            ),
-          ),
-          Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: IconButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                color: HexColor(Provider.of<WallHavenProvider>(context,
-                                    listen: false)
-                                .walls[index]
-                                .colors[Provider.of<WallHavenProvider>(context,
-                                        listen: false)
-                                    .walls[index]
-                                    .colors
-                                    .length -
-                                1])
-                            .computeLuminance() >
-                        0.5
-                    ? Colors.black
-                    : Colors.white,
-                icon: Icon(
-                  JamIcons.chevron_left,
-                ),
-              ),
-            ),
-          )
-        ],
-      ),
-    );
+            )
+          ],
+        ),
+      );
+    } catch (e) {
+      print(e.toString());
+      Navigator.pop(context);
+      return Container();
+    }
   }
 }
 

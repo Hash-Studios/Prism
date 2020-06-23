@@ -76,262 +76,274 @@ class FocusedMenuDetails extends StatelessWidget {
         : MediaQuery.of(context).orientation == Orientation.portrait
             ? size.width * 0.05
             : size.width * 0.02;
-
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
-                  child: Container(
-                    color: ThemeModel().returnTheme() == ThemeType.Dark
-                        ? Colors.black.withOpacity(0.75)
-                        : Colors.white.withOpacity(0.75),
-                  ),
-                )),
-            Positioned(
-                top: childOffset.dy,
-                left: childOffset.dx,
-                child: AbsorbPointer(
-                    absorbing: true,
+    try {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Container(
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
                     child: Container(
-                        width: childSize.width,
-                        height: childSize.height,
-                        child: child))),
-            Positioned(
-              top: childOffset.dy + childSize.height * 2 / 8,
-              left: childOffset.dx,
-              child: TweenAnimationBuilder(
-                duration: Duration(milliseconds: 200),
-                builder: (BuildContext context, value, Widget child) {
-                  return Transform.scale(
-                    scale: value,
-                    alignment: Alignment.bottomRight,
-                    child: child,
-                  );
-                },
-                tween: Tween(begin: 0.0, end: 1.0),
-                child: Container(
-                  width: childSize.width,
-                  height: childSize.height * 6 / 8,
-                  decoration: BoxDecoration(
-                    color: Color(0xFF2F2F2F),
-                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              ActionChip(
-                                  pressElevation: 5,
-                                  padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                  backgroundColor: HexColor(
+                      color: ThemeModel().returnTheme() == ThemeType.Dark
+                          ? Colors.black.withOpacity(0.75)
+                          : Colors.white.withOpacity(0.75),
+                    ),
+                  )),
+              Positioned(
+                  top: childOffset.dy,
+                  left: childOffset.dx,
+                  child: AbsorbPointer(
+                      absorbing: true,
+                      child: Container(
+                          width: childSize.width,
+                          height: childSize.height,
+                          child: child))),
+              Positioned(
+                top: childOffset.dy + childSize.height * 2 / 8,
+                left: childOffset.dx,
+                child: TweenAnimationBuilder(
+                  duration: Duration(milliseconds: 200),
+                  builder: (BuildContext context, value, Widget child) {
+                    return Transform.scale(
+                      scale: value,
+                      alignment: Alignment.bottomRight,
+                      child: child,
+                    );
+                  },
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  child: Container(
+                    width: childSize.width,
+                    height: childSize.height * 6 / 8,
+                    decoration: BoxDecoration(
+                      color: Color(0xFF2F2F2F),
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(20.0)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(20.0)),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                ActionChip(
+                                    pressElevation: 5,
+                                    padding:
+                                        EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                    backgroundColor: HexColor(
+                                        Provider.of<WallHavenProvider>(context,
+                                                    listen: false)
+                                                .walls[index]
+                                                .colors[
+                                            Provider.of<WallHavenProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .walls[index]
+                                                    .colors
+                                                    .length -
+                                                1]),
+                                    label: Text(
                                       Provider.of<WallHavenProvider>(context,
                                                   listen: false)
                                               .walls[index]
-                                              .colors[
+                                              .category
+                                              .toString()[0]
+                                              .toUpperCase() +
                                           Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .walls[index]
-                                                  .colors
-                                                  .length -
-                                              1]),
-                                  label: Text(
+                                                  context,
+                                                  listen: false)
+                                              .walls[index]
+                                              .category
+                                              .toString()
+                                              .substring(1),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline4
+                                          .copyWith(
+                                            color: HexColor(Provider.of<
+                                                                    WallHavenProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .walls[index]
+                                                            .colors[Provider.of<
+                                                                        WallHavenProvider>(
+                                                                    context,
+                                                                    listen:
+                                                                        false)
+                                                                .walls[index]
+                                                                .colors
+                                                                .length -
+                                                            1])
+                                                        .computeLuminance() >
+                                                    0.5
+                                                ? Colors.black
+                                                : Colors.white,
+                                          ),
+                                    ),
+                                    onPressed: () {}),
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                  child: Text(
                                     Provider.of<WallHavenProvider>(context,
-                                                listen: false)
-                                            .walls[index]
-                                            .category
-                                            .toString()[0]
-                                            .toUpperCase() +
-                                        Provider.of<WallHavenProvider>(context,
-                                                listen: false)
-                                            .walls[index]
-                                            .category
-                                            .toString()
-                                            .substring(1),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headline4
-                                        .copyWith(
-                                          color: HexColor(Provider.of<
-                                                                  WallHavenProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .walls[index]
-                                                          .colors[Provider.of<
-                                                                      WallHavenProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .walls[index]
-                                                              .colors
-                                                              .length -
-                                                          1])
-                                                      .computeLuminance() >
-                                                  0.5
-                                              ? Colors.black
-                                              : Colors.white,
-                                        ),
+                                            listen: false)
+                                        .walls[index]
+                                        .id
+                                        .toString(),
+                                    style:
+                                        Theme.of(context).textTheme.headline5,
                                   ),
-                                  onPressed: () {}),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                child: Text(
+                                ),
+                                Text(
+                                  "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].views.toString()} views",
+                                  style: Theme.of(context).textTheme.headline6,
+                                ),
+                                Text(
+                                  "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].favorites.toString()} favs",
+                                  style: Theme.of(context).textTheme.headline6,
+                                ),
+                                Text(
                                   Provider.of<WallHavenProvider>(context,
                                           listen: false)
                                       .walls[index]
-                                      .id
-                                      .toString(),
-                                  style: Theme.of(context).textTheme.headline5,
+                                      .short_url
+                                      .toString()
+                                      .replaceAll("https://", ""),
+                                  style: Theme.of(context).textTheme.headline6,
                                 ),
-                              ),
-                              Text(
-                                "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].views.toString()} views",
-                                style: Theme.of(context).textTheme.headline6,
-                              ),
-                              Text(
-                                "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].favorites.toString()} favs",
-                                style: Theme.of(context).textTheme.headline6,
-                              ),
-                              Text(
-                                Provider.of<WallHavenProvider>(context,
-                                        listen: false)
-                                    .walls[index]
-                                    .short_url
-                                    .toString()
-                                    .replaceAll("https://", ""),
-                                style: Theme.of(context).textTheme.headline6,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: GestureDetector(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  color: Color(0xFF2F2F2F),
-                                  borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(20),
-                                      bottomRight: Radius.circular(20))),
-                              padding: EdgeInsets.all(0),
-                              child: Padding(
-                                padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                child: Icon(
-                                  JamIcons.close,
-                                  color: Colors.white,
-                                ),
-                              ),
+                              ],
                             ),
-                            onTap: () async {
-                              Navigator.pop(context);
-                            },
                           ),
-                        )
-                      ],
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: GestureDetector(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: Color(0xFF2F2F2F),
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        bottomRight: Radius.circular(20))),
+                                padding: EdgeInsets.all(0),
+                                child: Padding(
+                                  padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                  child: Icon(
+                                    JamIcons.close,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              onTap: () async {
+                                Navigator.pop(context);
+                              },
+                            ),
+                          )
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              top: topOffset,
-              left: leftOffset,
-              child: GestureDetector(
-                onTap: () {
-                  print("Wallpaper");
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(.25),
-                          blurRadius: 4,
-                          offset: Offset(0, 4))
-                    ],
-                    borderRadius: BorderRadius.circular(500),
-                  ),
-                  padding: EdgeInsets.all(17),
-                  child: Icon(
-                    JamIcons.layers,
-                    color: Theme.of(context).accentColor,
-                    size: 30,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: topOffset - fabHeartTopOffset,
-              left: leftOffset - fabHeartLeftOffset,
-              child: GestureDetector(
-                onTap: () {
-                  print("Fav");
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(.25),
-                          blurRadius: 4,
-                          offset: Offset(0, 4))
-                    ],
-                    borderRadius: BorderRadius.circular(500),
-                  ),
-                  padding: EdgeInsets.all(17),
-                  child: Icon(
-                    JamIcons.heart,
-                    color: Theme.of(context).accentColor,
-                    size: 30,
+              Positioned(
+                top: topOffset,
+                left: leftOffset,
+                child: GestureDetector(
+                  onTap: () {
+                    print("Wallpaper");
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(.25),
+                            blurRadius: 4,
+                            offset: Offset(0, 4))
+                      ],
+                      borderRadius: BorderRadius.circular(500),
+                    ),
+                    padding: EdgeInsets.all(17),
+                    child: Icon(
+                      JamIcons.layers,
+                      color: Theme.of(context).accentColor,
+                      size: 30,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              top: topOffset + fabWallTopOffset,
-              left: leftOffset + fabWallLeftOffset,
-              child: GestureDetector(
-                onTap: () {
-                  print("Download");
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(.25),
-                          blurRadius: 4,
-                          offset: Offset(0, 4))
-                    ],
-                    borderRadius: BorderRadius.circular(500),
-                  ),
-                  padding: EdgeInsets.all(17),
-                  child: Icon(
-                    JamIcons.download,
-                    color: Theme.of(context).accentColor,
-                    size: 30,
+              Positioned(
+                top: topOffset - fabHeartTopOffset,
+                left: leftOffset - fabHeartLeftOffset,
+                child: GestureDetector(
+                  onTap: () {
+                    print("Fav");
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(.25),
+                            blurRadius: 4,
+                            offset: Offset(0, 4))
+                      ],
+                      borderRadius: BorderRadius.circular(500),
+                    ),
+                    padding: EdgeInsets.all(17),
+                    child: Icon(
+                      JamIcons.heart,
+                      color: Theme.of(context).accentColor,
+                      size: 30,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+              Positioned(
+                top: topOffset + fabWallTopOffset,
+                left: leftOffset + fabWallLeftOffset,
+                child: GestureDetector(
+                  onTap: () {
+                    print("Download");
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(.25),
+                            blurRadius: 4,
+                            offset: Offset(0, 4))
+                      ],
+                      borderRadius: BorderRadius.circular(500),
+                    ),
+                    padding: EdgeInsets.all(17),
+                    child: Icon(
+                      JamIcons.download,
+                      color: Theme.of(context).accentColor,
+                      size: 30,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      print(e.toString());
+      Navigator.pop(context);
+      return Container();
+    }
   }
 }
 
