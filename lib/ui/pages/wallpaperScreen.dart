@@ -962,15 +962,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                   : Scaffold(
                       key: _scaffoldKey,
                       backgroundColor: isLoading
-                          ? HexColor(Provider.of<WallHavenProvider>(context,
-                                  listen: false)
-                              .wallsS[index]
-                              .colors[Provider.of<WallHavenProvider>(context,
-                                      listen: false)
-                                  .wallsS[index]
-                                  .colors
-                                  .length -
-                              2])
+                          ? Theme.of(context).primaryColor
                           : colors[0],
                       body: Stack(
                         children: <Widget>[
@@ -990,22 +982,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                               child: Center(
                                 child: CircularProgressIndicator(
                                   valueColor: AlwaysStoppedAnimation(
-                                    HexColor(Provider.of<WallHavenProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .wallsS[index]
-                                                        .colors[
-                                                    Provider.of<WallHavenProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .wallsS[index]
-                                                            .colors
-                                                            .length -
-                                                        1])
-                                                .computeLuminance() >
-                                            0.5
-                                        ? Colors.black
-                                        : Colors.white,
+                                    isLoading
+                                        ? Theme.of(context).accentColor
+                                        : colors[0].computeLuminance() > 0.5
+                                            ? Colors.black
+                                            : Colors.white,
                                   ),
                                 ),
                               ),
@@ -1014,23 +995,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                               child: Center(
                                 child: Icon(
                                   JamIcons.close_circle_f,
-                                  color: HexColor(Provider.of<
-                                                          WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .wallsS[index]
-                                                  .colors[Provider.of<
-                                                              WallHavenProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .wallsS[index]
-                                                      .colors
-                                                      .length -
-                                                  1])
-                                              .computeLuminance() >
-                                          0.5
-                                      ? Colors.black
-                                      : Colors.white,
+                                  color: isLoading
+                                      ? Theme.of(context).accentColor
+                                      : colors[0].computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
                                 ),
                               ),
                             ),
@@ -1069,22 +1038,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 onPressed: () {
                                   Navigator.pop(context);
                                 },
-                                color: HexColor(Provider.of<WallHavenProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .wallsS[index]
-                                                    .colors[
-                                                Provider.of<WallHavenProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .wallsS[index]
-                                                        .colors
-                                                        .length -
-                                                    1])
-                                            .computeLuminance() >
-                                        0.5
-                                    ? Colors.black
-                                    : Colors.white,
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
                                 icon: Icon(
                                   JamIcons.chevron_left,
                                 ),
@@ -1100,16 +1058,4 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
       return Container();
     }
   }
-}
-
-class HexColor extends Color {
-  static int _getColorFromHex(String hexColor) {
-    hexColor = hexColor.toUpperCase().replaceAll("#", "");
-    if (hexColor.length == 6) {
-      hexColor = "FF" + hexColor;
-    }
-    return int.parse(hexColor, radix: 16);
-  }
-
-  HexColor(final String hexColor) : super(_getColorFromHex(hexColor));
 }
