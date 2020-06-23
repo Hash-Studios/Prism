@@ -1,8 +1,10 @@
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:Prism/main.dart' as main;
 
 class BottomBar extends StatefulWidget {
   final Widget child;
@@ -99,7 +101,33 @@ class _BottomBarState extends State<BottomBar>
   }
 }
 
-class BottomNavBar extends StatelessWidget {
+class BottomNavBar extends StatefulWidget {
+  @override
+  _BottomNavBarState createState() => _BottomNavBarState();
+}
+
+class _BottomNavBarState extends State<BottomNavBar> {
+  bool isLoggedin = false;
+  @override
+  void initState() {
+    checkSignIn();
+    super.initState();
+  }
+
+  void checkSignIn() async {
+    setState(() {
+      isLoggedin = main.prefs.getBool("isLoggedin");
+    });
+  }
+
+  void showGooglePopUp(Function func) {
+    if (!isLoggedin) {
+      googleSignInPopUp(context);
+    } else {
+      func();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -145,7 +173,9 @@ class BottomNavBar extends StatelessWidget {
                 icon: Icon(JamIcons.heart_f,
                     color: Theme.of(context).accentColor),
                 onPressed: () {
-                  Navigator.of(context).pushNamedIfNotCurrent(FavRoute);
+                  showGooglePopUp(() {
+                    Navigator.of(context).pushNamedIfNotCurrent(FavRoute);
+                  });
                 },
               ),
             ),

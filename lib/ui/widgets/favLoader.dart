@@ -5,7 +5,7 @@ import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:Prism/globals.dart' as globals;
+import 'package:Prism/main.dart' as main;
 
 class FavLoader extends StatefulWidget {
   @override
@@ -16,10 +16,8 @@ class _FavLoaderState extends State<FavLoader>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
-  bool isLoggedin = false;
   @override
   void initState() {
-    checkSignIn();
     super.initState();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -74,29 +72,14 @@ class _FavLoaderState extends State<FavLoader>
     super.dispose();
   }
 
-  void checkSignIn() async {
-    globals.gAuth.googleSignIn.isSignedIn().then((value) {
-      setState(() {
-        print(value);
-        isLoggedin = value;
-      });
-      if (isLoggedin) {
-      } else {
-        googleSignInPopUp(context);
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
 
-    return isLoggedin
-        ? FavouriteGrid(
-            controller: controller,
-            animation: animation,
-          )
-        : LoadingCards(controller: controller, animation: animation);
+    return FavouriteGrid(
+      controller: controller,
+      animation: animation,
+    );
   }
 }
