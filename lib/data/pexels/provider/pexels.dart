@@ -10,6 +10,7 @@ class PexelsProvider extends ChangeNotifier {
   int pageGetQueryP = 1;
   int pageAbstractP = 1;
   int pageNatureP = 1;
+  int pageColorsP = 1;
   int pageRedP = 1;
   int pageBlueP = 1;
   int pageGreenP = 1;
@@ -78,6 +79,34 @@ class PexelsProvider extends ChangeNotifier {
               );
         }
         this.pageGetQueryP = resp["page"] + 1;
+        print("data done");
+        return this.wallsP;
+      },
+    );
+  }
+
+  Future<List<WallPaperP>> getWallsPbyColor(String query) async {
+    http.get(
+        "https://api.pexels.com/v1/search?query=$query&per_page=80&page=${this.pageColorsP}",
+        headers: {
+          "Authorization":
+              "563492ad6f9170000100000107272bb5cab346b68e27263fbf1b6a72"
+        }).then(
+      (http.Response response) {
+        var resp = json.decode(response.body);
+        for (int i = 0; i < resp["photos"].length; i++) {
+          this.wallsP.add(
+                WallPaperP(
+                    id: resp["photos"][i]["id"].toString(),
+                    url: resp["photos"][i]["url"],
+                    width: resp["photos"][i]["width"].toString(),
+                    height: resp["photos"][i]["height"].toString(),
+                    photographer: resp["photos"][i]["photographer"],
+                    src: resp["photos"][i]["src"],
+                    current_page: resp["page"]),
+              );
+        }
+        this.pageColorsP = resp["page"] + 1;
         print("data done");
         return this.wallsP;
       },

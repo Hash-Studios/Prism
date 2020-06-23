@@ -3,10 +3,43 @@ import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
-class CategoriesBar extends StatelessWidget {
+class CategoriesBar extends StatefulWidget {
   final String current;
   CategoriesBar({Key key, @required this.current}) : super(key: key);
+
+  @override
+  _CategoriesBarState createState() => _CategoriesBarState();
+}
+
+class _CategoriesBarState extends State<CategoriesBar> {
+  List<Color> colors = [
+    Color(0xFFFF0000),
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Color(0xFF0000FF),
+    Colors.blue[700],
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Color(0xFF00FF00),
+    Colors.lightGreen,
+    Colors.lime,
+    Colors.yellow,
+    Colors.amber,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+    Color(0xFF000000),
+    Color(0xFFFFFFFF)
+  ];
+  Color currentColor = Color(0xFFFF0000);
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +66,7 @@ class CategoriesBar extends StatelessWidget {
                         padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
                         backgroundColor: Provider.of<CategoryProvider>(context)
                                     .categories[index] ==
-                                current
+                                widget.current
                             ? Theme.of(context).accentColor
                             : Theme.of(context).hintColor,
                         label: Text(
@@ -41,7 +74,7 @@ class CategoriesBar extends StatelessWidget {
                                 .categories[index],
                             style: Provider.of<CategoryProvider>(context)
                                         .categories[index] ==
-                                    current
+                                    widget.current
                                 ? Theme.of(context)
                                     .textTheme
                                     .headline4
@@ -49,7 +82,44 @@ class CategoriesBar extends StatelessWidget {
                                         color: Theme.of(context).primaryColor)
                                 : Theme.of(context).textTheme.headline4),
                         onPressed: () {
-                          if (current == "Home") {
+                          if (Provider.of<CategoryProvider>(context,
+                                      listen: false)
+                                  .categories[index] ==
+                              "Colors") {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Select a color'),
+                                  content: SingleChildScrollView(
+                                    child: BlockPicker(
+                                      availableColors: colors,
+                                      pickerColor: currentColor,
+                                      onColorChanged: (Color color) =>
+                                          setState(() {
+                                        currentColor = color;
+                                        Navigator.pop(context);
+                                        Navigator.pushNamed(
+                                          context,
+                                          ColorRoute,
+                                          arguments: [
+                                            currentColor
+                                                .toString()
+                                                .replaceAll(
+                                                    "MaterialColor(primary value: Color(0xff",
+                                                    "")
+                                                .replaceAll("Color(0xff", "")
+                                                .replaceAll(")", ""),
+                                          ],
+                                        );
+                                      }),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          }
+                          if (widget.current == "Home") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -85,7 +155,7 @@ class CategoriesBar extends StatelessWidget {
                                 "Green") {
                               Navigator.pushNamed(context, GreenRoute);
                             }
-                          } else if (current == "Curated") {
+                          } else if (widget.current == "Curated") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -125,7 +195,7 @@ class CategoriesBar extends StatelessWidget {
                               Navigator.pushReplacementNamed(
                                   context, GreenRoute);
                             }
-                          } else if (current == "Abstract") {
+                          } else if (widget.current == "Abstract") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -165,7 +235,7 @@ class CategoriesBar extends StatelessWidget {
                               Navigator.pushReplacementNamed(
                                   context, GreenRoute);
                             }
-                          } else if (current == "Nature") {
+                          } else if (widget.current == "Nature") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -205,7 +275,7 @@ class CategoriesBar extends StatelessWidget {
                               Navigator.pushReplacementNamed(
                                   context, BlueRoute);
                             }
-                          } else if (current == "Red") {
+                          } else if (widget.current == "Red") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -246,7 +316,7 @@ class CategoriesBar extends StatelessWidget {
                               Navigator.pushReplacementNamed(
                                   context, GreenRoute);
                             }
-                          } else if (current == "Blue") {
+                          } else if (widget.current == "Blue") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -286,7 +356,7 @@ class CategoriesBar extends StatelessWidget {
                               Navigator.pushReplacementNamed(
                                   context, GreenRoute);
                             }
-                          } else if (current == "Green") {
+                          } else if (widget.current == "Green") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==

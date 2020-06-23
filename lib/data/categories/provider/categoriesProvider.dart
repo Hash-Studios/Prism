@@ -6,6 +6,7 @@ class CategoryProvider extends ChangeNotifier {
     'Curated',
     'Abstract',
     'Nature',
+    'Colors',
     'Red',
     'Blue',
     'Green'
