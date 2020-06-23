@@ -54,15 +54,15 @@ var kLightTheme = ThemeData(
     ),
     bodyText2: TextStyle(
       fontFamily: 'Proxima Nova',
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: FontWeight.w500,
-      color: config.Colors().accentColor(.85),
+      color: Colors.white.withOpacity(.75),
     ),
     bodyText1: TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 24,
       fontWeight: FontWeight.w500,
-      color: config.Colors().accentColor(1),
+      color: Colors.white.withOpacity(1),
     ),
     caption: TextStyle(
       fontFamily: 'Roboto',
