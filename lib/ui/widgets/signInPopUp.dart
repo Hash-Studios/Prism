@@ -1,8 +1,9 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/globals.dart' as globals;
+import 'package:Prism/main.dart' as main;
 
-void googleSignInPopUp(BuildContext context) {
+void googleSignInPopUp(BuildContext context, Function func) {
   Dialog signinPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: SingleChildScrollView(
@@ -75,9 +76,10 @@ void googleSignInPopUp(BuildContext context) {
               color: Color(0xFFE57697),
               onPressed: () {
                 Navigator.of(context).pop();
-                globals.gAuth
-                    .signInWithGoogle()
-                    .whenComplete(() => Navigator.pop(context));
+                globals.gAuth.signInWithGoogle().whenComplete(() {
+                  main.prefs.setBool("isLoggedin", true);
+                  func();
+                });
               },
               child: Text(
                 'LOGIN',

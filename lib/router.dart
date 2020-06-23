@@ -2,9 +2,11 @@ import 'package:Prism/routing_constants.dart';
 import 'package:Prism/ui/pages/abstractScreen.dart';
 import 'package:Prism/ui/pages/colorScreen.dart';
 import 'package:Prism/ui/pages/curatedScreen.dart';
+import 'package:Prism/ui/pages/downloadScreen.dart';
 import 'package:Prism/ui/pages/favouriteScreen.dart';
 import 'package:Prism/ui/pages/homeScreen.dart';
 import 'package:Prism/ui/pages/natureScreen.dart';
+import 'package:Prism/ui/pages/profileScreen.dart';
 import 'package:Prism/ui/pages/searchScreen.dart';
 import 'package:Prism/ui/pages/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
@@ -22,6 +24,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(builder: (context) => FavouriteScreen());
     case HomeRoute:
       return CupertinoPageRoute(builder: (context) => HomeScreen());
+    case ProfileRoute:
+      return CupertinoPageRoute(builder: (context) => ProfileScreen());
+    case DownloadRoute:
+      return CupertinoPageRoute(builder: (context) => DownloadScreen());
     case CuratedRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => CuratedScreen());
