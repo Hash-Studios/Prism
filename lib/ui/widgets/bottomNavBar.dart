@@ -79,7 +79,8 @@ class _BottomBarState extends State<BottomBar>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(fit: StackFit.expand,
+    return Stack(
+      fit: StackFit.expand,
       alignment: Alignment.bottomCenter,
       children: [
         InheritedDataProvider(
@@ -123,7 +124,9 @@ class BottomNavBar extends StatelessWidget {
               child: IconButton(
                 icon:
                     Icon(JamIcons.home_f, color: Theme.of(context).accentColor),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).pushNamedIfNotCurrent(HomeRoute);
+                },
               ),
             ),
             Padding(
@@ -131,7 +134,9 @@ class BottomNavBar extends StatelessWidget {
               child: IconButton(
                 icon:
                     Icon(JamIcons.search, color: Theme.of(context).accentColor),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).pushNamedIfNotCurrent(SearchRoute);
+                },
               ),
             ),
             Padding(
@@ -140,7 +145,7 @@ class BottomNavBar extends StatelessWidget {
                 icon: Icon(JamIcons.heart_f,
                     color: Theme.of(context).accentColor),
                 onPressed: () {
-                  Navigator.pushNamed(context, FavRoute);
+                  Navigator.of(context).pushNamedIfNotCurrent(FavRoute);
                 },
               ),
             ),
@@ -169,5 +174,24 @@ class BottomNavBar extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+extension NavigatorStateExtension on NavigatorState {
+  void pushNamedIfNotCurrent(String routeName, {Object arguments}) {
+    if (!isCurrent(routeName)) {
+      pushNamed(routeName, arguments: arguments);
+    }
+  }
+
+  bool isCurrent(String routeName) {
+    bool isCurrent = false;
+    popUntil((route) {
+      if (route.settings.name == routeName) {
+        isCurrent = true;
+      }
+      return true;
+    });
+    return isCurrent;
   }
 }
