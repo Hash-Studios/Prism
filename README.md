@@ -209,20 +209,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] likedimages hero implementation
 - [ ] merge liked list of wallpapers and likedimages
 - [ ] liked list to shared prefs
-- [ ] named routing
+- [x] named routing
 - [ ] code refactoring
 - [ ] add more themes and remove dumb ones
 - [ ] liked images can't be opened (shows black screen)
-- [ ] improve the wall cards (tap and hold feature) (look at pinterest app)
+- [x] improve the wall cards (tap and hold feature) (look at pinterest app)
 - [ ] replace all loading screens with some animated things, it feels it got stuck
-- [ ] fix dynamic color cards (looks really bad on 60% images)
-- [ ] change info icon, and simplify applying steps
+- [x] fix dynamic color cards (looks really bad on 60% images)
+- [x] change info icon, and simplify applying steps
 - [ ] add fourth tab for homescreen setups
 - [ ] glitch effect fix in downloads (while opening)
 - [ ] improve drawer header UI as well as overall drawer
 - [ ] improve app icon and use it throughout the app
 - [ ] change the onboarding layout / route
 - [ ] community walls + collections (add users to upload there own walls in the app)
-- [ ] include other APIs too like pexels
+- [x] include other APIs too like pexels
 - [ ] create sections like abstract, photos and others, other than the random feed
 - [ ] improve the overall tab UI (make it simplified)
+- [ ] add refresh indicator on home screens
+- [ ] clean pexels UI
+- [ ] remove numbers from detail card
+- [ ] make tags clickable
+- [ ] fix bug of add more walls when reloading
+- [ ] Add shared pref to save current theme
+- [ ] fix pop screen when not login in favs
+- [ ] fix multiple pushing of screens overall
+- [ ] Add color pallette from pexels images
+- [ ] remove cupertino page transition from categories tab
+- [ ] Add hero animation in bottom sheet arrow
