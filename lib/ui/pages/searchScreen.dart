@@ -1,3 +1,4 @@
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/bottomNavBar.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,16 @@ class _SearchScreenState extends State<SearchScreen> {
     'Cars',
     'Comics',
   ];
+  bool isTyping;
+  bool isSubmitted;
+  TextEditingController searchController = TextEditingController();
+  @override
+  void initState() {
+    isSubmitted = false;
+    isTyping = false;
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,7 +39,30 @@ class _SearchScreenState extends State<SearchScreen> {
           titleSpacing: 0,
           title: SizedBox(
             width: MediaQuery.of(context).size.width,
-            child: TextField(),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(500),
+                    color: Theme.of(context).hintColor),
+                child: TextField(
+                  style: Theme.of(context)
+                      .textTheme
+                      .headline5
+                      .copyWith(color: Theme.of(context).accentColor),
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.only(left: 30, top: 15),
+                    border: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    hintText: "Search",
+                    suffixIcon: Icon(JamIcons.search),
+                  ),
+                ),
+              ),
+            ),
           ),
           bottom: PreferredSize(
               child: SizedBox(
