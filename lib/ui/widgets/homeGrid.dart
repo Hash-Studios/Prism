@@ -147,8 +147,13 @@ class _HomeGridState extends State<HomeGrid>
                                 fit: BoxFit.cover)),
               ),
               onTap: () {
-                Navigator.pushNamed(context, WallpaperRoute,
-                    arguments: [index]);
+                if (Provider.of<WallHavenProvider>(context, listen: false)
+                        .walls ==
+                    []) {
+                } else {
+                  Navigator.pushNamed(context, WallpaperRoute,
+                      arguments: [index]);
+                }
               },
             ),
           );
@@ -197,12 +202,17 @@ class _HomeGridState extends State<HomeGrid>
                                 fit: BoxFit.cover)),
               ),
               onTap: () {
-                Navigator.pushNamed(context, WallpaperRouteP, arguments: [
-                  index,
-                  Provider.of<PexelsProvider>(context, listen: false)
-                      .wallsP[index]
-                      .src["small"]
-                ]);
+                if (Provider.of<PexelsProvider>(context, listen: false)
+                        .wallsP ==
+                    []) {
+                } else {
+                  Navigator.pushNamed(context, WallpaperRouteP, arguments: [
+                    index,
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .wallsP[index]
+                        .src["small"]
+                  ]);
+                }
               },
             ),
           );
