@@ -60,6 +60,12 @@ class CategoriesBar extends StatelessWidget {
                                           "Curated" &&
                                       current != "Curated"
                                   ? Navigator.pushNamed(context, CuratedRoute)
+                                  :  Provider.of<CategoryProvider>(context,
+                                                  listen: false)
+                                              .categories[index] ==
+                                          "Abstract" &&
+                                      current != "Abstract"
+                                  ? Navigator.pushNamed(context, AbstractRoute)
                                   : print("No route defined");
                         }),
                   ),
