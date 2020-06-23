@@ -549,21 +549,26 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                       child: Center(
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation(
-                            HexColor(Provider.of<WallHavenProvider>(context,
-                                                    listen: false)
-                                                .walls[index]
-                                                .colors[
-                                            Provider.of<WallHavenProvider>(
+                            isLoading
+                                ? HexColor(Provider.of<WallHavenProvider>(
                                                         context,
                                                         listen: false)
                                                     .walls[index]
-                                                    .colors
-                                                    .length -
-                                                1])
-                                        .computeLuminance() >
-                                    0.5
-                                ? Colors.black
-                                : Colors.white,
+                                                    .colors[
+                                                Provider.of<WallHavenProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .walls[index]
+                                                        .colors
+                                                        .length -
+                                                    1])
+                                            .computeLuminance() >
+                                        0.5
+                                    ? Colors.black
+                                    : Colors.white
+                                : colors[0].computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
                           ),
                         ),
                       ),
@@ -572,22 +577,25 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                       child: Center(
                         child: Icon(
                           JamIcons.close_circle_f,
-                          color: HexColor(Provider.of<WallHavenProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .walls[index]
-                                              .colors[
-                                          Provider.of<WallHavenProvider>(
-                                                      context,
+                          color: isLoading
+                              ? HexColor(Provider.of<WallHavenProvider>(context,
                                                       listen: false)
                                                   .walls[index]
-                                                  .colors
-                                                  .length -
-                                              1])
-                                      .computeLuminance() >
-                                  0.5
-                              ? Colors.black
-                              : Colors.white,
+                                                  .colors[
+                                              Provider.of<WallHavenProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .walls[index]
+                                                      .colors
+                                                      .length -
+                                                  1])
+                                          .computeLuminance() >
+                                      0.5
+                                  ? Colors.black
+                                  : Colors.white
+                              : colors[0].computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
                         ),
                       ),
                     ),
@@ -624,20 +632,25 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        color: HexColor(Provider.of<WallHavenProvider>(context,
-                                            listen: false)
-                                        .walls[index]
-                                        .colors[Provider.of<WallHavenProvider>(
-                                                context,
-                                                listen: false)
-                                            .walls[index]
-                                            .colors
-                                            .length -
-                                        1])
-                                    .computeLuminance() >
-                                0.5
-                            ? Colors.black
-                            : Colors.white,
+                        color: isLoading
+                            ? HexColor(Provider.of<WallHavenProvider>(context,
+                                                    listen: false)
+                                                .walls[index]
+                                                .colors[
+                                            Provider.of<WallHavenProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .walls[index]
+                                                    .colors
+                                                    .length -
+                                                1])
+                                        .computeLuminance() >
+                                    0.5
+                                ? Colors.black
+                                : Colors.white
+                            : colors[0].computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
                         icon: Hero(
                           tag: "BottomSheet",
                           child: Icon(
