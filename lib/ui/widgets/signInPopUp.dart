@@ -9,20 +9,21 @@ void googleSignInPopUp(BuildContext context, Function func) {
     child: SingleChildScrollView(
       child: Container(
         decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20), color: Colors.white10),
-        width: 300.0,
+            borderRadius: BorderRadius.circular(20),
+            color: Theme.of(context).primaryColor),
+        width: MediaQuery.of(context).size.width * .7,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
               height: 150,
-              width: 300,
+              width: MediaQuery.of(context).size.width * .7,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20)),
-                  color: Colors.white12),
+                  color: Theme.of(context).hintColor),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Image.asset(
@@ -37,7 +38,10 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
                   child: Text(
                     'SIGNING IN UNLOCKS:',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: Theme.of(context).accentColor),
                   ),
                 ),
               ],
@@ -45,29 +49,36 @@ void googleSignInPopUp(BuildContext context, Function func) {
             SizedBox(
               height: 20,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Icon(JamIcons.heart_f),
-                Text(
-                  "The ability to favourite wallpapers.",
-                  style: Theme.of(context).textTheme.headline6,
-                )
-              ],
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Icon(JamIcons.download),
-                Text(
-                  "The ability to download wallpapers.",
-                  style: Theme.of(context).textTheme.headline6,
-                )
-              ],
-            ),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Icon(JamIcons.heart_f),
+                  SizedBox(height: 10),
+                  Icon(JamIcons.download),
+                ],
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(
+                    "The ability to favourite wallpapers.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline5
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    "The ability to download wallpapers.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline5
+                        .copyWith(color: Theme.of(context).accentColor),
+                  )
+                ],
+              ),
+            ]),
             SizedBox(
               height: 25,
             ),
@@ -82,12 +93,15 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 });
               },
               child: Text(
-                'LOGIN',
-                style: TextStyle(fontSize: 18.0),
+                'SIGN IN WITH GOOGLE',
+                style: TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.white,
+                ),
               ),
             ),
             SizedBox(
-              height: 10,
+              height: 20,
             ),
           ],
         ),
