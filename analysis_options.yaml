@@ -2,3 +2,5 @@ analyzer:
   errors:
     unused_import: ignore
     missing_return: ignore
+enable-experiment:
+    - extension-methods
