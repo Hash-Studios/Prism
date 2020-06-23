@@ -323,112 +323,252 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                               ),
                             ),
                           )
-                        : Expanded(
-                            flex: 4,
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: <Widget>[
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                        : provider.length > 6 && provider.substring(0, 6) == "Colors"
+                            ? Expanded(
+                                flex: 4,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(35, 0, 35, 0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: <Widget>[
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            0, 5, 0, 10),
-                                        child: Text(
-                                          Provider.of<WallHavenProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .wallsS[index]
-                                              .id
-                                              .toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText1,
-                                        ),
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                0, 5, 0, 10),
+                                            child: Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  .4,
+                                              child: Text(
+                                                Provider.of<PexelsProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .wallsC[index]
+                                                        .url
+                                                        .toString()
+                                                        .replaceAll(
+                                                            "https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")[0]
+                                                        .toUpperCase() +
+                                                    Provider.of<PexelsProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .wallsC[index]
+                                                        .url
+                                                        .toString()
+                                                        .replaceAll(
+                                                            "https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")
+                                                        .substring(
+                                                            1,
+                                                            Provider.of<PexelsProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .wallsC[
+                                                                        index]
+                                                                    .url
+                                                                    .toString()
+                                                                    .replaceAll(
+                                                                        "https://www.pexels.com/photo/", "")
+                                                                    .replaceAll(
+                                                                        "-", " ")
+                                                                    .replaceAll(
+                                                                        "/", "")
+                                                                    .length -
+                                                                8),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText1,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            "${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].height.toString()}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()} views",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                      Text(
-                                        "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].favorites.toString()} favs",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                      Text(
-                                        Provider.of<WallHavenProvider>(context,
-                                                listen: false)
-                                            .wallsS[index]
-                                            .short_url
-                                            .toString()
-                                            .replaceAll("https://", ""),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                .4,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      0, 5, 0, 10),
+                                              child: Text(
+                                                Provider.of<PexelsProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .wallsC[index]
+                                                    .photographer
+                                                    .toString(),
+                                                textAlign: TextAlign.end,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText1,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            Provider.of<PexelsProvider>(context,
+                                                    listen: false)
+                                                .wallsC[index]
+                                                .id
+                                                .toString(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                          // Text(
+                                          //   "${double.parse(((double.parse(Provider.of<PexelsProvider>(context, listen: false).walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                          //   style: Theme.of(context).textTheme.bodyText2,
+                                          // ),
+                                          Text(
+                                            "All Rights Reserved",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                ),
+                              )
+                            : Expanded(
+                                flex: 4,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(35, 0, 35, 0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: <Widget>[
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            0, 5, 0, 10),
-                                        child: Text(
-                                          Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .wallsS[index]
-                                                  .category
-                                                  .toString()[0]
-                                                  .toUpperCase() +
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                0, 5, 0, 10),
+                                            child: Text(
                                               Provider.of<WallHavenProvider>(
                                                       context,
                                                       listen: false)
                                                   .wallsS[index]
-                                                  .category
-                                                  .toString()
-                                                  .substring(1),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText1,
-                                        ),
+                                                  .id
+                                                  .toString(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText1,
+                                            ),
+                                          ),
+                                          Text(
+                                            "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()} views",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                          Text(
+                                            "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].favorites.toString()} favs",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                          Text(
+                                            Provider.of<WallHavenProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .wallsS[index]
+                                                .short_url
+                                                .toString()
+                                                .replaceAll("https://", ""),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].resolution.toString()}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                      Text(
-                                        "${double.parse(((double.parse(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                      Text(
-                                        "All Rights Reserved",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                0, 5, 0, 10),
+                                            child: Text(
+                                              Provider.of<WallHavenProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .wallsS[index]
+                                                      .category
+                                                      .toString()[0]
+                                                      .toUpperCase() +
+                                                  Provider.of<WallHavenProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .wallsS[index]
+                                                      .category
+                                                      .toString()
+                                                      .substring(1),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText1,
+                                            ),
+                                          ),
+                                          Text(
+                                            "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].resolution.toString()}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                          Text(
+                                            "${double.parse(((double.parse(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                          Text(
+                                            "All Rights Reserved",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ),
                 Expanded(
                   flex: 3,
                   child: Row(
@@ -520,17 +660,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
       return provider == "WallHaven"
           ? Scaffold(
               key: _scaffoldKey,
-              backgroundColor: isLoading
-                  ? HexColor(
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                              .walls[index]
-                              .colors[
-                          Provider.of<WallHavenProvider>(context, listen: false)
-                                  .walls[index]
-                                  .colors
-                                  .length -
-                              2])
-                  : colors[0],
+              backgroundColor:
+                  isLoading ? Theme.of(context).primaryColor : colors[0],
               body: Stack(
                 children: <Widget>[
                   OptimizedCacheImage(
@@ -550,22 +681,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation(
                             isLoading
-                                ? HexColor(Provider.of<WallHavenProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .walls[index]
-                                                    .colors[
-                                                Provider.of<WallHavenProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .walls[index]
-                                                        .colors
-                                                        .length -
-                                                    1])
-                                            .computeLuminance() >
-                                        0.5
-                                    ? Colors.black
-                                    : Colors.white
+                                ? Theme.of(context).accentColor
                                 : colors[0].computeLuminance() > 0.5
                                     ? Colors.black
                                     : Colors.white,
@@ -578,21 +694,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                         child: Icon(
                           JamIcons.close_circle_f,
                           color: isLoading
-                              ? HexColor(Provider.of<WallHavenProvider>(context,
-                                                      listen: false)
-                                                  .walls[index]
-                                                  .colors[
-                                              Provider.of<WallHavenProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .walls[index]
-                                                      .colors
-                                                      .length -
-                                                  1])
-                                          .computeLuminance() >
-                                      0.5
-                                  ? Colors.black
-                                  : Colors.white
+                              ? Theme.of(context).accentColor
                               : colors[0].computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
@@ -614,9 +716,12 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                           width: MediaQuery.of(context).size.width,
                           height: MediaQuery.of(context).size.height / 20,
                           child: Center(
-                            child: Icon(
-                              JamIcons.chevron_up,
-                              color: Colors.white,
+                            child: Hero(
+                              tag: "BottomSheet",
+                              child: Icon(
+                                JamIcons.chevron_up,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -633,29 +738,12 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                           Navigator.pop(context);
                         },
                         color: isLoading
-                            ? HexColor(Provider.of<WallHavenProvider>(context,
-                                                    listen: false)
-                                                .walls[index]
-                                                .colors[
-                                            Provider.of<WallHavenProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .walls[index]
-                                                    .colors
-                                                    .length -
-                                                1])
-                                        .computeLuminance() >
-                                    0.5
-                                ? Colors.black
-                                : Colors.white
+                            ? Theme.of(context).accentColor
                             : colors[0].computeLuminance() > 0.5
                                 ? Colors.black
                                 : Colors.white,
-                        icon: Hero(
-                          tag: "BottomSheet",
-                          child: Icon(
-                            JamIcons.chevron_left,
-                          ),
+                        icon: Icon(
+                          JamIcons.chevron_left,
                         ),
                       ),
                     ),
@@ -754,38 +842,212 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                     ],
                   ),
                 )
-              : Scaffold(
-                  key: _scaffoldKey,
-                  backgroundColor: isLoading
-                      ? HexColor(Provider.of<WallHavenProvider>(context,
+              : provider.length > 6 && provider.substring(0, 6) == "Colors"
+                  ? Scaffold(
+                      key: _scaffoldKey,
+                      backgroundColor: isLoading
+                          ? Theme.of(context).primaryColor
+                          : colors[0],
+                      body: Stack(
+                        children: <Widget>[
+                          OptimizedCacheImage(
+                            imageUrl: Provider.of<PexelsProvider>(context)
+                                .wallsC[index]
+                                .src["portrait"],
+                            imageBuilder: (context, imageProvider) => Container(
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            placeholder: (context, url) => Container(
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(
+                                    isLoading
+                                        ? Theme.of(context).accentColor
+                                        : colors[0].computeLuminance() > 0.5
+                                            ? Colors.black
+                                            : Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              child: Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: isLoading
+                                      ? Theme.of(context).accentColor
+                                      : colors[0].computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: GestureDetector(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
+                                    ),
+                                    color: Color(0xFF2F2F2F)),
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width,
+                                  height:
+                                      MediaQuery.of(context).size.height / 20,
+                                  child: Center(
+                                    child: Icon(
+                                      JamIcons.chevron_up,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              onTap:
+                                  !isLoading ? _showBottomSheetCallback : () {},
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.topLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                icon: Icon(
+                                  JamIcons.chevron_left,
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    )
+                  : Scaffold(
+                      key: _scaffoldKey,
+                      backgroundColor: isLoading
+                          ? HexColor(Provider.of<WallHavenProvider>(context,
                                   listen: false)
                               .wallsS[index]
-                              .colors[
-                          Provider.of<WallHavenProvider>(context, listen: false)
+                              .colors[Provider.of<WallHavenProvider>(context,
+                                      listen: false)
                                   .wallsS[index]
                                   .colors
                                   .length -
                               2])
-                      : colors[0],
-                  body: Stack(
-                    children: <Widget>[
-                      OptimizedCacheImage(
-                        imageUrl: Provider.of<WallHavenProvider>(context)
-                            .wallsS[index]
-                            .path,
-                        imageBuilder: (context, imageProvider) => Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: imageProvider,
-                              fit: BoxFit.cover,
+                          : colors[0],
+                      body: Stack(
+                        children: <Widget>[
+                          OptimizedCacheImage(
+                            imageUrl: Provider.of<WallHavenProvider>(context)
+                                .wallsS[index]
+                                .path,
+                            imageBuilder: (context, imageProvider) => Container(
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            placeholder: (context, url) => Container(
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(
+                                    HexColor(Provider.of<WallHavenProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .wallsS[index]
+                                                        .colors[
+                                                    Provider.of<WallHavenProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .wallsS[index]
+                                                            .colors
+                                                            .length -
+                                                        1])
+                                                .computeLuminance() >
+                                            0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              child: Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: HexColor(Provider.of<
+                                                          WallHavenProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .wallsS[index]
+                                                  .colors[Provider.of<
+                                                              WallHavenProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .wallsS[index]
+                                                      .colors
+                                                      .length -
+                                                  1])
+                                              .computeLuminance() >
+                                          0.5
+                                      ? Colors.black
+                                      : Colors.white,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                        placeholder: (context, url) => Container(
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation(
-                                HexColor(Provider.of<WallHavenProvider>(context,
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: GestureDetector(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
+                                    ),
+                                    color: Color(0xFF2F2F2F)),
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width,
+                                  height:
+                                      MediaQuery.of(context).size.height / 20,
+                                  child: Center(
+                                    child: Icon(
+                                      JamIcons.chevron_up,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              onTap:
+                                  !isLoading ? _showBottomSheetCallback : () {},
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.topLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                color: HexColor(Provider.of<WallHavenProvider>(
+                                                        context,
                                                         listen: false)
                                                     .wallsS[index]
                                                     .colors[
@@ -800,94 +1062,18 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         0.5
                                     ? Colors.black
                                     : Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          child: Center(
-                            child: Icon(
-                              JamIcons.close_circle_f,
-                              color: HexColor(Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .wallsS[index]
-                                                  .colors[
-                                              Provider.of<WallHavenProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .wallsS[index]
-                                                      .colors
-                                                      .length -
-                                                  1])
-                                          .computeLuminance() >
-                                      0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: GestureDetector(
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                ),
-                                color: Color(0xFF2F2F2F)),
-                            child: SizedBox(
-                              width: MediaQuery.of(context).size.width,
-                              height: MediaQuery.of(context).size.height / 20,
-                              child: Center(
-                                child: Icon(
-                                  JamIcons.chevron_up,
-                                  color: Colors.white,
+                                icon: Hero(
+                                  tag: "BottomSheet",
+                                  child: Icon(
+                                    JamIcons.chevron_left,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          onTap: !isLoading ? _showBottomSheetCallback : () {},
-                        ),
+                          )
+                        ],
                       ),
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: IconButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            color: HexColor(Provider.of<WallHavenProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .wallsS[index]
-                                                .colors[
-                                            Provider.of<WallHavenProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .wallsS[index]
-                                                    .colors
-                                                    .length -
-                                                1])
-                                        .computeLuminance() >
-                                    0.5
-                                ? Colors.black
-                                : Colors.white,
-                            icon: Hero(
-                              tag: "BottomSheet",
-                              child: Icon(
-                                JamIcons.chevron_left,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
-                );
+                    );
     } catch (e) {
       print(e.toString());
       Navigator.pop(context);

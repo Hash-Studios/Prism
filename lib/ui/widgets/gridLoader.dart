@@ -28,6 +28,9 @@ class _GridLoaderState extends State<GridLoader>
     } else if (widget.provider == "Pexels") {
       Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
       // Provider.of<PexelsProvider>(context, listen: false).pageGetDataP = 1;
+    } else if (widget.provider.length > 6 &&
+        widget.provider.substring(0, 6) == "Colors") {
+      Provider.of<PexelsProvider>(context, listen: false).wallsC = [];
     }
     _future = widget.future;
     super.initState();
