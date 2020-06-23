@@ -9,7 +9,4 @@ const String HomeRoute = '/home';
 const String CuratedRoute = '/curated';
 const String AbstractRoute = '/abstract';
 const String NatureRoute = '/nature';
-const String RedRoute = '/red';
-const String BlueRoute = '/blue';
-const String GreenRoute = '/green';
 const String ColorRoute = '/color';
