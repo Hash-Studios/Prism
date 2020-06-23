@@ -1,3 +1,4 @@
+import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -7,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class HomeGrid extends StatefulWidget {
+  final String provider;
+  HomeGrid({@required this.provider});
   @override
   _HomeGridState createState() => _HomeGridState();
 }
@@ -81,9 +84,13 @@ class _HomeGridState extends State<HomeGrid>
     return GridView.builder(
       controller: controller,
       padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
-      itemCount: Provider.of<WallHavenProvider>(context).walls.length == 0
-          ? 24
-          : Provider.of<WallHavenProvider>(context).walls.length,
+      itemCount: widget.provider == "WallHaven"
+          ? Provider.of<WallHavenProvider>(context).walls.length == 0
+              ? 24
+              : Provider.of<WallHavenProvider>(context).walls.length
+          : Provider.of<PexelsProvider>(context).wallsP.length == 0
+              ? 24
+              : Provider.of<PexelsProvider>(context).wallsP.length,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent:
@@ -94,53 +101,108 @@ class _HomeGridState extends State<HomeGrid>
           mainAxisSpacing: 8,
           crossAxisSpacing: 8),
       itemBuilder: (context, index) {
-        if (index == Provider.of<WallHavenProvider>(context).walls.length - 1) {
-          return FlatButton(
-              color: ThemeModel().returnTheme() == ThemeType.Dark
-                  ? Colors.white10
-                  : Colors.black.withOpacity(.1),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              onPressed: () {
-                if (!seeMoreLoader) {
-                  Provider.of<WallHavenProvider>(context, listen: false)
-                      .getData();
-                  setState(() {
-                    seeMoreLoader = true;
-                    Future.delayed(Duration(seconds: 3))
-                        .then((value) => seeMoreLoader = false);
-                  });
-                }
+        if (widget.provider == "WallHaven") {
+          if (index ==
+              Provider.of<WallHavenProvider>(context).walls.length - 1) {
+            return FlatButton(
+                color: ThemeModel().returnTheme() == ThemeType.Dark
+                    ? Colors.white10
+                    : Colors.black.withOpacity(.1),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                onPressed: () {
+                  if (!seeMoreLoader) {
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getData();
+                    setState(() {
+                      seeMoreLoader = true;
+                      Future.delayed(Duration(seconds: 3))
+                          .then((value) => seeMoreLoader = false);
+                    });
+                  }
+                },
+                child: !seeMoreLoader
+                    ? Text("See more")
+                    : CircularProgressIndicator());
+          }
+          return FocusedMenuHolder(
+            provider: "WallHaven",
+            index: index,
+            child: GestureDetector(
+              child: Container(
+                decoration:
+                    Provider.of<WallHavenProvider>(context).walls.length == 0
+                        ? BoxDecoration(
+                            color: animation.value,
+                            borderRadius: BorderRadius.circular(20),
+                          )
+                        : BoxDecoration(
+                            color: animation.value,
+                            borderRadius: BorderRadius.circular(20),
+                            image: DecorationImage(
+                                image: NetworkImage(
+                                    Provider.of<WallHavenProvider>(context)
+                                        .walls[index]
+                                        .thumbs["original"]),
+                                fit: BoxFit.cover)),
+              ),
+              onTap: () {
+                Navigator.pushNamed(context, WallpaperRoute,
+                    arguments: [index]);
               },
-              child: !seeMoreLoader
-                  ? Text("See more")
-                  : CircularProgressIndicator());
-        }
-        return FocusedMenuHolder(
-          index: index,
-          child: GestureDetector(
-            child: Container(
-              decoration:
-                  Provider.of<WallHavenProvider>(context).walls.length == 0
-                      ? BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                        )
-                      : BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(
-                              image: NetworkImage(
-                                  Provider.of<WallHavenProvider>(context)
-                                      .walls[index]
-                                      .thumbs["original"]),
-                              fit: BoxFit.cover)),
             ),
-            onTap: () {
-              Navigator.pushNamed(context, WallpaperRoute, arguments: [index]);
-            },
-          ),
-        );
+          );
+        } else {
+          if (index == Provider.of<PexelsProvider>(context).wallsP.length - 1) {
+            return FlatButton(
+                color: ThemeModel().returnTheme() == ThemeType.Dark
+                    ? Colors.white10
+                    : Colors.black.withOpacity(.1),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                onPressed: () {
+                  if (!seeMoreLoader) {
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getDataP();
+                    setState(() {
+                      seeMoreLoader = true;
+                      Future.delayed(Duration(seconds: 3))
+                          .then((value) => seeMoreLoader = false);
+                    });
+                  }
+                },
+                child: !seeMoreLoader
+                    ? Text("See more")
+                    : CircularProgressIndicator());
+          }
+          return FocusedMenuHolder(
+            provider: widget.provider,
+            index: index,
+            child: GestureDetector(
+              child: Container(
+                decoration:
+                    Provider.of<PexelsProvider>(context).wallsP.length == 0
+                        ? BoxDecoration(
+                            color: animation.value,
+                            borderRadius: BorderRadius.circular(20),
+                          )
+                        : BoxDecoration(
+                            color: animation.value,
+                            borderRadius: BorderRadius.circular(20),
+                            image: DecorationImage(
+                                image: NetworkImage(
+                                    Provider.of<PexelsProvider>(context)
+                                        .wallsP[index]
+                                        .src["medium"]),
+                                fit: BoxFit.cover)),
+              ),
+              onTap: () {
+                Navigator.pushNamed(context, WallpaperRouteP,
+                    arguments: [index]);
+              },
+            ),
+          );
+        }
       },
     );
   }

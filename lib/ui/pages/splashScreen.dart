@@ -17,7 +17,7 @@ class SplashWidget extends StatelessWidget {
       Provider.of<ThemeModel>(context).currentTheme == kLightTheme
           ? 'assets/animations/Prism Splash.flr'
           : 'assets/animations/Prism Splash Dark.flr',
-      (context) => MainWidget(),
+      (context) => HomeScreen(),
       startAnimation:
           Provider.of<ThemeModel>(context).currentTheme == kLightTheme
               ? 'Main'

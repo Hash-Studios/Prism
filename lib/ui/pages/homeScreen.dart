@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
-class MainWidget extends StatelessWidget {
-  MainWidget({
+class HomeScreen extends StatelessWidget {
+  HomeScreen({
     Key key,
   }) : super(key: key);
 
@@ -17,11 +17,17 @@ class MainWidget extends StatelessWidget {
     return Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: PreferredSize(
-          child: CategoriesBar(),
+          child: CategoriesBar(
+            current: "Home",
+          ),
           preferredSize: Size(double.infinity, 55),
         ),
         body: BottomBar(
-          child: GridLoader(),
+          child: GridLoader(
+            future: Provider.of<WallHavenProvider>(context, listen: false)
+                .getData(),
+            provider: "WallHaven",
+          ),
         ));
   }
 }
