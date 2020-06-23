@@ -226,7 +226,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   onTap: () {
                     Share.share(
-                        'Hey check out this amazing wallpaper app Prism https://github.com/Hash-Studios/Prism');
+                        'Hey check out this amazing wallpaper app Prism https://play.google.com/store/apps/details?id=com.hash.prism');
                   }),
             ],
           ),
@@ -326,20 +326,20 @@ class ProfileScreen extends StatelessWidget {
                         child: Container(
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
-                              color: Colors.white10),
-                          width: 300.0,
+                              color: Theme.of(context).primaryColor),
+                          width: MediaQuery.of(context).size.width * .7,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
                               Container(
                                 height: 150,
-                                width: 300,
+                                width: MediaQuery.of(context).size.width * .7,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         topRight: Radius.circular(20)),
-                                    color: Colors.white12),
+                                    color: Theme.of(context).hintColor),
                                 child: Padding(
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 20),
@@ -353,7 +353,11 @@ class ProfileScreen extends StatelessWidget {
                                 padding: EdgeInsets.all(8),
                                 child: Text(
                                   "Prism is a collection of beautiful high quality wallpapers, curated into insightful categories, with robust back-end and beautiful UI. This app has been developed with WallHaven and Pexels API.",
-                                  style: Theme.of(context).textTheme.headline6,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline6
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
                                   textAlign: TextAlign.center,
                                 ),
                               ),
@@ -368,7 +372,10 @@ class ProfileScreen extends StatelessWidget {
                                 },
                                 child: Text(
                                   'CLOSE',
-                                  style: TextStyle(fontSize: 18.0),
+                                  style: TextStyle(
+                                    fontSize: 18.0,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                               SizedBox(
