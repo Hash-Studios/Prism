@@ -402,6 +402,17 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
       return provider == "WallHaven"
           ? Scaffold(
               key: _scaffoldKey,
+              backgroundColor: isLoading
+                  ? HexColor(
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                              .walls[index]
+                              .colors[
+                          Provider.of<WallHavenProvider>(context, listen: false)
+                                  .walls[index]
+                                  .colors
+                                  .length -
+                              2])
+                  : colors[0],
               body: Stack(
                 children: <Widget>[
                   OptimizedCacheImage(
@@ -417,15 +428,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                       ),
                     ),
                     placeholder: (context, url) => Container(
-                      color: HexColor(Provider.of<WallHavenProvider>(context,
-                                  listen: false)
-                              .walls[index]
-                              .colors[
-                          Provider.of<WallHavenProvider>(context, listen: false)
-                                  .walls[index]
-                                  .colors
-                                  .length -
-                              2]),
                       child: Center(
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation(
@@ -449,15 +451,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      color: HexColor(Provider.of<WallHavenProvider>(context,
-                                  listen: false)
-                              .walls[index]
-                              .colors[
-                          Provider.of<WallHavenProvider>(context, listen: false)
-                                  .walls[index]
-                                  .colors
-                                  .length -
-                              2]),
                       child: Center(
                         child: Icon(
                           JamIcons.close_circle_f,
@@ -541,6 +534,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
             )
           : Scaffold(
               key: _scaffoldKey,
+              backgroundColor:
+                  isLoading ? Theme.of(context).primaryColor : colors[0],
               body: Stack(
                 children: <Widget>[
                   OptimizedCacheImage(
@@ -559,7 +554,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                       child: Center(
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation(
-                            Colors.white,
+                            isLoading
+                                ? Theme.of(context).accentColor
+                                : colors[0].computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
                           ),
                         ),
                       ),
@@ -568,7 +567,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                       child: Center(
                         child: Icon(
                           JamIcons.close_circle_f,
-                          color: Colors.white,
+                          color: isLoading
+                              ? Theme.of(context).accentColor
+                              : colors[0].computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
                         ),
                       ),
                     ),
@@ -605,7 +608,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        color: Colors.white,
+                        color: isLoading
+                            ? Theme.of(context).accentColor
+                            : colors[0].computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
                         icon: Icon(
                           JamIcons.chevron_left,
                         ),
