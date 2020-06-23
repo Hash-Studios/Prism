@@ -87,26 +87,27 @@ class WallHavenProvider extends ChangeNotifier {
         .then(
       (http.Response response) {
         var resp = json.decode(response.body);
+        print(resp);
         for (int i = 0; i < resp["data"].length; i++) {
           this.walls.add(
                 WallPaper(
                     id: resp["data"][i]["id"],
                     url: resp["data"][i]["url"],
                     short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"],
-                    favorites: resp["data"][i]["favorites"],
+                    views: resp["data"][i]["views"].toString(),
+                    favorites: resp["data"][i]["favorites"].toString(),
                     category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"],
-                    dimension_y: resp["data"][i]["dimension_y"],
-                    resolution: resp["data"][i]["id"],
-                    file_size: resp["data"][i]["file_size"],
+                    dimension_x: resp["data"][i]["dimension_x"].toString(),
+                    dimension_y: resp["data"][i]["dimension_y"].toString(),
+                    resolution: resp["data"][i]["resolution"],
+                    file_size: resp["data"][i]["file_size"].toString(),
                     colors: resp["data"][i]["colors"],
                     path: resp["data"][i]["path"],
                     thumbs: resp["data"][i]["thumbs"],
                     current_page: resp["meta"]["current_page"]),
               );
         }
-        this.pageGetQuery = resp["meta"]["current_page"] + 1;
+        this.pageGetQuery = this.pageGetQuery + 1;
       },
     ).whenComplete(() => notifyListeners());
     return this.walls;
