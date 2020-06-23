@@ -3,6 +3,7 @@ import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
@@ -96,6 +97,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                             ),
                             onTap: () {
                               Navigator.pop(context);
+                              SystemChrome.setEnabledSystemUIOverlays([
+                                SystemUiOverlay.top,
+                                SystemUiOverlay.bottom
+                              ]);
                               Navigator.pushNamed(
                                 context,
                                 ColorRoute,
@@ -668,7 +673,15 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    SystemChrome.setEnabledSystemUIOverlays(
+        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    SystemChrome.setEnabledSystemUIOverlays([]);
     try {
       return provider == "WallHaven"
           ? Scaffold(
