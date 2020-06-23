@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 class WallHavenProvider extends ChangeNotifier {
   List<WallPaper> walls = [];
+  List<WallPaper> wallsS = [];
   int pageGetData = 1;
   int pageGetQuery = 1;
   int pageGetTag = 1;
@@ -81,15 +82,18 @@ class WallHavenProvider extends ChangeNotifier {
   }
 
   Future<List<WallPaper>> getWallsbyQuery(String query) async {
+    print(
+        "https://wallhaven.cc/api/v1/search?q=$query&page=1");
     http
         .get(
-            "https://wallhaven.cc/api/v1/search?query=$query&page=${this.pageGetQuery}&categories=100&purity=100&sorting=random&order=des")
+            "https://wallhaven.cc/api/v1/search?q=$query&page=1")
         .then(
       (http.Response response) {
         var resp = json.decode(response.body);
-        print(resp);
+        print(resp["data"].length);
+        print(wallsS.length);
         for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
+          this.wallsS.add(
                 WallPaper(
                     id: resp["data"][i]["id"],
                     url: resp["data"][i]["url"],
@@ -108,9 +112,43 @@ class WallHavenProvider extends ChangeNotifier {
               );
         }
         this.pageGetQuery = this.pageGetQuery + 1;
+        return this.wallsS;
       },
-    ).whenComplete(() => notifyListeners());
-    return this.walls;
+    );
+  }
+  Future<List<WallPaper>> getWallsbyQueryPage(String query) async {
+    print(
+        "https://wallhaven.cc/api/v1/search?q=$query&page=${this.pageGetQuery}");
+    http
+        .get(
+            "https://wallhaven.cc/api/v1/search?q=$query&page=${this.pageGetQuery}")
+        .then(
+      (http.Response response) {
+        var resp = json.decode(response.body);
+        for (int i = 0; i < resp["data"].length; i++) {
+          this.wallsS.add(
+                WallPaper(
+                    id: resp["data"][i]["id"],
+                    url: resp["data"][i]["url"],
+                    short_url: resp["data"][i]["short_url"],
+                    views: resp["data"][i]["views"].toString(),
+                    favorites: resp["data"][i]["favorites"].toString(),
+                    category: resp["data"][i]["category"],
+                    dimension_x: resp["data"][i]["dimension_x"].toString(),
+                    dimension_y: resp["data"][i]["dimension_y"].toString(),
+                    resolution: resp["data"][i]["resolution"],
+                    file_size: resp["data"][i]["file_size"].toString(),
+                    colors: resp["data"][i]["colors"],
+                    path: resp["data"][i]["path"],
+                    thumbs: resp["data"][i]["thumbs"],
+                    current_page: resp["meta"]["current_page"]),
+              );
+        }
+        this.pageGetQuery = this.pageGetQuery + 1;
+        notifyListeners();
+        return this.wallsS;
+      },
+    );
   }
 
   Future<List<WallPaper>> getWallsbyTag(String tagname) async {
