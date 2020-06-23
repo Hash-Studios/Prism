@@ -3,6 +3,7 @@ import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:optimized_cached_image/widgets.dart';
+import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 
 class WallpaperScreenP extends StatefulWidget {
@@ -15,11 +16,36 @@ class WallpaperScreenP extends StatefulWidget {
 class _WallpaperScreenPState extends State<WallpaperScreenP> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int index;
+  String link;
+
+  bool isLoading = true;
+  PaletteGenerator paletteGenerator;
+  List<Color> colors;
+
+  Future<void> _updatePaletteGenerator() async {
+    setState(() {
+      isLoading = true;
+    });
+    paletteGenerator = await PaletteGenerator.fromImageProvider(
+      new NetworkImage(link),
+      maximumColorCount: 20,
+    );
+    setState(() {
+      isLoading = false;
+    });
+    colors = paletteGenerator.colors.toList();
+    if (paletteGenerator.colors.length > 5) {
+      colors = colors.sublist(0, 5);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     index = widget.arguements[0];
+    link = widget.arguements[1];
+    isLoading = true;
+    _updatePaletteGenerator();
   }
 
   void _showBottomSheetCallback() {
@@ -30,7 +56,7 @@ class _WallpaperScreenPState extends State<WallpaperScreenP> {
             color: Color(0xFF2F2F2F),
           ),
           child: SizedBox(
-            height: MediaQuery.of(context).size.height * .4,
+            height: MediaQuery.of(context).size.height * .42,
             width: MediaQuery.of(context).size.width,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,31 +75,25 @@ class _WallpaperScreenPState extends State<WallpaperScreenP> {
                     ),
                   ),
                 ),
-                // Expanded(
-                //   flex: 2,
-                //   child: Row(
-                //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                //     children: List.generate(
-                //       Provider.of<PexelsProvider>(context, listen: false)
-                //           .wallsP[index]
-                //           .colors
-                //           .length,
-                //       (color) {
-                //         return Container(
-                //           decoration: BoxDecoration(
-                //             color: HexColor(Provider.of<PexelsProvider>(context,
-                //                     listen: false)
-                //                 .walls[index]
-                //                 .colors[color]),
-                //             borderRadius: BorderRadius.circular(500),
-                //           ),
-                //           height: MediaQuery.of(context).size.width / 8,
-                //           width: MediaQuery.of(context).size.width / 8,
-                //         );
-                //       },
-                //     ),
-                //   ),
-                // ),
+                Expanded(
+                  flex: 2,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(
+                      colors.length,
+                      (color) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: colors[color],
+                            borderRadius: BorderRadius.circular(500),
+                          ),
+                          height: MediaQuery.of(context).size.width / 8,
+                          width: MediaQuery.of(context).size.width / 8,
+                        );
+                      },
+                    ),
+                  ),
+                ),
                 Expanded(
                   flex: 4,
                   child: Padding(
@@ -321,7 +341,7 @@ class _WallpaperScreenPState extends State<WallpaperScreenP> {
                   ),
                 ),
               ),
-              onTap: _showBottomSheetCallback,
+              onTap: !isLoading ? _showBottomSheetCallback : () {},
             ),
           ),
           Align(
