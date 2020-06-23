@@ -1,5 +1,4 @@
 import 'package:Prism/data/pexels/provider/pexels.dart';
-import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/homeGrid.dart';

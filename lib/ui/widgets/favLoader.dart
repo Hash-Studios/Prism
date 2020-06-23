@@ -1,11 +1,8 @@
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/favGrid.dart';
-import 'package:Prism/ui/widgets/gridLoader.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
-import 'package:Prism/ui/widgets/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:Prism/main.dart' as main;
 
 class FavLoader extends StatefulWidget {
   @override
