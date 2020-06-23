@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class GridLoader extends StatefulWidget {
+  final Future future;
+  final String provider;
+  GridLoader({@required this.future, @required this.provider});
   @override
   _GridLoaderState createState() => _GridLoaderState();
 }
@@ -15,11 +18,11 @@ class _GridLoaderState extends State<GridLoader>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
-  Future<List<WallPaper>> _future;
+  // Future<List<WallPaper>> _future;
 
   @override
   void initState() {
-    _future = Provider.of<WallHavenProvider>(context, listen: false).getData();
+    // _future = Provider.of<WallHavenProvider>(context, listen: false).getData();
     super.initState();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -78,8 +81,8 @@ class _GridLoaderState extends State<GridLoader>
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
-    return FutureBuilder<List<WallPaper>>(
-      future: _future,
+    return FutureBuilder(
+      future: widget.future,
       builder: (ctx, snapshot) {
         if (snapshot == null) {
           print("snapshot null");
@@ -91,7 +94,9 @@ class _GridLoaderState extends State<GridLoader>
           return LoadingCards(controller: controller, animation: animation);
         } else {
           // print("snapshot done");
-          return HomeGrid();
+          return HomeGrid(
+            provider: widget.provider,
+          );
         }
       },
     );

@@ -4,7 +4,7 @@ class WallPaperP {
   final String height;
   final String url;
   final String photographer;
-  final Map<String, String> src;
+  final Map src;
   final int current_page;
   WallPaperP({
     this.id,

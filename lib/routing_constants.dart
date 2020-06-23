@@ -5,3 +5,6 @@ const String OnboardRoute3 = 'onboard2';
 const String SearchRoute = '/search';
 const String FavRoute = '/favourite';
 const String WallpaperRoute = '/wallpaper';
+const String WallpaperRouteP = '/wallpaperp';
+const String HomeRoute = '/home';
+const String CuratedRoute = '/curated';

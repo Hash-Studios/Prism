@@ -8,7 +8,7 @@ class PexelsProvider extends ChangeNotifier {
   List<WallPaperP> wallsP = [];
   int pageGetDataP = 1;
   int pageGetQueryP = 1;
-  void getDataP() async {
+  Future<List<WallPaperP>> getDataP() async {
     http.get(
         "https://api.pexels.com/v1/curated?per_page=24&page=${this.pageGetDataP}",
         headers: {
@@ -20,19 +20,20 @@ class PexelsProvider extends ChangeNotifier {
         for (int i = 0; i < resp["photos"].length; i++) {
           this.wallsP.add(
                 WallPaperP(
-                    id: resp["photos"][i]["id"],
+                    id: resp["photos"][i]["id"].toString(),
                     url: resp["photos"][i]["url"],
-                    width: resp["photos"][i]["width"],
-                    height: resp["photos"][i]["height"],
+                    width: resp["photos"][i]["width"].toString(),
+                    height: resp["photos"][i]["height"].toString(),
                     photographer: resp["photos"][i]["photographer"],
-                    src: resp["photos"][i]["category"],
+                    src: resp["photos"][i]["src"],
                     current_page: resp["page"]),
               );
         }
-        this.pageGetDataP = int.parse(resp["page"]) + 1;
+        this.pageGetDataP = resp["page"] + 1;
+        print("data done");
+        return this.wallsP;
       },
     );
-    notifyListeners();
   }
 
   Future<WallPaperP> getWallbyIDP(String id) async {

@@ -1,13 +1,18 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/focusedMenuDetails.dart';
+import 'package:Prism/ui/widgets/focusedMenuDetailsP.dart';
 import 'package:flutter/material.dart';
 
 class FocusedMenuHolder extends StatefulWidget {
+  final String provider;
   final Widget child;
   final int index;
 
   const FocusedMenuHolder(
-      {Key key, @required this.child, @required this.index});
+      {Key key,
+      @required this.provider,
+      @required this.child,
+      @required this.index});
 
   @override
   _FocusedMenuHolderState createState() => _FocusedMenuHolderState();
@@ -63,12 +68,19 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
                             Tween(begin: 0.0, end: 1.0).animate(animation);
                         return FadeTransition(
                             opacity: animation,
-                            child: FocusedMenuDetails(
-                              child: widget.child,
-                              childOffset: childOffset,
-                              childSize: childSize,
-                              index: widget.index,
-                            ));
+                            child: widget.provider == "WallHaven"
+                                ? FocusedMenuDetails(
+                                    child: widget.child,
+                                    childOffset: childOffset,
+                                    childSize: childSize,
+                                    index: widget.index,
+                                  )
+                                : FocusedMenuDetailsP(
+                                    child: widget.child,
+                                    childOffset: childOffset,
+                                    childSize: childSize,
+                                    index: widget.index,
+                                  ));
                       },
                       fullscreenDialog: true,
                       opaque: false));
