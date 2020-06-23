@@ -23,13 +23,12 @@ class _SearchScreenState extends State<SearchScreen> {
     'Cars',
     'Comics',
   ];
-  bool isTyping;
   bool isSubmitted;
   TextEditingController searchController = TextEditingController();
+  Future _future;
   @override
   void initState() {
     isSubmitted = false;
-    isTyping = false;
     super.initState();
   }
 
@@ -65,15 +64,14 @@ class _SearchScreenState extends State<SearchScreen> {
                     hintText: "Search",
                     suffixIcon: Icon(JamIcons.search),
                   ),
-                  onChanged: (tex) {
-                    setState(() {
-                      isTyping = true;
-                    });
-                  },
                   onSubmitted: (tex) {
                     setState(() {
-                      isTyping = false;
                       isSubmitted = true;
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .wallsS = [];
+                      _future =
+                          Provider.of<WallHavenProvider>(context, listen: false)
+                              .getWallsbyQuery(tex);
                     });
                   },
                 ),
@@ -114,9 +112,8 @@ class _SearchScreenState extends State<SearchScreen> {
         body: BottomBar(
           child: isSubmitted
               ? SearchLoader(
-                  future: Provider.of<WallHavenProvider>(context)
-                      .getWallsbyQuery(searchController.text),
-                  provider: "WallHaven",
+                  future: _future,
+                  provider: searchController.text,
                 )
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -157,7 +154,7 @@ class _SearchLoaderState extends State<SearchLoader>
 
   @override
   void initState() {
-    Provider.of<WallHavenProvider>(context, listen: false).walls = [];
+    Provider.of<WallHavenProvider>(context, listen: false).wallsS = [];
     Provider.of<WallHavenProvider>(context, listen: false).pageGetQuery = 1;
     _future = widget.future;
     super.initState();
