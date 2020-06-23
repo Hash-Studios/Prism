@@ -1,6 +1,7 @@
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
+import 'package:Prism/ui/widgets/categoriesLoader.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -43,6 +44,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   @override
   Widget build(BuildContext context) {
+    // Provider.of<CategoryProvider>(context).categories.remove(widget.current);
+    // Provider.of<CategoryProvider>(context).categories.insert(0, widget.current);
     return AppBar(
       excludeHeaderSemantics: false,
       automaticallyImplyLeading: false,
