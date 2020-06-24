@@ -4,6 +4,8 @@ import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/downloadButton.dart';
+import 'package:Prism/ui/widgets/favWallpaperButton.dart';
+import 'package:Prism/ui/widgets/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -785,56 +787,12 @@ class FocusedMenuDetails extends StatelessWidget {
               Positioned(
                 top: topOffset,
                 left: leftOffset,
-                child: GestureDetector(
-                  onTap: () {
-                    print("Wallpaper");
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(.25),
-                            blurRadius: 4,
-                            offset: Offset(0, 4))
-                      ],
-                      borderRadius: BorderRadius.circular(500),
-                    ),
-                    padding: EdgeInsets.all(17),
-                    child: Icon(
-                      JamIcons.layers,
-                      color: Theme.of(context).accentColor,
-                      size: 30,
-                    ),
-                  ),
-                ),
+                child: SetWallpaperButton(),
               ),
               Positioned(
                 top: topOffset - fabHeartTopOffset,
                 left: leftOffset - fabHeartLeftOffset,
-                child: GestureDetector(
-                  onTap: () {
-                    print("Fav");
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(.25),
-                            blurRadius: 4,
-                            offset: Offset(0, 4))
-                      ],
-                      borderRadius: BorderRadius.circular(500),
-                    ),
-                    padding: EdgeInsets.all(17),
-                    child: Icon(
-                      JamIcons.heart,
-                      color: Theme.of(context).accentColor,
-                      size: 30,
-                    ),
-                  ),
-                ),
+                child: FavouriteWallpaperButton(),
               ),
               Positioned(
                 top: topOffset + fabWallTopOffset,

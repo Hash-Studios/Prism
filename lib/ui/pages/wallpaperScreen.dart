@@ -3,6 +3,8 @@ import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/downloadButton.dart';
+import 'package:Prism/ui/widgets/favWallpaperButton.dart';
+import 'package:Prism/ui/widgets/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
@@ -836,52 +838,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         .path
                                         .toString(),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          print("Wallpaper");
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withOpacity(.25),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 4))
-                            ],
-                            borderRadius: BorderRadius.circular(500),
-                          ),
-                          padding: EdgeInsets.all(17),
-                          child: Icon(
-                            JamIcons.layers,
-                            color: Theme.of(context).accentColor,
-                            size: 30,
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          print("Fav");
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withOpacity(.25),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 4))
-                            ],
-                            borderRadius: BorderRadius.circular(500),
-                          ),
-                          padding: EdgeInsets.all(17),
-                          child: Icon(
-                            JamIcons.heart,
-                            color: Theme.of(context).accentColor,
-                            size: 30,
-                          ),
-                        ),
-                      ),
+                      SetWallpaperButton(),
+                      FavouriteWallpaperButton(),
                     ],
                   ),
                 ),
