@@ -96,7 +96,8 @@ class FocusedMenuDetails extends StatelessWidget {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
                     child: Container(
-                      color: ThemeModel().returnTheme() == ThemeType.Dark
+                      color: Provider.of<ThemeModel>(context,listen:false).returnTheme() ==
+                              ThemeType.Dark
                           ? Colors.black.withOpacity(0.75)
                           : Colors.white.withOpacity(0.75),
                     ),
