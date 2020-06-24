@@ -2,7 +2,6 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:Prism/routing_constants.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:flutter/material.dart';
 
 class DownloadScreen extends StatefulWidget {
@@ -10,11 +9,7 @@ class DownloadScreen extends StatefulWidget {
   _DownloadScreenState createState() => _DownloadScreenState();
 }
 
-class _DownloadScreenState extends State<DownloadScreen>
-    // with SingleTickerProviderStateMixin 
-    {
-  // AnimationController _controller;
-  // Animation<Color> animation;
+class _DownloadScreenState extends State<DownloadScreen> {
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = HashMap();
   List files = List();
@@ -26,56 +21,10 @@ class _DownloadScreenState extends State<DownloadScreen>
     dataFetched = false;
     files = [];
     readData();
-    // _controller = AnimationController(
-    //   duration: const Duration(milliseconds: 800),
-    //   vsync: this,
-    // );
-    // animation = ThemeModel().returnTheme() == ThemeType.Dark
-    //     ? TweenSequence<Color>(
-    //         [
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.white10,
-    //               end: Colors.white12,
-    //             ),
-    //           ),
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.white12,
-    //               end: Colors.white10,
-    //             ),
-    //           ),
-    //         ],
-    //       ).animate(_controller)
-    //     : TweenSequence<Color>(
-    //         [
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.black.withOpacity(.1),
-    //               end: Colors.black.withOpacity(.14),
-    //             ),
-    //           ),
-    //           TweenSequenceItem(
-    //             weight: 1.0,
-    //             tween: ColorTween(
-    //               begin: Colors.black.withOpacity(.14),
-    //               end: Colors.black.withOpacity(.1),
-    //             ),
-    //           ),
-    //         ],
-    //       ).animate(_controller)
-    //   ..addListener(() {
-    //     setState(() {});
-    //   });
-    // _controller.repeat();
   }
 
   @override
   void dispose() {
-    // _controller?.dispose();
     super.dispose();
   }
 
@@ -114,7 +63,7 @@ class _DownloadScreenState extends State<DownloadScreen>
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-          child: RefreshIndicator(
+      child: RefreshIndicator(
         key: refreshDownloadKey,
         onRefresh: refreshList,
         child: Container(
@@ -135,23 +84,21 @@ class _DownloadScreenState extends State<DownloadScreen>
                 child: Container(
                   decoration: files.length == 0
                       ? BoxDecoration(
-                          color: Theme.of(context).accentColor.withOpacity(0.12),
+                          color:
+                              Theme.of(context).accentColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(20),
                         )
                       : BoxDecoration(
-                          color: Theme.of(context).accentColor.withOpacity(0.12),
+                          color:
+                              Theme.of(context).accentColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(20),
                           image: DecorationImage(
-                              image: FileImage(files[index]), fit: BoxFit.cover)),
+                              image: FileImage(files[index]),
+                              fit: BoxFit.cover)),
                 ),
                 onTap: () {
-                  //     Navigator.pushNamed(context, WallpaperRoute, arguments: [
-                  //   "Downloads",
-                  //   index,
-                  //   Provider.of<WallHavenProvider>(context, listen: false)
-                  //       .walls[index]
-                  //       .thumbs["small"],
-                  // ]);
+                  Navigator.pushNamed(context, DownloadWallpaperRoute,
+                      arguments: ["Downloads", files[index]]);
                 },
               );
             },
