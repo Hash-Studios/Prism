@@ -247,3 +247,5 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] All rights reserved to provider name
 - [x] Show useful stuff in the info bar
 - [x] colorpicker results are the same (not working except rgb)
+- [ ] add analytics
+- [ ] add share button and implementation
