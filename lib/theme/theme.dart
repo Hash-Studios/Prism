@@ -54,7 +54,7 @@ var kLightTheme = ThemeData(
     ),
     bodyText2: TextStyle(
       fontFamily: 'Proxima Nova',
-      fontSize: 18,
+      fontSize: 14,
       fontWeight: FontWeight.w500,
       color: Colors.white.withOpacity(.75),
     ),
@@ -126,7 +126,7 @@ var kDarkTheme = ThemeData(
     ),
     bodyText2: TextStyle(
       fontFamily: 'Proxima Nova',
-      fontSize: 18,
+      fontSize: 14,
       fontWeight: FontWeight.w500,
       color: config.Colors().accentDarkColor(.85),
     ),

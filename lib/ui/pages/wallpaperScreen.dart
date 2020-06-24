@@ -120,9 +120,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                     ? Expanded(
                         flex: 4,
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
+                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: <Widget>[
                               Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -137,30 +138,61 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                               listen: false)
                                           .walls[index]
                                           .id
-                                          .toString(),
+                                          .toString()
+                                          .toUpperCase(),
                                       style:
                                           Theme.of(context).textTheme.bodyText1,
                                     ),
                                   ),
-                                  Text(
-                                    "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].views.toString()} views",
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        JamIcons.eye,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].views.toString()}",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2,
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].favorites.toString()} favs",
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
+                                  SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        JamIcons.heart_f,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].favorites.toString()}",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2,
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    Provider.of<WallHavenProvider>(context,
-                                            listen: false)
-                                        .walls[index]
-                                        .short_url
-                                        .toString()
-                                        .replaceAll("https://", ""),
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
+                                  SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        JamIcons.save,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        "${double.parse(((double.parse(Provider.of<WallHavenProvider>(context, listen: false).walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2,
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -171,39 +203,70 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 children: <Widget>[
                                   Padding(
                                     padding:
-                                        const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                    child: Text(
-                                      Provider.of<WallHavenProvider>(context,
-                                                  listen: false)
-                                              .walls[index]
-                                              .category
-                                              .toString()[0]
-                                              .toUpperCase() +
+                                        const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                                    child: Row(
+                                      children: [
+                                        Text(
                                           Provider.of<WallHavenProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .walls[index]
-                                              .category
-                                              .toString()
-                                              .substring(1),
-                                      style:
-                                          Theme.of(context).textTheme.bodyText1,
+                                                      context,
+                                                      listen: false)
+                                                  .walls[index]
+                                                  .category
+                                                  .toString()[0]
+                                                  .toUpperCase() +
+                                              Provider.of<WallHavenProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .walls[index]
+                                                  .category
+                                                  .toString()
+                                                  .substring(1),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2,
+                                        ),
+                                        SizedBox(width: 10),
+                                        Icon(
+                                          JamIcons.unordered_list,
+                                          size: 20,
+                                          color: Colors.white70,
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Text(
-                                    "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].resolution.toString()}",
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
+                                  SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].resolution.toString()}",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Icon(
+                                        JamIcons.set_square,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    "${double.parse(((double.parse(Provider.of<WallHavenProvider>(context, listen: false).walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
-                                  ),
-                                  Text(
-                                    "All Rights Reserved",
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
+                                  SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        provider.toString(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Icon(
+                                        JamIcons.database,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -215,17 +278,187 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                         ? Expanded(
                             flex: 4,
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: <Widget>[
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
+                              padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                    child: Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          .8,
+                                      child: Text(
+                                        Provider.of<PexelsProvider>(context,
+                                                    listen: false)
+                                                .wallsP[index]
+                                                .url
+                                                .toString()
+                                                .replaceAll(
+                                                    "https://www.pexels.com/photo/",
+                                                    "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")[0]
+                                                .toUpperCase() +
+                                            Provider.of<PexelsProvider>(context,
+                                                    listen: false)
+                                                .wallsP[index]
+                                                .url
+                                                .toString()
+                                                .replaceAll(
+                                                    "https://www.pexels.com/photo/",
+                                                    "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")
+                                                .substring(
+                                                    1,
+                                                    Provider.of<PexelsProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .wallsP[index]
+                                                            .url
+                                                            .toString()
+                                                            .replaceAll(
+                                                                "https://www.pexels.com/photo/",
+                                                                "")
+                                                            .replaceAll(
+                                                                "-", " ")
+                                                            .replaceAll("/", "")
+                                                            .length -
+                                                        8),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: <Widget>[
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.camera,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Container(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    .4,
+                                                child: Text(
+                                                  Provider.of<PexelsProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .wallsP[index]
+                                                      .photographer
+                                                      .toString(),
+                                                  textAlign: TextAlign.left,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.set_square,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Text(
+                                                "${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].height.toString()}",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          Row(
+                                            children: [
+                                              Text(
+                                                Provider.of<PexelsProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .wallsP[index]
+                                                    .id
+                                                    .toString(),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.info,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                provider.toString(),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.database,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : provider.length > 6 &&
+                                provider.substring(0, 6) == "Colors"
+                            ? Expanded(
+                                flex: 4,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
-                                    children: <Widget>[
+                                    children: [
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),
@@ -233,11 +466,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                           width: MediaQuery.of(context)
                                                   .size
                                                   .width *
-                                              .4,
+                                              .8,
                                           child: Text(
                                             Provider.of<PexelsProvider>(context,
                                                         listen: false)
-                                                    .wallsP[index]
+                                                    .wallsC[index]
                                                     .url
                                                     .toString()
                                                     .replaceAll(
@@ -249,7 +482,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                 Provider.of<PexelsProvider>(
                                                         context,
                                                         listen: false)
-                                                    .wallsP[index]
+                                                    .wallsC[index]
                                                     .url
                                                     .toString()
                                                     .replaceAll(
@@ -263,7 +496,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                                     context,
                                                                     listen:
                                                                         false)
-                                                                .wallsP[index]
+                                                                .wallsC[index]
                                                                 .url
                                                                 .toString()
                                                                 .replaceAll(
@@ -278,197 +511,118 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText1,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
                                           ),
                                         ),
                                       ),
-                                      Text(
-                                        "${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].height.toString()}",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                    ],
-                                  ),
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: <Widget>[
-                                      Container(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                .4,
-                                        child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              0, 5, 0, 10),
-                                          child: Text(
-                                            Provider.of<PexelsProvider>(context,
-                                                    listen: false)
-                                                .wallsP[index]
-                                                .photographer
-                                                .toString(),
-                                            textAlign: TextAlign.end,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText1,
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        Provider.of<PexelsProvider>(context,
-                                                listen: false)
-                                            .wallsP[index]
-                                            .id
-                                            .toString(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                      // Text(
-                                      //   "${double.parse(((double.parse(Provider.of<PexelsProvider>(context, listen: false).walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
-                                      //   style: Theme.of(context).textTheme.bodyText2,
-                                      // ),
-                                      Text(
-                                        "All Rights Reserved",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : provider.length > 6 &&
-                                provider.substring(0, 6) == "Colors"
-                            ? Expanded(
-                                flex: 4,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: <Widget>[
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
+                                      Row(
                                         mainAxisAlignment:
-                                            MainAxisAlignment.start,
+                                            MainAxisAlignment.spaceBetween,
                                         crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                            CrossAxisAlignment.end,
                                         children: <Widget>[
-                                          Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                0, 5, 0, 10),
-                                            child: Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  .4,
-                                              child: Text(
-                                                Provider.of<PexelsProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .wallsC[index]
-                                                        .url
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")[0]
-                                                        .toUpperCase() +
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.camera,
+                                                    size: 20,
+                                                    color: Colors.white70,
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Container(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            .4,
+                                                    child: Text(
+                                                      Provider.of<PexelsProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .wallsC[index]
+                                                          .photographer
+                                                          .toString(),
+                                                      textAlign: TextAlign.left,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyText2,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              SizedBox(height: 5),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.set_square,
+                                                    size: 20,
+                                                    color: Colors.white70,
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Text(
+                                                    "${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].height.toString()}",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2,
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: <Widget>[
+                                              Row(
+                                                children: [
+                                                  Text(
                                                     Provider.of<PexelsProvider>(
                                                             context,
                                                             listen: false)
                                                         .wallsC[index]
-                                                        .url
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")
-                                                        .substring(
-                                                            1,
-                                                            Provider.of<PexelsProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .wallsC[
-                                                                        index]
-                                                                    .url
-                                                                    .toString()
-                                                                    .replaceAll(
-                                                                        "https://www.pexels.com/photo/", "")
-                                                                    .replaceAll(
-                                                                        "-", " ")
-                                                                    .replaceAll(
-                                                                        "/", "")
-                                                                    .length -
-                                                                8),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyText1,
+                                                        .id
+                                                        .toString(),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2,
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Icon(
+                                                    JamIcons.info,
+                                                    size: 20,
+                                                    color: Colors.white70,
+                                                  ),
+                                                ],
                                               ),
-                                            ),
-                                          ),
-                                          Text(
-                                            "${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].height.toString()}",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
-                                          ),
-                                        ],
-                                      ),
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: <Widget>[
-                                          Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                .4,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      0, 5, 0, 10),
-                                              child: Text(
-                                                Provider.of<PexelsProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .wallsC[index]
-                                                    .photographer
-                                                    .toString(),
-                                                textAlign: TextAlign.end,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyText1,
+                                              SizedBox(height: 5),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    "Pexels",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2,
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Icon(
+                                                    JamIcons.database,
+                                                    size: 20,
+                                                    color: Colors.white70,
+                                                  ),
+                                                ],
                                               ),
-                                            ),
-                                          ),
-                                          Text(
-                                            Provider.of<PexelsProvider>(context,
-                                                    listen: false)
-                                                .wallsC[index]
-                                                .id
-                                                .toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
-                                          ),
-                                          // Text(
-                                          //   "${double.parse(((double.parse(Provider.of<PexelsProvider>(context, listen: false).walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
-                                          //   style: Theme.of(context).textTheme.bodyText2,
-                                          // ),
-                                          Text(
-                                            "All Rights Reserved",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
+                                            ],
                                           ),
                                         ],
                                       ),
@@ -480,10 +634,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 flex: 4,
                                 child: Padding(
                                   padding:
-                                      const EdgeInsets.fromLTRB(35, 0, 35, 0),
+                                      const EdgeInsets.fromLTRB(35, 0, 35, 15),
                                   child: Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: <Widget>[
                                       Column(
                                         mainAxisSize: MainAxisSize.min,
@@ -501,35 +656,62 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                       listen: false)
                                                   .wallsS[index]
                                                   .id
-                                                  .toString(),
+                                                  .toString()
+                                                  .toUpperCase(),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText1,
                                             ),
                                           ),
-                                          Text(
-                                            "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()} views",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.eye,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Text(
+                                                "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()}",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                            ],
                                           ),
-                                          Text(
-                                            "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].favorites.toString()} favs",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
+                                          SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.heart_f,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Text(
+                                                "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].favorites.toString()}",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                            ],
                                           ),
-                                          Text(
-                                            Provider.of<WallHavenProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .wallsS[index]
-                                                .short_url
-                                                .toString()
-                                                .replaceAll("https://", ""),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
+                                          SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.save,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Text(
+                                                "${double.parse(((double.parse(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
@@ -542,44 +724,75 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         children: <Widget>[
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(
-                                                0, 5, 0, 10),
-                                            child: Text(
-                                              Provider.of<WallHavenProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .wallsS[index]
-                                                      .category
-                                                      .toString()[0]
-                                                      .toUpperCase() +
+                                                0, 0, 0, 0),
+                                            child: Row(
+                                              children: [
+                                                Text(
                                                   Provider.of<WallHavenProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .wallsS[index]
-                                                      .category
-                                                      .toString()
-                                                      .substring(1),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText1,
+                                                              context,
+                                                              listen: false)
+                                                          .wallsS[index]
+                                                          .category
+                                                          .toString()[0]
+                                                          .toUpperCase() +
+                                                      Provider.of<WallHavenProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .wallsS[index]
+                                                          .category
+                                                          .toString()
+                                                          .substring(1),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2,
+                                                ),
+                                                SizedBox(width: 10),
+                                                Icon(
+                                                  JamIcons.unordered_list,
+                                                  size: 20,
+                                                  color: Colors.white70,
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          Text(
-                                            "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].resolution.toString()}",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
+                                          SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].resolution.toString()}",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.set_square,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
                                           ),
-                                          Text(
-                                            "${double.parse(((double.parse(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
-                                          ),
-                                          Text(
-                                            "All Rights Reserved",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
+                                          SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                provider
+                                                        .toString()[0]
+                                                        .toUpperCase() +
+                                                    provider
+                                                        .toString()
+                                                        .substring(1),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.search,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
