@@ -311,7 +311,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                     .substring(
                                                         1,
                                                         Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
-                                                            8)
+                                                            7)
                                             : Provider.of<PexelsProvider>(context, listen: false)
                                                     .wallsP[index]
                                                     .url
@@ -492,7 +492,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                         .substring(
                                                             1,
                                                             Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
-                                                                8)
+                                                                7)
                                                 : Provider.of<PexelsProvider>(context, listen: false)
                                                         .wallsC[index]
                                                         .url
