@@ -1,30 +1,30 @@
-import 'dart:io';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class DownloadWallpaperScreen extends StatefulWidget {
+class ShareWallpaperViewScreen extends StatefulWidget {
   final List arguments;
-  DownloadWallpaperScreen({@required this.arguments});
+  ShareWallpaperViewScreen({this.arguments});
+
   @override
-  _DownloadWallpaperScreenState createState() =>
-      _DownloadWallpaperScreenState();
+  _ShareWallpaperViewScreenState createState() =>
+      _ShareWallpaperViewScreenState();
 }
 
-class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
+class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  String id;
   String provider;
-  File file;
-
+  String url;
   bool isLoading = true;
-
   @override
   void initState() {
-    super.initState();
-    provider = widget.arguments[0];
-    file = widget.arguments[1];
+    id = widget.arguments[0];
+    provider = widget.arguments[1];
+    url = widget.arguments[2];
     isLoading = true;
+    super.initState();
   }
 
   @override
@@ -46,8 +46,8 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
             Container(
               height: MediaQuery.of(context).size.height,
               width: MediaQuery.of(context).size.width,
-              child: Image.file(
-                file,
+              child: Image.network(
+                url,
                 fit: BoxFit.cover,
               ),
             ),
