@@ -2,6 +2,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 void googleSignInPopUp(BuildContext context, Function func) {
   Dialog signinPopUp = Dialog(
@@ -87,9 +88,12 @@ void googleSignInPopUp(BuildContext context, Function func) {
               color: Color(0xFFE57697),
               onPressed: () {
                 Navigator.of(context).pop();
-                globals.gAuth.signInWithGoogle().whenComplete(() {
+                globals.gAuth.signInWithGoogle().then((value) {
                   main.prefs.setBool("isLoggedin", true);
                   func();
+                }).catchError((e) {
+                  main.prefs.setBool("isLoggedin", false);
+                  toasts.error(e.toString());
                 });
               },
               child: Text(
