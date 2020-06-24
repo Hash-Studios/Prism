@@ -231,7 +231,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] remove numbers from detail card
 - [ ] make tags clickable
 - [x] fix bug of add more walls when reloading
-- [ ] Add shared pref to save current theme
+- [x] Add shared pref to save current theme
 - [x] fix pop screen when not login in favs
 - [ ] fix multiple pushing of screens overall
 - [x] Add color pallette from pexels images
