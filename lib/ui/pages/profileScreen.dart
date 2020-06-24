@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +19,9 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(slivers: <Widget>[
         SliverAppBar(
+          backgroundColor: main.prefs.getBool("isLoggedin")
+              ? Theme.of(context).primaryColor
+              : Color(0xFFE57697),
           automaticallyImplyLeading: false,
           pinned: false,
           floating: true,
@@ -106,11 +112,47 @@ class ProfileScreen extends StatelessWidget {
                   fontFamily: "Proxima Nova"),
             ),
             subtitle: Text(
-              "See all your downloads",
+              "See all your downloaded wallpapers",
               style: TextStyle(fontSize: 12),
             ),
             trailing: Icon(JamIcons.chevron_right),
           ),
+          ListTile(
+              leading: Icon(
+                JamIcons.database,
+              ),
+              title: new Text(
+                "Clear Downloads",
+                style: TextStyle(
+                    color: Theme.of(context).accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
+              ),
+              subtitle: Text(
+                "Clear downloaded wallpapers",
+                style: TextStyle(fontSize: 12),
+              ),
+              onTap: () {
+                final dir = Directory("storage/emulated/0/Prism/");
+                try {
+                  dir.deleteSync(recursive: true);
+                  Fluttertoast.showToast(
+                      msg: "Deleted all downloads!",
+                      toastLength: Toast.LENGTH_LONG,
+                      timeInSecForIosWeb: 1,
+                      textColor: Colors.white,
+                      backgroundColor: Colors.green[400],
+                      fontSize: 16.0);
+                } catch (e) {
+                  Fluttertoast.showToast(
+                      msg: "No downloads!",
+                      toastLength: Toast.LENGTH_LONG,
+                      timeInSecForIosWeb: 1,
+                      textColor: Colors.white,
+                      backgroundColor: Colors.red[400],
+                      fontSize: 16.0);
+                }
+              }),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
@@ -126,16 +168,16 @@ class ProfileScreen extends StatelessWidget {
               Provider.of<ThemeModel>(context, listen: false).toggleTheme();
               main.RestartWidget.restartApp(context);
             },
-            leading: Icon(JamIcons.brightness),
+            leading: Icon(JamIcons.lightbulb),
             title: Text(
-              "Themes",
+              "Dark Mode",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
             subtitle: Text(
-              "Change app theme",
+              "Toggle app theme",
               style: TextStyle(fontSize: 12),
             ),
           ),
@@ -175,60 +217,23 @@ class ProfileScreen extends StatelessWidget {
               //     textColor: Colors.white,
               //     fontSize: 16.0);
               // }),
-              // ListTile(
-              //     leading: Icon(
-              //       Icons.storage,
-              //     ),
-              //     title: new Text(
-              //       "Clear Downloads",
-              //       style: TextStyle(
-              //           color: Theme.of(context).accentColor,
-              //           fontWeight: FontWeight.w500,
-              //           fontFamily: "Proxima Nova"),
-              //     ),
-              //     subtitle: Text(
-              //       "Clear downloaded images",
-              //       style: TextStyle(fontSize: 12),
-              //     ),
-              //     onTap: () {
-              // final dir = Directory("storage/emulated/0/Prism/");
-              // try {
-              //   dir.deleteSync(recursive: true);
-              //   DefaultCacheManager().emptyCache();
-              //   Fluttertoast.showToast(
-              //       msg: "Deleted all downloads!",
-              //       toastLength: Toast.LENGTH_LONG,
-              //       timeInSecForIosWeb: 1,
-              //       textColor: Colors.white,
-              //       fontSize: 16.0);
-              // } catch (e) {
-              //   Fluttertoast.showToast(
-              //       msg: "No downloads!",
-              //       toastLength: Toast.LENGTH_LONG,
-              //       timeInSecForIosWeb: 1,
-              //       textColor: Colors.white,
-              //       fontSize: 16.0);
-              // }
-              // }),
               ListTile(
-                  leading: Icon(
-                    JamIcons.share,
-                  ),
-                  title: new Text(
-                    "Share Prism!",
-                    style: TextStyle(
-                        color: Theme.of(context).accentColor,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: "Proxima Nova"),
-                  ),
-                  subtitle: Text(
-                    "Quick link to pass on to your friends and enemies",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  onTap: () {
-                    Share.share(
-                        'Hey check out this amazing wallpaper app Prism https://play.google.com/store/apps/details?id=com.hash.prism');
-                  }),
+                onTap: () {
+                  main.RestartWidget.restartApp(context);
+                },
+                leading: Icon(JamIcons.refresh),
+                title: Text(
+                  "Restart App",
+                  style: TextStyle(
+                      color: Theme.of(context).accentColor,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
+                ),
+                subtitle: Text(
+                  "Force the application to restart",
+                  style: TextStyle(fontSize: 12),
+                ),
+              ),
             ],
           ),
           main.prefs.getBool("isLoggedin")
@@ -553,6 +558,25 @@ class ProfileScreen extends StatelessWidget {
                   }),
               ListTile(
                   leading: Icon(
+                    JamIcons.share,
+                  ),
+                  title: new Text(
+                    "Share Prism!",
+                    style: TextStyle(
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: "Proxima Nova"),
+                  ),
+                  subtitle: Text(
+                    "Quick link to pass on to your friends and enemies",
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onTap: () {
+                    Share.share(
+                        'Hey check out this amazing wallpaper app Prism https://play.google.com/store/apps/details?id=com.hash.prism');
+                  }),
+              ListTile(
+                  leading: Icon(
                     JamIcons.github,
                   ),
                   title: new Text(
@@ -603,6 +627,24 @@ class ProfileScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () {}),
+              ListTile(
+                  leading: Icon(
+                    JamIcons.coffee,
+                  ),
+                  title: new Text(
+                    "Buy us a cup of tea",
+                    style: TextStyle(
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: "Proxima Nova"),
+                  ),
+                  subtitle: Text(
+                    "Support us if you like what we do",
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onTap: () {
+                    launch("https://buymeacoff.ee/HashStudios");
+                  }),
               ExpansionTile(
                 leading: Icon(
                   JamIcons.users,
