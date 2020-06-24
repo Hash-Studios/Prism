@@ -329,14 +329,14 @@ class ProfileScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
                               color: Theme.of(context).primaryColor),
-                          width: MediaQuery.of(context).size.width * .7,
+                          width: MediaQuery.of(context).size.width * .71,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
                               Container(
                                 height: 150,
-                                width: MediaQuery.of(context).size.width * .7,
+                                width: MediaQuery.of(context).size.width * .71,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.only(
                                         topLeft: Radius.circular(20),
@@ -351,20 +351,179 @@ class ProfileScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              Container(
-                                padding: EdgeInsets.all(8),
-                                child: Text(
-                                  "Prism is a collection of beautiful high quality wallpapers, curated into insightful categories, with robust back-end and beautiful UI. This app has been developed with WallHaven and Pexels API.",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headline6
-                                      .copyWith(
+                              Row(
+                                children: [
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                                    child: Text(
+                                      'v2.0.0',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
                                           color: Theme.of(context).accentColor),
-                                  textAlign: TextAlign.center,
-                                ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               SizedBox(
-                                height: 15,
+                                height: 20,
+                              ),
+                              Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.only(left: 20),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          Icon(
+                                            JamIcons.phone,
+                                            size: 22,
+                                            color: Color(0xFFE57697),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Icon(
+                                            JamIcons.camera,
+                                            size: 22,
+                                            color: Color(0xFFE57697),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Icon(
+                                            JamIcons.search,
+                                            size: 22,
+                                            color: Color(0xFFE57697),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Icon(
+                                            JamIcons.brush,
+                                            size: 22,
+                                            color: Color(0xFFE57697),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Icon(
+                                            JamIcons.pictures,
+                                            size: 22,
+                                            color: Color(0xFFE57697),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Icon(
+                                            JamIcons.google,
+                                            size: 22,
+                                            color: Color(0xFFE57697),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Icon(
+                                            JamIcons.settings_alt,
+                                            size: 22,
+                                            color: Color(0xFFE57697),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Icon(
+                                            JamIcons.eyedropper,
+                                            size: 22,
+                                            color: Color(0xFFE57697),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 20),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          Text(
+                                            "Completely new redesigned UI.",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                          SizedBox(height: 13),
+                                          Text(
+                                            "Added Pexels API support.",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                          SizedBox(height: 13),
+                                          Text(
+                                            "Added new color search.",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                          SizedBox(height: 13),
+                                          Text(
+                                            "Added new themes.",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                          SizedBox(height: 13),
+                                          Text(
+                                            "Added 1M+ wallpapers.",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                          SizedBox(height: 13),
+                                          Text(
+                                            "Added non intrusive sign in support.",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                          SizedBox(height: 13),
+                                          Text(
+                                            "Added new quick wallpaper actions.",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                          SizedBox(height: 13),
+                                          Text(
+                                            "Added new palette generator.",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ]),
+                              SizedBox(
+                                height: 25,
                               ),
                               FlatButton(
                                 shape: StadiumBorder(),
@@ -375,13 +534,13 @@ class ProfileScreen extends StatelessWidget {
                                 child: Text(
                                   'CLOSE',
                                   style: TextStyle(
-                                    fontSize: 18.0,
+                                    fontSize: 16.0,
                                     color: Colors.white,
                                   ),
                                 ),
                               ),
                               SizedBox(
-                                height: 10,
+                                height: 15,
                               ),
                             ],
                           ),
