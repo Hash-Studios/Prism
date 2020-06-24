@@ -3,6 +3,7 @@ import 'package:Prism/ui/widgets/favGrid.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
 
 class FavLoader extends StatefulWidget {
   @override
@@ -20,7 +21,8 @@ class _FavLoaderState extends State<FavLoader>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = ThemeModel().returnTheme() == ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
+            ThemeType.Dark
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
