@@ -243,3 +243,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [ ] wallpaper set
 - [ ] tap and hold to open menu
 - [ ] fix favgrid
+- [ ] fix about/signin popup headline 5 to 6
+- [ ] All rights reserved to provider name
+- [ ] Show useful stuff in the info bar
+- [ ] colorpicker results are the same (not working except rgb)
