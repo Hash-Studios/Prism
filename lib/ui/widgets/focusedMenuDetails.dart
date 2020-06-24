@@ -148,6 +148,10 @@ class FocusedMenuDetails extends StatelessWidget {
                                           pressElevation: 5,
                                           padding: EdgeInsets.fromLTRB(
                                               14, 11, 14, 11),
+                                          avatar: Icon(
+                                            JamIcons.ordered_list,
+                                            size: 20,
+                                          ),
                                           backgroundColor: HexColor(Provider.of<
                                                           WallHavenProvider>(
                                                       context,
@@ -212,34 +216,44 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   listen: false)
                                               .walls[index]
                                               .id
-                                              .toString(),
+                                              .toString()
+                                              .toUpperCase(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .headline5,
                                         ),
                                       ),
-                                      Text(
-                                        "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].views.toString()} views",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline6,
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            JamIcons.eye,
+                                            size: 20,
+                                            color: Colors.white70,
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            "Views: ${Provider.of<WallHavenProvider>(context, listen: false).walls[index].views.toString()}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].favorites.toString()} favs",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline6,
-                                      ),
-                                      Text(
-                                        Provider.of<WallHavenProvider>(context,
-                                                listen: false)
-                                            .walls[index]
-                                            .short_url
-                                            .toString()
-                                            .replaceAll("https://", ""),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline6,
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            JamIcons.set_square,
+                                            size: 20,
+                                            color: Colors.white70,
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].resolution.toString()}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -318,6 +332,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                               padding: EdgeInsets.fromLTRB(
                                                   14, 11, 14, 11),
                                               backgroundColor: Colors.black,
+                                              avatar: Icon(JamIcons.camera,
+                                                  size: 20),
                                               label: Text(
                                                 Provider.of<PexelsProvider>(
                                                         context,
@@ -382,11 +398,20 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   .headline5,
                                             ),
                                           ),
-                                          Text(
-                                            "${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].height.toString()}",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headline6,
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.set_square,
+                                                size: 20,
+                                              ),
+                                              SizedBox(width: 5),
+                                              Text(
+                                                "${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].height.toString()}",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .headline6,
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
@@ -466,6 +491,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   padding: EdgeInsets.fromLTRB(
                                                       14, 11, 14, 11),
                                                   backgroundColor: Colors.black,
+                                                  avatar: Icon(JamIcons.camera,
+                                                      size: 20),
                                                   label: Text(
                                                     Provider.of<PexelsProvider>(
                                                             context,
@@ -526,11 +553,20 @@ class FocusedMenuDetails extends StatelessWidget {
                                                       .headline5,
                                                 ),
                                               ),
-                                              Text(
-                                                "${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].height.toString()}",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline6,
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.set_square,
+                                                    size: 20,
+                                                  ),
+                                                  SizedBox(width: 5),
+                                                  Text(
+                                                    "${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].height.toString()}",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .headline6,
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
@@ -611,19 +647,23 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   pressElevation: 5,
                                                   padding: EdgeInsets.fromLTRB(
                                                       14, 11, 14, 11),
-                                                  backgroundColor: HexColor(Provider
-                                                          .of<WallHavenProvider>(
-                                                              context,
-                                                              listen: false)
-                                                      .wallsS[index]
-                                                      .colors[Provider.of<
-                                                                  WallHavenProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .wallsS[index]
-                                                          .colors
-                                                          .length -
-                                                      1]),
+                                                  avatar: Icon(
+                                                      JamIcons.ordered_list,
+                                                      size: 20),
+                                                  backgroundColor: HexColor(
+                                                      Provider.of<WallHavenProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .wallsS[index]
+                                                              .colors[
+                                                          Provider.of<WallHavenProvider>(
+                                                                      context,
+                                                                      listen:
+                                                                          false)
+                                                                  .wallsS[index]
+                                                                  .colors
+                                                                  .length -
+                                                              1]),
                                                   label: Text(
                                                     Provider.of<WallHavenProvider>(
                                                                 context,
@@ -664,35 +704,44 @@ class FocusedMenuDetails extends StatelessWidget {
                                                           listen: false)
                                                       .wallsS[index]
                                                       .id
-                                                      .toString(),
+                                                      .toString()
+                                                      .toUpperCase(),
                                                   style: Theme.of(context)
                                                       .textTheme
                                                       .headline5,
                                                 ),
                                               ),
-                                              Text(
-                                                "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()} views",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline6,
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.eye,
+                                                    size: 20,
+                                                    color: Colors.white70,
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Text(
+                                                    "Views: ${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()}",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2,
+                                                  ),
+                                                ],
                                               ),
-                                              Text(
-                                                "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].favorites.toString()} favs",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline6,
-                                              ),
-                                              Text(
-                                                Provider.of<WallHavenProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .wallsS[index]
-                                                    .short_url
-                                                    .toString()
-                                                    .replaceAll("https://", ""),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline6,
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.set_square,
+                                                    size: 20,
+                                                    color: Colors.white70,
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Text(
+                                                    "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].resolution.toString()}",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2,
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
