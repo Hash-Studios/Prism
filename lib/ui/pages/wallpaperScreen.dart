@@ -12,8 +12,8 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 
 class WallpaperScreen extends StatefulWidget {
-  final List arguements;
-  WallpaperScreen({@required this.arguements});
+  final List arguments;
+  WallpaperScreen({@required this.arguments});
   @override
   _WallpaperScreenState createState() => _WallpaperScreenState();
 }
@@ -48,9 +48,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
   @override
   void initState() {
     super.initState();
-    provider = widget.arguements[0];
-    index = widget.arguements[1];
-    link = widget.arguements[2];
+    provider = widget.arguments[0];
+    index = widget.arguments[1];
+    link = widget.arguments[2];
     isLoading = true;
     _updatePaletteGenerator();
   }
