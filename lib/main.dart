@@ -9,9 +9,19 @@ import 'package:provider/provider.dart';
 import 'package:Prism/router.dart' as router;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Prism/globals.dart' as globals;
+import 'package:Prism/theme/theme.dart';
 
 SharedPreferences prefs;
-void main() => runApp(
+var darkMode;
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.getInstance().then((prefs) {
+    darkMode = prefs.getBool('darkMode') ?? true;
+    if (darkMode)
+      prefs.setBool('darkMode', true);
+    else
+      prefs.setBool('darkMode', false);
+    runApp(
       RestartWidget(
         child: MultiProvider(
           providers: [
@@ -25,13 +35,17 @@ void main() => runApp(
               create: (context) => CategoryProvider(),
             ),
             ChangeNotifierProvider<ThemeModel>(
-              create: (context) => ThemeModel(),
+              create: (context) => ThemeModel(
+                  darkMode ? kDarkTheme : kLightTheme,
+                  darkMode ? ThemeType.Dark : ThemeType.Light),
             )
           ],
           child: MyApp(),
         ),
       ),
     );
+  });
+}
 
 class MyApp extends StatefulWidget {
   @override
@@ -86,6 +100,13 @@ class _RestartWidgetState extends State<RestartWidget> {
   void restartApp() {
     setState(() {
       key = UniqueKey();
+    });
+    SharedPreferences.getInstance().then((prefs) {
+      darkMode = prefs.getBool('darkMode') ?? true;
+      if (darkMode)
+        prefs.setBool('darkMode', true);
+      else
+        prefs.setBool('darkMode', false);
     });
   }
 
