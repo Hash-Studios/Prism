@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
 
 var kLightTheme = ThemeData(
+  canvasColor: Colors.transparent,
   primaryColor: Colors.white,
   brightness: Brightness.light,
   accentColor: config.Colors().accentColor(1),
@@ -74,6 +75,7 @@ var kLightTheme = ThemeData(
 );
 
 var kDarkTheme = ThemeData(
+  canvasColor: Colors.transparent,
   primaryColor: Color(0xFF181818),
   brightness: Brightness.dark,
   accentColor: config.Colors().accentDarkColor(1),
