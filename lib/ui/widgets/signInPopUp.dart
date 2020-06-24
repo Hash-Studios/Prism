@@ -89,11 +89,12 @@ void googleSignInPopUp(BuildContext context, Function func) {
               onPressed: () {
                 Navigator.of(context).pop();
                 globals.gAuth.signInWithGoogle().then((value) {
+                  toasts.successLog();
                   main.prefs.setBool("isLoggedin", true);
                   func();
                 }).catchError((e) {
                   main.prefs.setBool("isLoggedin", false);
-                  toasts.error(e.toString());
+                  toasts.error("Something went wrong, please try again!");
                 });
               },
               child: Text(
