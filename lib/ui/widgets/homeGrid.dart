@@ -402,7 +402,7 @@ class _HomeGridState extends State<HomeGrid>
             shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
         uriPrefix: 'https://prismwallpapers.page.link',
         link:
-            Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider'),
+            Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url'),
         androidParameters: AndroidParameters(
           packageName: 'com.hash.prism',
           minimumVersion: 1,

@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:Prism/router.dart' as router;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Prism/globals.dart' as globals;
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/cupertino.dart';
 
 SharedPreferences prefs;
@@ -51,60 +50,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     getLoginStatus();
-    initDynamicLinks();
     super.initState();
-  }
-
-  void createDynamicLink(String id, String provider, String url) async {
-    final DynamicLinkParameters parameters = DynamicLinkParameters(
-        socialMetaTagParameters: SocialMetaTagParameters(
-            title: "Prism Wallpapers - $id",
-            imageUrl: Uri.parse(url),
-            description:
-                "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
-        dynamicLinkParametersOptions: DynamicLinkParametersOptions(
-            shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
-        uriPrefix: 'https://prismwallpapers.page.link',
-        link:
-            Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider'),
-        androidParameters: AndroidParameters(
-          packageName: 'com.hash.prism',
-          minimumVersion: 1,
-        ),
-        iosParameters: IosParameters(
-          bundleId: 'com.hash.prism',
-          minimumVersion: '1.0.1',
-          appStoreId: '1405860595',
-        ));
-    final Uri dynamicUrl = await parameters.buildUrl();
-    final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
-    final Uri shortUrl = shortDynamicLink.shortUrl;
-  }
-
-  void initDynamicLinks() async {
-    final PendingDynamicLinkData data =
-        await FirebaseDynamicLinks.instance.getInitialLink();
-    final Uri deepLink = data?.link;
-
-    if (deepLink != null) {
-      print(deepLink.path);
-      print(deepLink.queryParametersAll);
-      Navigator.pushNamed(context, deepLink.path);
-    }
-
-    FirebaseDynamicLinks.instance.onLink(
-        onSuccess: (PendingDynamicLinkData dynamicLink) async {
-      final Uri deepLink = dynamicLink?.link;
-
-      if (deepLink != null) {
-        print(deepLink.path);
-        print(deepLink.queryParameters);
-        Navigator.pushNamed(context, deepLink.path);
-      }
-    }, onError: (OnLinkErrorException e) async {
-      print('onLinkError');
-      print(e.message);
-    });
   }
 
   @override

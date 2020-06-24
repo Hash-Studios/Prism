@@ -9,6 +9,7 @@ import 'package:Prism/ui/pages/homeScreen.dart';
 import 'package:Prism/ui/pages/natureScreen.dart';
 import 'package:Prism/ui/pages/profileScreen.dart';
 import 'package:Prism/ui/pages/searchScreen.dart';
+import 'package:Prism/ui/pages/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/pages/wallpaperScreen.dart';
@@ -41,15 +42,18 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case ColorRoute:
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) =>
-              ColorScreen(arguements: settings.arguments));
+              ColorScreen(arguments: settings.arguments));
     case WallpaperRoute:
       return CupertinoPageRoute(
-          builder: (context) =>
-              WallpaperScreen(arguements: settings.arguments));
+          builder: (context) => WallpaperScreen(arguments: settings.arguments));
     case DownloadWallpaperRoute:
       return CupertinoPageRoute(
           builder: (context) =>
-              DownloadWallpaperScreen(arguements: settings.arguments));
+              DownloadWallpaperScreen(arguments: settings.arguments));
+    case ShareRoute:
+      return CupertinoPageRoute(
+          builder: (context) =>
+              ShareWallpaperViewScreen(arguments: settings.arguments));
     default:
       return CupertinoPageRoute(
         builder: (context) => UndefinedScreen(
