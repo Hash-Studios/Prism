@@ -938,6 +938,45 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                         ),
                       ),
                     ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: IconButton(
+                        onPressed: () {
+                          var link = Provider.of<WallHavenProvider>(context,
+                                  listen: false)
+                              .walls[index]
+                              .path;
+                          Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                  transitionDuration:
+                                      Duration(milliseconds: 300),
+                                  pageBuilder:
+                                      (context, animation, secondaryAnimation) {
+                                    animation = Tween(begin: 0.0, end: 1.0)
+                                        .animate(animation);
+                                    return FadeTransition(
+                                        opacity: animation,
+                                        child: ClockOverlay(
+                                          link: link,
+                                        ));
+                                  },
+                                  fullscreenDialog: true,
+                                  opaque: false));
+                        },
+                        color: isLoading
+                            ? Theme.of(context).accentColor
+                            : colors[0].computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                        icon: Icon(
+                          JamIcons.clock,
+                        ),
+                      ),
+                    ),
                   )
                 ],
               ),
@@ -1026,6 +1065,45 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                     : Colors.white,
                             icon: Icon(
                               JamIcons.chevron_left,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () {
+                              var link = Provider.of<PexelsProvider>(context,
+                                      listen: false)
+                                  .wallsP[index]
+                                  .src["portrait"];
+                              Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                      transitionDuration:
+                                          Duration(milliseconds: 300),
+                                      pageBuilder: (context, animation,
+                                          secondaryAnimation) {
+                                        animation = Tween(begin: 0.0, end: 1.0)
+                                            .animate(animation);
+                                        return FadeTransition(
+                                            opacity: animation,
+                                            child: ClockOverlay(
+                                              link: link,
+                                            ));
+                                      },
+                                      fullscreenDialog: true,
+                                      opaque: false));
+                            },
+                            color: isLoading
+                                ? Theme.of(context).accentColor
+                                : colors[0].computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                            icon: Icon(
+                              JamIcons.clock,
                             ),
                           ),
                         ),
@@ -1123,6 +1201,47 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 ),
                               ),
                             ),
+                          ),
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  var link = Provider.of<PexelsProvider>(
+                                          context,
+                                          listen: false)
+                                      .wallsC[index]
+                                      .src["portrait"];
+                                  Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                          transitionDuration:
+                                              Duration(milliseconds: 300),
+                                          pageBuilder: (context, animation,
+                                              secondaryAnimation) {
+                                            animation =
+                                                Tween(begin: 0.0, end: 1.0)
+                                                    .animate(animation);
+                                            return FadeTransition(
+                                                opacity: animation,
+                                                child: ClockOverlay(
+                                                  link: link,
+                                                ));
+                                          },
+                                          fullscreenDialog: true,
+                                          opaque: false));
+                                },
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                icon: Icon(
+                                  JamIcons.clock,
+                                ),
+                              ),
+                            ),
                           )
                         ],
                       ),
@@ -1216,6 +1335,47 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 ),
                               ),
                             ),
+                          ),
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  var link = Provider.of<WallHavenProvider>(
+                                          context,
+                                          listen: false)
+                                      .wallsS[index]
+                                      .path;
+                                  Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                          transitionDuration:
+                                              Duration(milliseconds: 300),
+                                          pageBuilder: (context, animation,
+                                              secondaryAnimation) {
+                                            animation =
+                                                Tween(begin: 0.0, end: 1.0)
+                                                    .animate(animation);
+                                            return FadeTransition(
+                                                opacity: animation,
+                                                child: ClockOverlay(
+                                                  link: link,
+                                                ));
+                                          },
+                                          fullscreenDialog: true,
+                                          opaque: false));
+                                },
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                icon: Icon(
+                                  JamIcons.clock,
+                                ),
+                              ),
+                            ),
                           )
                         ],
                       ),
@@ -1225,5 +1385,61 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
       Navigator.pop(context);
       return Container();
     }
+  }
+}
+
+class ClockOverlay extends StatefulWidget {
+  final String link;
+  ClockOverlay({@required this.link});
+  @override
+  _ClockOverlayState createState() => _ClockOverlayState();
+}
+
+class _ClockOverlayState extends State<ClockOverlay> {
+  @override
+  Widget build(BuildContext context) {
+    var date = DateTime.now().toString();
+    var hour = DateTime.now().hour.toString();
+    var minute = DateTime.now().minute.toString();
+    return Material(
+      child: Stack(
+        children: <Widget>[
+          OptimizedCacheImage(
+            imageUrl: widget.link,
+            imageBuilder: (context, imageProvider) => Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: imageProvider,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: MediaQuery.of(context).size.height / 2,
+            width: MediaQuery.of(context).size.width,
+            child: Center(
+              child: Text(
+                hour + date.substring(13, 16),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: "Roboto",
+                  fontSize: 80,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+          ),
+          GestureDetector(
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height,
+              width: MediaQuery.of(context).size.width,
+              child: Text(""),
+            ),
+            onTap: () => {Navigator.pop(context)},
+          )
+        ],
+      ),
+    );
   }
 }
