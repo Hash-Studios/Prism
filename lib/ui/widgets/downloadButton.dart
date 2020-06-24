@@ -1,7 +1,9 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:gallery_saver/gallery_saver.dart';
+import 'package:Prism/main.dart' as main;
 
 class DownloadButton extends StatefulWidget {
   final String link;
@@ -27,7 +29,13 @@ class _DownloadButtonState extends State<DownloadButton> {
     return GestureDetector(
       onTap: () {
         print("Download");
-        onDownload();
+        if (!main.prefs.getBool("isLoggedin")) {
+          googleSignInPopUp(context, () {
+            onDownload();
+          });
+        } else {
+          onDownload();
+        }
       },
       child: Stack(
         children: [
