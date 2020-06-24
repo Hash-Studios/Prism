@@ -4,9 +4,11 @@ import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focusedMenu.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-
+import 'package:Prism/theme/toasts.dart' as toasts;
 class HomeGrid extends StatefulWidget {
   final String provider;
   HomeGrid({@required this.provider});
@@ -319,9 +321,101 @@ class _HomeGridState extends State<HomeGrid>
                 }
               }
             },
+            onLongPress: () {
+              if (widget.provider == "WallHaven") {
+                if (Provider.of<WallHavenProvider>(context, listen: false)
+                        .walls ==
+                    []) {
+                } else {
+                  HapticFeedback.vibrate();
+                  createDynamicLink(
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .walls[index]
+                          .id,
+                      widget.provider,
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .walls[index]
+                          .path);
+                }
+              } else if (widget.provider == "Pexels") {
+                if (Provider.of<PexelsProvider>(context, listen: false)
+                        .wallsP ==
+                    []) {
+                } else {
+                  HapticFeedback.vibrate();
+                  createDynamicLink(
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsP[index]
+                          .id,
+                      widget.provider,
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsP[index]
+                          .src["portrait"]);
+                }
+              } else if (widget.provider.length > 6 &&
+                  widget.provider.substring(0, 6) == "Colors") {
+                if (Provider.of<PexelsProvider>(context, listen: false)
+                        .wallsC ==
+                    []) {
+                } else {
+                  HapticFeedback.vibrate();
+                  createDynamicLink(
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsC[index]
+                          .id,
+                      "Pexels",
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsC[index]
+                          .src["portrait"]);
+                }
+              } else {
+                if (Provider.of<WallHavenProvider>(context, listen: false)
+                        .wallsS ==
+                    []) {
+                } else {
+                  HapticFeedback.vibrate();
+                  createDynamicLink(
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .wallsS[index]
+                          .id,
+                      "WallHaven",
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .wallsS[index]
+                          .path);
+                }
+              }
+            },
           ),
         );
       },
     );
+  }
+
+  void createDynamicLink(String id, String provider, String url) async {
+    final DynamicLinkParameters parameters = DynamicLinkParameters(
+        socialMetaTagParameters: SocialMetaTagParameters(
+            title: "Prism Wallpapers - $id",
+            imageUrl: Uri.parse(url),
+            description:
+                "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
+        dynamicLinkParametersOptions: DynamicLinkParametersOptions(
+            shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
+        uriPrefix: 'https://prismwallpapers.page.link',
+        link:
+            Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider'),
+        androidParameters: AndroidParameters(
+          packageName: 'com.hash.prism',
+          minimumVersion: 1,
+        ),
+        iosParameters: IosParameters(
+          bundleId: 'com.hash.prism',
+          minimumVersion: '1.0.1',
+          appStoreId: '1405860595',
+        ));
+    final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
+    final Uri shortUrl = shortDynamicLink.shortUrl;
+    Clipboard.setData(ClipboardData(text: shortUrl.toString()));
+    toasts.shareWall();
+    print(shortUrl);
   }
 }

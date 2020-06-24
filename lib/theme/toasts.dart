@@ -158,3 +158,14 @@ void completedDownload() {
       textColor: Colors.white,
       fontSize: 16.0);
 }
+
+void shareWall() {
+  Fluttertoast.showToast(
+      msg: "Sharing link copied!",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green[400],
+      timeInSecForIosWeb: 1,
+      textColor: Colors.white,
+      fontSize: 16.0);
+}
