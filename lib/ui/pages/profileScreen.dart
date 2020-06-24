@@ -17,6 +17,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).primaryColor,
       body: CustomScrollView(slivers: <Widget>[
         SliverAppBar(
           backgroundColor: main.prefs.getBool("isLoggedin")
