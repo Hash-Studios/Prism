@@ -25,14 +25,14 @@ void googleSignInPopUp(BuildContext context, Function func) {
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Theme.of(context).primaryColor),
-        width: MediaQuery.of(context).size.width * .7,
+        width: MediaQuery.of(context).size.width * .71,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
               height: 150,
-              width: MediaQuery.of(context).size.width * .7,
+              width: MediaQuery.of(context).size.width * .71,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
@@ -63,34 +63,64 @@ void googleSignInPopUp(BuildContext context, Function func) {
             SizedBox(
               height: 20,
             ),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Icon(JamIcons.heart_f),
-                  SizedBox(height: 10),
-                  Icon(JamIcons.download),
-                ],
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Padding(
+                padding: EdgeInsets.only(left: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Icon(
+                      JamIcons.heart,
+                      size: 22,
+                      color: Color(0xFFE57697),
+                    ),
+                    SizedBox(height: 10),
+                    Icon(
+                      JamIcons.download,
+                      size: 22,
+                      color: Color(0xFFE57697),
+                    ),
+                    SizedBox(height: 10),
+                    Icon(
+                      JamIcons.cloud,
+                      size: 22,
+                      color: Color(0xFFE57697),
+                    ),
+                  ],
+                ),
               ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Text(
-                    "The ability to favourite wallpapers.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline5
-                        .copyWith(color: Theme.of(context).accentColor),
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    "The ability to download wallpapers.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline5
-                        .copyWith(color: Theme.of(context).accentColor),
-                  )
-                ],
+              Padding(
+                padding: EdgeInsets.only(right: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Text(
+                      "The ability to favourite wallpapers.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline5
+                          .copyWith(color: Theme.of(context).accentColor),
+                    ),
+                    SizedBox(height: 13),
+                    Text(
+                      "The ability to download wallpapers.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline5
+                          .copyWith(color: Theme.of(context).accentColor),
+                    ),
+                    SizedBox(height: 13),
+                    Text(
+                      "The ability to cloud sync data.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline5
+                          .copyWith(color: Theme.of(context).accentColor),
+                    ),
+                  ],
+                ),
               ),
             ]),
             SizedBox(
@@ -124,7 +154,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
               ),
             ),
             SizedBox(
-              height: 20,
+              height: 15,
             ),
           ],
         ),
