@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -52,26 +53,9 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
             ),
             Align(
               alignment: Alignment.bottomCenter,
-              child: GestureDetector(
-                child: Container(
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                      color: Color(0xFF2F2F2F)),
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height / 20,
-                    child: Center(
-                      child: Icon(
-                        JamIcons.chevron_up,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                onTap: () {},
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: SetWallpaperButton(),
               ),
             ),
             Align(
