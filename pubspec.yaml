@@ -39,6 +39,7 @@ dependencies:
 #   image: 2.1.12
   fluttertoast: ^4.0.1
   gallery_saver: ^2.0.1
+  firebase_dynamic_links: ^0.5.1
 
 dev_dependencies:
   flutter_test:
