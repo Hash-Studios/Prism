@@ -1430,6 +1430,38 @@ class _ClockOverlayState extends State<ClockOverlay> {
               ),
             ),
           ),
+          Positioned(
+            bottom: 100,
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Image.asset(
+                    "assets/images/dialer.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                  Image.asset(
+                    "assets/images/messages.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                  Image.asset(
+                    "assets/images/playstore.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                  Image.asset(
+                    "assets/images/chrome.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                  Image.asset(
+                    "assets/images/camera.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                ],
+              ),
+            ),
+          ),
           GestureDetector(
             child: SizedBox(
               height: MediaQuery.of(context).size.height,
