@@ -2,6 +2,7 @@ import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/downloadButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
@@ -809,28 +810,31 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
-                      GestureDetector(
-                        onTap: () {
-                          print("Download");
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withOpacity(.25),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 4))
-                            ],
-                            borderRadius: BorderRadius.circular(500),
-                          ),
-                          padding: EdgeInsets.all(17),
-                          child: Icon(
-                            JamIcons.download,
-                            color: Theme.of(context).accentColor,
-                            size: 30,
-                          ),
-                        ),
+                      DownloadButton(
+                        link: provider == "WallHaven"
+                            ? Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .walls[index]
+                                .path
+                                .toString()
+                            : provider == "Pexels"
+                                ? Provider.of<PexelsProvider>(context,
+                                        listen: false)
+                                    .wallsP[index]
+                                    .url
+                                    .toString()
+                                : provider.length > 6 &&
+                                        provider.substring(0, 6) == "Colors"
+                                    ? Provider.of<PexelsProvider>(context,
+                                            listen: false)
+                                        .wallsC[index]
+                                        .url
+                                        .toString()
+                                    : Provider.of<WallHavenProvider>(context,
+                                            listen: false)
+                                        .wallsS[index]
+                                        .path
+                                        .toString(),
                       ),
                       GestureDetector(
                         onTap: () {

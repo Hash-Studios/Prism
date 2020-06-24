@@ -136,3 +136,25 @@ void successContact() {
     fontSize: 16.0,
   );
 }
+
+void startDownload() {
+  Fluttertoast.showToast(
+      msg: "Starting Download",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green[400],
+      timeInSecForIosWeb: 1,
+      textColor: Colors.white,
+      fontSize: 16.0);
+}
+
+void completedDownload() {
+  Fluttertoast.showToast(
+      msg: "Image Downloaded in Pictures/Prism!",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green[400],
+      timeInSecForIosWeb: 1,
+      textColor: Colors.white,
+      fontSize: 16.0);
+}

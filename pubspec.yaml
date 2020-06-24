@@ -19,7 +19,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # gallery_saver: ^2.0.1
   shared_preferences: ^0.5.7
   # path_provider: ^1.6.7
   share: ^0.6.4
@@ -39,6 +38,7 @@ dependencies:
 # dependency_overrides:
 #   image: 2.1.12
   fluttertoast: ^4.0.1
+  gallery_saver: ^2.0.1
 
 dev_dependencies:
   flutter_test:
