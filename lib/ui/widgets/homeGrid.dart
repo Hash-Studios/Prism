@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+
 class HomeGrid extends StatefulWidget {
   final String provider;
   HomeGrid({@required this.provider});
@@ -344,7 +345,10 @@ class _HomeGridState extends State<HomeGrid>
                       widget.provider,
                       Provider.of<WallHavenProvider>(context, listen: false)
                           .walls[index]
-                          .path);
+                          .path,
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .walls[index]
+                          .thumbs["original"]);
                 }
               } else if (widget.provider == "Pexels") {
                 if (Provider.of<PexelsProvider>(context, listen: false)
@@ -359,7 +363,10 @@ class _HomeGridState extends State<HomeGrid>
                       widget.provider,
                       Provider.of<PexelsProvider>(context, listen: false)
                           .wallsP[index]
-                          .src["portrait"]);
+                          .src["portrait"],
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsP[index]
+                          .src["medium"]);
                 }
               } else if (widget.provider.length > 6 &&
                   widget.provider.substring(0, 6) == "Colors") {
@@ -375,7 +382,10 @@ class _HomeGridState extends State<HomeGrid>
                       "Pexels",
                       Provider.of<PexelsProvider>(context, listen: false)
                           .wallsC[index]
-                          .src["portrait"]);
+                          .src["portrait"],
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsC[index]
+                          .src["medium"]);
                 }
               } else {
                 if (Provider.of<WallHavenProvider>(context, listen: false)
@@ -390,7 +400,10 @@ class _HomeGridState extends State<HomeGrid>
                       "WallHaven",
                       Provider.of<WallHavenProvider>(context, listen: false)
                           .wallsS[index]
-                          .path);
+                          .path,
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .wallsS[index]
+                          .thumbs["original"]);
                 }
               }
             },
@@ -400,18 +413,19 @@ class _HomeGridState extends State<HomeGrid>
     );
   }
 
-  void createDynamicLink(String id, String provider, String url) async {
+  void createDynamicLink(
+      String id, String provider, String url, String thumbUrl) async {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
         socialMetaTagParameters: SocialMetaTagParameters(
             title: "Prism Wallpapers - $id",
-            imageUrl: Uri.parse(url),
+            imageUrl: Uri.parse(thumbUrl),
             description:
                 "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
         dynamicLinkParametersOptions: DynamicLinkParametersOptions(
             shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
         uriPrefix: 'https://prismwallpapers.page.link',
-        link:
-            Uri.parse('http://prism.hash.com/share?id=$id&provider=$provider&url=$url'),
+        link: Uri.parse(
+            'http://prism.hash.com/share?id=$id&provider=$provider&url=$url'),
         androidParameters: AndroidParameters(
           packageName: 'com.hash.prism',
           minimumVersion: 1,
