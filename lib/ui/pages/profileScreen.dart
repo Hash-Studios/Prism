@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/globals.dart' as globals;
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class ProfileScreen extends StatelessWidget {
   @override
@@ -286,6 +287,7 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         onTap: () {
                           globals.gAuth.signOutGoogle();
+                          toasts.successLogOut();
                           main.RestartWidget.restartApp(context);
                         }),
                   ],
