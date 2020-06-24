@@ -290,43 +290,46 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                       width: MediaQuery.of(context).size.width *
                                           .8,
                                       child: Text(
-                                        Provider.of<PexelsProvider>(context,
-                                                    listen: false)
-                                                .wallsP[index]
-                                                .url
-                                                .toString()
-                                                .replaceAll(
-                                                    "https://www.pexels.com/photo/",
-                                                    "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")[0]
-                                                .toUpperCase() +
-                                            Provider.of<PexelsProvider>(context,
-                                                    listen: false)
-                                                .wallsP[index]
-                                                .url
-                                                .toString()
-                                                .replaceAll(
-                                                    "https://www.pexels.com/photo/",
-                                                    "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")
-                                                .substring(
-                                                    1,
-                                                    Provider.of<PexelsProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .wallsP[index]
-                                                            .url
-                                                            .toString()
-                                                            .replaceAll(
-                                                                "https://www.pexels.com/photo/",
-                                                                "")
-                                                            .replaceAll(
-                                                                "-", " ")
-                                                            .replaceAll("/", "")
-                                                            .length -
-                                                        8),
+                                        Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                            ? Provider.of<PexelsProvider>(context, listen: false)
+                                                    .wallsP[index]
+                                                    .url
+                                                    .toString()
+                                                    .replaceAll(
+                                                        "https://www.pexels.com/photo/", "")
+                                                    .replaceAll("-", " ")
+                                                    .replaceAll("/", "")[0]
+                                                    .toUpperCase() +
+                                                Provider.of<PexelsProvider>(context, listen: false)
+                                                    .wallsP[index]
+                                                    .url
+                                                    .toString()
+                                                    .replaceAll(
+                                                        "https://www.pexels.com/photo/", "")
+                                                    .replaceAll("-", " ")
+                                                    .replaceAll("/", "")
+                                                    .substring(
+                                                        1,
+                                                        Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                            8)
+                                            : Provider.of<PexelsProvider>(context, listen: false)
+                                                    .wallsP[index]
+                                                    .url
+                                                    .toString()
+                                                    .replaceAll(
+                                                        "https://www.pexels.com/photo/", "")
+                                                    .replaceAll("-", " ")
+                                                    .replaceAll("/", "")[0]
+                                                    .toUpperCase() +
+                                                Provider.of<PexelsProvider>(context,
+                                                        listen: false)
+                                                    .wallsP[index]
+                                                    .url
+                                                    .toString()
+                                                    .replaceAll("https://www.pexels.com/photo/", "")
+                                                    .replaceAll("-", " ")
+                                                    .replaceAll("/", "")
+                                                    .substring(1),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText1,
@@ -468,46 +471,47 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                   .width *
                                               .8,
                                           child: Text(
-                                            Provider.of<PexelsProvider>(context,
-                                                        listen: false)
-                                                    .wallsC[index]
-                                                    .url
-                                                    .toString()
-                                                    .replaceAll(
-                                                        "https://www.pexels.com/photo/",
-                                                        "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")[0]
-                                                    .toUpperCase() +
-                                                Provider.of<PexelsProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .wallsC[index]
-                                                    .url
-                                                    .toString()
-                                                    .replaceAll(
-                                                        "https://www.pexels.com/photo/",
-                                                        "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")
-                                                    .substring(
-                                                        1,
-                                                        Provider.of<PexelsProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .wallsC[index]
-                                                                .url
-                                                                .toString()
-                                                                .replaceAll(
-                                                                    "https://www.pexels.com/photo/",
-                                                                    "")
-                                                                .replaceAll(
-                                                                    "-", " ")
-                                                                .replaceAll(
-                                                                    "/", "")
-                                                                .length -
-                                                            8),
+                                            Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                                ? Provider.of<PexelsProvider>(context, listen: false)
+                                                        .wallsC[index]
+                                                        .url
+                                                        .toString()
+                                                        .replaceAll(
+                                                            "https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")[0]
+                                                        .toUpperCase() +
+                                                    Provider.of<PexelsProvider>(context, listen: false)
+                                                        .wallsC[index]
+                                                        .url
+                                                        .toString()
+                                                        .replaceAll(
+                                                            "https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")
+                                                        .substring(
+                                                            1,
+                                                            Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                                8)
+                                                : Provider.of<PexelsProvider>(context, listen: false)
+                                                        .wallsC[index]
+                                                        .url
+                                                        .toString()
+                                                        .replaceAll(
+                                                            "https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")[0]
+                                                        .toUpperCase() +
+                                                    Provider.of<PexelsProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .wallsC[index]
+                                                        .url
+                                                        .toString()
+                                                        .replaceAll("https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")
+                                                        .substring(1),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText1,
