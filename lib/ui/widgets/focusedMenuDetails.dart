@@ -96,7 +96,8 @@ class FocusedMenuDetails extends StatelessWidget {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
                     child: Container(
-                      color: Provider.of<ThemeModel>(context,listen:false).returnTheme() ==
+                      color: Provider.of<ThemeModel>(context, listen: false)
+                                  .returnTheme() ==
                               ThemeType.Dark
                           ? Colors.black.withOpacity(0.75)
                           : Colors.white.withOpacity(0.75),
@@ -154,6 +155,24 @@ class FocusedMenuDetails extends StatelessWidget {
                                               14, 11, 14, 11),
                                           avatar: Icon(
                                             JamIcons.ordered_list,
+                                            color: HexColor(Provider.of<
+                                                                    WallHavenProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .walls[index]
+                                                            .colors[Provider.of<
+                                                                        WallHavenProvider>(
+                                                                    context,
+                                                                    listen:
+                                                                        false)
+                                                                .walls[index]
+                                                                .colors
+                                                                .length -
+                                                            1])
+                                                        .computeLuminance() >
+                                                    0.5
+                                                ? Colors.black
+                                                : Colors.white,
                                             size: 20,
                                           ),
                                           backgroundColor: HexColor(Provider.of<
@@ -337,6 +356,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   14, 11, 14, 11),
                                               backgroundColor: Colors.black,
                                               avatar: Icon(JamIcons.camera,
+                                                  color: Colors.white,
                                                   size: 20),
                                               label: Text(
                                                 Provider.of<PexelsProvider>(
@@ -406,6 +426,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                             children: [
                                               Icon(
                                                 JamIcons.set_square,
+                                                color: Colors.white70,
                                                 size: 20,
                                               ),
                                               SizedBox(width: 5),
@@ -496,6 +517,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                       14, 11, 14, 11),
                                                   backgroundColor: Colors.black,
                                                   avatar: Icon(JamIcons.camera,
+                                                      color: Colors.white,
                                                       size: 20),
                                                   label: Text(
                                                     Provider.of<PexelsProvider>(
@@ -561,6 +583,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                 children: [
                                                   Icon(
                                                     JamIcons.set_square,
+                                                    color: Colors.white70,
                                                     size: 20,
                                                   ),
                                                   SizedBox(width: 5),
@@ -651,8 +674,10 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   pressElevation: 5,
                                                   padding: EdgeInsets.fromLTRB(
                                                       14, 11, 14, 11),
-                                                  avatar: Icon(
-                                                      JamIcons.ordered_list,
+                                                  avatar: Icon(JamIcons.ordered_list,
+                                                      color: HexColor(Provider.of<WallHavenProvider>(context, listen: false).walls[index].colors[Provider.of<WallHavenProvider>(context, listen: false).walls[index].colors.length - 1]).computeLuminance() > 0.5
+                                                          ? Colors.black
+                                                          : Colors.white,
                                                       size: 20),
                                                   backgroundColor: HexColor(
                                                       Provider.of<WallHavenProvider>(
@@ -660,10 +685,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                   listen: false)
                                                               .wallsS[index]
                                                               .colors[
-                                                          Provider.of<WallHavenProvider>(
-                                                                      context,
-                                                                      listen:
-                                                                          false)
+                                                          Provider.of<WallHavenProvider>(context, listen: false)
                                                                   .wallsS[index]
                                                                   .colors
                                                                   .length -
