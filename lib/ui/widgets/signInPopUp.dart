@@ -5,6 +5,19 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 void googleSignInPopUp(BuildContext context, Function func) {
+  Dialog loaderDialog = Dialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    child: Container(
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Theme.of(context).primaryColor),
+      width: MediaQuery.of(context).size.width * .7,
+      height: MediaQuery.of(context).size.height * .3,
+      child: Center(
+        child: CircularProgressIndicator(),
+      ),
+    ),
+  );
   Dialog signinPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: SingleChildScrollView(
@@ -88,11 +101,16 @@ void googleSignInPopUp(BuildContext context, Function func) {
               color: Color(0xFFE57697),
               onPressed: () {
                 Navigator.of(context).pop();
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) => loaderDialog);
                 globals.gAuth.signInWithGoogle().then((value) {
                   toasts.successLog();
                   main.prefs.setBool("isLoggedin", true);
+                  Navigator.pop(context);
                   func();
                 }).catchError((e) {
+                  Navigator.pop(context);
                   main.prefs.setBool("isLoggedin", false);
                   toasts.error("Something went wrong, please try again!");
                 });
