@@ -25,6 +25,18 @@ void successLog() {
   );
 }
 
+void successLogOut() {
+  Fluttertoast.showToast(
+    msg: "Log out Successful!",
+    toastLength: Toast.LENGTH_LONG,
+    gravity: ToastGravity.BOTTOM,
+    timeInSecForIosWeb: 1,
+    backgroundColor: Colors.green[400],
+    textColor: Colors.white,
+    fontSize: 16.0,
+  );
+}
+
 void validEmail() {
   Fluttertoast.showToast(
       msg: "Please enter valid email address!",

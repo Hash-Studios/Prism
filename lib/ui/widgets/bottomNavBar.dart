@@ -181,14 +181,14 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 },
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
-              child: IconButton(
-                icon: Icon(JamIcons.instant_picture_f,
-                    color: Theme.of(context).accentColor),
-                onPressed: () {},
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
+            //   child: IconButton(
+            //     icon: Icon(JamIcons.instant_picture_f,
+            //         color: Theme.of(context).accentColor),
+            //     onPressed: () {},
+            //   ),
+            // ),
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
               child: IconButton(
