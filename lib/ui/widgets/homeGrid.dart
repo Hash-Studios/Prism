@@ -27,7 +27,8 @@ class _HomeGridState extends State<HomeGrid>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = ThemeModel().returnTheme() == ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
+            ThemeType.Dark
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
@@ -113,7 +114,9 @@ class _HomeGridState extends State<HomeGrid>
           if (index ==
               Provider.of<WallHavenProvider>(context).walls.length - 1) {
             return FlatButton(
-                color: ThemeModel().returnTheme() == ThemeType.Dark
+                color: Provider.of<ThemeModel>(context, listen: false)
+                            .returnTheme() ==
+                        ThemeType.Dark
                     ? Colors.white10
                     : Colors.black.withOpacity(.1),
                 shape: RoundedRectangleBorder(
@@ -136,7 +139,9 @@ class _HomeGridState extends State<HomeGrid>
         } else if (widget.provider == "Pexels") {
           if (index == Provider.of<PexelsProvider>(context).wallsP.length - 1) {
             return FlatButton(
-                color: ThemeModel().returnTheme() == ThemeType.Dark
+                color: Provider.of<ThemeModel>(context, listen: false)
+                            .returnTheme() ==
+                        ThemeType.Dark
                     ? Colors.white10
                     : Colors.black.withOpacity(.1),
                 shape: RoundedRectangleBorder(
@@ -160,7 +165,9 @@ class _HomeGridState extends State<HomeGrid>
             widget.provider.substring(0, 6) == "Colors") {
           if (index == Provider.of<PexelsProvider>(context).wallsC.length - 1) {
             return FlatButton(
-                color: ThemeModel().returnTheme() == ThemeType.Dark
+                color: Provider.of<ThemeModel>(context, listen: false)
+                            .returnTheme() ==
+                        ThemeType.Dark
                     ? Colors.white10
                     : Colors.black.withOpacity(.1),
                 shape: RoundedRectangleBorder(
@@ -184,7 +191,9 @@ class _HomeGridState extends State<HomeGrid>
           if (index ==
               Provider.of<WallHavenProvider>(context).wallsS.length - 1) {
             return FlatButton(
-                color: ThemeModel().returnTheme() == ThemeType.Dark
+                color: Provider.of<ThemeModel>(context, listen: false)
+                            .returnTheme() ==
+                        ThemeType.Dark
                     ? Colors.white10
                     : Colors.black.withOpacity(.1),
                 shape: RoundedRectangleBorder(

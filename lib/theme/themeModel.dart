@@ -1,27 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:Prism/main.dart' as main;
 
 enum ThemeType { Light, Dark }
 
 class ThemeModel extends ChangeNotifier {
   ThemeData currentTheme = kDarkTheme;
-  ThemeType _themeType = ThemeType.Dark;
+  ThemeType themeType = ThemeType.Dark;
+
+  ThemeModel(this.currentTheme, this.themeType);
 
   toggleTheme() {
-    if (this._themeType == ThemeType.Dark) {
+    if (this.themeType == ThemeType.Dark) {
+      main.prefs.setBool("darkMode", false);
       this.currentTheme = kLightTheme;
-      this._themeType = ThemeType.Light;
+      this.themeType = ThemeType.Light;
+      print(main.prefs.getBool("darkMode"));
       return notifyListeners();
     }
 
-    if (this._themeType == ThemeType.Light) {
+    if (this.themeType == ThemeType.Light) {
+      main.prefs.setBool("darkMode", true);
       this.currentTheme = kDarkTheme;
-      this._themeType = ThemeType.Dark;
+      this.themeType = ThemeType.Dark;
+      print(main.prefs.getBool("darkMode"));
       return notifyListeners();
     }
   }
 
   returnTheme() {
-    return _themeType;
+    return themeType;
   }
 }
