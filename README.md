@@ -241,3 +241,5 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [ ] search tags working
 - [ ] wallpaper download
 - [ ] wallpaper set
+- [ ] tap and hold to open menu
+- [ ] fix favgrid
