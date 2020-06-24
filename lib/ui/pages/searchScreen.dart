@@ -120,7 +120,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   children: <Widget>[
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
-                      child: ThemeModel().returnTheme() == ThemeType.Dark
+                      child: Provider.of<ThemeModel>(context, listen: false)
+                                  .returnTheme() ==
+                              ThemeType.Dark
                           ? SvgPicture.asset(
                               "assets/images/loader dark.svg",
                             )
@@ -162,7 +164,8 @@ class _SearchLoaderState extends State<SearchLoader>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = ThemeModel().returnTheme() == ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
+            ThemeType.Dark
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
