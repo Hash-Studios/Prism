@@ -239,11 +239,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] Add hero animation in bottom sheet arrow
 - [ ] fix font in account settings
 - [ ] search tags working
-- [ ] wallpaper download
+- [x] wallpaper download
 - [ ] wallpaper set
 - [ ] tap and hold to open menu
 - [ ] fix favgrid
-- [ ] fix about/signin popup headline 5 to 6
+- [x] fix about/signin popup headline 5 to 6
 - [x] All rights reserved to provider name
 - [x] Show useful stuff in the info bar
 - [x] colorpicker results are the same (not working except rgb)
