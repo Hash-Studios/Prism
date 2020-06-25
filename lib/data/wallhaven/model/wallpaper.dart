@@ -5,7 +5,7 @@ class WallPaper {
   final String url;
   final String short_url;
   final String views;
-  final String favorites;
+  final String favourites;
   final String category;
   final String dimension_x;
   final String dimension_y;
@@ -21,7 +21,7 @@ class WallPaper {
     this.url,
     this.short_url,
     this.views,
-    this.favorites,
+    this.favourites,
     this.category,
     this.dimension_x,
     this.dimension_y,
