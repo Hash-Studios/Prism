@@ -21,9 +21,7 @@ class ProfileScreen extends StatelessWidget {
       backgroundColor: Theme.of(context).primaryColor,
       body: CustomScrollView(slivers: <Widget>[
         SliverAppBar(
-          backgroundColor: main.prefs.getBool("isLoggedin")
-              ? Theme.of(context).primaryColor
-              : Color(0xFFE57697),
+          backgroundColor: Color(0xFFE57697),
           automaticallyImplyLeading: false,
           pinned: false,
           floating: true,
@@ -35,10 +33,8 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 main.prefs.getBool("isLoggedin")
                     ? Container(
-                        child: Image.asset(
-                        "assets/images/bgp.jpg",
-                        fit: BoxFit.cover,
-                      ))
+                        color: Color(0xFFE57697),
+                      )
                     : Container(
                         child: Image.asset(
                         "assets/images/bgp.png",
@@ -319,14 +315,14 @@ class ProfileScreen extends StatelessWidget {
                     JamIcons.info,
                   ),
                   title: new Text(
-                    "About",
+                    "What's new?",
                     style: TextStyle(
                         color: Theme.of(context).accentColor,
                         fontWeight: FontWeight.w500,
                         fontFamily: "Proxima Nova"),
                   ),
                   subtitle: Text(
-                    "Know more about Prism",
+                    "Check out the changelog",
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () {
