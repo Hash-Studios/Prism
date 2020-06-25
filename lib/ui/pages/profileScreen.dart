@@ -288,12 +288,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   onTap: () {
                     DefaultCacheManager().emptyCache();
-                    Fluttertoast.showToast(
-                        msg: "Cleared cache!",
-                        toastLength: Toast.LENGTH_LONG,
-                        timeInSecForIosWeb: 1,
-                        textColor: Colors.white,
-                        fontSize: 16.0);
+                    toasts.clearCache();
                   }),
               ListTile(
                 onTap: () {
