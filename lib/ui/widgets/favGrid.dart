@@ -1,33 +1,81 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focusedMenu.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
+import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class FavouriteGrid extends StatefulWidget {
   const FavouriteGrid({
     Key key,
-    @required this.controller,
-    @required this.animation,
   }) : super(key: key);
 
-  final ScrollController controller;
-  final Animation<Color> animation;
   @override
   _FavouriteGridState createState() => _FavouriteGridState();
 }
 
-class _FavouriteGridState extends State<FavouriteGrid> {
-  String userId = '';
+class _FavouriteGridState extends State<FavouriteGrid>
+    with SingleTickerProviderStateMixin {
+  AnimationController _controller;
+  Animation<Color> animation;
+  // String userId = '';
   var refreshFavKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
+            ThemeType.Dark
+        ? TweenSequence<Color>(
+            [
+              TweenSequenceItem(
+                weight: 1.0,
+                tween: ColorTween(
+                  begin: Colors.white10,
+                  end: Colors.white12,
+                ),
+              ),
+              TweenSequenceItem(
+                weight: 1.0,
+                tween: ColorTween(
+                  begin: Colors.white12,
+                  end: Colors.white10,
+                ),
+              ),
+            ],
+          ).animate(_controller)
+        : TweenSequence<Color>(
+            [
+              TweenSequenceItem(
+                weight: 1.0,
+                tween: ColorTween(
+                  begin: Colors.black.withOpacity(.1),
+                  end: Colors.black.withOpacity(.14),
+                ),
+              ),
+              TweenSequenceItem(
+                weight: 1.0,
+                tween: ColorTween(
+                  begin: Colors.black.withOpacity(.14),
+                  end: Colors.black.withOpacity(.1),
+                ),
+              ),
+            ],
+          ).animate(_controller)
+      ..addListener(() {
+        setState(() {});
+      });
+    _controller.repeat();
   }
 
   @override
   void dispose() {
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -40,16 +88,23 @@ class _FavouriteGridState extends State<FavouriteGrid> {
 
   @override
   Widget build(BuildContext context) {
+    final ScrollController controller =
+        InheritedDataProvider.of(context).scrollController;
     return RefreshIndicator(
         key: refreshFavKey,
         onRefresh: refreshList,
-        child: Provider.of<FavouriteProvider>(context).liked != null
+        child: Provider.of<FavouriteProvider>(context, listen: false).liked !=
+                null
             ? GridView.builder(
-                controller: widget.controller,
+                controller: controller,
                 shrinkWrap: true,
-                padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+                cacheExtent: 50000,
+                padding: EdgeInsets.fromLTRB(4, 4, 4, 4),
                 itemCount:
-                    Provider.of<FavouriteProvider>(context).liked.length == 0
+                    Provider.of<FavouriteProvider>(context, listen: false)
+                                .liked
+                                .length ==
+                            0
                         ? 0
                         : Provider.of<FavouriteProvider>(context).liked.length,
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -61,13 +116,16 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8),
                 itemBuilder: (context, index) {
+                  // print(Provider.of<FavouriteProvider>(context, listen: false)
+                  //     .liked[index]);
+                  // print(index);
                   return FocusedMenuHolder(
-                    provider: "WallHaven",
+                    provider: "Liked",
                     index: index,
                     child: GestureDetector(
                       child: Container(
                         decoration: BoxDecoration(
-                            color: widget.animation.value,
+                            color: animation.value,
                             borderRadius: BorderRadius.circular(20),
                             image: DecorationImage(
                                 image: NetworkImage(
@@ -80,7 +138,6 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                     ),
                   );
                 })
-            : LoadingCards(
-                controller: widget.controller, animation: widget.animation));
+            : LoadingCards(controller: controller, animation: animation));
   }
 }
