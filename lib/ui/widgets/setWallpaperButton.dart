@@ -65,6 +65,30 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
+  void _setHomeWallPaper() async {
+    bool result;
+    try {
+      result =
+          await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
+        'url': widget.url,
+      });
+      if (result) {
+        print("Success");
+        toasts.setWallpaper();
+      } else {
+        print("Failed");
+        toasts.error("Something went wrong!");
+      }
+      if (this.mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
   void onPaint() async {
     showDialog(
       context: context,
@@ -75,20 +99,24 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           ),
         ),
         content: Container(
-          height: 130,
+          height: 200,
           width: 250,
           child: Center(
             child: ListView.builder(
-                itemCount: 2,
+                itemCount: 3,
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
                   return ListTile(
                     leading: Icon(
-                      index == 0 ? JamIcons.key : JamIcons.picture,
+                      index == 0
+                          ? JamIcons.phone
+                          : index == 1 ? JamIcons.key : JamIcons.picture,
                       color: Theme.of(context).accentColor,
                     ),
                     title: Text(
-                      index == 0 ? "Lock Screen" : "Home & Lock Screen",
+                      index == 0
+                          ? "Home Screen"
+                          : index == 1 ? "Lock Screen" : "Both",
                       style: Theme.of(context).textTheme.headline4,
                     ),
                     onTap: index == 0
@@ -99,17 +127,27 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                               isLoading = true;
                             });
                             Future.delayed(Duration(seconds: 1))
-                                .then((value) => _setLockWallPaper());
+                                .then((value) => _setHomeWallPaper());
                           }
-                        : () async {
-                            HapticFeedback.vibrate();
-                            Navigator.of(context).pop();
-                            setState(() {
-                              isLoading = true;
-                            });
-                            Future.delayed(Duration(seconds: 1))
-                                .then((value) => _setWallPaper());
-                          },
+                        : index == 1
+                            ? () async {
+                                HapticFeedback.vibrate();
+                                Navigator.of(context).pop();
+                                setState(() {
+                                  isLoading = true;
+                                });
+                                Future.delayed(Duration(seconds: 1))
+                                    .then((value) => _setLockWallPaper());
+                              }
+                            : () async {
+                                HapticFeedback.vibrate();
+                                Navigator.of(context).pop();
+                                setState(() {
+                                  isLoading = true;
+                                });
+                                Future.delayed(Duration(seconds: 1))
+                                    .then((value) => _setWallPaper());
+                              },
                   );
                 }),
           ),
