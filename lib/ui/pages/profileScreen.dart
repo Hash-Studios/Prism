@@ -372,24 +372,24 @@ class ProfileScreen extends StatelessWidget {
                   onTap: () async {
                     launch("https://github.com/LiquidatorCoder/Prism");
                   }),
-              // ListTile(
-              //     leading: Icon(
-              //       Icons.wallpaper,
-              //     ),
-              //     title: new Text(
-              //       "API",
-              //       style: TextStyle(
-              //           color: Theme.of(context).accentColor,
-              //           fontWeight: FontWeight.w500,
-              //           fontFamily: "Proxima Nova"),
-              //     ),
-              //     subtitle: Text(
-              //       "Prism uses Wallhaven API for wallpapers",
-              //       style: TextStyle(fontSize: 12),
-              //     ),
-              //     onTap: () async {
-              //       launch("https://wallhaven.cc/help/api");
-              //     }),
+              ListTile(
+                  leading: Icon(
+                    JamIcons.picture,
+                  ),
+                  title: new Text(
+                    "API",
+                    style: TextStyle(
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: "Proxima Nova"),
+                  ),
+                  subtitle: Text(
+                    "Prism uses Wallhaven and Pexels API for wallpapers",
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onTap: () async {
+                    // launch("https://wallhaven.cc/help/api");
+                  }),
               ListTile(
                   leading: Icon(
                     JamIcons.computer_alt,
