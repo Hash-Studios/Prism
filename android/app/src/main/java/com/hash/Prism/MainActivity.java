@@ -1,6 +1,8 @@
 package com.hash.Prism;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import android.content.Intent;
+import android.net.*;
 
 import com.bumptech.glide.request.target.CustomTarget;
 import io.flutter.embedding.android.FlutterActivity;
@@ -27,7 +29,48 @@ public class MainActivity extends FlutterActivity {
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
                 .setMethodCallHandler(
                         (call, result) -> {
-                            if (call.method.equals("set_wallpaper")){
+                            if (call.method.equals("set_lock_wallpaper")){
+
+                                String url = call.argument("url"); // .argument returns the correct type
+                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+url);
+
+                                Glide.with(getActivity())
+                                        .asBitmap()
+                                        .load(url)
+                                        .into(new CustomTarget<Bitmap>() {
+                                            @Override
+                                            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+"Ready");
+                                                WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+                                                try {
+                                                    wallpaperManager.setBitmap(resource,null,true,WallpaperManager.FLAG_LOCK);
+                                                    // Intent intent = new Intent("com.android.camera.action.CROP");
+                                                    // intent.setType("image/*");
+                                                    // Toast.makeText(this, "Wallpaper set!", Toast.LENGTH_SHORT).show();
+//                                                    Intent wall_intent =  new Intent(Intent.ACTION_ATTACH_DATA);
+//                                                    wall_intent.setDataAndType(Uri.parse(url), "image/*");
+//                                                    wall_intent.putExtra("mimeType", "image/*");
+//                                                    Intent chooserIntent = Intent.createChooser(wall_intent,
+//                                                            "Set As");
+//                                                    chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                                                    chooserIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                                    result.success(true);
+//                                                    try {
+//                                                        getApplicationContext().startActivity(chooserIntent);
+//                                                    }catch (Exception e)
+//                                                    {
+//                                                        e.printStackTrace();
+//                                                    }
+                                                } catch (IOException ex) {
+                                                    ex.printStackTrace();
+                                                }
+                                            }
+                                            @Override
+                                            public void onLoadCleared(@Nullable Drawable placeholder) {
+                                            }
+                                        });
+
+                            } else if (call.method.equals("set_wallpaper")){
 
                                 String url = call.argument("url"); // .argument returns the correct type
                                 android.util.Log.i("Arguments ", "configureFlutterEngine: "+url);
