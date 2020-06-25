@@ -182,7 +182,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                     ),
                                     SizedBox(width: 10),
                                     Text(
-                                      "${Provider.of<WallHavenProvider>(context).wall.favorites.toString()}",
+                                      "${Provider.of<WallHavenProvider>(context).wall.favourites.toString()}",
                                       style:
                                           Theme.of(context).textTheme.bodyText2,
                                     ),

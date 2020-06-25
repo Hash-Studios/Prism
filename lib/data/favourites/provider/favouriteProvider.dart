@@ -18,7 +18,7 @@ class FavouriteProvider extends ChangeNotifier {
         .getDocuments()
         .then((value) {
       value.documents.forEach((f) => this.liked.add(f.data));
-      // print(this.liked);
+      print(this.liked);
     }).catchError((e) {
       print("data done with error");
     });
@@ -57,7 +57,7 @@ class FavouriteProvider extends ChangeNotifier {
         "provider": "WallHaven",
         "views": wallhaven.views.toString(),
         "resolution": wallhaven.resolution.toString(),
-        "fav": wallhaven.favorites.toString(),
+        "fav": wallhaven.favourites.toString(),
         "size": wallhaven.file_size.toString(),
         "photographer": ""
       });
@@ -106,5 +106,34 @@ class FavouriteProvider extends ChangeNotifier {
         }
       },
     );
+  }
+
+  Future<int> countFav() async {
+    int favs;
+    print("in countfav");
+    await getDataBase().then((value) {
+      print(value.length);
+      favs = value.length;
+    });
+    return favs;
+  }
+
+  void deleteData() async {
+    var uid = main.prefs.getString("id");
+    try {
+      await databaseReference
+          .collection("users")
+          .document(uid)
+          .collection("images")
+          .getDocuments()
+          .then((snapshot) {
+        for (DocumentSnapshot ds in snapshot.documents) {
+          ds.reference.delete();
+        }
+      });
+    } catch (e) {
+      print(e.toString());
+    }
+    await getDataBase();
   }
 }

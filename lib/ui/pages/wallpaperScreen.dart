@@ -175,7 +175,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                     ),
                                     SizedBox(width: 10),
                                     Text(
-                                      "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].favorites.toString()}",
+                                      "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].favourites.toString()}",
                                       style:
                                           Theme.of(context).textTheme.bodyText2,
                                     ),
@@ -688,7 +688,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                             ),
                                             SizedBox(width: 10),
                                             Text(
-                                              "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].favorites.toString()}",
+                                              "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].favourites.toString()}",
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2,

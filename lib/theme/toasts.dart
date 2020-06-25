@@ -213,3 +213,14 @@ void unfavWall() {
       textColor: Colors.white,
       fontSize: 16.0);
 }
+
+void clearFav() {
+  Fluttertoast.showToast(
+      msg: "Cleared all favourites!",
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.red[400],
+      toastLength: Toast.LENGTH_LONG,
+      timeInSecForIosWeb: 1,
+      textColor: Colors.white,
+      fontSize: 16.0);
+}
