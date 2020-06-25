@@ -63,45 +63,49 @@ class _DownloadScreenState extends State<DownloadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: RefreshIndicator(
-        key: refreshDownloadKey,
-        onRefresh: refreshList,
-        child: Container(
-          child: GridView.builder(
-            shrinkWrap: true,
-            padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
-            itemCount: files.length,
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent:
-                    MediaQuery.of(context).orientation == Orientation.portrait
-                        ? 300
-                        : 250,
-                childAspectRatio: 0.830,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8),
-            itemBuilder: (BuildContext context, int index) {
-              return GestureDetector(
-                child: Container(
-                  decoration: files.length == 0
-                      ? BoxDecoration(
-                          color:
-                              Theme.of(context).accentColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        )
-                      : BoxDecoration(
-                          color:
-                              Theme.of(context).accentColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(
-                              image: FileImage(files[index]),
-                              fit: BoxFit.cover)),
-                ),
-                onTap: () {
-                  Navigator.pushNamed(context, DownloadWallpaperRoute,
-                      arguments: ["Downloads", files[index]]);
-                },
-              );
-            },
+      backgroundColor: Theme.of(context).primaryColor,
+      body: SafeArea(
+        child: RefreshIndicator(
+          backgroundColor: Theme.of(context).primaryColor,
+          key: refreshDownloadKey,
+          onRefresh: refreshList,
+          child: Container(
+            child: GridView.builder(
+              shrinkWrap: true,
+              padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+              itemCount: files.length,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent:
+                      MediaQuery.of(context).orientation == Orientation.portrait
+                          ? 300
+                          : 250,
+                  childAspectRatio: 0.830,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8),
+              itemBuilder: (BuildContext context, int index) {
+                return GestureDetector(
+                  child: Container(
+                    decoration: files.length == 0
+                        ? BoxDecoration(
+                            color:
+                                Theme.of(context).accentColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          )
+                        : BoxDecoration(
+                            color:
+                                Theme.of(context).accentColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            image: DecorationImage(
+                                image: FileImage(files[index]),
+                                fit: BoxFit.cover)),
+                  ),
+                  onTap: () {
+                    Navigator.pushNamed(context, DownloadWallpaperRoute,
+                        arguments: ["Downloads", files[index]]);
+                  },
+                );
+              },
+            ),
           ),
         ),
       ),

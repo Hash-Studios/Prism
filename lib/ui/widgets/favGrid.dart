@@ -92,6 +92,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
     return RefreshIndicator(
+        backgroundColor: Theme.of(context).primaryColor,
         key: refreshFavKey,
         onRefresh: refreshList,
         child: Provider.of<FavouriteProvider>(context, listen: false).liked !=
