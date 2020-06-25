@@ -648,7 +648,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                       "Pexels"
                                   ? Positioned(
                                       top: childOffset.dy +
-                                          childSize.height * 2 / 8,
+                                          childSize.height * 1 / 2,
                                       left: childOffset.dx,
                                       child: TweenAnimationBuilder(
                                         duration: Duration(milliseconds: 200),
@@ -663,7 +663,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                         tween: Tween(begin: 0.0, end: 1.0),
                                         child: Container(
                                           width: childSize.width,
-                                          height: childSize.height * 6 / 8,
+                                          height: childSize.height * 1 / 2,
                                           decoration: BoxDecoration(
                                             color: Color(0xFF2F2F2F),
                                             borderRadius:
@@ -719,46 +719,6 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                 ),
                                                           ),
                                                           onPressed: () {}),
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                    .fromLTRB(
-                                                                0, 5, 0, 10),
-                                                        child: Text(
-                                                          Provider.of<FavouriteProvider>(context, listen: false).liked[index]["url"].toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                                              ? Provider.of<FavouriteProvider>(context, listen: false).liked[index]["url"].toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
-                                                                  Provider.of<FavouriteProvider>(context, listen: false)
-                                                                      .liked[index][
-                                                                          "url"]
-                                                                      .toString()
-                                                                      .replaceAll(
-                                                                          "https://www.pexels.com/photo/",
-                                                                          "")
-                                                                      .replaceAll(
-                                                                          "-", " ")
-                                                                      .replaceAll(
-                                                                          "/", "")
-                                                                      .substring(
-                                                                          1,
-                                                                          Provider.of<FavouriteProvider>(context, listen: false).liked[index]["url"].toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
-                                                                              7)
-                                                              : Provider.of<FavouriteProvider>(context, listen: false).liked[index]["url"].toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
-                                                                  Provider.of<PexelsProvider>(
-                                                                          context,
-                                                                          listen: false)
-                                                                      .wallsP[index]
-                                                                      .url
-                                                                      .toString()
-                                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                                      .replaceAll("-", " ")
-                                                                      .replaceAll("/", "")
-                                                                      .substring(1),
-                                                          style:
-                                                              Theme.of(context)
-                                                                  .textTheme
-                                                                  .headline5,
-                                                        ),
-                                                      ),
                                                       Row(
                                                         children: [
                                                           Icon(
@@ -1368,7 +1328,66 @@ class FocusedMenuDetails extends StatelessWidget {
               Positioned(
                 top: topOffset - fabHeartTopOffset,
                 left: leftOffset - fabHeartLeftOffset,
-                child: FavouriteWallpaperButton(),
+                child: provider == "WallHaven"
+                    ? FavouriteWallpaperButton(
+                        id: Provider.of<WallHavenProvider>(context,
+                                listen: false)
+                            .walls[index]
+                            .id
+                            .toString(),
+                        provider: "WallHaven",
+                        wallhaven: Provider.of<WallHavenProvider>(context,
+                                listen: false)
+                            .walls[index],
+                      )
+                    : provider == "Pexels"
+                        ? FavouriteWallpaperButton(
+                            id: Provider.of<PexelsProvider>(context,
+                                    listen: false)
+                                .wallsP[index]
+                                .id
+                                .toString(),
+                            provider: "Pexels",
+                            pexels: Provider.of<PexelsProvider>(context,
+                                    listen: false)
+                                .wallsP[index],
+                          )
+                        : provider == "Liked"
+                            ? FavouriteWallpaperButton(
+                                id: Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["id"]
+                                    .toString(),
+                                provider: Provider.of<FavouriteProvider>(
+                                        context,
+                                        listen: false)
+                                    .liked[index]["provider"]
+                                    .toString(),
+                              )
+                            : provider.length > 6 &&
+                                    provider.substring(0, 6) == "Colors"
+                                ? FavouriteWallpaperButton(
+                                    id: Provider.of<PexelsProvider>(context,
+                                            listen: false)
+                                        .wallsC[index]
+                                        .id
+                                        .toString(),
+                                    provider: "Pexels",
+                                    pexels: Provider.of<PexelsProvider>(context,
+                                            listen: false)
+                                        .wallsC[index])
+                                : FavouriteWallpaperButton(
+                                    id: Provider.of<WallHavenProvider>(context,
+                                            listen: false)
+                                        .wallsS[index]
+                                        .id
+                                        .toString(),
+                                    provider: "WallHaven",
+                                    wallhaven: Provider.of<WallHavenProvider>(
+                                            context,
+                                            listen: false)
+                                        .wallsS[index],
+                                  ),
               ),
               Positioned(
                 top: topOffset + fabWallTopOffset,
