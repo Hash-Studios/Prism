@@ -70,7 +70,32 @@ public class MainActivity extends FlutterActivity {
                                             }
                                         });
 
-                            } else if (call.method.equals("set_wallpaper")){
+                            } else if (call.method.equals("set_home_wallpaper")){
+
+                                String url = call.argument("url"); // .argument returns the correct type
+                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+url);
+
+                                Glide.with(getActivity())
+                                        .asBitmap()
+                                        .load(url)
+                                        .into(new CustomTarget<Bitmap>() {
+                                            @Override
+                                            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+"Ready");
+                                                WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+                                                try {
+                                                    wallpaperManager.setBitmap(resource,null,true,WallpaperManager.FLAG_SYSTEM);
+                                                    result.success(true);
+                                                } catch (IOException ex) {
+                                                    ex.printStackTrace();
+                                                }
+                                            }
+                                            @Override
+                                            public void onLoadCleared(@Nullable Drawable placeholder) {
+                                            }
+                                        });
+
+                            }else if (call.method.equals("set_wallpaper")){
 
                                 String url = call.argument("url"); // .argument returns the correct type
                                 android.util.Log.i("Arguments ", "configureFlutterEngine: "+url);
