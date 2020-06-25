@@ -810,7 +810,30 @@ class FocusedMenuDetails extends StatelessWidget {
               Positioned(
                 top: topOffset,
                 left: leftOffset,
-                child: SetWallpaperButton(),
+                child: SetWallpaperButton(
+                  url: provider == "WallHaven"
+                      ? Provider.of<WallHavenProvider>(context, listen: false)
+                          .walls[index]
+                          .path
+                          .toString()
+                      : provider == "Pexels"
+                          ? Provider.of<PexelsProvider>(context, listen: false)
+                              .wallsP[index]
+                              .url
+                              .toString()
+                          : provider.length > 6 &&
+                                  provider.substring(0, 6) == "Colors"
+                              ? Provider.of<PexelsProvider>(context,
+                                      listen: false)
+                                  .wallsC[index]
+                                  .src["portrait"]
+                                  .toString()
+                              : Provider.of<WallHavenProvider>(context,
+                                      listen: false)
+                                  .wallsS[index]
+                                  .path
+                                  .toString(),
+                ),
               ),
               Positioned(
                 top: topOffset - fabHeartTopOffset,
@@ -836,7 +859,7 @@ class FocusedMenuDetails extends StatelessWidget {
                               ? Provider.of<PexelsProvider>(context,
                                       listen: false)
                                   .wallsC[index]
-                                  .url
+                                  .src["portrait"]
                                   .toString()
                               : Provider.of<WallHavenProvider>(context,
                                       listen: false)
