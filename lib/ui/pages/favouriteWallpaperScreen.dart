@@ -539,7 +539,15 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                               .liked[index]["url"],
                     ),
                     SetWallpaperButton(),
-                    FavouriteWallpaperButton(),
+                    FavouriteWallpaperButton(
+                      id: Provider.of<FavouriteProvider>(context, listen: false)
+                          .liked[index]["id"]
+                          .toString(),
+                      provider:
+                          Provider.of<FavouriteProvider>(context, listen: false)
+                              .liked[index]["provider"]
+                              .toString(),
+                    ),
                     ShareButton(
                         id: Provider.of<FavouriteProvider>(context,
                                 listen: false)

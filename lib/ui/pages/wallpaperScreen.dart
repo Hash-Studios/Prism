@@ -1,3 +1,4 @@
+import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
@@ -846,7 +847,69 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                     : Provider.of<WallHavenProvider>(context)
                                         .wallsS[index]
                                         .path),
-                    FavouriteWallpaperButton(),
+                    provider == "WallHaven"
+                        ? FavouriteWallpaperButton(
+                            id: Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .walls[index]
+                                .id
+                                .toString(),
+                            provider: "WallHaven",
+                            wallhaven: Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .walls[index],
+                          )
+                        : provider == "Pexels"
+                            ? FavouriteWallpaperButton(
+                                id: Provider.of<PexelsProvider>(context,
+                                        listen: false)
+                                    .wallsP[index]
+                                    .id
+                                    .toString(),
+                                provider: "Pexels",
+                                pexels: Provider.of<PexelsProvider>(context,
+                                        listen: false)
+                                    .wallsP[index],
+                              )
+                            : provider == "Liked"
+                                ? FavouriteWallpaperButton(
+                                    id: Provider.of<FavouriteProvider>(context,
+                                            listen: false)
+                                        .liked[index]["id"]
+                                        .toString(),
+                                    provider: Provider.of<FavouriteProvider>(
+                                            context,
+                                            listen: false)
+                                        .liked[index]["provider"]
+                                        .toString(),
+                                  )
+                                : provider.length > 6 &&
+                                        provider.substring(0, 6) == "Colors"
+                                    ? FavouriteWallpaperButton(
+                                        id: Provider.of<PexelsProvider>(context,
+                                                listen: false)
+                                            .wallsC[index]
+                                            .id
+                                            .toString(),
+                                        provider: "Pexels",
+                                        pexels: Provider.of<PexelsProvider>(
+                                                context,
+                                                listen: false)
+                                            .wallsC[index])
+                                    : FavouriteWallpaperButton(
+                                        id: Provider.of<WallHavenProvider>(
+                                                context,
+                                                listen: false)
+                                            .wallsS[index]
+                                            .id
+                                            .toString(),
+                                        provider: "WallHaven",
+                                        wallhaven:
+                                            Provider.of<WallHavenProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .wallsS[index],
+                                      ),
                     provider == "WallHaven"
                         ? ShareButton(
                             id: Provider.of<WallHavenProvider>(context, listen: false)
