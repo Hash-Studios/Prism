@@ -250,3 +250,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [ ] add analytics
 - [ ] add share button and implementation
 - [ ] widgetize clockoverlay
+- [ ] fix continuity error overall
+- [ ] centrecrop java for search
+- [ ] fav, download, set wall button in focus menu
+- [ ] 4 buttons in shareView, favView, downloadView and wallpaperScreen

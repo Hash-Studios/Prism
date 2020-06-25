@@ -1,4 +1,5 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focusedMenu.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
@@ -134,7 +135,21 @@ class _FavouriteGridState extends State<FavouriteGrid>
                                 ),
                                 fit: BoxFit.cover)),
                       ),
-                      onTap: () {},
+                      onTap: () {
+                        if (Provider.of<FavouriteProvider>(context,
+                                    listen: false)
+                                .liked ==
+                            []) {
+                        } else {
+                          Navigator.pushNamed(context, FavWallViewRoute,
+                              arguments: [
+                                index,
+                                Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["thumb"],
+                              ]);
+                        }
+                      },
                     ),
                   );
                 })
