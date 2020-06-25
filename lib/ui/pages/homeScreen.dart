@@ -53,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 deepLink.queryParameters["id"],
                 deepLink.queryParameters["provider"],
                 deepLink.queryParameters["url"],
+                deepLink.queryParameters["thumb"],
               ]));
       print("opened while closed altogether via deep link2345");
     }
@@ -68,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   deepLink.queryParameters["id"],
                   deepLink.queryParameters["provider"],
                   deepLink.queryParameters["url"],
+                  deepLink.queryParameters["thumb"],
                 ]));
         print("opened while bg via deep link2345");
       }
