@@ -7,7 +7,7 @@ import 'package:Prism/main.dart' as main;
 class FavouriteProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
   List liked;
-  Future<List> getDataBase() {
+  Future<List> getDataBase() async {
     this.liked = [];
     var uid = main.prefs.getString("id");
     databaseReference
@@ -16,9 +16,11 @@ class FavouriteProvider extends ChangeNotifier {
         .collection("images")
         .getDocuments()
         .then((value) {
-      print(value);
       value.documents.forEach((f) => this.liked.add(f.data));
       print(this.liked);
+      return this.liked;
+    }).catchError((e) {
+      print("data done with error");
       return this.liked;
     });
   }
