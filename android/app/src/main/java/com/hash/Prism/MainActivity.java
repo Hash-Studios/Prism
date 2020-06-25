@@ -1,4 +1,4 @@
-package com.hash.Prism;
+package com.hash.prism;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.content.Intent;

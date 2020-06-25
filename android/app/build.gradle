@@ -33,7 +33,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.hash.Prism"
+        applicationId "com.hash.prism"
         minSdkVersion 16
         targetSdkVersion 28
         versionCode flutterVersionCode.toInteger()
@@ -58,3 +58,4 @@ dependencies{
 flutter {
     source '../..'
 }
+apply plugin: 'com.google.gms.google-services'
