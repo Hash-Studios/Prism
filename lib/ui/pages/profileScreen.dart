@@ -330,7 +330,7 @@ class ProfileScreen extends StatelessWidget {
                   }),
               ListTile(
                   leading: Icon(
-                    JamIcons.share,
+                    JamIcons.share_alt,
                   ),
                   title: new Text(
                     "Share Prism!",

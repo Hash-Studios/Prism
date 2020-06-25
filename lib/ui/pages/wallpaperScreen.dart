@@ -5,6 +5,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/downloadButton.dart';
 import 'package:Prism/ui/widgets/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/setWallpaperButton.dart';
+import 'package:Prism/ui/widgets/shareButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
@@ -59,7 +60,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
     _scaffoldKey.currentState.showBottomSheet<void>(
       (BuildContext context) {
         return Container(
-          height: MediaQuery.of(context).size.height * .42,
+          height: MediaQuery.of(context).size.height * .46,
           width: MediaQuery.of(context).size.width,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
@@ -124,7 +125,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                   ? Expanded(
                       flex: 4,
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -830,6 +831,41 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                     ),
                     SetWallpaperButton(),
                     FavouriteWallpaperButton(),
+                    provider == "WallHaven"
+                        ? ShareButton(
+                            id: Provider.of<WallHavenProvider>(context, listen: false)
+                                .walls[index]
+                                .id,
+                            provider: provider,
+                            url: Provider.of<WallHavenProvider>(context, listen: false)
+                                .walls[index]
+                                .path,
+                            thumbUrl:
+                                Provider.of<WallHavenProvider>(context, listen: false)
+                                    .walls[index]
+                                    .thumbs["original"])
+                        : provider == "Pexels"
+                            ? ShareButton(
+                                id: Provider.of<PexelsProvider>(context, listen: false)
+                                    .wallsP[index]
+                                    .id,
+                                provider: provider,
+                                url: Provider.of<PexelsProvider>(context, listen: false)
+                                    .wallsP[index]
+                                    .src["portrait"],
+                                thumbUrl:
+                                    Provider.of<PexelsProvider>(context, listen: false)
+                                        .wallsP[index]
+                                        .src["medium"])
+                            : provider.length > 6 && provider.substring(0, 6) == "Colors"
+                                ? ShareButton(
+                                    id: Provider.of<PexelsProvider>(context, listen: false)
+                                        .wallsC[index]
+                                        .id,
+                                    provider: "Pexels",
+                                    url: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["portrait"],
+                                    thumbUrl: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["medium"])
+                                : ShareButton(id: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].id, provider: "WallHaven", url: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].path, thumbUrl: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].thumbs["original"])
                   ],
                 ),
               ),

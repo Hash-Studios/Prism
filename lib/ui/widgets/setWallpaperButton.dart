@@ -25,7 +25,7 @@ class SetWallpaperButton extends StatelessWidget {
         ),
         padding: EdgeInsets.all(17),
         child: Icon(
-          JamIcons.layers,
+          JamIcons.picture,
           color: Theme.of(context).accentColor,
           size: 30,
         ),
