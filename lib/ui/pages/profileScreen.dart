@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -15,7 +16,32 @@ import 'package:Prism/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
+  @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  int favCount;
+  @override
+  void initState() {
+    checkFav();
+    super.initState();
+  }
+
+  Future checkFav() async {
+    if (main.prefs.getBool("isLoggedin")) {
+      await Provider.of<FavouriteProvider>(context, listen: false)
+          .countFav()
+          .then((value) {
+        print(value);
+        setState(() {
+          favCount = value;
+        });
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,7 +53,7 @@ class ProfileScreen extends StatelessWidget {
           pinned: false,
           floating: true,
           snap: true,
-          expandedHeight: 200.0,
+          expandedHeight: 280.0,
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(
               fit: StackFit.expand,
@@ -45,23 +71,38 @@ class ProfileScreen extends StatelessWidget {
                     ? Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: <Widget>[
-                          main.prefs.getString("googleimage") == null
-                              ? Container()
-                              : CircleAvatar(
-                                  radius: 60,
-                                  backgroundImage: NetworkImage(
-                                      main.prefs.getString("googleimage")),
-                                ),
                           Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              main.prefs.getString("googleimage") == null
+                                  ? Container()
+                                  : Container(
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(5000),
+                                          boxShadow: [
+                                            BoxShadow(
+                                                blurRadius: 16,
+                                                offset: Offset(0, 4),
+                                                color: Color(0xFF000000)
+                                                    .withOpacity(0.24))
+                                          ]),
+                                      child: CircleAvatar(
+                                        radius: 50,
+                                        backgroundImage: NetworkImage(main.prefs
+                                            .getString("googleimage")),
+                                      ),
+                                    ),
                               Padding(
-                                padding: const EdgeInsets.all(4.0),
+                                padding: const EdgeInsets.fromLTRB(8, 15, 8, 6),
                                 child: main.prefs.getString("name") == null
                                     ? Container()
                                     : Text(
                                         main.prefs.getString("name"),
                                         style: TextStyle(
+                                            fontFamily: "Proxima Nova",
+                                            color: Colors.white,
+                                            fontSize: 32,
                                             fontWeight: FontWeight.w700),
                                       ),
                               ),
@@ -69,8 +110,38 @@ class ProfileScreen extends StatelessWidget {
                                   ? Container()
                                   : Text(
                                       main.prefs.getString("email"),
-                                      style: TextStyle(fontSize: 14),
+                                      style: TextStyle(
+                                          fontFamily: "Proxima Nova",
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500),
                                     ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: RichText(
+                                  text: TextSpan(
+                                      text: favCount.toString(),
+                                      style: TextStyle(
+                                          fontFamily: "Proxima Nova",
+                                          fontSize: 24,
+                                          color: Colors.white70,
+                                          fontWeight: FontWeight.w700),
+                                      children: [
+                                        TextSpan(
+                                          text: " Favourites",
+                                          style: TextStyle(
+                                              fontFamily: "Proxima Nova",
+                                              color: Colors.white70,
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.w500),
+                                        )
+                                      ]),
+
+                                  // style: TextStyle(
+                                  //     fontFamily: "Proxima Nova",
+                                  //     fontSize: 24,
+                                  //     fontWeight: FontWeight.w500),
+                                ),
+                              ),
                             ],
                           )
                         ],
@@ -263,24 +334,20 @@ class ProfileScreen extends StatelessWidget {
                           JamIcons.heart,
                         ),
                         title: new Text(
-                          "Clear Favorites",
+                          "Clear favourites",
                           style: TextStyle(
                               color: Theme.of(context).accentColor,
                               fontWeight: FontWeight.w500,
                               fontFamily: "Proxima Nova"),
                         ),
                         subtitle: Text(
-                          "Remove all favorites",
+                          "Remove all favourites",
                           style: TextStyle(fontSize: 12),
                         ),
                         onTap: () {
-                          // Fluttertoast.showToast(
-                          //     msg: "Cleared all favorites!",
-                          //     toastLength: Toast.LENGTH_LONG,
-                          //     timeInSecForIosWeb: 1,
-                          //     textColor: Colors.white,
-                          //     fontSize: 16.0);
-                          // deleteData();
+                          toasts.clearFav();
+                          Provider.of<FavouriteProvider>(context, listen: false)
+                              .deleteData();
                         }),
                     ListTile(
                         leading: Icon(
