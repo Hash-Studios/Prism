@@ -88,7 +88,7 @@ class _ShareButtonState extends State<ShareButton> {
             shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
         uriPrefix: 'https://prismwallpapers.page.link',
         link: Uri.parse(
-            'http://prism.hash.com/share?id=${widget.id}&provider=${widget.provider}&url=${widget.url}'),
+            'http://prism.hash.com/share?id=${widget.id}&provider=${widget.provider}&url=${widget.url}&thumb=${widget.thumbUrl}'),
         androidParameters: AndroidParameters(
           packageName: 'com.hash.prism',
           minimumVersion: 1,
