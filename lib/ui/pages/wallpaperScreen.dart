@@ -1423,6 +1423,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                 hour + date.substring(13, 16),
                 textAlign: TextAlign.center,
                 style: TextStyle(
+                  color: Colors.white,
                   fontFamily: "Roboto",
                   fontSize: 80,
                   fontWeight: FontWeight.w400,
