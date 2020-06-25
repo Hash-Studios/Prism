@@ -55,7 +55,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: SetWallpaperButton(),
+                child: SetWallpaperButton(url: file.path),
               ),
             ),
             Align(
