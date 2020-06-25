@@ -8,6 +8,7 @@ class FavouriteProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
   List liked;
   Future<List> getDataBase() {
+    this.liked = [];
     var uid = main.prefs.getString("id");
     databaseReference
         .collection("users")
@@ -16,9 +17,9 @@ class FavouriteProvider extends ChangeNotifier {
         .getDocuments()
         .then((value) {
       print(value);
-      value.documents.forEach((f) => liked.add(f.data));
-      print(liked);
-      return liked;
+      value.documents.forEach((f) => this.liked.add(f.data));
+      print(this.liked);
+      return this.liked;
     });
   }
 
