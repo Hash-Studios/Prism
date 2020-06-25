@@ -1,4 +1,4 @@
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+// import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/favGrid.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
@@ -8,6 +8,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
 class FavLoader extends StatefulWidget {
+  final Future<List> future;
+  FavLoader({this.future});
   @override
   _FavLoaderState createState() => _FavLoaderState();
 }
@@ -20,8 +22,9 @@ class _FavLoaderState extends State<FavLoader>
   @override
   void initState() {
     super.initState();
-    _future =
-        Provider.of<FavouriteProvider>(context, listen: false).getDataBase();
+    // _future =
+    //     Provider.of<FavouriteProvider>(context, listen: false).getDataBase();
+    _future = widget.future;
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -84,20 +87,26 @@ class _FavLoaderState extends State<FavLoader>
     return FutureBuilder(
       future: _future,
       builder: (ctx, snapshot) {
+        // if (snapshot.hasData) {
+        //   print("has data");
+        //   return FavouriteGrid();
+        // } else {
+        //   print("snapshot waiting");
+        //   return CircularProgressIndicator();
+        // }
         if (snapshot == null) {
           print("snapshot null");
+          // return CircularProgressIndicator();
           return LoadingCards(controller: controller, animation: animation);
         }
-        // if (snapshot.connectionState == ConnectionState.waiting ||
-        //     snapshot.connectionState == ConnectionState.none) {
-        //   print("snapshot none, waiting");
-        //   return LoadingCards(controller: controller, animation: animation);
-        // } else {
-        return FavouriteGrid(
-          controller: controller,
-          animation: animation,
-        );
-        // }
+        if (snapshot.connectionState == ConnectionState.waiting ||
+            snapshot.connectionState == ConnectionState.none) {
+          print("snapshot none, waiting");
+          //   return CircularProgressIndicator();
+          return LoadingCards(controller: controller, animation: animation);
+        } else {
+          return FavouriteGrid();
+        }
       },
     );
   }
