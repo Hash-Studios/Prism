@@ -191,3 +191,25 @@ void setWallpaper() {
       textColor: Colors.white,
       fontSize: 16.0);
 }
+
+void favWall() {
+  Fluttertoast.showToast(
+      msg: "Wallpaper added to favourites!",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green[400],
+      timeInSecForIosWeb: 1,
+      textColor: Colors.white,
+      fontSize: 16.0);
+}
+
+void unfavWall() {
+  Fluttertoast.showToast(
+      msg: "Wallpaper removed from favourites!",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.red[400],
+      timeInSecForIosWeb: 1,
+      textColor: Colors.white,
+      fontSize: 16.0);
+}
