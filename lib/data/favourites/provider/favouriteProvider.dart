@@ -3,32 +3,32 @@ import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class FavouriteProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
   List liked;
   Future<List> getDataBase() async {
-    this.liked = [];
     var uid = main.prefs.getString("id");
-    databaseReference
+    this.liked = [];
+    await databaseReference
         .collection("users")
         .document(uid)
         .collection("images")
         .getDocuments()
         .then((value) {
       value.documents.forEach((f) => this.liked.add(f.data));
-      print(this.liked);
-      return this.liked;
+      // print(this.liked);
     }).catchError((e) {
       print("data done with error");
-      return this.liked;
     });
+    return this.liked;
   }
 
-  void deleteDataByID(String id) {
+  void deleteDataByID(String id) async {
     var uid = main.prefs.getString("id");
     try {
-      databaseReference
+      await databaseReference
           .collection("users")
           .document(uid)
           .collection("images")
@@ -37,6 +37,7 @@ class FavouriteProvider extends ChangeNotifier {
     } catch (e) {
       print(e.toString());
     }
+    await getDataBase();
   }
 
   void createDataByWall(
@@ -51,7 +52,7 @@ class FavouriteProvider extends ChangeNotifier {
           .setData({
         "id": wallhaven.id.toString(),
         "url": wallhaven.path.toString(),
-        "thumb": wallhaven.thumbs["original"],
+        "thumb": wallhaven.thumbs["original"].toString(),
         "category": wallhaven.category.toString(),
         "provider": "WallHaven",
         "views": wallhaven.views.toString(),
@@ -69,15 +70,41 @@ class FavouriteProvider extends ChangeNotifier {
           .setData({
         "id": pexels.id.toString(),
         "url": pexels.src["portrait"].toString(),
-        "thumb": pexels.src["medium"],
+        "thumb": pexels.src["medium"].toString(),
         "category": "",
         "provider": "Pexels",
         "views": "",
         "resolution": pexels.width.toString() + "x" + pexels.height.toString(),
         "fav": "",
         "size": "",
-        "photographer": pexels.photographer
+        "photographer": pexels.photographer.toString()
       });
     }
+    // await getDataBase();
+  }
+
+  Future favCheck(String id, String provider, WallPaper wallhaven,
+      WallPaperP pexels) async {
+    int index;
+    await getDataBase().then(
+      (value) {
+        value.forEach(
+          (element) {
+            if (element["id"] == id) {
+              index = value.indexOf(element);
+            }
+          },
+        );
+        if (index == null) {
+          print("Fav");
+          createDataByWall(provider, wallhaven, pexels);
+          toasts.favWall();
+        } else {
+          toasts.unfavWall();
+          deleteDataByID(id);
+          return false;
+        }
+      },
+    );
   }
 }
