@@ -62,8 +62,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: RefreshIndicator(
+    return Scaffold(
+      body: RefreshIndicator(
         key: refreshDownloadKey,
         onRefresh: refreshList,
         child: Container(
