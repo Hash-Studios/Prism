@@ -249,3 +249,4 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] colorpicker results are the same (not working except rgb)
 - [ ] add analytics
 - [ ] add share button and implementation
+- [ ] widgetize clockoverlay
