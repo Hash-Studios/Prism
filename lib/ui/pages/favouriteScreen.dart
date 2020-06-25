@@ -10,11 +10,12 @@ class FavouriteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        body: BottomBar(
-          child: SafeArea(
-            child: FavLoader(),
-          ),
-        ));
+      backgroundColor: Theme.of(context).primaryColor,
+      body: BottomBar(
+        child: SafeArea(
+          child: FavLoader(),
+        ),
+      ),
+    );
   }
 }

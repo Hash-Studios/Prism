@@ -1,5 +1,7 @@
+import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/favGrid.dart';
+import 'package:Prism/ui/widgets/gridLoader.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -14,9 +16,12 @@ class _FavLoaderState extends State<FavLoader>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
+  Future<List> _future;
   @override
   void initState() {
     super.initState();
+    _future =
+        Provider.of<FavouriteProvider>(context, listen: false).getDataBase();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -76,9 +81,24 @@ class _FavLoaderState extends State<FavLoader>
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
 
-    return FavouriteGrid(
-      controller: controller,
-      animation: animation,
+    return FutureBuilder(
+      future: _future,
+      builder: (ctx, snapshot) {
+        if (snapshot == null) {
+          print("snapshot null");
+          return LoadingCards(controller: controller, animation: animation);
+        }
+        // if (snapshot.connectionState == ConnectionState.waiting ||
+        //     snapshot.connectionState == ConnectionState.none) {
+        //   print("snapshot none, waiting");
+        //   return LoadingCards(controller: controller, animation: animation);
+        // } else {
+        return FavouriteGrid(
+          controller: controller,
+          animation: animation,
+        );
+        // }
+      },
     );
   }
 }

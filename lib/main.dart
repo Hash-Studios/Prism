@@ -1,4 +1,5 @@
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -34,6 +35,9 @@ void main() {
             ),
             ChangeNotifierProvider<CategoryProvider>(
               create: (context) => CategoryProvider(),
+            ),
+            ChangeNotifierProvider<FavouriteProvider>(
+              create: (context) => FavouriteProvider(),
             ),
             ChangeNotifierProvider<ThemeModel>(
               create: (context) => ThemeModel(
