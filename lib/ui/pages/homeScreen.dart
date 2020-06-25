@@ -2,11 +2,13 @@ import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/ui/widgets/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/categoriesBar.dart';
+import 'package:Prism/ui/widgets/changelogPopUp.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/main.dart' as main;
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({
@@ -18,6 +20,27 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool isNew;
+  @override
+  void initState() {
+    isNew = true;
+    super.initState();
+  }
+
+  void showChangelogCheck(BuildContext context) {
+    var newApp = main.prefs.getBool("newApp");
+    if (newApp == null) {
+      showChangelog(context, () {
+        setState(() {
+          isNew = false;
+        });
+      });
+      main.prefs.setBool("newApp", false);
+    } else {
+      main.prefs.setBool("newApp", false);
+    }
+  }
+
   void initDynamicLinks(BuildContext context) async {
     final PendingDynamicLinkData data =
         await FirebaseDynamicLinks.instance.getInitialLink();
@@ -56,6 +79,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (isNew) {
+      Future.delayed(Duration(seconds: 0))
+          .then((value) => showChangelogCheck(context));
+    }
     initDynamicLinks(context);
     return Scaffold(
         backgroundColor: Theme.of(context).primaryColor,

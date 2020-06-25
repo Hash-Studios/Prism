@@ -25,14 +25,14 @@ void googleSignInPopUp(BuildContext context, Function func) {
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Theme.of(context).primaryColor),
-        width: MediaQuery.of(context).size.width * .71,
+        width: MediaQuery.of(context).size.width * .75,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
               height: 150,
-              width: MediaQuery.of(context).size.width * .71,
+              width: MediaQuery.of(context).size.width * .75,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
@@ -100,7 +100,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                       "The ability to favourite wallpapers.",
                       style: Theme.of(context)
                           .textTheme
-                          .headline5
+                          .headline6
                           .copyWith(color: Theme.of(context).accentColor),
                     ),
                     SizedBox(height: 13),
@@ -108,7 +108,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                       "The ability to download wallpapers.",
                       style: Theme.of(context)
                           .textTheme
-                          .headline5
+                          .headline6
                           .copyWith(color: Theme.of(context).accentColor),
                     ),
                     SizedBox(height: 13),
@@ -116,7 +116,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                       "The ability to cloud sync data.",
                       style: Theme.of(context)
                           .textTheme
-                          .headline5
+                          .headline6
                           .copyWith(color: Theme.of(context).accentColor),
                     ),
                   ],
@@ -132,6 +132,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
               onPressed: () {
                 Navigator.of(context).pop();
                 showDialog(
+                    barrierDismissible: false,
                     context: context,
                     builder: (BuildContext context) => loaderDialog);
                 globals.gAuth.signInWithGoogle().then((value) {
