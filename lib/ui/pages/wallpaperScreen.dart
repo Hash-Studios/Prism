@@ -829,7 +829,23 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                       .path
                                       .toString(),
                     ),
-                    SetWallpaperButton(),
+                    SetWallpaperButton(
+                        url: provider == "WallHaven"
+                            ? Provider.of<WallHavenProvider>(context)
+                                .walls[index]
+                                .path
+                            : provider == "Pexels"
+                                ? Provider.of<PexelsProvider>(context)
+                                    .wallsP[index]
+                                    .src["portrait"]
+                                : provider.length > 6 &&
+                                        provider.substring(0, 6) == "Colors"
+                                    ? Provider.of<PexelsProvider>(context)
+                                        .wallsC[index]
+                                        .src["portrait"]
+                                    : Provider.of<WallHavenProvider>(context)
+                                        .wallsS[index]
+                                        .path),
                     FavouriteWallpaperButton(),
                     provider == "WallHaven"
                         ? ShareButton(
