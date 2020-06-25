@@ -7,10 +7,10 @@ import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
 class ColorScreen extends StatelessWidget {
-  final List arguements;
+  final List arguments;
   ColorScreen({
     Key key,
-    @required this.arguements,
+    @required this.arguments,
   }) : super(key: key);
 
   @override
@@ -26,8 +26,8 @@ class ColorScreen extends StatelessWidget {
         body: BottomBar(
           child: GridLoader(
             future: Provider.of<PexelsProvider>(context, listen: false)
-                .getWallsPbyColor("color: ${arguements[0]}"),
-            provider: "Colors - color: ${arguements[0]}",
+                .getWallsPbyColor("color: ${arguments[0]}"),
+            provider: "Colors - color: ${arguments[0]}",
           ),
         ));
   }

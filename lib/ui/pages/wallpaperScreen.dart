@@ -5,6 +5,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/downloadButton.dart';
 import 'package:Prism/ui/widgets/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/setWallpaperButton.dart';
+import 'package:Prism/ui/widgets/shareButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
@@ -12,8 +13,8 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 
 class WallpaperScreen extends StatefulWidget {
-  final List arguements;
-  WallpaperScreen({@required this.arguements});
+  final List arguments;
+  WallpaperScreen({@required this.arguments});
   @override
   _WallpaperScreenState createState() => _WallpaperScreenState();
 }
@@ -48,9 +49,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
   @override
   void initState() {
     super.initState();
-    provider = widget.arguements[0];
-    index = widget.arguements[1];
-    link = widget.arguements[2];
+    provider = widget.arguments[0];
+    index = widget.arguments[1];
+    link = widget.arguments[2];
     isLoading = true;
     _updatePaletteGenerator();
   }
@@ -59,7 +60,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
     _scaffoldKey.currentState.showBottomSheet<void>(
       (BuildContext context) {
         return Container(
-          height: MediaQuery.of(context).size.height * .42,
+          height: MediaQuery.of(context).size.height * .46,
           width: MediaQuery.of(context).size.width,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
@@ -124,7 +125,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                   ? Expanded(
                       flex: 4,
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -846,6 +847,41 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         .wallsS[index]
                                         .path),
                     FavouriteWallpaperButton(),
+                    provider == "WallHaven"
+                        ? ShareButton(
+                            id: Provider.of<WallHavenProvider>(context, listen: false)
+                                .walls[index]
+                                .id,
+                            provider: provider,
+                            url: Provider.of<WallHavenProvider>(context, listen: false)
+                                .walls[index]
+                                .path,
+                            thumbUrl:
+                                Provider.of<WallHavenProvider>(context, listen: false)
+                                    .walls[index]
+                                    .thumbs["original"])
+                        : provider == "Pexels"
+                            ? ShareButton(
+                                id: Provider.of<PexelsProvider>(context, listen: false)
+                                    .wallsP[index]
+                                    .id,
+                                provider: provider,
+                                url: Provider.of<PexelsProvider>(context, listen: false)
+                                    .wallsP[index]
+                                    .src["portrait"],
+                                thumbUrl:
+                                    Provider.of<PexelsProvider>(context, listen: false)
+                                        .wallsP[index]
+                                        .src["medium"])
+                            : provider.length > 6 && provider.substring(0, 6) == "Colors"
+                                ? ShareButton(
+                                    id: Provider.of<PexelsProvider>(context, listen: false)
+                                        .wallsC[index]
+                                        .id,
+                                    provider: "Pexels",
+                                    url: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["portrait"],
+                                    thumbUrl: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["medium"])
+                                : ShareButton(id: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].id, provider: "WallHaven", url: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].path, thumbUrl: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].thumbs["original"])
                   ],
                 ),
               ),
@@ -954,6 +990,45 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                         ),
                       ),
                     ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: IconButton(
+                        onPressed: () {
+                          var link = Provider.of<WallHavenProvider>(context,
+                                  listen: false)
+                              .walls[index]
+                              .path;
+                          Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                  transitionDuration:
+                                      Duration(milliseconds: 300),
+                                  pageBuilder:
+                                      (context, animation, secondaryAnimation) {
+                                    animation = Tween(begin: 0.0, end: 1.0)
+                                        .animate(animation);
+                                    return FadeTransition(
+                                        opacity: animation,
+                                        child: ClockOverlay(
+                                          link: link,
+                                        ));
+                                  },
+                                  fullscreenDialog: true,
+                                  opaque: false));
+                        },
+                        color: isLoading
+                            ? Theme.of(context).accentColor
+                            : colors[0].computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                        icon: Icon(
+                          JamIcons.clock,
+                        ),
+                      ),
+                    ),
                   )
                 ],
               ),
@@ -1042,6 +1117,45 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                     : Colors.white,
                             icon: Icon(
                               JamIcons.chevron_left,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () {
+                              var link = Provider.of<PexelsProvider>(context,
+                                      listen: false)
+                                  .wallsP[index]
+                                  .src["portrait"];
+                              Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                      transitionDuration:
+                                          Duration(milliseconds: 300),
+                                      pageBuilder: (context, animation,
+                                          secondaryAnimation) {
+                                        animation = Tween(begin: 0.0, end: 1.0)
+                                            .animate(animation);
+                                        return FadeTransition(
+                                            opacity: animation,
+                                            child: ClockOverlay(
+                                              link: link,
+                                            ));
+                                      },
+                                      fullscreenDialog: true,
+                                      opaque: false));
+                            },
+                            color: isLoading
+                                ? Theme.of(context).accentColor
+                                : colors[0].computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                            icon: Icon(
+                              JamIcons.clock,
                             ),
                           ),
                         ),
@@ -1139,6 +1253,47 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 ),
                               ),
                             ),
+                          ),
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  var link = Provider.of<PexelsProvider>(
+                                          context,
+                                          listen: false)
+                                      .wallsC[index]
+                                      .src["portrait"];
+                                  Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                          transitionDuration:
+                                              Duration(milliseconds: 300),
+                                          pageBuilder: (context, animation,
+                                              secondaryAnimation) {
+                                            animation =
+                                                Tween(begin: 0.0, end: 1.0)
+                                                    .animate(animation);
+                                            return FadeTransition(
+                                                opacity: animation,
+                                                child: ClockOverlay(
+                                                  link: link,
+                                                ));
+                                          },
+                                          fullscreenDialog: true,
+                                          opaque: false));
+                                },
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                icon: Icon(
+                                  JamIcons.clock,
+                                ),
+                              ),
+                            ),
                           )
                         ],
                       ),
@@ -1232,6 +1387,47 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 ),
                               ),
                             ),
+                          ),
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  var link = Provider.of<WallHavenProvider>(
+                                          context,
+                                          listen: false)
+                                      .wallsS[index]
+                                      .path;
+                                  Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                          transitionDuration:
+                                              Duration(milliseconds: 300),
+                                          pageBuilder: (context, animation,
+                                              secondaryAnimation) {
+                                            animation =
+                                                Tween(begin: 0.0, end: 1.0)
+                                                    .animate(animation);
+                                            return FadeTransition(
+                                                opacity: animation,
+                                                child: ClockOverlay(
+                                                  link: link,
+                                                ));
+                                          },
+                                          fullscreenDialog: true,
+                                          opaque: false));
+                                },
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                icon: Icon(
+                                  JamIcons.clock,
+                                ),
+                              ),
+                            ),
                           )
                         ],
                       ),
@@ -1241,5 +1437,94 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
       Navigator.pop(context);
       return Container();
     }
+  }
+}
+
+class ClockOverlay extends StatefulWidget {
+  final String link;
+  ClockOverlay({@required this.link});
+  @override
+  _ClockOverlayState createState() => _ClockOverlayState();
+}
+
+class _ClockOverlayState extends State<ClockOverlay> {
+  @override
+  Widget build(BuildContext context) {
+    var date = DateTime.now().toString();
+    var hour = DateTime.now().hour.toString();
+    var minute = DateTime.now().minute.toString();
+    return Material(
+      child: Stack(
+        children: <Widget>[
+          OptimizedCacheImage(
+            imageUrl: widget.link,
+            imageBuilder: (context, imageProvider) => Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: imageProvider,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: MediaQuery.of(context).size.height / 2,
+            width: MediaQuery.of(context).size.width,
+            child: Center(
+              child: Text(
+                hour + date.substring(13, 16),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: "Roboto",
+                  fontSize: 80,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 100,
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Image.asset(
+                    "assets/images/dialer.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                  Image.asset(
+                    "assets/images/messages.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                  Image.asset(
+                    "assets/images/playstore.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                  Image.asset(
+                    "assets/images/chrome.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                  Image.asset(
+                    "assets/images/camera.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          GestureDetector(
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height,
+              width: MediaQuery.of(context).size.width,
+              child: Text(""),
+            ),
+            onTap: () => {Navigator.pop(context)},
+          )
+        ],
+      ),
+    );
   }
 }

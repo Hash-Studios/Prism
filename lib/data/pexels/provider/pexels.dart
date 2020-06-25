@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 class PexelsProvider extends ChangeNotifier {
   List<WallPaperP> wallsP = [];
   List<WallPaperP> wallsC = [];
+  WallPaperP wall;
   int pageGetDataP = 1;
   int pageGetQueryP = 1;
   int pageAbstractP = 1;
@@ -41,18 +42,24 @@ class PexelsProvider extends ChangeNotifier {
   }
 
   Future<WallPaperP> getWallbyIDP(String id) async {
-    http.get("https://api.pexels.com/v1/photos/$id").then(
+    print("https://api.pexels.com/v1/photos/$id");
+    wall = null;
+    http.get("https://api.pexels.com/v1/photos/$id", headers: {
+      "Authorization":
+          "563492ad6f9170000100000107272bb5cab346b68e27263fbf1b6a72"
+    }).then(
       (http.Response response) {
-        var resp = json.decode(response.body)["data"];
-        return WallPaperP(
-            id: resp["id"],
-            url: resp["url"],
-            width: resp["width"],
-            height: resp["height"],
-            photographer: resp["photographer"],
+        var resp = json.decode(response.body);
+        wall = WallPaperP(
+            id: resp["id"].toString(),
+            url: resp["url"].toString(),
+            width: resp["width"].toString(),
+            height: resp["height"].toString(),
+            photographer: resp["photographer"].toString(),
             src: resp["category"]);
       },
     );
+    return wall;
   }
 
   Future<List<WallPaperP>> getWallsPbyQuery(String query) async {

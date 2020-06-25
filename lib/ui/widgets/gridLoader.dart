@@ -37,7 +37,7 @@ class _GridLoaderState extends State<GridLoader>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = ThemeModel().returnTheme() == ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context,listen:false).returnTheme() == ThemeType.Dark
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
