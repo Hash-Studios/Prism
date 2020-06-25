@@ -63,6 +63,36 @@ void showChangelog(BuildContext context, Function func) {
                         width: 20,
                       ),
                       Icon(
+                        JamIcons.brush,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Changed app icon.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
                         JamIcons.history,
                         size: 22,
                         color: Color(0xFFE57697),
@@ -70,12 +100,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added backwards compatibility.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added backwards compatibility.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -97,12 +130,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Redesigned profile page UI.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Redesigned profile page UI.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -124,12 +160,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Fixed favourites and downloads.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Fixed favourites and downloads.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -168,12 +207,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added clock overlay to test wallpapers.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added clock overlay to test wallpapers.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -195,12 +237,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added ability to share wallpapers.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added ability to share wallpapers.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -222,12 +267,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added ability to clear app cache.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added ability to clear app cache.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -249,12 +297,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Major bug fixes and tweaks.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Major bug fixes and tweaks.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -293,12 +344,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Completely new redesigned UI.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Completely new redesigned UI.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -320,12 +374,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added Pexels API support.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added Pexels API support.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -347,12 +404,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added new color search.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added new color search.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -374,12 +434,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added new themes.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added new themes.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -401,12 +464,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added 1M+ wallpapers.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added 1M+ wallpapers.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -428,12 +494,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added non intrusive sign in support.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added non intrusive sign in support.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -455,12 +524,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added new quick wallpaper actions.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added new quick wallpaper actions.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
@@ -482,12 +554,15 @@ void showChangelog(BuildContext context, Function func) {
                       SizedBox(
                         width: 20,
                       ),
-                      Text(
-                        "Added new palette generator.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline6
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added new palette generator.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
                     ],
                   ),
