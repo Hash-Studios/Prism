@@ -13,6 +13,7 @@ import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class ProfileScreen extends StatelessWidget {
   @override
@@ -168,9 +169,15 @@ class ProfileScreen extends StatelessWidget {
               Provider.of<ThemeModel>(context, listen: false).toggleTheme();
               main.RestartWidget.restartApp(context);
             },
-            leading: Icon(JamIcons.lightbulb),
+            leading: main.prefs.getBool("darkMode") == null
+                ? Icon(JamIcons.moon_f)
+                : main.prefs.getBool("darkMode")
+                    ? Icon(JamIcons.sun_f)
+                    : Icon(JamIcons.moon_f),
             title: Text(
-              "Dark Mode",
+              main.prefs.getBool("darkMode") == null
+                  ? "Dark Mode"
+                  : main.prefs.getBool("darkMode") ? "Light Mode" : "Dark Mode",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
@@ -193,30 +200,30 @@ class ProfileScreen extends StatelessWidget {
           ),
           Column(
             children: [
-              // ListTile(
-              //     leading: Icon(
-              //       Icons.data_usage,
-              //     ),
-              //     title: Text(
-              //       "Clear Cache",
-              //       style: TextStyle(
-              //           color: Theme.of(context).accentColor,
-              //           fontWeight: FontWeight.w500,
-              //           fontFamily: "Proxima Nova"),
-              //     ),
-              //     subtitle: Text(
-              //       "Clear locally cached images",
-              //       style: TextStyle(fontSize: 12),
-              //     ),
-              //     onTap: () {
-              // DefaultCacheManager().emptyCache();
-              // Fluttertoast.showToast(
-              //     msg: "Cleared cache!",
-              //     toastLength: Toast.LENGTH_LONG,
-              //     timeInSecForIosWeb: 1,
-              //     textColor: Colors.white,
-              //     fontSize: 16.0);
-              // }),
+              ListTile(
+                  leading: Icon(
+                    JamIcons.pie_chart_alt,
+                  ),
+                  title: Text(
+                    "Clear Cache",
+                    style: TextStyle(
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: "Proxima Nova"),
+                  ),
+                  subtitle: Text(
+                    "Clear locally cached images",
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onTap: () {
+                    DefaultCacheManager().emptyCache();
+                    Fluttertoast.showToast(
+                        msg: "Cleared cache!",
+                        toastLength: Toast.LENGTH_LONG,
+                        timeInSecForIosWeb: 1,
+                        textColor: Colors.white,
+                        fontSize: 16.0);
+                  }),
               ListTile(
                 onTap: () {
                   main.RestartWidget.restartApp(context);
@@ -395,7 +402,7 @@ class ProfileScreen extends StatelessWidget {
                         fontFamily: "Proxima Nova"),
                   ),
                   subtitle: Text(
-                    "2.0 stable",
+                    "v2.2.0+1",
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () {}),
