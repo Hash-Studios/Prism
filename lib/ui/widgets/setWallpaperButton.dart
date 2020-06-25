@@ -139,7 +139,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
             ),
             padding: EdgeInsets.all(17),
             child: Icon(
-              JamIcons.layers,
+              JamIcons.picture,
               color: Theme.of(context).accentColor,
               size: 30,
             ),

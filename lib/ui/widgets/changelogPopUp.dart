@@ -1,24 +1,8 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/globals.dart' as globals;
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
 
-void googleSignInPopUp(BuildContext context, Function func) {
-  Dialog loaderDialog = Dialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    child: Container(
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Theme.of(context).primaryColor),
-      width: MediaQuery.of(context).size.width * .7,
-      height: MediaQuery.of(context).size.height * .3,
-      child: Center(
-        child: CircularProgressIndicator(),
-      ),
-    ),
-  );
-  Dialog signinPopUp = Dialog(
+void showChangelog(BuildContext context, Function func) {
+  Dialog aboutPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: SingleChildScrollView(
       child: Container(
@@ -51,7 +35,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
                   child: Text(
-                    'SIGNING IN UNLOCKS:',
+                    'v2.0.0',
                     style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
@@ -71,19 +55,49 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Icon(
-                      JamIcons.heart,
+                      JamIcons.phone,
                       size: 22,
                       color: Color(0xFFE57697),
                     ),
                     SizedBox(height: 10),
                     Icon(
-                      JamIcons.download,
+                      JamIcons.camera,
                       size: 22,
                       color: Color(0xFFE57697),
                     ),
                     SizedBox(height: 10),
                     Icon(
-                      JamIcons.cloud,
+                      JamIcons.search,
+                      size: 22,
+                      color: Color(0xFFE57697),
+                    ),
+                    SizedBox(height: 10),
+                    Icon(
+                      JamIcons.brush,
+                      size: 22,
+                      color: Color(0xFFE57697),
+                    ),
+                    SizedBox(height: 10),
+                    Icon(
+                      JamIcons.pictures,
+                      size: 22,
+                      color: Color(0xFFE57697),
+                    ),
+                    SizedBox(height: 10),
+                    Icon(
+                      JamIcons.google,
+                      size: 22,
+                      color: Color(0xFFE57697),
+                    ),
+                    SizedBox(height: 10),
+                    Icon(
+                      JamIcons.settings_alt,
+                      size: 22,
+                      color: Color(0xFFE57697),
+                    ),
+                    SizedBox(height: 10),
+                    Icon(
+                      JamIcons.eyedropper,
                       size: 22,
                       color: Color(0xFFE57697),
                     ),
@@ -97,7 +111,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Text(
-                      "The ability to favourite wallpapers.",
+                      "Completely new redesigned UI.",
                       style: Theme.of(context)
                           .textTheme
                           .headline6
@@ -105,7 +119,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     ),
                     SizedBox(height: 13),
                     Text(
-                      "The ability to download wallpapers.",
+                      "Added Pexels API support.",
                       style: Theme.of(context)
                           .textTheme
                           .headline6
@@ -113,7 +127,47 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     ),
                     SizedBox(height: 13),
                     Text(
-                      "The ability to cloud sync data.",
+                      "Added new color search.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline6
+                          .copyWith(color: Theme.of(context).accentColor),
+                    ),
+                    SizedBox(height: 13),
+                    Text(
+                      "Added new themes.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline6
+                          .copyWith(color: Theme.of(context).accentColor),
+                    ),
+                    SizedBox(height: 13),
+                    Text(
+                      "Added 1M+ wallpapers.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline6
+                          .copyWith(color: Theme.of(context).accentColor),
+                    ),
+                    SizedBox(height: 13),
+                    Text(
+                      "Added non intrusive sign in support.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline6
+                          .copyWith(color: Theme.of(context).accentColor),
+                    ),
+                    SizedBox(height: 13),
+                    Text(
+                      "Added new quick wallpaper actions.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline6
+                          .copyWith(color: Theme.of(context).accentColor),
+                    ),
+                    SizedBox(height: 13),
+                    Text(
+                      "Added new palette generator.",
                       style: Theme.of(context)
                           .textTheme
                           .headline6
@@ -131,24 +185,10 @@ void googleSignInPopUp(BuildContext context, Function func) {
               color: Color(0xFFE57697),
               onPressed: () {
                 Navigator.of(context).pop();
-                showDialog(
-                    barrierDismissible: false,
-                    context: context,
-                    builder: (BuildContext context) => loaderDialog);
-                globals.gAuth.signInWithGoogle().then((value) {
-                  toasts.successLog();
-                  main.prefs.setBool("isLoggedin", true);
-                  Navigator.pop(context);
-                  func();
-                }).catchError((e) {
-                  print(e);
-                  Navigator.pop(context);
-                  main.prefs.setBool("isLoggedin", false);
-                  toasts.error("Something went wrong, please try again!");
-                });
+                func();
               },
               child: Text(
-                'SIGN IN WITH GOOGLE',
+                'CLOSE',
                 style: TextStyle(
                   fontSize: 16.0,
                   color: Colors.white,
@@ -163,5 +203,5 @@ void googleSignInPopUp(BuildContext context, Function func) {
       ),
     ),
   );
-  showDialog(context: context, builder: (BuildContext context) => signinPopUp);
+  showDialog(context: context, builder: (BuildContext context) => aboutPopUp);
 }
