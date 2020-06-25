@@ -158,3 +158,14 @@ void completedDownload() {
       textColor: Colors.white,
       fontSize: 16.0);
 }
+
+void setWallpaper() {
+  Fluttertoast.showToast(
+      msg: "Wallpaper set successfully!",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green[400],
+      timeInSecForIosWeb: 1,
+      textColor: Colors.white,
+      fontSize: 16.0);
+}
