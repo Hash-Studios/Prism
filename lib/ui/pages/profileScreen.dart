@@ -314,15 +314,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          main.prefs.getBool("isLoggedin")
-              ? Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'User',
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'User',
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).accentColor,
+              ),
+            ),
+          ),
+          main.prefs.getBool("isLoggedin") == false
+              ? ListTile(
+                  onTap: () {
+                    if (!main.prefs.getBool("isLoggedin")) {
+                      googleSignInPopUp(context, () {
+                        main.RestartWidget.restartApp(context);
+                      });
+                    } else {
+                      main.RestartWidget.restartApp(context);
+                    }
+                  },
+                  leading: Icon(JamIcons.log_in),
+                  title: Text(
+                    "Log in",
                     style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).accentColor,
-                    ),
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: "Proxima Nova"),
+                  ),
+                  subtitle: Text(
+                    "Log in to sync data across devices",
+                    style: TextStyle(fontSize: 12),
                   ),
                 )
               : Container(),
