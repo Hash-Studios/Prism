@@ -138,7 +138,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                   ? Expanded(
                       flex: 4,
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -472,12 +472,36 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                           : provider == "Pexels"
                               ? Provider.of<PexelsProvider>(context)
                                   .wall
-                                  .url
+                                  .src["portrait"]
                                   .toString()
-                              : Container(),
+                              : "",
                     ),
-                    SetWallpaperButton(),
-                    FavouriteWallpaperButton(),
+                    SetWallpaperButton(url:"" ,),
+                    provider == "WallHaven"
+                        ? FavouriteWallpaperButton(
+                            id: Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .wall
+                                .id
+                                .toString(),
+                            provider: "WallHaven",
+                            wallhaven: Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .wall,
+                          )
+                        : provider == "Pexels"
+                            ? FavouriteWallpaperButton(
+                                id: Provider.of<PexelsProvider>(context,
+                                        listen: false)
+                                    .wall
+                                    .id
+                                    .toString(),
+                                provider: "Pexels",
+                                pexels: Provider.of<PexelsProvider>(context,
+                                        listen: false)
+                                    .wall,
+                              )
+                            : Container()
                   ],
                 ),
               ),
