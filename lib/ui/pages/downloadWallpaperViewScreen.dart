@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class DownloadWallpaperScreen extends StatefulWidget {
-  final List arguements;
-  DownloadWallpaperScreen({@required this.arguements});
+  final List arguments;
+  DownloadWallpaperScreen({@required this.arguments});
   @override
   _DownloadWallpaperScreenState createState() =>
       _DownloadWallpaperScreenState();
@@ -22,8 +22,8 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
   @override
   void initState() {
     super.initState();
-    provider = widget.arguements[0];
-    file = widget.arguements[1];
+    provider = widget.arguments[0];
+    file = widget.arguments[1];
     isLoading = true;
   }
 
