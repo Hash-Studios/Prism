@@ -884,8 +884,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                         listen:
                                                                             false)
                                                                     .liked[
-                                                                        index][
-                                                                        "fav"]
+                                                                        index]
+                                                                        ["fav"]
                                                                     .toString(),
                                                             style: Theme.of(
                                                                     context)
@@ -1352,17 +1352,17 @@ class FocusedMenuDetails extends StatelessWidget {
                                   .liked[index]["url"]
                                   .toString()
                               : provider.length > 6 &&
-                                  provider.substring(0, 6) == "Colors"
-                              ? Provider.of<PexelsProvider>(context,
-                                      listen: false)
-                                  .wallsC[index]
-                                  .src["portrait"]
-                                  .toString()
-                              : Provider.of<WallHavenProvider>(context,
-                                      listen: false)
-                                  .wallsS[index]
-                                  .path
-                                  .toString(),
+                                      provider.substring(0, 6) == "Colors"
+                                  ? Provider.of<PexelsProvider>(context,
+                                          listen: false)
+                                      .wallsC[index]
+                                      .src["portrait"]
+                                      .toString()
+                                  : Provider.of<WallHavenProvider>(context,
+                                          listen: false)
+                                      .wallsS[index]
+                                      .path
+                                      .toString(),
                 ),
               ),
               Positioned(
@@ -1394,7 +1394,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                   ? Provider.of<PexelsProvider>(context,
                                           listen: false)
                                       .wallsC[index]
-                                  .src["portrait"]
+                                      .src["portrait"]
                                       .toString()
                                   : Provider.of<WallHavenProvider>(context,
                                           listen: false)

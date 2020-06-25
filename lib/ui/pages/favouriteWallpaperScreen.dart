@@ -1,8 +1,4 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
-import 'package:Prism/data/pexels/model/wallpaperp.dart';
-import 'package:Prism/data/pexels/provider/pexels.dart';
-import 'package:Prism/data/wallhaven/model/wallpaper.dart';
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/downloadButton.dart';
