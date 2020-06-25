@@ -5,6 +5,7 @@ import 'package:Prism/ui/pages/curatedScreen.dart';
 import 'package:Prism/ui/pages/downloadScreen.dart';
 import 'package:Prism/ui/pages/downloadWallpaperViewScreen.dart';
 import 'package:Prism/ui/pages/favouriteScreen.dart';
+import 'package:Prism/ui/pages/favouriteWallpaperScreen.dart';
 import 'package:Prism/ui/pages/homeScreen.dart';
 import 'package:Prism/ui/pages/natureScreen.dart';
 import 'package:Prism/ui/pages/profileScreen.dart';
@@ -54,6 +55,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               ShareWallpaperViewScreen(arguments: settings.arguments));
+    case FavWallViewRoute:
+      return CupertinoPageRoute(
+          builder: (context) =>
+              FavWallpaperViewScreen(arguments: settings.arguments));
     default:
       return CupertinoPageRoute(
         builder: (context) => UndefinedScreen(
