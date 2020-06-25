@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 class WallHavenProvider extends ChangeNotifier {
   List<WallPaper> walls = [];
   List<WallPaper> wallsS = [];
+  WallPaper wall;
   int pageGetData = 1;
   int pageGetQuery = 1;
   int pageGetTag = 1;
@@ -49,45 +50,44 @@ class WallHavenProvider extends ChangeNotifier {
   }
 
   Future<WallPaper> getWallbyID(String id) async {
+    print("https://wallhaven.cc/api/v1/w/$id");
+    wall = null;
     http.get("https://wallhaven.cc/api/v1/w/$id").then(
       (http.Response response) {
         var resp = json.decode(response.body)["data"];
-        return WallPaper(
-          id: resp["id"],
+        wall = WallPaper(
+          id: resp["id"].toString(),
           url: resp["url"],
           short_url: resp["short_url"],
-          views: resp["views"],
-          favorites: resp["favorites"],
+          views: resp["views"].toString(),
+          favorites: resp["favorites"].toString(),
           category: resp["category"],
-          dimension_x: resp["dimension_x"],
-          dimension_y: resp["dimension_y"],
-          resolution: resp["id"],
-          file_size: resp["file_size"],
+          dimension_x: resp["dimension_x"].toString(),
+          dimension_y: resp["dimension_y"].toString(),
+          resolution: resp["resolution"],
+          file_size: resp["file_size"].toString(),
           colors: resp["colors"],
           path: resp["path"],
           thumbs: resp["thumbs"],
           tags: new List<Tag>.generate(
             resp["tags"].length,
             (tag) => Tag(
-              id: resp["tags"][tag]["id"],
+              id: resp["tags"][tag]["id"].toString(),
               name: resp["tags"][tag]["name"],
               alias: resp["tags"][tag]["alias"],
-              category_id: resp["tags"][tag]["category_id"],
+              category_id: resp["tags"][tag]["category_id"].toString(),
               category: resp["tags"][tag]["category"],
             ),
           ),
         );
       },
     );
+    return wall;
   }
 
   Future<List<WallPaper>> getWallsbyQuery(String query) async {
-    print(
-        "https://wallhaven.cc/api/v1/search?q=$query&page=1");
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?q=$query&page=1")
-        .then(
+    print("https://wallhaven.cc/api/v1/search?q=$query&page=1");
+    http.get("https://wallhaven.cc/api/v1/search?q=$query&page=1").then(
       (http.Response response) {
         var resp = json.decode(response.body);
         print(resp["data"].length);
@@ -116,6 +116,7 @@ class WallHavenProvider extends ChangeNotifier {
       },
     );
   }
+
   Future<List<WallPaper>> getWallsbyQueryPage(String query) async {
     print(
         "https://wallhaven.cc/api/v1/search?q=$query&page=${this.pageGetQuery}");
