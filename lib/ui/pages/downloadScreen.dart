@@ -51,10 +51,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
     var status = await Permission.storage.status;
     if (!status.isGranted) {
       await Permission.storage.request();
-      var status = await Permission.storage.status;
-      if (!status.isGranted) {
-        await Permission.storage.request();
-      }
     }
     final file = await localfile;
     files = Directory(file).listSync();

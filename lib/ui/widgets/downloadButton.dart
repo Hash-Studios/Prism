@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:permission_handler/permission_handler.dart';
 
 class DownloadButton extends StatefulWidget {
   final String link;
@@ -27,7 +28,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         print("Download");
         if (!main.prefs.getBool("isLoggedin")) {
           googleSignInPopUp(context, () {
@@ -69,6 +70,10 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   void onDownload() async {
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      await Permission.storage.request();
+    }
     setState(() {
       isLoading = true;
     });
