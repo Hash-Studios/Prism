@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/clockOverlay.dart';
 import 'package:Prism/ui/widgets/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,14 +18,11 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
   String provider;
   File file;
 
-  bool isLoading = true;
-
   @override
   void initState() {
     super.initState();
     provider = widget.arguments[0];
     file = widget.arguments[1];
-    isLoading = true;
   }
 
   @override
@@ -69,6 +67,37 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
                   color: Theme.of(context).accentColor,
                   icon: Icon(
                     JamIcons.chevron_left,
+                  ),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IconButton(
+                  onPressed: () {
+                    var link = file.path;
+                    Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                            transitionDuration: Duration(milliseconds: 300),
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) {
+                              animation = Tween(begin: 0.0, end: 1.0)
+                                  .animate(animation);
+                              return FadeTransition(
+                                  opacity: animation,
+                                  child: ClockOverlay(
+                                    link: link,
+                                  ));
+                            },
+                            fullscreenDialog: true,
+                            opaque: false));
+                  },
+                  color: Theme.of(context).accentColor,
+                  icon: Icon(
+                    JamIcons.clock,
                   ),
                 ),
               ),

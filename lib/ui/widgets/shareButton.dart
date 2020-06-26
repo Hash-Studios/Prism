@@ -1,7 +1,6 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
 
