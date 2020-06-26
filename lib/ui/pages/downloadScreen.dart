@@ -2,8 +2,12 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:Prism/routing_constants.dart';
+import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/headingChipBar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 
 class DownloadScreen extends StatefulWidget {
   @override
@@ -35,6 +39,14 @@ class _DownloadScreenState extends State<DownloadScreen> {
   }
 
   Future<void> readData() async {
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      await Permission.storage.request();
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        await Permission.storage.request();
+      }
+    }
     final file = await localfile;
     files = Directory(file).listSync();
 
@@ -76,44 +88,69 @@ class _DownloadScreenState extends State<DownloadScreen> {
           backgroundColor: Theme.of(context).primaryColor,
           key: refreshDownloadKey,
           onRefresh: refreshList,
-          child: Container(
-            child: GridView.builder(
-              shrinkWrap: true,
-              padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
-              itemCount: files.length,
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent:
-                      MediaQuery.of(context).orientation == Orientation.portrait
-                          ? 300
-                          : 250,
-                  childAspectRatio: 0.830,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8),
-              itemBuilder: (BuildContext context, int index) {
-                return GestureDetector(
-                  child: Container(
-                    decoration: files.length == 0
-                        ? BoxDecoration(
-                            color:
-                                Theme.of(context).accentColor.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(20),
-                          )
-                        : BoxDecoration(
-                            color:
-                                Theme.of(context).accentColor.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(20),
-                            image: DecorationImage(
-                                image: FileImage(files[index]),
-                                fit: BoxFit.cover)),
+          child: dataFetched
+              ? Container(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+                    itemCount: files.length,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent:
+                            MediaQuery.of(context).orientation ==
+                                    Orientation.portrait
+                                ? 300
+                                : 250,
+                        childAspectRatio: 0.830,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8),
+                    itemBuilder: (BuildContext context, int index) {
+                      return GestureDetector(
+                        child: Container(
+                          decoration: files.length == 0
+                              ? BoxDecoration(
+                                  color: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                )
+                              : BoxDecoration(
+                                  color: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: FileImage(files[index]),
+                                      fit: BoxFit.cover)),
+                        ),
+                        onTap: () {
+                          Navigator.pushNamed(context, DownloadWallpaperRoute,
+                              arguments: ["Downloads", files[index]]);
+                        },
+                      );
+                    },
                   ),
-                  onTap: () {
-                    Navigator.pushNamed(context, DownloadWallpaperRoute,
-                        arguments: ["Downloads", files[index]]);
-                  },
-                );
-              },
-            ),
-          ),
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: Provider.of<ThemeModel>(context, listen: false)
+                                  .returnTheme() ==
+                              ThemeType.Dark
+                          ? SvgPicture.asset(
+                              "assets/images/loader dark.svg",
+                            )
+                          : SvgPicture.asset(
+                              "assets/images/loader light.svg",
+                            ),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height * 0.1,
+                    )
+                  ],
+                ),
         ),
       ),
     );

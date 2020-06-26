@@ -40,6 +40,7 @@ dependencies:
   fluttertoast: ^4.0.1
   gallery_saver: ^2.0.1
   firebase_dynamic_links: ^0.5.1
+  permission_handler: ^5.0.1+1
 
 dev_dependencies:
   flutter_test:
