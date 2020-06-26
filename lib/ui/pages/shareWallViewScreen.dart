@@ -531,7 +531,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([]);
+    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
 
     return provider == "WallHaven"
         ? Scaffold(

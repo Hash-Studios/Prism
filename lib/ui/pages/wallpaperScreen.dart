@@ -966,7 +966,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([]);
+    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
     // try {
     return provider == "WallHaven"
         ? Scaffold(
@@ -1236,7 +1236,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                         Provider.of<PexelsProvider>(context).wallsC == null
                             ? Container()
                             : OptimizedCacheImage(
-                                imageUrl: Provider.of<PexelsProvider>(context, listen: false)
+                                imageUrl: Provider.of<PexelsProvider>(context,
+                                        listen: false)
                                     .wallsC[index]
                                     .src["portrait"],
                                 imageBuilder: (context, imageProvider) =>
