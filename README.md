@@ -256,7 +256,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [ ] 4 buttons in shareView, favView, downloadView and wallpaperScreen
 hold to copy link
 like, dislike, set wall, download
-- [ ] share page info not loading
+- [x] share page info not loading
 - [ ] pexels image not setting as wall from focussed menu and not downloading too
 - [ ] color download not working
 - [ ] second layer deep colors search crash
@@ -269,4 +269,6 @@ like, dislike, set wall, download
 - [ ] remove animation from bottom bar navigation
 - [ ] fix search bar ui (cursor color to pink, top sizedBox)
 - [ ] add downloads and fav chips bar
+- [ ] fix system overlays
+- [ ] fix see more in search
 
