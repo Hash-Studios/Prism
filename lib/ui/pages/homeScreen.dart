@@ -1,4 +1,5 @@
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/ui/widgets/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/categoriesBar.dart';
@@ -20,6 +21,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  Future<bool> onWillPop() async {
+    String route = currentRoute;
+    currentRoute = previousRoute;
+    previousRoute = route;
+    print(currentRoute);
+    return true;
+  }
+
   bool isNew;
   @override
   void initState() {
@@ -86,20 +95,23 @@ class _HomeScreenState extends State<HomeScreen> {
           .then((value) => showChangelogCheck(context));
     }
     initDynamicLinks(context);
-    return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: PreferredSize(
-          child: CategoriesBar(
-            current: "Home",
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: Scaffold(
+          backgroundColor: Theme.of(context).primaryColor,
+          appBar: PreferredSize(
+            child: CategoriesBar(
+              current: "Home",
+            ),
+            preferredSize: Size(double.infinity, 55),
           ),
-          preferredSize: Size(double.infinity, 55),
-        ),
-        body: BottomBar(
-          child: GridLoader(
-            future: Provider.of<WallHavenProvider>(context, listen: false)
-                .getData(),
-            provider: "WallHaven",
-          ),
-        ));
+          body: BottomBar(
+            child: GridLoader(
+              future: Provider.of<WallHavenProvider>(context, listen: false)
+                  .getData(),
+              provider: "WallHaven",
+            ),
+          )),
+    );
   }
 }
