@@ -301,7 +301,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] remove toasts errors
 - [x] focussed menu details in fav page download not working
 - [x] abstact page curated shows when see more
-- [ ] create a api popup
+- [x] create a api popup
 - [ ] replace downloads image in readme
 - [ ] notifications (timed, random)
 - [ ] code refactoring
