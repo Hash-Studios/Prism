@@ -30,6 +30,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
     print(currentRoute);
     return true;
   }
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String provider;
   int index;
@@ -993,7 +994,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
     // try {
     return WillPopScope(
       onWillPop: onWillPop,
-          child: provider == "WallHaven"
+      child: provider == "WallHaven"
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor:
@@ -1001,8 +1002,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
               body: Stack(
                 children: <Widget>[
                   OptimizedCacheImage(
-                    imageUrl:
-                        Provider.of<WallHavenProvider>(context).walls[index].path,
+                    imageUrl: Provider.of<WallHavenProvider>(context)
+                        .walls[index]
+                        .path,
                     imageBuilder: (context, imageProvider) => Container(
                       decoration: BoxDecoration(
                         image: DecorationImage(
@@ -1097,7 +1099,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                           Navigator.push(
                               context,
                               PageRouteBuilder(
-                                  transitionDuration: Duration(milliseconds: 300),
+                                  transitionDuration:
+                                      Duration(milliseconds: 300),
                                   pageBuilder:
                                       (context, animation, secondaryAnimation) {
                                     animation = Tween(begin: 0.0, end: 1.0)
@@ -1106,6 +1109,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         opacity: animation,
                                         child: ClockOverlay(
                                           link: link,
+                                          file: false,
                                         ));
                                   },
                                   fullscreenDialog: true,
@@ -1240,6 +1244,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                             opacity: animation,
                                             child: ClockOverlay(
                                               link: link,
+                                              file: false,
                                             ));
                                       },
                                       fullscreenDialog: true,
@@ -1262,8 +1267,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
               : provider.length > 6 && provider.substring(0, 6) == "Colors"
                   ? Scaffold(
                       key: _scaffoldKey,
-                      backgroundColor:
-                          isLoading ? Theme.of(context).primaryColor : colors[0],
+                      backgroundColor: isLoading
+                          ? Theme.of(context).primaryColor
+                          : colors[0],
                       body: Stack(
                         children: <Widget>[
                           Provider.of<PexelsProvider>(context).wallsC == null
@@ -1288,14 +1294,16 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         valueColor: AlwaysStoppedAnimation(
                                           isLoading
                                               ? Theme.of(context).accentColor
-                                              : colors[0].computeLuminance() > 0.5
+                                              : colors[0].computeLuminance() >
+                                                      0.5
                                                   ? Colors.black
                                                   : Colors.white,
                                         ),
                                       ),
                                     ),
                                   ),
-                                  errorWidget: (context, url, error) => Container(
+                                  errorWidget: (context, url, error) =>
+                                      Container(
                                     child: Center(
                                       child: Icon(
                                         JamIcons.close_circle_f,
@@ -1320,7 +1328,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                     color: Color(0xFF2F2F2F)),
                                 child: SizedBox(
                                   width: MediaQuery.of(context).size.width,
-                                  height: MediaQuery.of(context).size.height / 20,
+                                  height:
+                                      MediaQuery.of(context).size.height / 20,
                                   child: Center(
                                     child: Icon(
                                       JamIcons.chevron_up,
@@ -1362,7 +1371,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                               padding: const EdgeInsets.all(8.0),
                               child: IconButton(
                                 onPressed: () {
-                                  var link = Provider.of<PexelsProvider>(context,
+                                  var link = Provider.of<PexelsProvider>(
+                                          context,
                                           listen: false)
                                       .wallsC[index]
                                       .src["portrait"];
@@ -1380,6 +1390,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                 opacity: animation,
                                                 child: ClockOverlay(
                                                   link: link,
+                                                  file: false,
                                                 ));
                                           },
                                           fullscreenDialog: true,
@@ -1401,8 +1412,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                     )
                   : Scaffold(
                       key: _scaffoldKey,
-                      backgroundColor:
-                          isLoading ? Theme.of(context).primaryColor : colors[0],
+                      backgroundColor: isLoading
+                          ? Theme.of(context).primaryColor
+                          : colors[0],
                       body: Stack(
                         children: <Widget>[
                           OptimizedCacheImage(
@@ -1455,7 +1467,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                     color: Color(0xFF2F2F2F)),
                                 child: SizedBox(
                                   width: MediaQuery.of(context).size.width,
-                                  height: MediaQuery.of(context).size.height / 20,
+                                  height:
+                                      MediaQuery.of(context).size.height / 20,
                                   child: Center(
                                     child: Icon(
                                       JamIcons.chevron_up,
@@ -1516,6 +1529,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                 opacity: animation,
                                                 child: ClockOverlay(
                                                   link: link,
+                                                  file: false,
                                                 ));
                                           },
                                           fullscreenDialog: true,
