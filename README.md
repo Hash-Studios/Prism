@@ -296,16 +296,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] fix system overlays
 - [x] fix see more in search
 - [x] download button add permission
-- [ ] cloclk overlay fix in downloadwallviewScren
-- [ ] remove toasts errors
-- [ ] abstact page curated shows when see more
-- [ ] focussed menu details in fav page download not working
+- [x] cloclk overlay fix in downloadwallviewScren
+- [x] fix multiple pushing of screens overall
+- [x] remove toasts errors
+- [x] focussed menu details in fav page download not working
+- [x] abstact page curated shows when see more
 - [ ] create a api popup
+- [ ] replace downloads image in readme
 - [ ] notifications (timed, random)
 - [ ] code refactoring
 - [ ] community walls + collections (add users to upload there own walls in the app)
 - [ ] make tags clickable
-- [ ] fix multiple pushing of screens overall
 - [ ] search tags working
 - [ ] add analytics
 - [ ] centrecrop java for search
