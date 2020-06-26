@@ -12,9 +12,11 @@ class FavouriteWallpaperButton extends StatefulWidget {
   final String provider;
   final WallPaper wallhaven;
   final WallPaperP pexels;
+  final bool trash;
   const FavouriteWallpaperButton({
     @required this.id,
     @required this.provider,
+    @required this.trash,
     this.wallhaven,
     this.pexels,
     Key key,
@@ -64,7 +66,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
             ),
             padding: EdgeInsets.all(17),
             child: Icon(
-              JamIcons.heart,
+              widget.trash ? JamIcons.trash : JamIcons.heart,
               color: Theme.of(context).accentColor,
               size: 30,
             ),

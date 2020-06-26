@@ -50,6 +50,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
 
   @override
   void initState() {
+    print("Wallpaper Screen");
     super.initState();
     provider = widget.arguments[0];
     index = widget.arguments[1];
@@ -817,14 +818,14 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                               ? Provider.of<PexelsProvider>(context,
                                       listen: false)
                                   .wallsP[index]
-                                  .url
+                                  .src["original"]
                                   .toString()
                               : provider.length > 6 &&
                                       provider.substring(0, 6) == "Colors"
                                   ? Provider.of<PexelsProvider>(context,
                                           listen: false)
                                       .wallsC[index]
-                                      .url
+                                      .src["original"]
                                       .toString()
                                   : Provider.of<WallHavenProvider>(context,
                                           listen: false)
@@ -840,12 +841,12 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                             : provider == "Pexels"
                                 ? Provider.of<PexelsProvider>(context)
                                     .wallsP[index]
-                                    .src["portrait"]
+                                    .src["original"]
                                 : provider.length > 6 &&
                                         provider.substring(0, 6) == "Colors"
                                     ? Provider.of<PexelsProvider>(context)
                                         .wallsC[index]
-                                        .src["portrait"]
+                                        .src["original"]
                                     : Provider.of<WallHavenProvider>(context)
                                         .wallsS[index]
                                         .path),
@@ -860,6 +861,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                             wallhaven: Provider.of<WallHavenProvider>(context,
                                     listen: false)
                                 .walls[index],
+                            trash: false,
                           )
                         : provider == "Pexels"
                             ? FavouriteWallpaperButton(
@@ -872,6 +874,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 pexels: Provider.of<PexelsProvider>(context,
                                         listen: false)
                                     .wallsP[index],
+                                trash: false,
                               )
                             : provider == "Liked"
                                 ? FavouriteWallpaperButton(
@@ -884,6 +887,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                             listen: false)
                                         .liked[index]["provider"]
                                         .toString(),
+                                    trash: true,
                                   )
                                 : provider.length > 6 &&
                                         provider.substring(0, 6) == "Colors"
@@ -897,7 +901,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         pexels: Provider.of<PexelsProvider>(
                                                 context,
                                                 listen: false)
-                                            .wallsC[index])
+                                            .wallsC[index],
+                                        trash: false,
+                                      )
                                     : FavouriteWallpaperButton(
                                         id: Provider.of<WallHavenProvider>(
                                                 context,
@@ -911,6 +917,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                     context,
                                                     listen: false)
                                                 .wallsS[index],
+                                        trash: false,
                                       ),
                     provider == "WallHaven"
                         ? ShareButton(
@@ -933,7 +940,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 provider: provider,
                                 url: Provider.of<PexelsProvider>(context, listen: false)
                                     .wallsP[index]
-                                    .src["portrait"],
+                                    .src["original"],
                                 thumbUrl:
                                     Provider.of<PexelsProvider>(context, listen: false)
                                         .wallsP[index]
@@ -944,7 +951,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         .wallsC[index]
                                         .id,
                                     provider: "Pexels",
-                                    url: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["portrait"],
+                                    url: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["original"],
                                     thumbUrl: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["medium"])
                                 : ShareButton(id: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].id, provider: "WallHaven", url: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].path, thumbUrl: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].thumbs["original"])
                   ],

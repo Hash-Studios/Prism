@@ -497,7 +497,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                             provider: "WallHaven",
                             wallhaven: Provider.of<WallHavenProvider>(context,
                                     listen: false)
-                                .wall,
+                                .wall,trash: false,
                           )
                         : provider == "Pexels"
                             ? FavouriteWallpaperButton(
@@ -510,6 +510,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                 pexels: Provider.of<PexelsProvider>(context,
                                         listen: false)
                                     .wall,
+                                    trash: false,
                               )
                             : Container()
                   ],
