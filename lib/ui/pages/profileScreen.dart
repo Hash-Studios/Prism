@@ -492,7 +492,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontFamily: "Proxima Nova"),
                   ),
                   subtitle: Text(
-                    "v2.3.0+1",
+                    "v2.3.5+1",
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () {}),

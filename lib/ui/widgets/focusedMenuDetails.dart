@@ -83,6 +83,7 @@ class FocusedMenuDetails extends StatelessWidget {
         : MediaQuery.of(context).orientation == Orientation.portrait
             ? size.width * 0.05
             : size.width * 0.02;
+    print(provider);
     try {
       return Scaffold(
         backgroundColor: Colors.transparent,
@@ -1304,7 +1305,7 @@ class FocusedMenuDetails extends StatelessWidget {
                       : provider == "Pexels"
                           ? Provider.of<PexelsProvider>(context, listen: false)
                               .wallsP[index]
-                              .src["portrait"]
+                              .src["original"]
                               .toString()
                           : provider == "Liked"
                               ? Provider.of<FavouriteProvider>(context,
@@ -1316,7 +1317,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                   ? Provider.of<PexelsProvider>(context,
                                           listen: false)
                                       .wallsC[index]
-                                      .src["portrait"]
+                                      .src["original"]
                                       .toString()
                                   : Provider.of<WallHavenProvider>(context,
                                           listen: false)
@@ -1339,6 +1340,7 @@ class FocusedMenuDetails extends StatelessWidget {
                         wallhaven: Provider.of<WallHavenProvider>(context,
                                 listen: false)
                             .walls[index],
+                        trash: false,
                       )
                     : provider == "Pexels"
                         ? FavouriteWallpaperButton(
@@ -1351,6 +1353,7 @@ class FocusedMenuDetails extends StatelessWidget {
                             pexels: Provider.of<PexelsProvider>(context,
                                     listen: false)
                                 .wallsP[index],
+                            trash: false,
                           )
                         : provider == "Liked"
                             ? FavouriteWallpaperButton(
@@ -1363,6 +1366,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                         listen: false)
                                     .liked[index]["provider"]
                                     .toString(),
+                                trash: true,
                               )
                             : provider.length > 6 &&
                                     provider.substring(0, 6) == "Colors"
@@ -1375,7 +1379,9 @@ class FocusedMenuDetails extends StatelessWidget {
                                     provider: "Pexels",
                                     pexels: Provider.of<PexelsProvider>(context,
                                             listen: false)
-                                        .wallsC[index])
+                                        .wallsC[index],
+                                    trash: false,
+                                  )
                                 : FavouriteWallpaperButton(
                                     id: Provider.of<WallHavenProvider>(context,
                                             listen: false)
@@ -1387,6 +1393,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                             context,
                                             listen: false)
                                         .wallsS[index],
+                                    trash: false,
                                   ),
               ),
               Positioned(
@@ -1401,7 +1408,7 @@ class FocusedMenuDetails extends StatelessWidget {
                       : provider == "Pexels"
                           ? Provider.of<PexelsProvider>(context, listen: false)
                               .wallsP[index]
-                              .src["portrait"]
+                              .src["original"]
                               .toString()
                           : provider == "Liked"
                               ? Provider.of<FavouriteProvider>(context,
@@ -1413,7 +1420,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                   ? Provider.of<PexelsProvider>(context,
                                           listen: false)
                                       .wallsC[index]
-                                      .src["portrait"]
+                                      .src["original"]
                                       .toString()
                                   : Provider.of<WallHavenProvider>(context,
                                           listen: false)

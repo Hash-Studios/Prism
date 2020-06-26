@@ -28,6 +28,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
   bool isLoading = true;
   PaletteGenerator paletteGenerator;
   List<Color> colors;
+  String downloadLinkBackwards;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -534,12 +535,28 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
-                    DownloadButton(
-                      link:
-                          Provider.of<FavouriteProvider>(context, listen: false)
+                    downloadLinkBackwards == null
+                        ? Container()
+                        : DownloadButton(
+                            link: Provider.of<FavouriteProvider>(context,
+                                            listen: false)
+                                        .liked[index]["provider"] ==
+                                    null
+                                ? downloadLinkBackwards
+                                : Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["url"],
+                          ),
+                    SetWallpaperButton(
+                      url: Provider.of<FavouriteProvider>(context,
+                                      listen: false)
+                                  .liked[index]["provider"] ==
+                              null
+                          ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                          : Provider.of<FavouriteProvider>(context,
+                                  listen: false)
                               .liked[index]["url"],
                     ),
-                    SetWallpaperButton(),
                     FavouriteWallpaperButton(
                       id: Provider.of<FavouriteProvider>(context, listen: false)
                           .liked[index]["id"]
@@ -548,6 +565,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                           Provider.of<FavouriteProvider>(context, listen: false)
                               .liked[index]["provider"]
                               .toString(),
+                      trash: true,
                     ),
                     ShareButton(
                         id: Provider.of<FavouriteProvider>(context,
@@ -735,15 +753,19 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
               children: <Widget>[
                 OptimizedCacheImage(
                   imageUrl:
-                      "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().substring(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().length - 3, Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().length)}",
-                  imageBuilder: (context, imageProvider) => Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: imageProvider,
-                        fit: BoxFit.cover,
+                      "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg",
+                  imageBuilder: (context, imageProvider) {
+                    downloadLinkBackwards =
+                        "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg";
+                    return Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: imageProvider,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                   placeholder: (context, url) => Container(
                     child: Center(
                       child: CircularProgressIndicator(
@@ -757,15 +779,44 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                       ),
                     ),
                   ),
-                  errorWidget: (context, url, error) => Container(
-                    child: Center(
-                      child: Icon(
-                        JamIcons.close_circle_f,
-                        color: isLoading
-                            ? Theme.of(context).accentColor
-                            : colors[0].computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
+                  errorWidget: (context, url, error) => OptimizedCacheImage(
+                    imageUrl:
+                        "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png",
+                    imageBuilder: (context, imageProvider) {
+                      downloadLinkBackwards =
+                          "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png";
+                      return Container(
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    },
+                    placeholder: (context, url) => Container(
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation(
+                            isLoading
+                                ? Theme.of(context).accentColor
+                                : colors[0].computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      child: Center(
+                        child: Icon(
+                          JamIcons.close_circle_f,
+                          color: isLoading
+                              ? Theme.of(context).accentColor
+                              : colors[0].computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                        ),
                       ),
                     ),
                   ),
