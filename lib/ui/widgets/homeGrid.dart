@@ -21,6 +21,7 @@ class _HomeGridState extends State<HomeGrid>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
+  var refreshHomeKey = GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
   @override
@@ -80,336 +81,366 @@ class _HomeGridState extends State<HomeGrid>
     super.dispose();
   }
 
+  Future<Null> refreshList() async {
+    refreshHomeKey.currentState?.show(atTop: true);
+    await Future.delayed(Duration(milliseconds: 500));
+    if (widget.provider == "WallHaven") {
+      Provider.of<WallHavenProvider>(context, listen: false).walls = [];
+      Provider.of<WallHavenProvider>(context, listen: false).getData();
+    } else if (widget.provider == "Pexels") {
+      Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
+      Provider.of<PexelsProvider>(context, listen: false).getDataP();
+    } else if (widget.provider.length > 6 &&
+        widget.provider.substring(0, 6) == "Colors") {
+      Provider.of<PexelsProvider>(context, listen: false).wallsC = [];
+      Provider.of<PexelsProvider>(context, listen: false)
+          .getWallsPbyColorPage(widget.provider.substring(9));
+    } else {
+      Provider.of<WallHavenProvider>(context, listen: false).wallsS = [];
+      Provider.of<WallHavenProvider>(context, listen: false)
+          .getWallsbyQuery(widget.provider);
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
-    return GridView.builder(
-      controller: controller,
-      padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
-      itemCount: widget.provider == "WallHaven"
-          ? Provider.of<WallHavenProvider>(context).walls.length == 0
-              ? 24
-              : Provider.of<WallHavenProvider>(context).walls.length
-          : widget.provider == "Pexels"
-              ? Provider.of<PexelsProvider>(context).wallsP.length == 0
-                  ? 24
-                  : Provider.of<PexelsProvider>(context).wallsP.length
-              : widget.provider.length > 6 &&
-                      widget.provider.substring(0, 6) == "Colors"
-                  ? Provider.of<PexelsProvider>(context).wallsC.length == 0
-                      ? 24
-                      : Provider.of<PexelsProvider>(context).wallsC.length
-                  : Provider.of<WallHavenProvider>(context).wallsS.length == 0
-                      ? 24
-                      : Provider.of<WallHavenProvider>(context).wallsS.length,
-      shrinkWrap: true,
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent:
-              MediaQuery.of(context).orientation == Orientation.portrait
-                  ? 300
-                  : 250,
-          childAspectRatio: 0.830,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8),
-      itemBuilder: (context, index) {
-        if (widget.provider == "WallHaven") {
-          if (index ==
-              Provider.of<WallHavenProvider>(context).walls.length - 1) {
-            return FlatButton(
-                color: Provider.of<ThemeModel>(context, listen: false)
-                            .returnTheme() ==
-                        ThemeType.Dark
-                    ? Colors.white10
-                    : Colors.black.withOpacity(.1),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                onPressed: () {
-                  if (!seeMoreLoader) {
-                    Provider.of<WallHavenProvider>(context, listen: false)
-                        .getData();
-                    setState(() {
-                      seeMoreLoader = true;
-                      Future.delayed(Duration(seconds: 3))
-                          .then((value) => seeMoreLoader = false);
-                    });
-                  }
-                },
-                child: !seeMoreLoader
-                    ? Text("See more")
-                    : CircularProgressIndicator());
+    return RefreshIndicator(
+      backgroundColor: Theme.of(context).primaryColor,
+      key: refreshHomeKey,
+      onRefresh: refreshList,
+      child: GridView.builder(
+        controller: controller,
+        padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+        itemCount: widget.provider == "WallHaven"
+            ? Provider.of<WallHavenProvider>(context).walls.length == 0
+                ? 24
+                : Provider.of<WallHavenProvider>(context).walls.length
+            : widget.provider == "Pexels"
+                ? Provider.of<PexelsProvider>(context).wallsP.length == 0
+                    ? 24
+                    : Provider.of<PexelsProvider>(context).wallsP.length
+                : widget.provider.length > 6 &&
+                        widget.provider.substring(0, 6) == "Colors"
+                    ? Provider.of<PexelsProvider>(context).wallsC.length == 0
+                        ? 24
+                        : Provider.of<PexelsProvider>(context).wallsC.length
+                    : Provider.of<WallHavenProvider>(context).wallsS.length == 0
+                        ? 24
+                        : Provider.of<WallHavenProvider>(context).wallsS.length,
+        shrinkWrap: true,
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent:
+                MediaQuery.of(context).orientation == Orientation.portrait
+                    ? 300
+                    : 250,
+            childAspectRatio: 0.830,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8),
+        itemBuilder: (context, index) {
+          if (widget.provider == "WallHaven") {
+            if (index ==
+                Provider.of<WallHavenProvider>(context).walls.length - 1) {
+              return FlatButton(
+                  color: Provider.of<ThemeModel>(context, listen: false)
+                              .returnTheme() ==
+                          ThemeType.Dark
+                      ? Colors.white10
+                      : Colors.black.withOpacity(.1),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  onPressed: () {
+                    if (!seeMoreLoader) {
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .getData();
+                      setState(() {
+                        seeMoreLoader = true;
+                        Future.delayed(Duration(seconds: 3))
+                            .then((value) => seeMoreLoader = false);
+                      });
+                    }
+                  },
+                  child: !seeMoreLoader
+                      ? Text("See more")
+                      : CircularProgressIndicator());
+            }
+          } else if (widget.provider == "Pexels") {
+            if (index ==
+                Provider.of<PexelsProvider>(context).wallsP.length - 1) {
+              return FlatButton(
+                  color: Provider.of<ThemeModel>(context, listen: false)
+                              .returnTheme() ==
+                          ThemeType.Dark
+                      ? Colors.white10
+                      : Colors.black.withOpacity(.1),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  onPressed: () {
+                    if (!seeMoreLoader) {
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .getDataP();
+                      setState(() {
+                        seeMoreLoader = true;
+                        Future.delayed(Duration(seconds: 3))
+                            .then((value) => seeMoreLoader = false);
+                      });
+                    }
+                  },
+                  child: !seeMoreLoader
+                      ? Text("See more")
+                      : CircularProgressIndicator());
+            }
+          } else if (widget.provider.length > 6 &&
+              widget.provider.substring(0, 6) == "Colors") {
+            if (index ==
+                Provider.of<PexelsProvider>(context).wallsC.length - 1) {
+              return FlatButton(
+                  color: Provider.of<ThemeModel>(context, listen: false)
+                              .returnTheme() ==
+                          ThemeType.Dark
+                      ? Colors.white10
+                      : Colors.black.withOpacity(.1),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  onPressed: () {
+                    if (!seeMoreLoader) {
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .getWallsPbyColorPage(widget.provider.substring(9));
+                      setState(() {
+                        seeMoreLoader = true;
+                        Future.delayed(Duration(seconds: 3))
+                            .then((value) => seeMoreLoader = false);
+                      });
+                    }
+                  },
+                  child: !seeMoreLoader
+                      ? Text("See more")
+                      : CircularProgressIndicator());
+            }
+          } else {
+            if (index ==
+                    Provider.of<WallHavenProvider>(context).wallsS.length - 1 &&
+                index >= 24) {
+              return FlatButton(
+                  color: Provider.of<ThemeModel>(context, listen: false)
+                              .returnTheme() ==
+                          ThemeType.Dark
+                      ? Colors.white10
+                      : Colors.black.withOpacity(.1),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  onPressed: () {
+                    if (!seeMoreLoader) {
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .getWallsbyQueryPage(widget.provider);
+                      setState(() {
+                        seeMoreLoader = true;
+                        Future.delayed(Duration(seconds: 3))
+                            .then((value) => seeMoreLoader = false);
+                      });
+                    }
+                  },
+                  child: !seeMoreLoader
+                      ? Text("See more")
+                      : CircularProgressIndicator());
+            }
           }
-        } else if (widget.provider == "Pexels") {
-          if (index == Provider.of<PexelsProvider>(context).wallsP.length - 1) {
-            return FlatButton(
-                color: Provider.of<ThemeModel>(context, listen: false)
-                            .returnTheme() ==
-                        ThemeType.Dark
-                    ? Colors.white10
-                    : Colors.black.withOpacity(.1),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                onPressed: () {
-                  if (!seeMoreLoader) {
-                    Provider.of<PexelsProvider>(context, listen: false)
-                        .getDataP();
-                    setState(() {
-                      seeMoreLoader = true;
-                      Future.delayed(Duration(seconds: 3))
-                          .then((value) => seeMoreLoader = false);
-                    });
+          return FocusedMenuHolder(
+            provider: widget.provider,
+            index: index,
+            child: GestureDetector(
+              child: Container(
+                decoration: widget.provider == "WallHaven"
+                    ? Provider.of<WallHavenProvider>(context).walls.length == 0
+                        ? BoxDecoration(
+                            color: animation.value,
+                            borderRadius: BorderRadius.circular(20),
+                          )
+                        : BoxDecoration(
+                            color: animation.value,
+                            borderRadius: BorderRadius.circular(20),
+                            image: DecorationImage(
+                                image: NetworkImage(
+                                    Provider.of<WallHavenProvider>(context)
+                                        .walls[index]
+                                        .thumbs["original"]),
+                                fit: BoxFit.cover))
+                    : widget.provider == "Pexels"
+                        ? Provider.of<PexelsProvider>(context).wallsP.length ==
+                                0
+                            ? BoxDecoration(
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                              )
+                            : BoxDecoration(
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                    image: NetworkImage(
+                                        Provider.of<PexelsProvider>(context)
+                                            .wallsP[index]
+                                            .src["medium"]),
+                                    fit: BoxFit.cover))
+                        : widget.provider.length > 6 &&
+                                widget.provider.substring(0, 6) == "Colors"
+                            ? Provider.of<PexelsProvider>(context).wallsC.length ==
+                                    0
+                                ? BoxDecoration(
+                                    color: animation.value,
+                                    borderRadius: BorderRadius.circular(20),
+                                  )
+                                : BoxDecoration(
+                                    color: animation.value,
+                                    borderRadius: BorderRadius.circular(20),
+                                    image: DecorationImage(
+                                        image: NetworkImage(
+                                            Provider.of<PexelsProvider>(context).wallsC[index].src["medium"]),
+                                        fit: BoxFit.cover))
+                            : Provider.of<WallHavenProvider>(context).wallsS.length == 0
+                                ? BoxDecoration(
+                                    color: animation.value,
+                                    borderRadius: BorderRadius.circular(20),
+                                  )
+                                : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<WallHavenProvider>(context).wallsS[index].thumbs["original"]), fit: BoxFit.cover)),
+              ),
+              onTap: () {
+                if (widget.provider == "WallHaven") {
+                  if (Provider.of<WallHavenProvider>(context, listen: false)
+                          .walls ==
+                      []) {
+                  } else {
+                    Navigator.pushNamed(context, WallpaperRoute, arguments: [
+                      widget.provider,
+                      index,
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .walls[index]
+                          .thumbs["small"],
+                    ]);
                   }
-                },
-                child: !seeMoreLoader
-                    ? Text("See more")
-                    : CircularProgressIndicator());
-          }
-        } else if (widget.provider.length > 6 &&
-            widget.provider.substring(0, 6) == "Colors") {
-          if (index == Provider.of<PexelsProvider>(context).wallsC.length - 1) {
-            return FlatButton(
-                color: Provider.of<ThemeModel>(context, listen: false)
-                            .returnTheme() ==
-                        ThemeType.Dark
-                    ? Colors.white10
-                    : Colors.black.withOpacity(.1),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                onPressed: () {
-                  if (!seeMoreLoader) {
-                    Provider.of<PexelsProvider>(context, listen: false)
-                        .getWallsPbyColorPage(widget.provider.substring(9));
-                    setState(() {
-                      seeMoreLoader = true;
-                      Future.delayed(Duration(seconds: 3))
-                          .then((value) => seeMoreLoader = false);
-                    });
+                } else if (widget.provider == "Pexels") {
+                  if (Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsP ==
+                      []) {
+                  } else {
+                    Navigator.pushNamed(context, WallpaperRoute, arguments: [
+                      widget.provider,
+                      index,
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsP[index]
+                          .src["small"]
+                    ]);
                   }
-                },
-                child: !seeMoreLoader
-                    ? Text("See more")
-                    : CircularProgressIndicator());
-          }
-        } else {
-          if (index ==
-              Provider.of<WallHavenProvider>(context).wallsS.length - 1) {
-            return FlatButton(
-                color: Provider.of<ThemeModel>(context, listen: false)
-                            .returnTheme() ==
-                        ThemeType.Dark
-                    ? Colors.white10
-                    : Colors.black.withOpacity(.1),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                onPressed: () {
-                  if (!seeMoreLoader) {
-                    Provider.of<WallHavenProvider>(context, listen: false)
-                        .getWallsbyQueryPage(widget.provider);
-                    setState(() {
-                      seeMoreLoader = true;
-                      Future.delayed(Duration(seconds: 3))
-                          .then((value) => seeMoreLoader = false);
-                    });
+                } else if (widget.provider.length > 6 &&
+                    widget.provider.substring(0, 6) == "Colors") {
+                  if (Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsC ==
+                      []) {
+                  } else {
+                    Navigator.pushNamed(context, WallpaperRoute, arguments: [
+                      widget.provider,
+                      index,
+                      Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsC[index]
+                          .src["small"]
+                    ]);
                   }
-                },
-                child: !seeMoreLoader
-                    ? Text("See more")
-                    : CircularProgressIndicator());
-          }
-        }
-        return FocusedMenuHolder(
-          provider: widget.provider,
-          index: index,
-          child: GestureDetector(
-            child: Container(
-              decoration: widget.provider == "WallHaven"
-                  ? Provider.of<WallHavenProvider>(context).walls.length == 0
-                      ? BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                        )
-                      : BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(
-                              image: NetworkImage(Provider.of<WallHavenProvider>(context)
-                                  .walls[index]
-                                  .thumbs["original"]),
-                              fit: BoxFit.cover))
-                  : widget.provider == "Pexels"
-                      ? Provider.of<PexelsProvider>(context).wallsP.length == 0
-                          ? BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                            )
-                          : BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                              image: DecorationImage(
-                                  image: NetworkImage(
-                                      Provider.of<PexelsProvider>(context)
-                                          .wallsP[index]
-                                          .src["medium"]),
-                                  fit: BoxFit.cover))
-                      : widget.provider.length > 6 &&
-                              widget.provider.substring(0, 6) == "Colors"
-                          ? Provider.of<PexelsProvider>(context).wallsC.length ==
-                                  0
-                              ? BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                )
-                              : BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                      image: NetworkImage(
-                                          Provider.of<PexelsProvider>(context)
-                                              .wallsC[index]
-                                              .src["medium"]),
-                                      fit: BoxFit.cover))
-                          : Provider.of<WallHavenProvider>(context).wallsS.length == 0
-                              ? BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                )
-                              : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<WallHavenProvider>(context).wallsS[index].thumbs["original"]), fit: BoxFit.cover)),
+                } else {
+                  if (Provider.of<WallHavenProvider>(context, listen: false)
+                          .wallsS ==
+                      []) {
+                  } else {
+                    Navigator.pushNamed(context, WallpaperRoute, arguments: [
+                      widget.provider,
+                      index,
+                      Provider.of<WallHavenProvider>(context, listen: false)
+                          .wallsS[index]
+                          .thumbs["small"],
+                    ]);
+                  }
+                }
+              },
+              onLongPress: () {
+                if (widget.provider == "WallHaven") {
+                  if (Provider.of<WallHavenProvider>(context, listen: false)
+                          .walls ==
+                      []) {
+                  } else {
+                    HapticFeedback.vibrate();
+                    createDynamicLink(
+                        Provider.of<WallHavenProvider>(context, listen: false)
+                            .walls[index]
+                            .id,
+                        widget.provider,
+                        Provider.of<WallHavenProvider>(context, listen: false)
+                            .walls[index]
+                            .path,
+                        Provider.of<WallHavenProvider>(context, listen: false)
+                            .walls[index]
+                            .thumbs["original"]);
+                  }
+                } else if (widget.provider == "Pexels") {
+                  if (Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsP ==
+                      []) {
+                  } else {
+                    HapticFeedback.vibrate();
+                    createDynamicLink(
+                        Provider.of<PexelsProvider>(context, listen: false)
+                            .wallsP[index]
+                            .id,
+                        widget.provider,
+                        Provider.of<PexelsProvider>(context, listen: false)
+                            .wallsP[index]
+                            .src["portrait"],
+                        Provider.of<PexelsProvider>(context, listen: false)
+                            .wallsP[index]
+                            .src["medium"]);
+                  }
+                } else if (widget.provider.length > 6 &&
+                    widget.provider.substring(0, 6) == "Colors") {
+                  if (Provider.of<PexelsProvider>(context, listen: false)
+                          .wallsC ==
+                      []) {
+                  } else {
+                    HapticFeedback.vibrate();
+                    createDynamicLink(
+                        Provider.of<PexelsProvider>(context, listen: false)
+                            .wallsC[index]
+                            .id,
+                        "Pexels",
+                        Provider.of<PexelsProvider>(context, listen: false)
+                            .wallsC[index]
+                            .src["portrait"],
+                        Provider.of<PexelsProvider>(context, listen: false)
+                            .wallsC[index]
+                            .src["medium"]);
+                  }
+                } else {
+                  if (Provider.of<WallHavenProvider>(context, listen: false)
+                          .wallsS ==
+                      []) {
+                  } else {
+                    HapticFeedback.vibrate();
+                    createDynamicLink(
+                        Provider.of<WallHavenProvider>(context, listen: false)
+                            .wallsS[index]
+                            .id,
+                        "WallHaven",
+                        Provider.of<WallHavenProvider>(context, listen: false)
+                            .wallsS[index]
+                            .path,
+                        Provider.of<WallHavenProvider>(context, listen: false)
+                            .wallsS[index]
+                            .thumbs["original"]);
+                  }
+                }
+              },
             ),
-            onTap: () {
-              if (widget.provider == "WallHaven") {
-                if (Provider.of<WallHavenProvider>(context, listen: false)
-                        .walls ==
-                    []) {
-                } else {
-                  Navigator.pushNamed(context, WallpaperRoute, arguments: [
-                    widget.provider,
-                    index,
-                    Provider.of<WallHavenProvider>(context, listen: false)
-                        .walls[index]
-                        .thumbs["small"],
-                  ]);
-                }
-              } else if (widget.provider == "Pexels") {
-                if (Provider.of<PexelsProvider>(context, listen: false)
-                        .wallsP ==
-                    []) {
-                } else {
-                  Navigator.pushNamed(context, WallpaperRoute, arguments: [
-                    widget.provider,
-                    index,
-                    Provider.of<PexelsProvider>(context, listen: false)
-                        .wallsP[index]
-                        .src["small"]
-                  ]);
-                }
-              } else if (widget.provider.length > 6 &&
-                  widget.provider.substring(0, 6) == "Colors") {
-                if (Provider.of<PexelsProvider>(context, listen: false)
-                        .wallsC ==
-                    []) {
-                } else {
-                  Navigator.pushNamed(context, WallpaperRoute, arguments: [
-                    widget.provider,
-                    index,
-                    Provider.of<PexelsProvider>(context, listen: false)
-                        .wallsC[index]
-                        .src["small"]
-                  ]);
-                }
-              } else {
-                if (Provider.of<WallHavenProvider>(context, listen: false)
-                        .wallsS ==
-                    []) {
-                } else {
-                  Navigator.pushNamed(context, WallpaperRoute, arguments: [
-                    widget.provider,
-                    index,
-                    Provider.of<WallHavenProvider>(context, listen: false)
-                        .wallsS[index]
-                        .thumbs["small"],
-                  ]);
-                }
-              }
-            },
-            onLongPress: () {
-              if (widget.provider == "WallHaven") {
-                if (Provider.of<WallHavenProvider>(context, listen: false)
-                        .walls ==
-                    []) {
-                } else {
-                  HapticFeedback.vibrate();
-                  createDynamicLink(
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                          .walls[index]
-                          .id,
-                      widget.provider,
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                          .walls[index]
-                          .path,
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                          .walls[index]
-                          .thumbs["original"]);
-                }
-              } else if (widget.provider == "Pexels") {
-                if (Provider.of<PexelsProvider>(context, listen: false)
-                        .wallsP ==
-                    []) {
-                } else {
-                  HapticFeedback.vibrate();
-                  createDynamicLink(
-                      Provider.of<PexelsProvider>(context, listen: false)
-                          .wallsP[index]
-                          .id,
-                      widget.provider,
-                      Provider.of<PexelsProvider>(context, listen: false)
-                          .wallsP[index]
-                          .src["portrait"],
-                      Provider.of<PexelsProvider>(context, listen: false)
-                          .wallsP[index]
-                          .src["medium"]);
-                }
-              } else if (widget.provider.length > 6 &&
-                  widget.provider.substring(0, 6) == "Colors") {
-                if (Provider.of<PexelsProvider>(context, listen: false)
-                        .wallsC ==
-                    []) {
-                } else {
-                  HapticFeedback.vibrate();
-                  createDynamicLink(
-                      Provider.of<PexelsProvider>(context, listen: false)
-                          .wallsC[index]
-                          .id,
-                      "Pexels",
-                      Provider.of<PexelsProvider>(context, listen: false)
-                          .wallsC[index]
-                          .src["portrait"],
-                      Provider.of<PexelsProvider>(context, listen: false)
-                          .wallsC[index]
-                          .src["medium"]);
-                }
-              } else {
-                if (Provider.of<WallHavenProvider>(context, listen: false)
-                        .wallsS ==
-                    []) {
-                } else {
-                  HapticFeedback.vibrate();
-                  createDynamicLink(
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                          .wallsS[index]
-                          .id,
-                      "WallHaven",
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                          .wallsS[index]
-                          .path,
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                          .wallsS[index]
-                          .thumbs["original"]);
-                }
-              }
-            },
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

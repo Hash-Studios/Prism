@@ -45,36 +45,46 @@ class _SearchScreenState extends State<SearchScreen> {
             width: MediaQuery.of(context).size.width,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(500),
-                    color: Theme.of(context).hintColor),
-                child: TextField(
-                  style: Theme.of(context)
-                      .textTheme
-                      .headline5
-                      .copyWith(color: Theme.of(context).accentColor),
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    contentPadding: EdgeInsets.only(left: 30, top: 15),
-                    border: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    hintText: "Search",
-                    suffixIcon: Icon(JamIcons.search),
-                  ),
-                  onSubmitted: (tex) {
-                    setState(() {
-                      isSubmitted = true;
-                      Provider.of<WallHavenProvider>(context, listen: false)
-                          .wallsS = [];
-                      _future =
+              child: Column(
+                children: [
+                  SizedBox(height: 2),
+                  Container(
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(500),
+                        color: Theme.of(context).hintColor),
+                    child: TextField(
+                      cursorColor: Color(0xFFE57697),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline5
+                          .copyWith(color: Theme.of(context).accentColor),
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.only(left: 30, top: 15),
+                        border: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        hintText: "Search",
+                        hintStyle: Theme.of(context)
+                            .textTheme
+                            .headline5
+                            .copyWith(color: Theme.of(context).accentColor),
+                        suffixIcon: Icon(JamIcons.search),
+                      ),
+                      onSubmitted: (tex) {
+                        setState(() {
+                          isSubmitted = true;
                           Provider.of<WallHavenProvider>(context, listen: false)
+                              .wallsS = [];
+                          _future = Provider.of<WallHavenProvider>(context,
+                                  listen: false)
                               .getWallsbyQuery(tex);
-                    });
-                  },
-                ),
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

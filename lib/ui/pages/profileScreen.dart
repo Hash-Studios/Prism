@@ -49,10 +49,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: CustomScrollView(slivers: <Widget>[
         SliverAppBar(
           backgroundColor: Color(0xFFE57697),
-          automaticallyImplyLeading: false,
-          pinned: false,
-          floating: true,
-          snap: true,
+          leading: IconButton(
+              icon: Icon(
+                JamIcons.chevron_left,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              }),
+          pinned: true,
           expandedHeight: 280.0,
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(
@@ -152,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         SliverList(
-            delegate: SliverChildListDelegate.fixed([
+            delegate: SliverChildListDelegate([
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
@@ -493,78 +498,144 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () {}),
               ListTile(
                   leading: Icon(
-                    JamIcons.coffee,
+                    JamIcons.bug,
                   ),
                   title: new Text(
-                    "Buy us a cup of tea",
+                    "Report a bug",
                     style: TextStyle(
                         color: Theme.of(context).accentColor,
                         fontWeight: FontWeight.w500,
                         fontFamily: "Proxima Nova"),
                   ),
                   subtitle: Text(
-                    "Support us if you like what we do",
+                    "Tell us if you found out a bug",
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () {
-                    launch("https://buymeacoff.ee/HashStudios");
+                    launch("https://github.com/Hash-Studios/Prism/issues");
                   }),
-              ExpansionTile(
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Hash Studios',
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).accentColor,
+              ),
+            ),
+          ),
+          Column(children: [
+            ListTile(
                 leading: Icon(
-                  JamIcons.users,
+                  JamIcons.luggage,
                 ),
                 title: new Text(
-                  "Developers",
+                  "Wanna work with us?",
                   style: TextStyle(
                       color: Theme.of(context).accentColor,
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
                 subtitle: Text(
-                  "Check out the cool devs!",
+                  "We are recruiting Flutter developers",
                   style: TextStyle(fontSize: 12),
                 ),
-                children: [
-                  ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: AssetImage("assets/images/AB.jpg"),
-                      ),
-                      title: new Text(
-                        "LiquidatorCoder",
-                        style: TextStyle(
-                            color: Theme.of(context).accentColor,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: "Proxima Nova"),
-                      ),
-                      subtitle: Text(
-                        "Abhay Maurya",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      onTap: () async {
-                        launch("https://github.com/LiquidatorCoder");
-                      }),
-                  ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: AssetImage("assets/images/AK.jpg"),
-                      ),
-                      title: new Text(
-                        "CodeNameAkshay",
-                        style: TextStyle(
-                            color: Theme.of(context).accentColor,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: "Proxima Nova"),
-                      ),
-                      subtitle: Text(
-                        "Akshay Maurya",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      onTap: () async {
-                        launch("https://github.com/codenameakshay");
-                      }),
-                ],
+                onTap: () {
+                  launch("https://forms.gle/nSt4QtiQVVaZvhdA8");
+                }),
+            ListTile(
+                leading: Icon(
+                  JamIcons.coffee,
+                ),
+                title: new Text(
+                  "Buy us a cup of tea",
+                  style: TextStyle(
+                      color: Theme.of(context).accentColor,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
+                ),
+                subtitle: Text(
+                  "Support us if you like what we do",
+                  style: TextStyle(fontSize: 12),
+                ),
+                onTap: () {
+                  launch("https://buymeacoff.ee/HashStudios");
+                }),
+            ExpansionTile(
+              leading: Icon(
+                JamIcons.users,
               ),
-            ],
-          ),
+              title: new Text(
+                "Meet the awesome team",
+                style: TextStyle(
+                    color: Theme.of(context).accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
+              ),
+              subtitle: Text(
+                "Check out the cool devs!",
+                style: TextStyle(fontSize: 12),
+              ),
+              children: [
+                ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: AssetImage("assets/images/AB.jpg"),
+                    ),
+                    title: new Text(
+                      "LiquidatorCoder",
+                      style: TextStyle(
+                          color: Theme.of(context).accentColor,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: "Proxima Nova"),
+                    ),
+                    subtitle: Text(
+                      "Abhay Maurya",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    onTap: () async {
+                      launch("https://github.com/LiquidatorCoder");
+                    }),
+                ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: AssetImage("assets/images/AK.jpg"),
+                    ),
+                    title: new Text(
+                      "CodeNameAkshay",
+                      style: TextStyle(
+                          color: Theme.of(context).accentColor,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: "Proxima Nova"),
+                    ),
+                    subtitle: Text(
+                      "Akshay Maurya",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    onTap: () async {
+                      launch("https://github.com/codenameakshay");
+                    }),
+                ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: AssetImage("assets/images/PT.jpg"),
+                    ),
+                    title: new Text(
+                      "1-2-ka-4-4-2-ka-1",
+                      style: TextStyle(
+                          color: Theme.of(context).accentColor,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: "Proxima Nova"),
+                    ),
+                    subtitle: Text(
+                      "Pratyush Tiwari",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    onTap: () async {
+                      launch("https://github.com/1-2-ka-4-4-2-ka-1");
+                    }),
+              ],
+            ),
+          ])
         ]))
       ]),
     );

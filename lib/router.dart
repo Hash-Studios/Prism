@@ -22,11 +22,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case SplashRoute:
       return CupertinoPageRoute(builder: (context) => SplashWidget());
     case SearchRoute:
-      return CupertinoPageRoute(builder: (context) => SearchScreen());
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => SearchScreen());
     case FavRoute:
-      return CupertinoPageRoute(builder: (context) => FavouriteScreen());
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => FavouriteScreen());
     case HomeRoute:
-      return CupertinoPageRoute(builder: (context) => HomeScreen());
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => HomeScreen());
     case ProfileRoute:
       return CupertinoPageRoute(builder: (context) => ProfileScreen());
     case DownloadRoute:
