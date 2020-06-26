@@ -1,5 +1,6 @@
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focusedMenu.dart';
@@ -179,8 +180,17 @@ class _HomeGridState extends State<HomeGrid>
                       borderRadius: BorderRadius.circular(20)),
                   onPressed: () {
                     if (!seeMoreLoader) {
-                      Provider.of<PexelsProvider>(context, listen: false)
-                          .getDataP();
+                      currentRoute == "Curated"
+                          ? Provider.of<PexelsProvider>(context, listen: false)
+                              .getDataP()
+                          : currentRoute == "Abstract"
+                              ? Provider.of<PexelsProvider>(context,
+                                      listen: false)
+                                  .getAbstractWalls()
+                              : Provider.of<PexelsProvider>(context,
+                                      listen: false)
+                                  .getNatureWalls();
+
                       setState(() {
                         seeMoreLoader = true;
                         Future.delayed(Duration(seconds: 3))
