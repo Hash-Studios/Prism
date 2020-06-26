@@ -746,6 +746,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                                         opacity: animation,
                                         child: ClockOverlay(
                                           link: link,
+                                          file: false,
                                         ));
                                   },
                                   fullscreenDialog: true,
@@ -921,6 +922,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                                         opacity: animation,
                                         child: ClockOverlay(
                                           link: link,
+                                          file: false,
                                         ));
                                   },
                                   fullscreenDialog: true,
