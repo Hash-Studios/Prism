@@ -254,3 +254,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [ ] centrecrop java for search
 - [ ] fav, download, set wall button in focus menu
 - [ ] 4 buttons in shareView, favView, downloadView and wallpaperScreen
+hold to copy link
+like, dislike, set wall, download
+- [ ] share page info not loading
+- [ ] pexels image not setting as wall from focussed menu and not downloading too
+- [ ] color download not working
+- [ ] second layer deep colors search crash
+- [ ] favscreen show trashcan to remove favs
+- [ ] png, jpg error in old favs
+- [ ] fav wall setbutton, download button
+- [ ] found a bug section
+- [ ] we are recuiting section
+- [ ] refresh indicator in home screen
+- [ ] remove animation from bottom bar navigation
+- [ ] fix search bar ui (cursor color to pink, top sizedBox)
+- [ ] add downloads and fav chips bar
+
