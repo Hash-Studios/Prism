@@ -682,6 +682,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                       opacity: animation,
                                       child: ClockOverlay(
                                         link: link,
+                                        file: false,
                                       ));
                                 },
                                 fullscreenDialog: true,
@@ -843,6 +844,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                           opacity: animation,
                                           child: ClockOverlay(
                                             link: link,
+                                            file: false,
                                           ));
                                     },
                                     fullscreenDialog: true,

@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:optimized_cached_image/widgets.dart';
 
 class ClockOverlay extends StatefulWidget {
   final String link;
-  ClockOverlay({@required this.link});
+  final bool file;
+  ClockOverlay({@required this.link, @required this.file});
   @override
   _ClockOverlayState createState() => _ClockOverlayState();
 }
@@ -16,17 +19,26 @@ class _ClockOverlayState extends State<ClockOverlay> {
     return Material(
       child: Stack(
         children: <Widget>[
-          OptimizedCacheImage(
-            imageUrl: widget.link,
-            imageBuilder: (context, imageProvider) => Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: imageProvider,
-                  fit: BoxFit.cover,
+          !widget.file
+              ? OptimizedCacheImage(
+                  imageUrl: widget.link,
+                  imageBuilder: (context, imageProvider) => Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: imageProvider,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                )
+              : Container(
+                  height: MediaQuery.of(context).size.height,
+                  width: MediaQuery.of(context).size.width,
+                  child: Image.file(
+                    File(widget.link),
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-            ),
-          ),
           SizedBox(
             height: MediaQuery.of(context).size.height / 2,
             width: MediaQuery.of(context).size.width,

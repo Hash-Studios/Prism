@@ -1,6 +1,7 @@
 analyzer:
   errors:
     # unused_import: ignore
+    deprecated_member_use: ignore
     missing_return: ignore
 enable-experiment:
     - extension-methods

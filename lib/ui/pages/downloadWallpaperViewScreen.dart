@@ -105,6 +105,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
                                     opacity: animation,
                                     child: ClockOverlay(
                                       link: link,
+                                      file: true,
                                     ));
                               },
                               fullscreenDialog: true,
