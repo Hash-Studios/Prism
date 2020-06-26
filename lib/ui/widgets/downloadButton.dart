@@ -85,7 +85,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         isLoading = false;
       });
     }).catchError((e) {
-      toasts.error(e.toString());
+      // toasts.error(e.toString());
       setState(() {
         isLoading = false;
       });
