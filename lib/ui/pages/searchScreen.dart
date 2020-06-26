@@ -1,4 +1,5 @@
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/bottomNavBar.dart';
@@ -15,6 +16,14 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  Future<bool> onWillPop() async {
+    String route = currentRoute;
+    currentRoute = previousRoute;
+    previousRoute = route;
+    print(currentRoute);
+    return true;
+  }
+
   final List<String> tags = [
     'Home',
     'Abstract',
@@ -34,119 +43,123 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: AppBar(
-          excludeHeaderSemantics: false,
-          automaticallyImplyLeading: false,
-          elevation: 0,
-          titleSpacing: 0,
-          title: SizedBox(
-            width: MediaQuery.of(context).size.width,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  SizedBox(height: 2),
-                  Container(
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(500),
-                        color: Theme.of(context).hintColor),
-                    child: TextField(
-                      cursorColor: Color(0xFFE57697),
-                      style: Theme.of(context)
-                          .textTheme
-                          .headline5
-                          .copyWith(color: Theme.of(context).accentColor),
-                      controller: searchController,
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.only(left: 30, top: 15),
-                        border: InputBorder.none,
-                        disabledBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        hintText: "Search",
-                        hintStyle: Theme.of(context)
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: Scaffold(
+          backgroundColor: Theme.of(context).primaryColor,
+          appBar: AppBar(
+            excludeHeaderSemantics: false,
+            automaticallyImplyLeading: false,
+            elevation: 0,
+            titleSpacing: 0,
+            title: SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    SizedBox(height: 2),
+                    Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color: Theme.of(context).hintColor),
+                      child: TextField(
+                        cursorColor: Color(0xFFE57697),
+                        style: Theme.of(context)
                             .textTheme
                             .headline5
                             .copyWith(color: Theme.of(context).accentColor),
-                        suffixIcon: Icon(JamIcons.search),
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.only(left: 30, top: 15),
+                          border: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          hintText: "Search",
+                          hintStyle: Theme.of(context)
+                              .textTheme
+                              .headline5
+                              .copyWith(color: Theme.of(context).accentColor),
+                          suffixIcon: Icon(JamIcons.search),
+                        ),
+                        onSubmitted: (tex) {
+                          setState(() {
+                            isSubmitted = true;
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .wallsS = [];
+                            _future = Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getWallsbyQuery(tex);
+                          });
+                        },
                       ),
-                      onSubmitted: (tex) {
-                        setState(() {
-                          isSubmitted = true;
-                          Provider.of<WallHavenProvider>(context, listen: false)
-                              .wallsS = [];
-                          _future = Provider.of<WallHavenProvider>(context,
-                                  listen: false)
-                              .getWallsbyQuery(tex);
-                        });
-                      },
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // bottom: PreferredSize(
-          //     child: SizedBox(
-          //       width: MediaQuery.of(context).size.width,
-          //       height: 60,
-          //       child: ListView.builder(
-          //         scrollDirection: Axis.horizontal,
-          //         itemCount: tags.length,
-          //         itemBuilder: (context, index) {
-          //           return Align(
-          //             alignment: Alignment.center,
-          //             child: Stack(
-          //               children: <Widget>[
-          //                 Padding(
-          //                   padding: const EdgeInsets.all(5),
-          //                   child: ActionChip(
-          //                       pressElevation: 5,
-          //                       padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-          //                       backgroundColor: Theme.of(context).hintColor,
-          //                       label: Text(tags[index],
-          //                           style:
-          //                               Theme.of(context).textTheme.headline4),
-          //                       onPressed: () {}),
-          //                 ),
-          //               ],
-          //             ),
-          //           );
-          //         },
-          //       ),
-          //     ),
-          //     preferredSize: Size(double.infinity, 55)),
-        ),
-        body: BottomBar(
-          child: isSubmitted
-              ? SearchLoader(
-                  future: _future,
-                  provider: searchController.text,
-                )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      child: Provider.of<ThemeModel>(context, listen: false)
-                                  .returnTheme() ==
-                              ThemeType.Dark
-                          ? SvgPicture.asset(
-                              "assets/images/loader dark.svg",
-                            )
-                          : SvgPicture.asset(
-                              "assets/images/loader light.svg",
-                            ),
-                    ),
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height * 0.1,
-                    )
                   ],
                 ),
-        ));
+              ),
+            ),
+            // bottom: PreferredSize(
+            //     child: SizedBox(
+            //       width: MediaQuery.of(context).size.width,
+            //       height: 60,
+            //       child: ListView.builder(
+            //         scrollDirection: Axis.horizontal,
+            //         itemCount: tags.length,
+            //         itemBuilder: (context, index) {
+            //           return Align(
+            //             alignment: Alignment.center,
+            //             child: Stack(
+            //               children: <Widget>[
+            //                 Padding(
+            //                   padding: const EdgeInsets.all(5),
+            //                   child: ActionChip(
+            //                       pressElevation: 5,
+            //                       padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+            //                       backgroundColor: Theme.of(context).hintColor,
+            //                       label: Text(tags[index],
+            //                           style:
+            //                               Theme.of(context).textTheme.headline4),
+            //                       onPressed: () {}),
+            //                 ),
+            //               ],
+            //             ),
+            //           );
+            //         },
+            //       ),
+            //     ),
+            //     preferredSize: Size(double.infinity, 55)),
+          ),
+          body: BottomBar(
+            child: isSubmitted
+                ? SearchLoader(
+                    future: _future,
+                    provider: searchController.text,
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        child: Provider.of<ThemeModel>(context, listen: false)
+                                    .returnTheme() ==
+                                ThemeType.Dark
+                            ? SvgPicture.asset(
+                                "assets/images/loader dark.svg",
+                              )
+                            : SvgPicture.asset(
+                                "assets/images/loader light.svg",
+                              ),
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height * 0.1,
+                      )
+                    ],
+                  ),
+          )),
+    );
   }
 }
 

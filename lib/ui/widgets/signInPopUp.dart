@@ -1,3 +1,4 @@
+import 'package:Prism/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/globals.dart' as globals;
@@ -156,10 +157,18 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 globals.gAuth.signInWithGoogle().then((value) {
                   toasts.successLog();
                   main.prefs.setBool("isLoggedin", true);
+                  String route = currentRoute;
+                  currentRoute = previousRoute;
+                  previousRoute = route;
+                  print(currentRoute);
                   Navigator.pop(context);
                   func();
                 }).catchError((e) {
                   print(e);
+                  String route = currentRoute;
+                  currentRoute = previousRoute;
+                  previousRoute = route;
+                  print(currentRoute);
                   Navigator.pop(context);
                   main.prefs.setBool("isLoggedin", false);
                   toasts.error("Something went wrong, please try again!");
