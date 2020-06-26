@@ -34,19 +34,31 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
   PaletteGenerator paletteGenerator;
   List<Color> colors;
   Future future;
-
+  var image;
   Future<void> _updatePaletteGenerator() async {
     setState(() {
       isLoading = true;
     });
-    paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new NetworkImage(thumb),
-      maximumColorCount: 20,
-    );
+    try {
+      image = new OptimizedCacheImageProvider(thumb, errorListener: () {
+        colors = [
+          Color(0xFFFFFFFF),
+          Color(0xFFc7c7c7),
+          Color(0xFF848484),
+          Color(0xFF3d3d3d),
+          Color(0xFF000000)
+        ];
+      });
+    } catch (e) {
+      toasts.error(e.toString());
+    }
+    paletteGenerator = await PaletteGenerator.fromImageProvider(image,
+        maximumColorCount: 20, timeout: Duration(seconds: 120));
     setState(() {
       isLoading = false;
     });
     colors = paletteGenerator.colors.toList();
+    print(colors.toString());
     if (paletteGenerator.colors.length > 5) {
       colors = colors.sublist(0, 5);
     }
@@ -470,12 +482,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                               .wall
                               .path
                               .toString()
-                          : provider == "Pexels"
-                              ? Provider.of<PexelsProvider>(context)
-                                  .wall
-                                  .src["portrait"]
-                                  .toString()
-                              : "",
+                          : provider == "Pexels" ? url.toString() : "",
                     ),
                     SetWallpaperButton(
                       url: "",
@@ -525,42 +532,29 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
   @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIOverlays([]);
-    try {
-      return provider == "WallHaven"
-          ? Scaffold(
-              key: _scaffoldKey,
-              backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : colors[0],
-              body: Stack(
-                children: <Widget>[
-                  OptimizedCacheImage(
-                    imageUrl: url,
-                    imageBuilder: (context, imageProvider) => Container(
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: imageProvider,
-                          fit: BoxFit.cover,
-                        ),
+
+    return provider == "WallHaven"
+        ? Scaffold(
+            key: _scaffoldKey,
+            backgroundColor:
+                isLoading ? Theme.of(context).primaryColor : colors[0],
+            body: Stack(
+              children: <Widget>[
+                OptimizedCacheImage(
+                  imageUrl: url,
+                  imageBuilder: (context, imageProvider) => Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: imageProvider,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                    placeholder: (context, url) => Container(
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation(
-                            isLoading
-                                ? Theme.of(context).accentColor
-                                : colors[0].computeLuminance() > 0.5
-                                    ? Colors.black
-                                    : Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      child: Center(
-                        child: Icon(
-                          JamIcons.close_circle_f,
-                          color: isLoading
+                  ),
+                  placeholder: (context, url) => Container(
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation(
+                          isLoading
                               ? Theme.of(context).accentColor
                               : colors[0].computeLuminance() > 0.5
                                   ? Colors.black
@@ -569,155 +563,151 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                       ),
                     ),
                   ),
-                  FutureBuilder<WallPaper>(
-                      future: future,
-                      builder: (context, AsyncSnapshot<WallPaper> snapshot) {
-                        if (snapshot == null) {
-                          print("Snapshot is null");
-                          return CircularProgressIndicator();
-                        }
-                        if (snapshot.connectionState ==
-                                ConnectionState.waiting ||
-                            snapshot.connectionState == ConnectionState.none) {
-                          print("snapshot none, waiting in share route");
-                          return CircularProgressIndicator();
-                        } else {
-                          return Align(
-                            alignment: Alignment.bottomCenter,
-                            child: GestureDetector(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(20),
-                                      topRight: Radius.circular(20),
-                                    ),
-                                    color: Color(0xFF2F2F2F)),
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width,
-                                  height:
-                                      MediaQuery.of(context).size.height / 20,
-                                  child: Center(
-                                    child: Icon(
-                                      JamIcons.chevron_up,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              onTap: !isLoading
-                                  ? () {
-                                      if (Provider.of<WallHavenProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .wall !=
-                                          null)
-                                        return _showBottomSheetCallback();
-                                      else {
-                                        toasts.info(
-                                            "Information is Loading, please wait!");
-                                      }
-                                    }
-                                  : () {
-                                      toasts.info(
-                                          "Information is Loading, please wait!");
-                                    },
-                            ),
-                          );
-                        }
-                      }),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
+                  errorWidget: (context, url, error) => Container(
+                    child: Center(
+                      child: Icon(
+                        JamIcons.close_circle_f,
                         color: isLoading
                             ? Theme.of(context).accentColor
                             : colors[0].computeLuminance() > 0.5
                                 ? Colors.black
                                 : Colors.white,
-                        icon: Icon(
-                          JamIcons.chevron_left,
-                        ),
                       ),
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        onPressed: () {
-                          var link = url;
-                          Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                  transitionDuration:
-                                      Duration(milliseconds: 300),
-                                  pageBuilder:
-                                      (context, animation, secondaryAnimation) {
-                                    animation = Tween(begin: 0.0, end: 1.0)
-                                        .animate(animation);
-                                    return FadeTransition(
-                                        opacity: animation,
-                                        child: ClockOverlay(
-                                          link: link,
-                                        ));
-                                  },
-                                  fullscreenDialog: true,
-                                  opaque: false));
-                        },
-                        color: isLoading
-                            ? Theme.of(context).accentColor
-                            : colors[0].computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                        icon: Icon(
-                          JamIcons.clock,
-                        ),
-                      ),
-                    ),
-                  )
-                ],
-              ),
-            )
-          : provider == "Pexels"
-              ? Scaffold(
-                  key: _scaffoldKey,
-                  backgroundColor:
-                      isLoading ? Theme.of(context).primaryColor : colors[0],
-                  body: Stack(
-                    children: <Widget>[
-                      OptimizedCacheImage(
-                        imageUrl: url,
-                        imageBuilder: (context, imageProvider) => Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: imageProvider,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        placeholder: (context, url) => Container(
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation(
-                                isLoading
-                                    ? Theme.of(context).accentColor
-                                    : colors[0].computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white,
+                ),
+                FutureBuilder<WallPaper>(
+                    future: future,
+                    builder: (context, AsyncSnapshot<WallPaper> snapshot) {
+                      if (snapshot == null) {
+                        print("Snapshot is null");
+                        return CircularProgressIndicator();
+                      }
+                      if (snapshot.connectionState == ConnectionState.waiting ||
+                          snapshot.connectionState == ConnectionState.none) {
+                        print("snapshot none, waiting in share route");
+                        return CircularProgressIndicator();
+                      } else {
+                        return Align(
+                          alignment: Alignment.bottomCenter,
+                          child: GestureDetector(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(20),
+                                    topRight: Radius.circular(20),
+                                  ),
+                                  color: Color(0xFF2F2F2F)),
+                              child: SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                height: MediaQuery.of(context).size.height / 20,
+                                child: Center(
+                                  child: Icon(
+                                    JamIcons.chevron_up,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
+                            onTap: !isLoading
+                                ? () {
+                                    if (Provider.of<WallHavenProvider>(context,
+                                                listen: false)
+                                            .wall !=
+                                        null)
+                                      return _showBottomSheetCallback();
+                                    else {
+                                      toasts.info(
+                                          "Information is Loading, please wait!");
+                                    }
+                                  }
+                                : () {
+                                    toasts.info(
+                                        "Information is Loading, please wait!");
+                                  },
+                          ),
+                        );
+                      }
+                    }),
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: IconButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      color: isLoading
+                          ? Theme.of(context).accentColor
+                          : colors[0].computeLuminance() > 0.5
+                              ? Colors.black
+                              : Colors.white,
+                      icon: Icon(
+                        JamIcons.chevron_left,
+                      ),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: IconButton(
+                      onPressed: () {
+                        var link = url;
+                        Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                                transitionDuration: Duration(milliseconds: 300),
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) {
+                                  animation = Tween(begin: 0.0, end: 1.0)
+                                      .animate(animation);
+                                  return FadeTransition(
+                                      opacity: animation,
+                                      child: ClockOverlay(
+                                        link: link,
+                                      ));
+                                },
+                                fullscreenDialog: true,
+                                opaque: false));
+                      },
+                      color: isLoading
+                          ? Theme.of(context).accentColor
+                          : colors[0].computeLuminance() > 0.5
+                              ? Colors.black
+                              : Colors.white,
+                      icon: Icon(
+                        JamIcons.clock,
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          )
+        : provider == "Pexels"
+            ? Scaffold(
+                key: _scaffoldKey,
+                backgroundColor:
+                    isLoading ? Theme.of(context).primaryColor : colors[0],
+                body: Stack(
+                  children: <Widget>[
+                    OptimizedCacheImage(
+                      imageUrl: url,
+                      imageBuilder: (context, imageProvider) => Container(
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
                           ),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          child: Center(
-                            child: Icon(
-                              JamIcons.close_circle_f,
-                              color: isLoading
+                      ),
+                      placeholder: (context, url) => Container(
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation(
+                              isLoading
                                   ? Theme.of(context).accentColor
                                   : colors[0].computeLuminance() > 0.5
                                       ? Colors.black
@@ -726,128 +716,133 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                           ),
                         ),
                       ),
-                      FutureBuilder<WallPaperP>(
-                          future: future,
-                          builder:
-                              (context, AsyncSnapshot<WallPaperP> snapshot) {
-                            if (snapshot == null) {
-                              print("Snapshot is null");
-                              return CircularProgressIndicator();
-                            }
-                            if (snapshot.connectionState ==
-                                    ConnectionState.waiting ||
-                                snapshot.connectionState ==
-                                    ConnectionState.none) {
-                              print("snapshot none, waiting in share route");
-                              return CircularProgressIndicator();
-                            } else {
-                              return Align(
-                                alignment: Alignment.bottomCenter,
-                                child: GestureDetector(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(20),
-                                          topRight: Radius.circular(20),
-                                        ),
-                                        color: Color(0xFF2F2F2F)),
-                                    child: SizedBox(
-                                      width: MediaQuery.of(context).size.width,
-                                      height:
-                                          MediaQuery.of(context).size.height /
-                                              20,
-                                      child: Center(
-                                        child: Icon(
-                                          JamIcons.chevron_up,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  onTap: !isLoading
-                                      ? () {
-                                          if (Provider.of<PexelsProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .wall !=
-                                              null)
-                                            return _showBottomSheetCallback();
-                                          else {
-                                            toasts.info(
-                                                "Information is Loading, please wait!");
-                                          }
-                                        }
-                                      : () {
-                                          toasts.info(
-                                              "Information is Loading, please wait!");
-                                        },
-                                ),
-                              );
-                            }
-                          }),
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: IconButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
+                      errorWidget: (context, url, error) => Container(
+                        child: Center(
+                          child: Icon(
+                            JamIcons.close_circle_f,
                             color: isLoading
                                 ? Theme.of(context).accentColor
                                 : colors[0].computeLuminance() > 0.5
                                     ? Colors.black
                                     : Colors.white,
-                            icon: Icon(
-                              JamIcons.chevron_left,
-                            ),
                           ),
                         ),
                       ),
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: IconButton(
-                            onPressed: () {
-                              var link = url;
-                              Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                      transitionDuration:
-                                          Duration(milliseconds: 300),
-                                      pageBuilder: (context, animation,
-                                          secondaryAnimation) {
-                                        animation = Tween(begin: 0.0, end: 1.0)
-                                            .animate(animation);
-                                        return FadeTransition(
-                                            opacity: animation,
-                                            child: ClockOverlay(
-                                              link: link,
-                                            ));
+                    ),
+                    FutureBuilder<WallPaperP>(
+                        future: future,
+                        builder: (context, AsyncSnapshot<WallPaperP> snapshot) {
+                          if (snapshot == null) {
+                            print("Snapshot is null");
+                            return CircularProgressIndicator();
+                          }
+                          if (snapshot.connectionState ==
+                                  ConnectionState.waiting ||
+                              snapshot.connectionState ==
+                                  ConnectionState.none) {
+                            print("snapshot none, waiting in share route");
+                            return CircularProgressIndicator();
+                          } else {
+                            return Align(
+                              alignment: Alignment.bottomCenter,
+                              child: GestureDetector(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        topRight: Radius.circular(20),
+                                      ),
+                                      color: Color(0xFF2F2F2F)),
+                                  child: SizedBox(
+                                    width: MediaQuery.of(context).size.width,
+                                    height:
+                                        MediaQuery.of(context).size.height / 20,
+                                    child: Center(
+                                      child: Icon(
+                                        JamIcons.chevron_up,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                onTap: !isLoading
+                                    ? () {
+                                        if (Provider.of<PexelsProvider>(context,
+                                                    listen: false)
+                                                .wall !=
+                                            null)
+                                          return _showBottomSheetCallback();
+                                        else {
+                                          toasts.info(
+                                              "Information is Loading, please wait!");
+                                        }
+                                      }
+                                    : () {
+                                        toasts.info(
+                                            "Information is Loading, please wait!");
                                       },
-                                      fullscreenDialog: true,
-                                      opaque: false));
-                            },
-                            color: isLoading
-                                ? Theme.of(context).accentColor
-                                : colors[0].computeLuminance() > 0.5
-                                    ? Colors.black
-                                    : Colors.white,
-                            icon: Icon(
-                              JamIcons.clock,
-                            ),
+                              ),
+                            );
+                          }
+                        }),
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          color: isLoading
+                              ? Theme.of(context).accentColor
+                              : colors[0].computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                          icon: Icon(
+                            JamIcons.chevron_left,
                           ),
                         ),
-                      )
-                    ],
-                  ),
-                )
-              : Container();
-    } catch (e) {
-      print(e.toString());
-      Navigator.pop(context);
-      return Container();
-    }
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IconButton(
+                          onPressed: () {
+                            var link = url;
+                            Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                    transitionDuration:
+                                        Duration(milliseconds: 300),
+                                    pageBuilder: (context, animation,
+                                        secondaryAnimation) {
+                                      animation = Tween(begin: 0.0, end: 1.0)
+                                          .animate(animation);
+                                      return FadeTransition(
+                                          opacity: animation,
+                                          child: ClockOverlay(
+                                            link: link,
+                                          ));
+                                    },
+                                    fullscreenDialog: true,
+                                    opaque: false));
+                          },
+                          color: isLoading
+                              ? Theme.of(context).accentColor
+                              : colors[0].computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                          icon: Icon(
+                            JamIcons.clock,
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              )
+            : Container();
   }
 }
