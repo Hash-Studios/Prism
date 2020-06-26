@@ -207,21 +207,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] change package name
 - [ ] notifications (timed, random)
 - [x] likedimages hero implementation
-- [ ] merge liked list of wallpapers and likedimages
-- [ ] liked list to shared prefs
 - [x] named routing
 - [ ] code refactoring
 - [x] add more themes and remove dumb ones
-- [ ] liked images can't be opened (shows black screen)
 - [x] improve the wall cards (tap and hold feature) (look at pinterest app)
-- [ ] replace all loading screens with some animated things, it feels it got stuck
 - [x] fix dynamic color cards (looks really bad on 60% images)
 - [x] change info icon, and simplify applying steps
-- [ ] add fourth tab for homescreen setups
-- [ ] glitch effect fix in downloads (while opening)
-- [ ] improve drawer header UI as well as overall drawer
 - [x] improve app icon and use it throughout the app
-- [ ] change the onboarding layout / route
 - [ ] community walls + collections (add users to upload there own walls in the app)
 - [x] include other APIs too like pexels
 - [x] create sections like abstract, photos and others, other than the random feed
@@ -237,25 +229,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] Add color pallette from pexels images
 - [x] remove cupertino page transition from categories tab
 - [x] Add hero animation in bottom sheet arrow
-- [ ] fix font in account settings
+- [x] fix font in account settings
 - [ ] search tags working
 - [x] wallpaper download
-- [ ] wallpaper set
-- [ ] tap and hold to open menu
-- [ ] fix favgrid
+- [x] wallpaper set
+- [x] fix favgrid
 - [x] fix about/signin popup headline 5 to 6
 - [x] All rights reserved to provider name
 - [x] Show useful stuff in the info bar
 - [x] colorpicker results are the same (not working except rgb)
 - [ ] add analytics
-- [ ] add share button and implementation
+- [x] add share button and implementation
 - [ ] widgetize clockoverlay
-- [ ] fix continuity error overall
 - [ ] centrecrop java for search
-- [ ] fav, download, set wall button in focus menu
-- [ ] 4 buttons in shareView, favView, downloadView and wallpaperScreen
-hold to copy link
-like, dislike, set wall, download
 - [x] share page info not loading
 - [ ] pexels image not setting as wall from focussed menu and not downloading too
 - [ ] color download not working
@@ -263,12 +249,12 @@ like, dislike, set wall, download
 - [ ] favscreen show trashcan to remove favs
 - [ ] png, jpg error in old favs
 - [ ] fav wall setbutton, download button
-- [ ] found a bug section
-- [ ] we are recuiting section
-- [ ] refresh indicator in home screen
-- [ ] remove animation from bottom bar navigation
-- [ ] fix search bar ui (cursor color to pink, top sizedBox)
-- [ ] add downloads and fav chips bar
-- [ ] fix system overlays
-- [ ] fix see more in search
+- [x] found a bug section
+- [x] we are recuiting section
+- [x] refresh indicator in home screen
+- [x] remove animation from bottom bar navigation
+- [x] fix search bar ui (cursor color to pink, top sizedBox)
+- [x] add downloads and fav chips bar
+- [x] fix system overlays
+- [x] fix see more in search
 
