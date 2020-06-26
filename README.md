@@ -251,32 +251,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] login page ui advanced (remove google sign in button)
 - [x] login page ui
 - [x] change package name
-- [ ] notifications (timed, random)
 - [x] likedimages hero implementation
 - [x] named routing
-- [ ] code refactoring
 - [x] add more themes and remove dumb ones
 - [x] improve the wall cards (tap and hold feature) (look at pinterest app)
 - [x] fix dynamic color cards (looks really bad on 60% images)
 - [x] change info icon, and simplify applying steps
 - [x] improve app icon and use it throughout the app
-- [ ] community walls + collections (add users to upload there own walls in the app)
 - [x] include other APIs too like pexels
 - [x] create sections like abstract, photos and others, other than the random feed
 - [x] improve the overall tab UI (make it simplified)
 - [x] add refresh indicator on home screens
 - [x] clean pexels UI
 - [x] remove numbers from detail card
-- [ ] make tags clickable
 - [x] fix bug of add more walls when reloading
 - [x] Add shared pref to save current theme
 - [x] fix pop screen when not login in favs
-- [ ] fix multiple pushing of screens overall
 - [x] Add color pallette from pexels images
 - [x] remove cupertino page transition from categories tab
 - [x] Add hero animation in bottom sheet arrow
 - [x] fix font in account settings
-- [ ] search tags working
 - [x] wallpaper download
 - [x] wallpaper set
 - [x] fix favgrid
@@ -284,10 +278,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] All rights reserved to provider name
 - [x] Show useful stuff in the info bar
 - [x] colorpicker results are the same (not working except rgb)
-- [ ] add analytics
 - [x] add share button and implementation
 - [x] widgetize clockoverlay
-- [ ] centrecrop java for search
 - [x] share page info not loading
 - [x] pexels image not setting as wall from focussed menu and not downloading too
 - [x] color download not working
@@ -303,11 +295,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] add downloads and fav chips bar
 - [x] fix system overlays
 - [x] fix see more in search
-- [ ] download button add permission
+- [x] download button add permission
 - [ ] cloclk overlay fix in downloadwallviewScren
 - [ ] remove toasts errors
 - [ ] abstact page curated shows when see more
 - [ ] focussed menu details in fav page download not working
 - [ ] create a api popup
-
-
+- [ ] notifications (timed, random)
+- [ ] code refactoring
+- [ ] community walls + collections (add users to upload there own walls in the app)
+- [ ] make tags clickable
+- [ ] fix multiple pushing of screens overall
+- [ ] search tags working
+- [ ] add analytics
+- [ ] centrecrop java for search
