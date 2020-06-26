@@ -41,6 +41,7 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 - Download any wallpaper to Gallery
 - Secure data and favourites storage on Google Firebase
 - Search for Wallpapers by keyword
+- Check how the wallpaper will look with fake clock and app icons
 - Search for Wallpapers by color
 - Find wallpapers with similar color to one wallpaper
 - Set any wallpaper on the home screen, lock screen or both
@@ -95,27 +96,31 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 ## Demo
 
-**Themes**
-
-| ![](demo/3.jpg) | ![](demo/4.jpg) | ![](demo/5.jpg) | ![](demo/6.jpg) | ![](demo/7.jpg) |
-| :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
-|    Serene White |  Divine Black   |  Amoled Blue    | Classic Dark    | Monochrome Cyan |
-
 **Screens**
 
-| ![](demo/1.jpg) | ![](demo/11.jpg) | ![](demo/12.jpg) | ![](demo/18.jpg) | ![](demo/14.jpg) |
+| ![](demo/3.jpg) | ![](demo/4.jpg) | ![](demo/5.jpg) | ![](demo/6.jpg) | ![](demo/8.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Explore     |    Favourites    |    Downloads     |     Search       |     Settings     |
+|     Explore     |    Curated    |    Abstract     |     Nature       |     Color Based     |
 
 
-| ![](demo/15.jpg) | ![](demo/13.jpg)| ![](demo/8.jpg)       | ![](demo/9.jpg)  | ![](demo/16.jpg)|
+| ![](demo/7.jpg) | ![](demo/19.jpg) | ![](demo/29.jpg) | ![](demo/17.jpg) | ![](demo/26.jpg) |
+| :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
+|     Color Picker    |    Favourites    |    Downloads     |     Search       |     Profile     |
+
+
+| ![](demo/31.jpg) | ![](demo/34.jpg)| ![](demo/38.jpg)       | ![](demo/35.jpg)  | ![](demo/21.jpg)|
 | :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------: |
-|  Sign-in Page    |    Drawer       |  Wallpaper Display    | Wallpaper Info   | Loading Screen  |
+|  Sign-in Popup    |    Quick Action Menu       |  Wallpaper Display    | Wallpaper Info   | Clock for testing  |
 
+| ![](demo/1.jpg) | ![](demo/2.jpg) | ![](demo/10.jpg) | ![](demo/28.jpg) | ![](demo/47.jpg) |
+| :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
+|     Splash Screen    |    Loading Animation    |    Wallpaper Popup     |     Changelog       |     Wallpaper Info 2     |
 
-| ![](demo/21.jpg) | ![](demo/22.jpg)| ![](demo/17.jpg)| ![](demo/23.jpg) | ![](demo/24.jpg)|
+**Light Theme**
+
+| ![](demo/41.jpg) | ![](demo/42.jpg)| ![](demo/44.jpg)| ![](demo/46.jpg) | ![](demo/45.jpg)|
 | :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
-|  Like Animation  |Dislike Animation|  Search Page    |      Example 1   |      Example 2  |
+|  Explore  |Search|  Favourites    |      Downloads   |      Profile  |
 
 ## Dependencies
 
