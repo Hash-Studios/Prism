@@ -9,6 +9,7 @@ import 'package:Prism/ui/widgets/changelogPopUp.dart';
 import 'package:Prism/ui/widgets/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:share/share.dart';
@@ -498,7 +499,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(fontSize: 12),
                     ),
                     onTap: () async {
-                      // launch("https://wallhaven.cc/help/api");
+                      showDialog(
+                        context: context,
+                        child: AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(20),
+                            ),
+                          ),
+                          content: Container(
+                            height: 150,
+                            width: 250,
+                            child: Center(
+                              child: ListView.builder(
+                                  itemCount: 2,
+                                  shrinkWrap: true,
+                                  itemBuilder: (context, index) {
+                                    return ListTile(
+                                      leading: Icon(
+                                        index == 0
+                                            ? JamIcons.picture
+                                            : JamIcons.camera,
+                                        color: Theme.of(context).accentColor,
+                                      ),
+                                      title: Text(
+                                        index == 0
+                                            ? "WallHaven API"
+                                            : "Pexels API",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline4,
+                                      ),
+                                      onTap: index == 0
+                                          ? () async {
+                                              HapticFeedback.vibrate();
+                                              Navigator.of(context).pop();
+                                              launch(
+                                                  "https://wallhaven.cc/help/api");
+                                            }
+                                          : () async {
+                                              HapticFeedback.vibrate();
+                                              Navigator.of(context).pop();
+                                              launch(
+                                                  "https://www.pexels.com/api/");
+                                            },
+                                    );
+                                  }),
+                            ),
+                          ),
+                        ),
+                      );
                     }),
                 ListTile(
                     leading: Icon(
