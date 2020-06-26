@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:Prism/routing_constants.dart';
+import 'package:Prism/ui/widgets/headingChipBar.dart';
 import 'package:flutter/material.dart';
 
 class DownloadScreen extends StatefulWidget {
@@ -63,6 +64,12 @@ class _DownloadScreenState extends State<DownloadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: PreferredSize(
+        child: HeadingChipBar(
+          current: "Downloads",
+        ),
+        preferredSize: Size(double.infinity, 55),
+      ),
       backgroundColor: Theme.of(context).primaryColor,
       body: SafeArea(
         child: RefreshIndicator(

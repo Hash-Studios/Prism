@@ -101,7 +101,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
                 controller: controller,
                 shrinkWrap: true,
                 cacheExtent: 50000,
-                padding: EdgeInsets.fromLTRB(4, 4, 4, 4),
+                padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
                 itemCount:
                     Provider.of<FavouriteProvider>(context, listen: false)
                                 .liked
