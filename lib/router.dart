@@ -17,6 +17,7 @@ import 'package:Prism/ui/pages/wallpaperScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+String previousRoute=  HomeRoute;
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
     case SplashRoute:

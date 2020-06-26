@@ -6,8 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:Prism/main.dart' as main;
 
+import '../../router.dart';
+
 class BottomBar extends StatefulWidget {
   final Widget child;
+
   const BottomBar({
     this.child,
     Key key,
@@ -123,7 +126,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
   void showGooglePopUp(Function func) {
     print(isLoggedin);
     if (!isLoggedin) {
-      googleSignInPopUp(context,func);
+      googleSignInPopUp(context, func);
     } else {
       func();
     }
@@ -155,7 +158,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 icon:
                     Icon(JamIcons.home_f, color: Theme.of(context).accentColor),
                 onPressed: () {
-                  Navigator.of(context).pushNamedIfNotCurrent(HomeRoute);
+                  if (HomeRoute != previousRoute) {
+                    Navigator.of(context).pushNamedAndRemoveUntil(HomeRoute, ModalRoute.withName(previousRoute));
+                    setState(() {
+                      previousRoute = HomeRoute;
+                    });
+                  }
                 },
               ),
             ),
@@ -165,8 +173,13 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 icon:
                     Icon(JamIcons.search, color: Theme.of(context).accentColor),
                 onPressed: () {
-                  Navigator.of(context).pushNamedIfNotCurrent(SearchRoute);
-                },
+                  if (SearchRoute != previousRoute) {
+                    Navigator.of(context).pushNamedAndRemoveUntil(SearchRoute, ModalRoute.withName(previousRoute));
+                    setState(() {
+                      previousRoute = SearchRoute;
+                    });
+                  }
+                  },
               ),
             ),
             Padding(
@@ -176,7 +189,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
                     color: Theme.of(context).accentColor),
                 onPressed: () {
                   showGooglePopUp(() {
-                    Navigator.of(context).pushNamedIfNotCurrent(FavRoute);
+                    if (HomeRoute != previousRoute) {
+                      Navigator.of(context).pushNamedAndRemoveUntil(HomeRoute, ModalRoute.withName(previousRoute));
+                      setState(() {
+                        previousRoute = HomeRoute;
+                      });
+                    }
                   });
                 },
               ),
