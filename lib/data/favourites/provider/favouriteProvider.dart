@@ -69,7 +69,7 @@ class FavouriteProvider extends ChangeNotifier {
           .document(pexels.id.toString())
           .setData({
         "id": pexels.id.toString(),
-        "url": pexels.src["portrait"].toString(),
+        "url": pexels.src["original"].toString(),
         "thumb": pexels.src["medium"].toString(),
         "category": "",
         "provider": "Pexels",

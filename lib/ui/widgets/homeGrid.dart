@@ -393,7 +393,7 @@ class _HomeGridState extends State<HomeGrid>
                         widget.provider,
                         Provider.of<PexelsProvider>(context, listen: false)
                             .wallsP[index]
-                            .src["portrait"],
+                            .src["original"],
                         Provider.of<PexelsProvider>(context, listen: false)
                             .wallsP[index]
                             .src["medium"]);
@@ -412,7 +412,7 @@ class _HomeGridState extends State<HomeGrid>
                         "Pexels",
                         Provider.of<PexelsProvider>(context, listen: false)
                             .wallsC[index]
-                            .src["portrait"],
+                            .src["original"],
                         Provider.of<PexelsProvider>(context, listen: false)
                             .wallsC[index]
                             .src["medium"]);

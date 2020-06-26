@@ -218,7 +218,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] include other APIs too like pexels
 - [x] create sections like abstract, photos and others, other than the random feed
 - [x] improve the overall tab UI (make it simplified)
-- [ ] add refresh indicator on home screens
+- [x] add refresh indicator on home screens
 - [x] clean pexels UI
 - [x] remove numbers from detail card
 - [ ] make tags clickable
@@ -240,15 +240,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] colorpicker results are the same (not working except rgb)
 - [ ] add analytics
 - [x] add share button and implementation
-- [ ] widgetize clockoverlay
+- [x] widgetize clockoverlay
 - [ ] centrecrop java for search
 - [x] share page info not loading
-- [ ] pexels image not setting as wall from focussed menu and not downloading too
-- [ ] color download not working
-- [ ] second layer deep colors search crash
-- [ ] favscreen show trashcan to remove favs
-- [ ] png, jpg error in old favs
-- [ ] fav wall setbutton, download button
+- [x] pexels image not setting as wall from focussed menu and not downloading too
+- [x] color download not working
+- [x] second layer deep colors search crash
+- [x] favscreen show trashcan to remove favs
+- [x] png, jpg error in old favs
+- [x] fav wall setbutton, download button
 - [x] found a bug section
 - [x] we are recuiting section
 - [x] refresh indicator in home screen

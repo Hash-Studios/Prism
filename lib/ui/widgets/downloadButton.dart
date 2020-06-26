@@ -72,6 +72,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     setState(() {
       isLoading = true;
     });
+    print(widget.link);
     toasts.startDownload();
     GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
       toasts.completedDownload();
