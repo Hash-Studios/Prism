@@ -57,6 +57,9 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 ## Changelog
 
 # v2.3.0
+- Major bug fixes and improvements
+
+# v2.3.0
 - Changed app icon and splash screen animations
 - Added backwards compatibility for v1
 - Redesigned profile page UI
