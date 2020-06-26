@@ -1304,7 +1304,7 @@ class FocusedMenuDetails extends StatelessWidget {
                       : provider == "Pexels"
                           ? Provider.of<PexelsProvider>(context, listen: false)
                               .wallsP[index]
-                              .url
+                              .src["portrait"]
                               .toString()
                           : provider == "Liked"
                               ? Provider.of<FavouriteProvider>(context,
@@ -1401,7 +1401,7 @@ class FocusedMenuDetails extends StatelessWidget {
                       : provider == "Pexels"
                           ? Provider.of<PexelsProvider>(context, listen: false)
                               .wallsP[index]
-                              .url
+                              .src["portrait"]
                               .toString()
                           : provider == "Liked"
                               ? Provider.of<FavouriteProvider>(context,
