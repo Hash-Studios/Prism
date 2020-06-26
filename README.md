@@ -56,22 +56,22 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 ## Changelog
 
-# v2.3.0
+### v2.3.5
 - Major bug fixes and improvements
 
-# v2.3.0
+### v2.3.0
 - Changed app icon and splash screen animations
 - Added backwards compatibility for v1
 - Redesigned profile page UI
 - Fixed favourites and downloads
 
-# v2.2.0
+### v2.2.0
 - Added clock overlay to test wallpapers
 - Added ability to share wallpapers
 - Added ability to clear app cache
 - Major bug fixes and tweaks
 
-# v2.0.0
+### v2.0.0
 - Completely new redesigned UI
 - Added Pexels API support
 - Added new color based search
@@ -81,7 +81,7 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 - Added new quick wallpaper actions
 - Added new palette generator
 
-# v1.0.0
+### v1.0.0
 - Added the app on Play Store
 - Wallpapers from WallHaven
 - Multiple Themes supported (including dark and light themes)
@@ -106,7 +106,7 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 |     Explore     |    Curated    |    Abstract     |     Nature       |     Color Based     |
 
 
-| ![](demo/7.jpg) | ![](demo/19.jpg) | ![](demo/29.jpg) | ![](demo/17.jpg) | ![](demo/26.jpg) |
+| ![](demo/7.jpg) | ![](demo/19.jpg) | ![](demo/48.jpg) | ![](demo/17.jpg) | ![](demo/26.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Color Picker    |    Favourites    |    Downloads     |     Search       |     Profile     |
 
@@ -121,7 +121,7 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 **Light Theme**
 
-| ![](demo/41.jpg) | ![](demo/42.jpg)| ![](demo/44.jpg)| ![](demo/46.jpg) | ![](demo/45.jpg)|
+| ![](demo/41.jpg) | ![](demo/42.jpg)| ![](demo/44.jpg)| ![](demo/49.jpg) | ![](demo/45.jpg)|
 | :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
 |  Explore  |Search|  Favourites    |      Downloads   |      Profile  |
 
