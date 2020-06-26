@@ -34,7 +34,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([]);
+    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
     try {
       return Scaffold(
         key: _scaffoldKey,
