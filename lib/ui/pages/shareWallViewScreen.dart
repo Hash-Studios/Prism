@@ -4,6 +4,7 @@ import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/clockOverlay.dart';
 import 'package:Prism/ui/widgets/downloadButton.dart';
 import 'package:Prism/ui/widgets/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/setWallpaperButton.dart';
@@ -476,7 +477,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                   .toString()
                               : "",
                     ),
-                    SetWallpaperButton(url:"" ,),
+                    SetWallpaperButton(
+                      url: "",
+                    ),
                     provider == "WallHaven"
                         ? FavouriteWallpaperButton(
                             id: Provider.of<WallHavenProvider>(context,
@@ -846,94 +849,5 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
       Navigator.pop(context);
       return Container();
     }
-  }
-}
-
-class ClockOverlay extends StatefulWidget {
-  final String link;
-  ClockOverlay({@required this.link});
-  @override
-  _ClockOverlayState createState() => _ClockOverlayState();
-}
-
-class _ClockOverlayState extends State<ClockOverlay> {
-  @override
-  Widget build(BuildContext context) {
-    var date = DateTime.now().toString();
-    var hour = DateTime.now().hour.toString();
-    var minute = DateTime.now().minute.toString();
-    return Material(
-      child: Stack(
-        children: <Widget>[
-          OptimizedCacheImage(
-            imageUrl: widget.link,
-            imageBuilder: (context, imageProvider) => Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: imageProvider,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height / 2,
-            width: MediaQuery.of(context).size.width,
-            child: Center(
-              child: Text(
-                hour + date.substring(13, 16),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: "Roboto",
-                  fontSize: 80,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 100,
-            child: Container(
-              width: MediaQuery.of(context).size.width,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Image.asset(
-                    "assets/images/dialer.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                  Image.asset(
-                    "assets/images/messages.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                  Image.asset(
-                    "assets/images/playstore.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                  Image.asset(
-                    "assets/images/chrome.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                  Image.asset(
-                    "assets/images/camera.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          GestureDetector(
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
-              child: Text(""),
-            ),
-            onTap: () => {Navigator.pop(context)},
-          )
-        ],
-      ),
-    );
   }
 }
