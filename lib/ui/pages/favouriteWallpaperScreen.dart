@@ -581,7 +581,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([]);
+    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
     // try {
     return Provider.of<FavouriteProvider>(context, listen: false).liked[index]
                     ["provider"] ==
