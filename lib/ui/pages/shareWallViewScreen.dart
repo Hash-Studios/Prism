@@ -51,7 +51,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
         ];
       });
     } catch (e) {
-      toasts.error(e.toString());
+      // toasts.error(e.toString());
     }
     paletteGenerator = await PaletteGenerator.fromImageProvider(image,
         maximumColorCount: 20, timeout: Duration(seconds: 120));
