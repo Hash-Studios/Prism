@@ -298,4 +298,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] add downloads and fav chips bar
 - [x] fix system overlays
 - [x] fix see more in search
+- [ ] download button add permission
+- [ ] cloclk overlay fix in downloadwallviewScren
+- [ ] remove toasts errors
+- [ ] abstact page curated shows when see more
+- [ ] focussed menu details in fav page download not working
+- [ ] create a api popup
+
 
