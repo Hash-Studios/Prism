@@ -137,7 +137,7 @@ public class MainActivity extends FlutterActivity {
     }
 }
 
-class SetWallPaperTask extends AsyncTask<Pair<Bitmap,String>,Boolean,Boolean>{
+class SetWallPaperTask extends AsyncTask<Pair<Bitmap,String>,Boolean,Boolean> {
 
     private final Context mContext;
     public SetWallPaperTask(final Context context) {
