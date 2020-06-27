@@ -1,4 +1,6 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
@@ -159,7 +161,27 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   toasts.successLog();
                   main.prefs.setBool("isLoggedin", true);
                   Navigator.pop(context);
-                  func();
+                  FirebaseMessaging f = new FirebaseMessaging();
+                  f.getToken().then((value) {
+                  Firestore.instance.collection('tokens').document(value.toString()).updateData({"devtoken":value.toString()}).then((value) {
+                      func();
+                    });
+                  }).catchError((onError){
+                    Navigator.pop(context);
+                    toasts.error(onError);
+                  });
+                }).catchError((e) {
+                  print(e);
+                  //For Debug Mode
+//                  FirebaseMessaging f = new FirebaseMessaging();
+//                  f.getToken().then((value) {
+//                    print(value);
+//                    Firestore.instance.collection('tokens').document(main.prefs.getString('id')).setData({"devtoken":value.toString()}).then((value) {
+//                    });
+//                  }).catchError((onError){
+//                    Navigator.pop(context);
+//                    toasts.error(onError);
+//                  });
                 }).catchError((e) {
                   print(e);
                   Navigator.pop(context);
