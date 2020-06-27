@@ -146,10 +146,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                     .returnTheme() ==
                                 ThemeType.Dark
                             ? SvgPicture.asset(
-                                "assets/images/loader dark.svg",
+                                "assets/images/downloads dark.svg",
                               )
                             : SvgPicture.asset(
-                                "assets/images/loader light.svg",
+                                "assets/images/downloads light.svg",
                               ),
                       ),
                       SizedBox(
