@@ -22,6 +22,7 @@ import java.io.IOException;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "flutter.prism.set_wallpaper";
+    public static  MethodChannel.Result res;
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
@@ -29,6 +30,8 @@ public class MainActivity extends FlutterActivity {
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
                 .setMethodCallHandler(
                         (call, result) -> {
+
+                            res = result;
                             if (call.method.equals("set_lock_wallpaper")){
 
                                 String url = call.argument("url"); // .argument returns the correct type
@@ -40,30 +43,34 @@ public class MainActivity extends FlutterActivity {
                                         .into(new CustomTarget<Bitmap>() {
                                             @Override
                                             public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+"Ready");
-                                                WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                                                try {
-                                                    wallpaperManager.setBitmap(resource,null,true,WallpaperManager.FLAG_LOCK);
-                                                    // Intent intent = new Intent("com.android.camera.action.CROP");
-                                                    // intent.setType("image/*");
-                                                    // Toast.makeText(this, "Wallpaper set!", Toast.LENGTH_SHORT).show();
-//                                                    Intent wall_intent =  new Intent(Intent.ACTION_ATTACH_DATA);
-//                                                    wall_intent.setDataAndType(Uri.parse(url), "image/*");
-//                                                    wall_intent.putExtra("mimeType", "image/*");
-//                                                    Intent chooserIntent = Intent.createChooser(wall_intent,
-//                                                            "Set As");
-//                                                    chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                                                    chooserIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                                    result.success(true);
-//                                                    try {
-//                                                        getApplicationContext().startActivity(chooserIntent);
-//                                                    }catch (Exception e)
-//                                                    {
-//                                                        e.printStackTrace();
+                                                Log.i("Arguments ", "configureFlutterEngine: "+"Ready 1");
+                                                SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
+                                                setWallPaperTask.execute(new Pair(resource,"1"));
+//                                                WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+//                                                try {
+//                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//                                                        wallpaperManager.setBitmap(resource,null,true,WallpaperManager.FLAG_LOCK);
 //                                                    }
-                                                } catch (IOException ex) {
-                                                    ex.printStackTrace();
-                                                }
+//                                                    // Intent intent = new Intent("com.android.camera.action.CROP");
+//                                                    // intent.setType("image/*");
+//                                                    // Toast.makeText(this, "Wallpaper set!", Toast.LENGTH_SHORT).show();
+////                                                    Intent wall_intent =  new Intent(Intent.ACTION_ATTACH_DATA);
+////                                                    wall_intent.setDataAndType(Uri.parse(url), "image/*");
+////                                                    wall_intent.putExtra("mimeType", "image/*");
+////                                                    Intent chooserIntent = Intent.createChooser(wall_intent,
+////                                                            "Set As");
+////                                                    chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+////                                                    chooserIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//                                                    result.success(true);
+////                                                    try {
+////                                                        getApplicationContext().startActivity(chooserIntent);
+////                                                    }catch (Exception e)
+////                                                    {
+////                                                        e.printStackTrace();
+////                                                    }
+//                                                } catch (IOException ex) {
+//                                                    ex.printStackTrace();
+//                                                }
                                             }
                                             @Override
                                             public void onLoadCleared(@Nullable Drawable placeholder) {
@@ -82,13 +89,15 @@ public class MainActivity extends FlutterActivity {
                                             @Override
                                             public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
                                                 android.util.Log.i("Arguments ", "configureFlutterEngine: "+"Ready");
-                                                WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                                                try {
-                                                    wallpaperManager.setBitmap(resource,null,true,WallpaperManager.FLAG_SYSTEM);
-                                                    result.success(true);
-                                                } catch (IOException ex) {
-                                                    ex.printStackTrace();
-                                                }
+                                                SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
+                                                setWallPaperTask.execute(new Pair  (resource,"2"));
+//                                                WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+//                                                try {
+//                                                    wallpaperManager.setBitmap(resource,null,true,WallpaperManager.FLAG_SYSTEM);
+//                                                    result.success(true);
+//                                                } catch (IOException ex) {
+//                                                    ex.printStackTrace();
+//                                                }
                                             }
                                             @Override
                                             public void onLoadCleared(@Nullable Drawable placeholder) {
@@ -107,13 +116,15 @@ public class MainActivity extends FlutterActivity {
                                             @Override
                                             public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
                                                 android.util.Log.i("Arguments ", "configureFlutterEngine: "+"Ready");
-                                                WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
-                                                try {
-                                                    wallpaperManager.setBitmap(resource);
-                                                    result.success(true);
-                                                } catch (IOException ex) {
-                                                    ex.printStackTrace();
-                                                }
+                                                SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
+                                                setWallPaperTask.execute(new Pair(resource,"3"));
+//                                                WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+//                                                try {
+//                                                    wallpaperManager.setBitmap(resource);
+//                                                    result.success(true);
+//                                                } catch (IOException ex) {
+//                                                    ex.printStackTrace();
+//                                                }
                                             }
                                             @Override
                                             public void onLoadCleared(@Nullable Drawable placeholder) {
@@ -123,5 +134,69 @@ public class MainActivity extends FlutterActivity {
                             }
                         }
                 );
+    }
+}
+
+class SetWallPaperTask extends AsyncTask<Pair<Bitmap,String>,Boolean,Boolean>{
+
+    private final Context mContext;
+    public SetWallPaperTask(final Context context) {
+        mContext = context;
+    }
+
+    @Override
+    protected final Boolean doInBackground(Pair<Bitmap, String>... pairs) {
+        switch (pairs[0].second) {
+            case "1": {
+                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        wallpaperManager.setBitmap(pairs[0].first, null, true, WallpaperManager.FLAG_LOCK);
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
+                break;
+            }
+            case "2": {
+                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        wallpaperManager.setBitmap(pairs[0].first, null, true, WallpaperManager.FLAG_SYSTEM);
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
+                break;
+            }
+            case "3": {
+                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
+                try {
+                    wallpaperManager.setBitmap(pairs[0].first);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    protected void onCancelled() {
+        super.onCancelled();
+    }
+
+    @Override
+    protected void onPostExecute(Boolean aBoolean) {
+        myMethod(aBoolean);
+    }
+
+    private void myMethod(Boolean result) {
+        MainActivity.res.success(result);
     }
 }
