@@ -13,7 +13,7 @@ Prism is a beautiful open-source wallpapers app for Android. It is built with Da
 
 Prism relies on [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/) API as its source of beautiful and large collection of Wallpapers. By utilising their API, it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to make the smartphone customisation experience, smooth and easy, yet giving the users amazing wallpapers, and features like downloading infinite (as much your storage allows) wallpapers or sharing the ones they like with others.
 
-Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated everyday. It also features categories like Abstract, Nature if you are into these. Then it allows one to find wallpapers on the basis of colors, i.e. you can find wallpapers with a color that matches your icons or homescreen setup. Not even that, it also shows you a pallete of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
+Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated every day. It also features categories like Abstract, Nature if you are into these. Then it allows one to find wallpapers on the basis of colors, i.e. you can find wallpapers with a color that matches your icons or homescreen setup. Not even that, it also shows you a palette of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
 
 Main features like finding and setting up wallpapers don't rquire Google Sign In, while features like Favourites or Downloads require you to sign up using Google. This signup is facilitated by Google Firebase, so it is secure and we only get your name, email and profile photo for identification purposes. The app also has Dark Mode, if you want to save your phone's battery while getting in love with those wallpapers. The app also allows users to share wallpapers with others by giving them a unique link for every wallpaper, using Dynamic Links so that anyone can directly view the wallpaper.
 
@@ -35,7 +35,7 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
 - Dark Mode supported
 - Google Sign In is optional
-- Low Internet usage due to minimal loading and persistant data using Provider
+- Low Internet usage due to minimal loading and persistent data using Provider
 - Home Feed is infinite, never ends
 - Save Liked Images for later (works even after uninstalling the app)
 - Download any wallpaper to Gallery
