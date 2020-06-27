@@ -106,7 +106,7 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 |     Explore     |    Curated    |    Abstract     |     Nature       |     Color Based     |
 
 
-| ![](demo/7.jpg) | ![](demo/19.jpg) | ![](demo/48.jpg) | ![](demo/17.jpg) | ![](demo/26.jpg) |
+| ![](demo/7.jpg) | ![](demo/19.jpg) | ![](demo/48.jpg) | ![](demo/52.jpg) | ![](demo/26.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Color Picker    |    Favourites    |    Downloads     |     Search       |     Profile     |
 
@@ -121,7 +121,7 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 **Light Theme**
 
-| ![](demo/51.jpg) | ![](demo/42.jpg)| ![](demo/44.jpg)| ![](demo/49.jpg) | ![](demo/45.jpg)|
+| ![](demo/51.jpg) | ![](demo/53.jpg)| ![](demo/44.jpg)| ![](demo/49.jpg) | ![](demo/45.jpg)|
 | :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
 |  Explore  |Search|  Favourites    |      Downloads   |      Profile  |
 
