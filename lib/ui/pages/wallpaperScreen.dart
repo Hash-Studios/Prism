@@ -1,6 +1,7 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/clockOverlay.dart';
@@ -22,6 +23,14 @@ class WallpaperScreen extends StatefulWidget {
 }
 
 class _WallpaperScreenState extends State<WallpaperScreen> {
+  Future<bool> onWillPop() async {
+    String route = currentRoute;
+    currentRoute = previousRoute;
+    previousRoute = route;
+    print(currentRoute);
+    return true;
+  }
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String provider;
   int index;
@@ -50,6 +59,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
 
   @override
   void initState() {
+    print("Wallpaper Screen");
     super.initState();
     provider = widget.arguments[0];
     index = widget.arguments[1];
@@ -77,6 +87,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
               Center(
                 child: GestureDetector(
                   onTap: () {
+                    String route = currentRoute;
+                    currentRoute = previousRoute;
+                    previousRoute = route;
+                    print(currentRoute);
                     Navigator.pop(context);
                   },
                   child: Padding(
@@ -105,7 +119,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                             width: MediaQuery.of(context).size.width / 8,
                           ),
                           onTap: () {
-                            // Navigator.pop(context);
+                            // // String route = currentRoute;
+                            // currentRoute = previousRoute;
+                            // previousRoute = route;
+                            // print(currentRoute);
+                            Navigator.pop(context);
                             SystemChrome.setEnabledSystemUIOverlays(
                                 [SystemUiOverlay.top, SystemUiOverlay.bottom]);
                             Future.delayed(Duration(seconds: 0))
@@ -817,14 +835,14 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                               ? Provider.of<PexelsProvider>(context,
                                       listen: false)
                                   .wallsP[index]
-                                  .url
+                                  .src["original"]
                                   .toString()
                               : provider.length > 6 &&
                                       provider.substring(0, 6) == "Colors"
                                   ? Provider.of<PexelsProvider>(context,
                                           listen: false)
                                       .wallsC[index]
-                                      .url
+                                      .src["original"]
                                       .toString()
                                   : Provider.of<WallHavenProvider>(context,
                                           listen: false)
@@ -840,12 +858,12 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                             : provider == "Pexels"
                                 ? Provider.of<PexelsProvider>(context)
                                     .wallsP[index]
-                                    .src["portrait"]
+                                    .src["original"]
                                 : provider.length > 6 &&
                                         provider.substring(0, 6) == "Colors"
                                     ? Provider.of<PexelsProvider>(context)
                                         .wallsC[index]
-                                        .src["portrait"]
+                                        .src["original"]
                                     : Provider.of<WallHavenProvider>(context)
                                         .wallsS[index]
                                         .path),
@@ -860,6 +878,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                             wallhaven: Provider.of<WallHavenProvider>(context,
                                     listen: false)
                                 .walls[index],
+                            trash: false,
                           )
                         : provider == "Pexels"
                             ? FavouriteWallpaperButton(
@@ -872,6 +891,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 pexels: Provider.of<PexelsProvider>(context,
                                         listen: false)
                                     .wallsP[index],
+                                trash: false,
                               )
                             : provider == "Liked"
                                 ? FavouriteWallpaperButton(
@@ -884,6 +904,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                             listen: false)
                                         .liked[index]["provider"]
                                         .toString(),
+                                    trash: true,
                                   )
                                 : provider.length > 6 &&
                                         provider.substring(0, 6) == "Colors"
@@ -897,7 +918,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         pexels: Provider.of<PexelsProvider>(
                                                 context,
                                                 listen: false)
-                                            .wallsC[index])
+                                            .wallsC[index],
+                                        trash: false,
+                                      )
                                     : FavouriteWallpaperButton(
                                         id: Provider.of<WallHavenProvider>(
                                                 context,
@@ -911,6 +934,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                     context,
                                                     listen: false)
                                                 .wallsS[index],
+                                        trash: false,
                                       ),
                     provider == "WallHaven"
                         ? ShareButton(
@@ -933,7 +957,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                 provider: provider,
                                 url: Provider.of<PexelsProvider>(context, listen: false)
                                     .wallsP[index]
-                                    .src["portrait"],
+                                    .src["original"],
                                 thumbUrl:
                                     Provider.of<PexelsProvider>(context, listen: false)
                                         .wallsP[index]
@@ -944,7 +968,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         .wallsC[index]
                                         .id,
                                     provider: "Pexels",
-                                    url: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["portrait"],
+                                    url: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["original"],
                                     thumbUrl: Provider.of<PexelsProvider>(context, listen: false).wallsC[index].src["medium"])
                                 : ShareButton(id: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].id, provider: "WallHaven", url: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].path, thumbUrl: Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].thumbs["original"])
                   ],
@@ -968,171 +992,32 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
     // try {
-    return provider == "WallHaven"
-        ? Scaffold(
-            key: _scaffoldKey,
-            backgroundColor:
-                isLoading ? Theme.of(context).primaryColor : colors[0],
-            body: Stack(
-              children: <Widget>[
-                OptimizedCacheImage(
-                  imageUrl:
-                      Provider.of<WallHavenProvider>(context).walls[index].path,
-                  imageBuilder: (context, imageProvider) => Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: imageProvider,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  placeholder: (context, url) => Container(
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation(
-                          isLoading
-                              ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    child: Center(
-                      child: Icon(
-                        JamIcons.close_circle_f,
-                        color: isLoading
-                            ? Theme.of(context).accentColor
-                            : colors[0].computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: GestureDetector(
-                    child: Container(
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: provider == "WallHaven"
+          ? Scaffold(
+              key: _scaffoldKey,
+              backgroundColor:
+                  isLoading ? Theme.of(context).primaryColor : colors[0],
+              body: Stack(
+                children: <Widget>[
+                  OptimizedCacheImage(
+                    imageUrl: Provider.of<WallHavenProvider>(context)
+                        .walls[index]
+                        .path,
+                    imageBuilder: (context, imageProvider) => Container(
                       decoration: BoxDecoration(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
-                          ),
-                          color: Color(0xFF2F2F2F)),
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height / 20,
-                        child: Center(
-                          child: Icon(
-                            JamIcons.chevron_up,
-                            color: Colors.white,
-                          ),
+                        image: DecorationImage(
+                          image: imageProvider,
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
-                    onTap: !isLoading ? _showBottomSheetCallback : () {},
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      color: isLoading
-                          ? Theme.of(context).accentColor
-                          : colors[0].computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
-                      icon: Icon(
-                        JamIcons.chevron_left,
-                      ),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: IconButton(
-                      onPressed: () {
-                        var link = Provider.of<WallHavenProvider>(context,
-                                listen: false)
-                            .walls[index]
-                            .path;
-                        Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                                transitionDuration: Duration(milliseconds: 300),
-                                pageBuilder:
-                                    (context, animation, secondaryAnimation) {
-                                  animation = Tween(begin: 0.0, end: 1.0)
-                                      .animate(animation);
-                                  return FadeTransition(
-                                      opacity: animation,
-                                      child: ClockOverlay(
-                                        link: link,
-                                      ));
-                                },
-                                fullscreenDialog: true,
-                                opaque: false));
-                      },
-                      color: isLoading
-                          ? Theme.of(context).accentColor
-                          : colors[0].computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
-                      icon: Icon(
-                        JamIcons.clock,
-                      ),
-                    ),
-                  ),
-                )
-              ],
-            ),
-          )
-        : provider == "Pexels"
-            ? Scaffold(
-                key: _scaffoldKey,
-                backgroundColor:
-                    isLoading ? Theme.of(context).primaryColor : colors[0],
-                body: Stack(
-                  children: <Widget>[
-                    OptimizedCacheImage(
-                      imageUrl: Provider.of<PexelsProvider>(context)
-                          .wallsP[index]
-                          .src["portrait"],
-                      imageBuilder: (context, imageProvider) => Container(
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: imageProvider,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      placeholder: (context, url) => Container(
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation(
-                              isLoading
-                                  ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        child: Center(
-                          child: Icon(
-                            JamIcons.close_circle_f,
-                            color: isLoading
+                    placeholder: (context, url) => Container(
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation(
+                            isLoading
                                 ? Theme.of(context).accentColor
                                 : colors[0].computeLuminance() > 0.5
                                     ? Colors.black
@@ -1141,263 +1026,133 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                         ),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: GestureDetector(
-                        child: Container(
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                topRight: Radius.circular(20),
-                              ),
-                              color: Color(0xFF2F2F2F)),
-                          child: SizedBox(
-                            width: MediaQuery.of(context).size.width,
-                            height: MediaQuery.of(context).size.height / 20,
-                            child: Center(
-                              child: Icon(
-                                JamIcons.chevron_up,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        onTap: !isLoading ? _showBottomSheetCallback : () {},
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: IconButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                    errorWidget: (context, url, error) => Container(
+                      child: Center(
+                        child: Icon(
+                          JamIcons.close_circle_f,
                           color: isLoading
                               ? Theme.of(context).accentColor
                               : colors[0].computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                          icon: Icon(
-                            JamIcons.chevron_left,
-                          ),
                         ),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: IconButton(
-                          onPressed: () {
-                            var link = Provider.of<PexelsProvider>(context,
-                                    listen: false)
-                                .wallsP[index]
-                                .src["portrait"];
-                            Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                    transitionDuration:
-                                        Duration(milliseconds: 300),
-                                    pageBuilder: (context, animation,
-                                        secondaryAnimation) {
-                                      animation = Tween(begin: 0.0, end: 1.0)
-                                          .animate(animation);
-                                      return FadeTransition(
-                                          opacity: animation,
-                                          child: ClockOverlay(
-                                            link: link,
-                                          ));
-                                    },
-                                    fullscreenDialog: true,
-                                    opaque: false));
-                          },
-                          color: isLoading
-                              ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                          icon: Icon(
-                            JamIcons.clock,
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: GestureDetector(
+                      child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              topRight: Radius.circular(20),
+                            ),
+                            color: Color(0xFF2F2F2F)),
+                        child: SizedBox(
+                          width: MediaQuery.of(context).size.width,
+                          height: MediaQuery.of(context).size.height / 20,
+                          child: Center(
+                            child: Icon(
+                              JamIcons.chevron_up,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    )
-                  ],
-                ),
-              )
-            : provider.length > 6 && provider.substring(0, 6) == "Colors"
-                ? Scaffold(
-                    key: _scaffoldKey,
-                    backgroundColor:
-                        isLoading ? Theme.of(context).primaryColor : colors[0],
-                    body: Stack(
-                      children: <Widget>[
-                        Provider.of<PexelsProvider>(context).wallsC == null
-                            ? Container()
-                            : OptimizedCacheImage(
-                                imageUrl: Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .wallsC[index]
-                                    .src["portrait"],
-                                imageBuilder: (context, imageProvider) =>
-                                    Container(
-                                  decoration: BoxDecoration(
-                                    image: DecorationImage(
-                                      image: imageProvider,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                                placeholder: (context, url) => Container(
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation(
-                                        isLoading
-                                            ? Theme.of(context).accentColor
-                                            : colors[0].computeLuminance() > 0.5
-                                                ? Colors.black
-                                                : Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                errorWidget: (context, url, error) => Container(
-                                  child: Center(
-                                    child: Icon(
-                                      JamIcons.close_circle_f,
-                                      color: isLoading
-                                          ? Theme.of(context).accentColor
-                                          : colors[0].computeLuminance() > 0.5
-                                              ? Colors.black
-                                              : Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: GestureDetector(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(20),
-                                    topRight: Radius.circular(20),
-                                  ),
-                                  color: Color(0xFF2F2F2F)),
-                              child: SizedBox(
-                                width: MediaQuery.of(context).size.width,
-                                height: MediaQuery.of(context).size.height / 20,
-                                child: Center(
-                                  child: Icon(
-                                    JamIcons.chevron_up,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            onTap:
-                                !isLoading ? _showBottomSheetCallback : () {},
-                          ),
+                      onTap: !isLoading ? _showBottomSheetCallback : () {},
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: IconButton(
+                        onPressed: () {
+                          String route = currentRoute;
+                          currentRoute = previousRoute;
+                          previousRoute = route;
+                          print(currentRoute);
+                          Navigator.pop(context);
+                        },
+                        color: isLoading
+                            ? Theme.of(context).accentColor
+                            : colors[0].computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                        icon: Icon(
+                          JamIcons.chevron_left,
                         ),
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: IconButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              color: isLoading
-                                  ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                              icon: Icon(
-                                JamIcons.chevron_left,
-                              ),
-                            ),
-                          ),
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: IconButton(
+                        onPressed: () {
+                          var link = Provider.of<WallHavenProvider>(context,
+                                  listen: false)
+                              .walls[index]
+                              .path;
+                          Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                  transitionDuration:
+                                      Duration(milliseconds: 300),
+                                  pageBuilder:
+                                      (context, animation, secondaryAnimation) {
+                                    animation = Tween(begin: 0.0, end: 1.0)
+                                        .animate(animation);
+                                    return FadeTransition(
+                                        opacity: animation,
+                                        child: ClockOverlay(
+                                          link: link,
+                                          file: false,
+                                        ));
+                                  },
+                                  fullscreenDialog: true,
+                                  opaque: false));
+                        },
+                        color: isLoading
+                            ? Theme.of(context).accentColor
+                            : colors[0].computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                        icon: Icon(
+                          JamIcons.clock,
                         ),
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: IconButton(
-                              onPressed: () {
-                                var link = Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .wallsC[index]
-                                    .src["portrait"];
-                                Navigator.push(
-                                    context,
-                                    PageRouteBuilder(
-                                        transitionDuration:
-                                            Duration(milliseconds: 300),
-                                        pageBuilder: (context, animation,
-                                            secondaryAnimation) {
-                                          animation =
-                                              Tween(begin: 0.0, end: 1.0)
-                                                  .animate(animation);
-                                          return FadeTransition(
-                                              opacity: animation,
-                                              child: ClockOverlay(
-                                                link: link,
-                                              ));
-                                        },
-                                        fullscreenDialog: true,
-                                        opaque: false));
-                              },
-                              color: isLoading
-                                  ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                              icon: Icon(
-                                JamIcons.clock,
-                              ),
-                            ),
-                          ),
-                        )
-                      ],
+                      ),
                     ),
                   )
-                : Scaffold(
-                    key: _scaffoldKey,
-                    backgroundColor:
-                        isLoading ? Theme.of(context).primaryColor : colors[0],
-                    body: Stack(
-                      children: <Widget>[
-                        OptimizedCacheImage(
-                          imageUrl: Provider.of<WallHavenProvider>(context)
-                              .wallsS[index]
-                              .path,
-                          imageBuilder: (context, imageProvider) => Container(
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: imageProvider,
-                                fit: BoxFit.cover,
-                              ),
+                ],
+              ),
+            )
+          : provider == "Pexels"
+              ? Scaffold(
+                  key: _scaffoldKey,
+                  backgroundColor:
+                      isLoading ? Theme.of(context).primaryColor : colors[0],
+                  body: Stack(
+                    children: <Widget>[
+                      OptimizedCacheImage(
+                        imageUrl: Provider.of<PexelsProvider>(context)
+                            .wallsP[index]
+                            .src["portrait"],
+                        imageBuilder: (context, imageProvider) => Container(
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: imageProvider,
+                              fit: BoxFit.cover,
                             ),
                           ),
-                          placeholder: (context, url) => Container(
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(
-                                  isLoading
-                                      ? Theme.of(context).accentColor
-                                      : colors[0].computeLuminance() > 0.5
-                                          ? Colors.black
-                                          : Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            child: Center(
-                              child: Icon(
-                                JamIcons.close_circle_f,
-                                color: isLoading
+                        ),
+                        placeholder: (context, url) => Container(
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation(
+                                isLoading
                                     ? Theme.of(context).accentColor
                                     : colors[0].computeLuminance() > 0.5
                                         ? Colors.black
@@ -1406,97 +1161,402 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                             ),
                           ),
                         ),
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: GestureDetector(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(20),
-                                    topRight: Radius.circular(20),
+                        errorWidget: (context, url, error) => Container(
+                          child: Center(
+                            child: Icon(
+                              JamIcons.close_circle_f,
+                              color: isLoading
+                                  ? Theme.of(context).accentColor
+                                  : colors[0].computeLuminance() > 0.5
+                                      ? Colors.black
+                                      : Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: GestureDetector(
+                          child: Container(
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                ),
+                                color: Color(0xFF2F2F2F)),
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width,
+                              height: MediaQuery.of(context).size.height / 20,
+                              child: Center(
+                                child: Icon(
+                                  JamIcons.chevron_up,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          onTap: !isLoading ? _showBottomSheetCallback : () {},
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () {
+                              String route = currentRoute;
+                              currentRoute = previousRoute;
+                              previousRoute = route;
+                              print(currentRoute);
+                              Navigator.pop(context);
+                            },
+                            color: isLoading
+                                ? Theme.of(context).accentColor
+                                : colors[0].computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                            icon: Icon(
+                              JamIcons.chevron_left,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () {
+                              var link = Provider.of<PexelsProvider>(context,
+                                      listen: false)
+                                  .wallsP[index]
+                                  .src["portrait"];
+                              Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                      transitionDuration:
+                                          Duration(milliseconds: 300),
+                                      pageBuilder: (context, animation,
+                                          secondaryAnimation) {
+                                        animation = Tween(begin: 0.0, end: 1.0)
+                                            .animate(animation);
+                                        return FadeTransition(
+                                            opacity: animation,
+                                            child: ClockOverlay(
+                                              link: link,
+                                              file: false,
+                                            ));
+                                      },
+                                      fullscreenDialog: true,
+                                      opaque: false));
+                            },
+                            color: isLoading
+                                ? Theme.of(context).accentColor
+                                : colors[0].computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                            icon: Icon(
+                              JamIcons.clock,
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                )
+              : provider.length > 6 && provider.substring(0, 6) == "Colors"
+                  ? Scaffold(
+                      key: _scaffoldKey,
+                      backgroundColor: isLoading
+                          ? Theme.of(context).primaryColor
+                          : colors[0],
+                      body: Stack(
+                        children: <Widget>[
+                          Provider.of<PexelsProvider>(context).wallsC == null
+                              ? Container()
+                              : OptimizedCacheImage(
+                                  imageUrl: Provider.of<PexelsProvider>(context,
+                                          listen: false)
+                                      .wallsC[index]
+                                      .src["portrait"],
+                                  imageBuilder: (context, imageProvider) =>
+                                      Container(
+                                    decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                        image: imageProvider,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                   ),
-                                  color: Color(0xFF2F2F2F)),
-                              child: SizedBox(
-                                width: MediaQuery.of(context).size.width,
-                                height: MediaQuery.of(context).size.height / 20,
-                                child: Center(
-                                  child: Icon(
-                                    JamIcons.chevron_up,
-                                    color: Colors.white,
+                                  placeholder: (context, url) => Container(
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        valueColor: AlwaysStoppedAnimation(
+                                          isLoading
+                                              ? Theme.of(context).accentColor
+                                              : colors[0].computeLuminance() >
+                                                      0.5
+                                                  ? Colors.black
+                                                  : Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                    child: Center(
+                                      child: Icon(
+                                        JamIcons.close_circle_f,
+                                        color: isLoading
+                                            ? Theme.of(context).accentColor
+                                            : colors[0].computeLuminance() > 0.5
+                                                ? Colors.black
+                                                : Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: GestureDetector(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
+                                    ),
+                                    color: Color(0xFF2F2F2F)),
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width,
+                                  height:
+                                      MediaQuery.of(context).size.height / 20,
+                                  child: Center(
+                                    child: Icon(
+                                      JamIcons.chevron_up,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              onTap:
+                                  !isLoading ? _showBottomSheetCallback : () {},
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.topLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  String route = currentRoute;
+                                  currentRoute = previousRoute;
+                                  previousRoute = route;
+                                  print(currentRoute);
+                                  Navigator.pop(context);
+                                },
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                icon: Icon(
+                                  JamIcons.chevron_left,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  var link = Provider.of<PexelsProvider>(
+                                          context,
+                                          listen: false)
+                                      .wallsC[index]
+                                      .src["portrait"];
+                                  Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                          transitionDuration:
+                                              Duration(milliseconds: 300),
+                                          pageBuilder: (context, animation,
+                                              secondaryAnimation) {
+                                            animation =
+                                                Tween(begin: 0.0, end: 1.0)
+                                                    .animate(animation);
+                                            return FadeTransition(
+                                                opacity: animation,
+                                                child: ClockOverlay(
+                                                  link: link,
+                                                  file: false,
+                                                ));
+                                          },
+                                          fullscreenDialog: true,
+                                          opaque: false));
+                                },
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                icon: Icon(
+                                  JamIcons.clock,
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    )
+                  : Scaffold(
+                      key: _scaffoldKey,
+                      backgroundColor: isLoading
+                          ? Theme.of(context).primaryColor
+                          : colors[0],
+                      body: Stack(
+                        children: <Widget>[
+                          OptimizedCacheImage(
+                            imageUrl: Provider.of<WallHavenProvider>(context)
+                                .wallsS[index]
+                                .path,
+                            imageBuilder: (context, imageProvider) => Container(
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            placeholder: (context, url) => Container(
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(
+                                    isLoading
+                                        ? Theme.of(context).accentColor
+                                        : colors[0].computeLuminance() > 0.5
+                                            ? Colors.black
+                                            : Colors.white,
                                   ),
                                 ),
                               ),
                             ),
-                            onTap:
-                                !isLoading ? _showBottomSheetCallback : () {},
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: IconButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              color: isLoading
-                                  ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                              icon: Icon(
-                                JamIcons.chevron_left,
+                            errorWidget: (context, url, error) => Container(
+                              child: Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: isLoading
+                                      ? Theme.of(context).accentColor
+                                      : colors[0].computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: IconButton(
-                              onPressed: () {
-                                var link = Provider.of<WallHavenProvider>(
-                                        context,
-                                        listen: false)
-                                    .wallsS[index]
-                                    .path;
-                                Navigator.push(
-                                    context,
-                                    PageRouteBuilder(
-                                        transitionDuration:
-                                            Duration(milliseconds: 300),
-                                        pageBuilder: (context, animation,
-                                            secondaryAnimation) {
-                                          animation =
-                                              Tween(begin: 0.0, end: 1.0)
-                                                  .animate(animation);
-                                          return FadeTransition(
-                                              opacity: animation,
-                                              child: ClockOverlay(
-                                                link: link,
-                                              ));
-                                        },
-                                        fullscreenDialog: true,
-                                        opaque: false));
-                              },
-                              color: isLoading
-                                  ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                              icon: Icon(
-                                JamIcons.clock,
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: GestureDetector(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
+                                    ),
+                                    color: Color(0xFF2F2F2F)),
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width,
+                                  height:
+                                      MediaQuery.of(context).size.height / 20,
+                                  child: Center(
+                                    child: Icon(
+                                      JamIcons.chevron_up,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              onTap:
+                                  !isLoading ? _showBottomSheetCallback : () {},
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.topLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  String route = currentRoute;
+                                  currentRoute = previousRoute;
+                                  previousRoute = route;
+                                  print(currentRoute);
+                                  Navigator.pop(context);
+                                },
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                icon: Icon(
+                                  JamIcons.chevron_left,
+                                ),
                               ),
                             ),
                           ),
-                        )
-                      ],
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  var link = Provider.of<WallHavenProvider>(
+                                          context,
+                                          listen: false)
+                                      .wallsS[index]
+                                      .path;
+                                  Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                          transitionDuration:
+                                              Duration(milliseconds: 300),
+                                          pageBuilder: (context, animation,
+                                              secondaryAnimation) {
+                                            animation =
+                                                Tween(begin: 0.0, end: 1.0)
+                                                    .animate(animation);
+                                            return FadeTransition(
+                                                opacity: animation,
+                                                child: ClockOverlay(
+                                                  link: link,
+                                                  file: false,
+                                                ));
+                                          },
+                                          fullscreenDialog: true,
+                                          opaque: false));
+                                },
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                                icon: Icon(
+                                  JamIcons.clock,
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
                     ),
-                  );
+    );
     // } catch (e) {
     //   print(e.toString());
-    //   Navigator.pop(context);
+    //   String route = currentRoute;
+    // currentRoute = previousRoute;
+    // previousRoute = route;
+    // print(currentRoute);
+    // Navigator.pop(context);
     //   return Container();
     // }
   }

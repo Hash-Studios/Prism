@@ -1,4 +1,7 @@
+import 'dart:core';
+
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -119,6 +122,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         onColorChanged: (Color color) =>
                                             setState(() {
                                           currentColor = color;
+                                          String route = currentRoute;
+                                          currentRoute = previousRoute;
+                                          previousRoute = route;
+                                          print(currentRoute);
                                           Navigator.pop(context);
                                           Navigator.pushNamed(
                                             context,
@@ -145,6 +152,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Home") {
+                              String route = currentRoute;
+                              currentRoute = previousRoute;
+                              previousRoute = route;
+                              print(currentRoute);
                               Navigator.pop(context);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
@@ -178,6 +189,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         onColorChanged: (Color color) =>
                                             setState(() {
                                           currentColor = color;
+                                          String route = currentRoute;
+                                          currentRoute = previousRoute;
+                                          previousRoute = route;
+                                          print(currentRoute);
                                           Navigator.pop(context);
                                           Navigator.pushReplacementNamed(
                                             context,
@@ -204,6 +219,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Home") {
+                              String route = currentRoute;
+                              currentRoute = previousRoute;
+                              previousRoute = route;
+                              print(currentRoute);
                               Navigator.pop(context);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
@@ -237,6 +256,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         onColorChanged: (Color color) =>
                                             setState(() {
                                           currentColor = color;
+                                          String route = currentRoute;
+                                          currentRoute = previousRoute;
+                                          previousRoute = route;
+                                          print(currentRoute);
                                           Navigator.pop(context);
                                           Navigator.pushReplacementNamed(
                                             context,
@@ -263,6 +286,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Home") {
+                              String route = currentRoute;
+                              currentRoute = previousRoute;
+                              previousRoute = route;
+                              print(currentRoute);
                               Navigator.pop(context);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
@@ -296,6 +323,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         onColorChanged: (Color color) =>
                                             setState(() {
                                           currentColor = color;
+                                          String route = currentRoute;
+                                          currentRoute = previousRoute;
+                                          previousRoute = route;
+                                          print(currentRoute);
                                           Navigator.pop(context);
                                           Navigator.pushReplacementNamed(
                                             context,
@@ -322,6 +353,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Home") {
+                              String route = currentRoute;
+                              currentRoute = previousRoute;
+                              previousRoute = route;
+                              print(currentRoute);
                               Navigator.pop(context);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
@@ -357,6 +392,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         onColorChanged: (Color color) =>
                                             setState(() {
                                           currentColor = color;
+                                          String route = currentRoute;
+                                          currentRoute = previousRoute;
+                                          previousRoute = route;
+                                          print(currentRoute);
                                           Navigator.pop(context);
                                           Navigator.pushReplacementNamed(
                                             context,

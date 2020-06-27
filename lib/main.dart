@@ -92,6 +92,7 @@ class RestartWidget extends StatefulWidget {
   final Widget child;
 
   static void restartApp(BuildContext context) {
+    router.currentRoute = "Home";
     context.findAncestorStateOfType<_RestartWidgetState>().restartApp();
   }
 

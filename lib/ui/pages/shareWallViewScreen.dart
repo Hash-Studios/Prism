@@ -2,6 +2,7 @@ import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/clockOverlay.dart';
@@ -50,7 +51,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
         ];
       });
     } catch (e) {
-      toasts.error(e.toString());
+      // toasts.error(e.toString());
     }
     paletteGenerator = await PaletteGenerator.fromImageProvider(image,
         maximumColorCount: 20, timeout: Duration(seconds: 120));
@@ -101,6 +102,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
               Center(
                 child: GestureDetector(
                   onTap: () {
+                    String route = currentRoute;
+                    currentRoute = previousRoute;
+                    previousRoute = route;
+                    print(currentRoute);
                     Navigator.pop(context);
                   },
                   child: Padding(
@@ -129,6 +134,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                             width: MediaQuery.of(context).size.width / 8,
                           ),
                           onTap: () {
+                            String route = currentRoute;
+                            currentRoute = previousRoute;
+                            previousRoute = route;
+                            print(currentRoute);
                             Navigator.pop(context);
                             SystemChrome.setEnabledSystemUIOverlays(
                                 [SystemUiOverlay.top, SystemUiOverlay.bottom]);
@@ -498,6 +507,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                             wallhaven: Provider.of<WallHavenProvider>(context,
                                     listen: false)
                                 .wall,
+                            trash: false,
                           )
                         : provider == "Pexels"
                             ? FavouriteWallpaperButton(
@@ -510,6 +520,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                 pexels: Provider.of<PexelsProvider>(context,
                                         listen: false)
                                     .wall,
+                                trash: false,
                               )
                             : Container()
                   ],
@@ -635,6 +646,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                     padding: const EdgeInsets.all(8.0),
                     child: IconButton(
                       onPressed: () {
+                        String route = currentRoute;
+                        currentRoute = previousRoute;
+                        previousRoute = route;
+                        print(currentRoute);
                         Navigator.pop(context);
                       },
                       color: isLoading
@@ -667,6 +682,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                       opacity: animation,
                                       child: ClockOverlay(
                                         link: link,
+                                        file: false,
                                       ));
                                 },
                                 fullscreenDialog: true,
@@ -791,6 +807,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
+                            String route = currentRoute;
+                            currentRoute = previousRoute;
+                            previousRoute = route;
+                            print(currentRoute);
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -824,6 +844,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                           opacity: animation,
                                           child: ClockOverlay(
                                             link: link,
+                                            file: false,
                                           ));
                                     },
                                     fullscreenDialog: true,

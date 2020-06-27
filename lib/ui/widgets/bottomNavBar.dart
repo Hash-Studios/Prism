@@ -1,3 +1,4 @@
+import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/inheritedScrollControllerProvider.dart';
@@ -158,12 +159,10 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 icon:
                     Icon(JamIcons.home_f, color: Theme.of(context).accentColor),
                 onPressed: () {
-                  if (HomeRoute != previousRoute) {
-                    Navigator.of(context).pushNamedAndRemoveUntil(HomeRoute, ModalRoute.withName(previousRoute));
-                    setState(() {
-                      previousRoute = HomeRoute;
-                    });
-                  }
+                  currentRoute == "Home"
+                      ? print("Currently on Home")
+                      : Navigator.of(context)
+                          .pushNamedAndRemoveUntil(HomeRoute, (route) => false);
                 },
               ),
             ),
@@ -173,13 +172,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 icon:
                     Icon(JamIcons.search, color: Theme.of(context).accentColor),
                 onPressed: () {
-                  if (SearchRoute != previousRoute) {
-                    Navigator.of(context).pushNamedAndRemoveUntil(SearchRoute, ModalRoute.withName(previousRoute));
-                    setState(() {
-                      previousRoute = SearchRoute;
-                    });
-                  }
-                  },
+                  currentRoute == "Search"
+                      ? print("Currently on Search")
+                      : currentRoute == "Home"
+                          ? Navigator.of(context).pushNamed(SearchRoute)
+                          : Navigator.of(context).pushNamed(SearchRoute);
+                },
               ),
             ),
             Padding(
@@ -189,12 +187,11 @@ class _BottomNavBarState extends State<BottomNavBar> {
                     color: Theme.of(context).accentColor),
                 onPressed: () {
                   showGooglePopUp(() {
-                    if (HomeRoute != previousRoute) {
-                      Navigator.of(context).pushNamedAndRemoveUntil(HomeRoute, ModalRoute.withName(previousRoute));
-                      setState(() {
-                        previousRoute = HomeRoute;
-                      });
-                    }
+                    currentRoute == "Favourites"
+                        ? print("Currently on Favourites")
+                        : currentRoute == "Home"
+                            ? Navigator.of(context).pushNamed(FavRoute)
+                            : Navigator.of(context).pushNamed(FavRoute);
                   });
                 },
               ),
@@ -218,7 +215,11 @@ class _BottomNavBarState extends State<BottomNavBar> {
                       color: Theme.of(context).primaryColor),
                 ),
                 onPressed: () {
-                  Navigator.of(context).pushNamedIfNotCurrent(ProfileRoute);
+                  currentRoute == "Profile"
+                      ? print("Currently on Profile")
+                      : currentRoute == "Home"
+                          ? Navigator.of(context).pushNamed(ProfileRoute)
+                          : Navigator.of(context).pushNamed(ProfileRoute);
                 },
               ),
             ),
