@@ -4,6 +4,8 @@ import 'package:Prism/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 
+import 'Animation/AnimationProgress.dart';
+
 void googleSignInPopUp(BuildContext context, Function func) {
   Dialog loaderDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -14,7 +16,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
       width: MediaQuery.of(context).size.width * .7,
       height: MediaQuery.of(context).size.height * .3,
       child: Center(
-        child: CircularProgressIndicator(),
+        child: AnimationProgress(),
       ),
     ),
   );

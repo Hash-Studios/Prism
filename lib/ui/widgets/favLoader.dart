@@ -92,17 +92,17 @@ class _FavLoaderState extends State<FavLoader>
         //   return FavouriteGrid();
         // } else {
         //   print("snapshot waiting");
-        //   return CircularProgressIndicator();
+        //   return AnimationProgress();
         // }
         if (snapshot == null) {
           print("snapshot null");
-          // return CircularProgressIndicator();
+          // return AnimationProgress();
           return LoadingCards(controller: controller, animation: animation);
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
           print("snapshot none, waiting");
-          //   return CircularProgressIndicator();
+          //   return AnimationProgress();
           return LoadingCards(controller: controller, animation: animation);
         } else {
           return FavouriteGrid();

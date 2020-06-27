@@ -5,6 +5,7 @@ import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/Animation/AnimationProgress.dart';
 import 'package:Prism/ui/widgets/clockOverlay.dart';
 import 'package:Prism/ui/widgets/downloadButton.dart';
 import 'package:Prism/ui/widgets/favWallpaperButton.dart';
@@ -592,12 +593,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                     builder: (context, AsyncSnapshot<WallPaper> snapshot) {
                       if (snapshot == null) {
                         print("Snapshot is null");
-                        return CircularProgressIndicator();
+                        return AnimationProgress();
                       }
                       if (snapshot.connectionState == ConnectionState.waiting ||
                           snapshot.connectionState == ConnectionState.none) {
                         print("snapshot none, waiting in share route");
-                        return CircularProgressIndicator();
+                        return AnimationProgress();
                       } else {
                         return Align(
                           alignment: Alignment.bottomCenter,
@@ -750,14 +751,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                         builder: (context, AsyncSnapshot<WallPaperP> snapshot) {
                           if (snapshot == null) {
                             print("Snapshot is null");
-                            return CircularProgressIndicator();
+                            return AnimationProgress();
                           }
                           if (snapshot.connectionState ==
                                   ConnectionState.waiting ||
                               snapshot.connectionState ==
                                   ConnectionState.none) {
                             print("snapshot none, waiting in share route");
-                            return CircularProgressIndicator();
+                            return AnimationProgress();
                           } else {
                             return Align(
                               alignment: Alignment.bottomCenter,

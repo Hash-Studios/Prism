@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
 
+import 'Animation/AnimationProgress.dart';
+
 class ShareButton extends StatefulWidget {
   final String id;
   final String provider;
@@ -67,7 +69,7 @@ class _ShareButtonState extends State<ShareButton> {
               left: 0,
               height: 63,
               width: 63,
-              child: isLoading ? CircularProgressIndicator() : Container())
+              child: isLoading ? AnimationProgress() : Container())
         ],
       ),
     );

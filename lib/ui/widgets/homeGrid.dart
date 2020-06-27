@@ -11,6 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
+import 'Animation/AnimationProgress.dart';
+
 class HomeGrid extends StatefulWidget {
   final String provider;
   HomeGrid({@required this.provider});
@@ -165,7 +167,7 @@ class _HomeGridState extends State<HomeGrid>
                   },
                   child: !seeMoreLoader
                       ? Text("See more")
-                      : CircularProgressIndicator());
+                      : AnimationProgress());
             }
           } else if (widget.provider == "Pexels") {
             if (index ==
@@ -200,7 +202,7 @@ class _HomeGridState extends State<HomeGrid>
                   },
                   child: !seeMoreLoader
                       ? Text("See more")
-                      : CircularProgressIndicator());
+                      : AnimationProgress());
             }
           } else if (widget.provider.length > 6 &&
               widget.provider.substring(0, 6) == "Colors") {
@@ -227,7 +229,7 @@ class _HomeGridState extends State<HomeGrid>
                   },
                   child: !seeMoreLoader
                       ? Text("See more")
-                      : CircularProgressIndicator());
+                      : AnimationProgress());
             }
           } else {
             if (index ==
@@ -254,7 +256,7 @@ class _HomeGridState extends State<HomeGrid>
                   },
                   child: !seeMoreLoader
                       ? Text("See more")
-                      : CircularProgressIndicator());
+                      : AnimationProgress());
             }
           }
           return FocusedMenuHolder(

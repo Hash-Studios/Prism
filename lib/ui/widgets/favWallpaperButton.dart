@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
 
+import 'Animation/AnimationProgress.dart';
+
 class FavouriteWallpaperButton extends StatefulWidget {
   final String id;
   final String provider;
@@ -80,7 +82,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
               left: 0,
               height: 63,
               width: 63,
-              child: isLoading ? CircularProgressIndicator() : Container())
+              child: isLoading ? AnimationProgress() : Container())
         ],
       ),
     );

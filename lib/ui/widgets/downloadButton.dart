@@ -6,6 +6,8 @@ import 'package:gallery_saver/gallery_saver.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:permission_handler/permission_handler.dart';
 
+import 'Animation/AnimationProgress.dart';
+
 class DownloadButton extends StatefulWidget {
   final String link;
   const DownloadButton({
@@ -63,7 +65,7 @@ class _DownloadButtonState extends State<DownloadButton> {
               left: 0,
               height: 63,
               width: 63,
-              child: isLoading ? CircularProgressIndicator() : Container())
+              child: isLoading ? AnimationProgress() : Container())
         ],
       ),
     );

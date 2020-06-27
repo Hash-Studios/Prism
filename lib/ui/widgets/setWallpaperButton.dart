@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
+import 'Animation/AnimationProgress.dart';
+
 class SetWallpaperButton extends StatefulWidget {
   final String url;
   const SetWallpaperButton({
@@ -187,7 +189,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
               left: 0,
               height: 63,
               width: 63,
-              child: isLoading ? CircularProgressIndicator() : Container())
+              child: isLoading ? AnimationProgress() : Container())
         ],
       ),
     );
