@@ -9,8 +9,7 @@ Prism is a beautiful open-source wallpapers app for Android. It is built with Da
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
 ![Stars](https://img.shields.io/github/stars/Hash-Studios/Prism)
 
-
-![Prism UI Mockup](demo/Prism_Mockup.jpg)
+<a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
 
 Prism relies on [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/) API as its source of beautiful and large collection of Wallpapers. By utilising their API, it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to make the smartphone customisation experience, smooth and easy, yet giving the users amazing wallpapers, and features like downloading infinite (as much your storage allows) wallpapers or sharing the ones they like with others.
 
@@ -23,12 +22,13 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 1. [Features](#features)
 2. [Changelog](#changelog)
 3. [Demo](#demo)
-4. [Dependencies](#dependencies)
-5. [Usage](#usage)
-6. [Development](#development)
-7. [License](#license)
-8. [Contributors](#contributors)
-9. [To-Do](#to-do)
+4. [Support](#support)
+5. [Dependencies](#dependencies)
+6. [Usage](#usage)
+7. [Development](#development)
+8. [License](#license)
+9. [Contributors](#contributors)
+10. [To-Do](#to-do)
 
 ## Features
 
@@ -121,10 +121,20 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 **Light Theme**
 
-| ![](demo/41.jpg) | ![](demo/42.jpg)| ![](demo/44.jpg)| ![](demo/49.jpg) | ![](demo/45.jpg)|
+| ![](demo/51.jpg) | ![](demo/42.jpg)| ![](demo/44.jpg)| ![](demo/49.jpg) | ![](demo/45.jpg)|
 | :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
 |  Explore  |Search|  Favourites    |      Downloads   |      Profile  |
 
+
+## Support
+
+If you like what we do, and would want to help us continue doing it, consider sponsoring this project.
+
+<a href="https://www.buymeacoffee.com/HashStudios" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
+
+You can also help by downloading the app from Google Play store and reviewing it.
+
+<a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width=200 /></a>
 ## Dependencies
 
 The following packages are needed for the development of this application.
