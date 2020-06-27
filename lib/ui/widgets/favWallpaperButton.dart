@@ -52,7 +52,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
         // currentRoute = previousRoute;
         // previousRoute = route;
         // print(currentRoute);
-        Navigator.pop(context);
+        // Navigator.pop(context);
         // }
       },
       child: Stack(
