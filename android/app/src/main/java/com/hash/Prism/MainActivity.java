@@ -1,8 +1,9 @@
 package com.hash.prism;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.content.Intent;
-import android.net.*;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
 
 import com.bumptech.glide.request.target.CustomTarget;
 import io.flutter.embedding.android.FlutterActivity;
@@ -10,12 +11,13 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
 import android.app.WallpaperManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.util.Log;
+import android.util.Pair;
 
-import io.flutter.embedding.android.FlutterActivity;
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.transition.Transition;
 
 import java.io.IOException;
@@ -137,7 +139,7 @@ public class MainActivity extends FlutterActivity {
     }
 }
 
-class SetWallPaperTask extends AsyncTask<Pair<Bitmap,String>,Boolean,Boolean> {
+class SetWallPaperTask extends AsyncTask<Pair<Bitmap,String>,Boolean,Boolean>{
 
     private final Context mContext;
     public SetWallPaperTask(final Context context) {
