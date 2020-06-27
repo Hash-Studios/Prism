@@ -55,10 +55,9 @@ class _SearchScreenState extends State<SearchScreen> {
             title: SizedBox(
               width: MediaQuery.of(context).size.width,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(4.0),
                 child: Column(
                   children: [
-                    SizedBox(height: 2),
                     Container(
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(500),
