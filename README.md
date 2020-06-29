@@ -323,3 +323,5 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [ ] search tags working
 - [ ] add analytics
 - [ ] centrecrop java for search
+- [ ] see more in search
+- [ ] favWallScreen downlod button issue
