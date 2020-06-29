@@ -622,24 +622,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () {
                     launch("https://forms.gle/nSt4QtiQVVaZvhdA8");
                   }),
-              ListTile(
-                  leading: Icon(
-                    JamIcons.coffee,
-                  ),
-                  title: new Text(
-                    "Buy us a cup of tea",
-                    style: TextStyle(
-                        color: Theme.of(context).accentColor,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: "Proxima Nova"),
-                  ),
-                  subtitle: Text(
-                    "Support us if you like what we do",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  onTap: () {
-                    launch("https://buymeacoff.ee/HashStudios");
-                  }),
+              // ListTile(
+              //     leading: Icon(
+              //       JamIcons.coffee,
+              //     ),
+              //     title: new Text(
+              //       "Buy us a cup of tea",
+              //       style: TextStyle(
+              //           color: Theme.of(context).accentColor,
+              //           fontWeight: FontWeight.w500,
+              //           fontFamily: "Proxima Nova"),
+              //     ),
+              //     subtitle: Text(
+              //       "Support us if you like what we do",
+              //       style: TextStyle(fontSize: 12),
+              //     ),
+              //     onTap: () {
+              //       launch("https://buymeacoff.ee/HashStudios");
+              //     }),
               ExpansionTile(
                 leading: Icon(
                   JamIcons.users,
