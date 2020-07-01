@@ -315,7 +315,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] focussed menu details in fav page download not working
 - [x] abstact page curated shows when see more
 - [x] create a api popup
-- [ ] replace downloads image in readme
+- [x] replace downloads image in readme
 - [ ] notifications (timed, random)
 - [ ] code refactoring
 - [ ] community walls + collections (add users to upload there own walls in the app)
