@@ -433,7 +433,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                           ),
                         ),
                         onPanUpdate: (details) {
-                          if (details.delta.dy > -10) {
+                          if (details.delta.dy < -10) {
                             print(details.delta.dy);
                             panelController.open();
                           }
@@ -879,7 +879,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                               ),
                             ),
                             onPanUpdate: (details) {
-                              if (details.delta.dy > -10) {
+                              if (details.delta.dy < -10) {
                                 print(details.delta.dy);
                                 panelController.open();
                               }
@@ -1352,7 +1352,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                       ),
                                     ),
                                     onPanUpdate: (details) {
-                                      if (details.delta.dy > -10) {
+                                      if (details.delta.dy < -10) {
                                         print(details.delta.dy);
                                         panelController.open();
                                       }
@@ -1812,7 +1812,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                   ),
                                 ),
                                 onPanUpdate: (details) {
-                                  if (details.delta.dy > -10) {
+                                  if (details.delta.dy < -10) {
                                     print(details.delta.dy);
                                     panelController.open();
                                   }
