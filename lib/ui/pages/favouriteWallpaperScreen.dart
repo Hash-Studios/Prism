@@ -551,53 +551,131 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                 flex: 3,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    downloadLinkBackwards == null
-                        ? Container()
-                        : DownloadButton(
+                  children: Provider.of<FavouriteProvider>(context,
+                                  listen: false)
+                              .liked[index]["provider"] ==
+                          null
+                      ? downloadLinkBackwards == null
+                          ? <Widget>[
+                              SetWallpaperButton(
+                                url: Provider.of<FavouriteProvider>(context,
+                                                listen: false)
+                                            .liked[index]["provider"] ==
+                                        null
+                                    ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                    : Provider.of<FavouriteProvider>(context,
+                                            listen: false)
+                                        .liked[index]["url"],
+                              ),
+                              FavouriteWallpaperButton(
+                                id: Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["id"]
+                                    .toString(),
+                                provider: Provider.of<FavouriteProvider>(
+                                        context,
+                                        listen: false)
+                                    .liked[index]["provider"]
+                                    .toString(),
+                                trash: true,
+                              ),
+                              ShareButton(
+                                  id: Provider.of<FavouriteProvider>(context, listen: false)
+                                      .liked[index]["id"],
+                                  provider: Provider.of<FavouriteProvider>(
+                                          context,
+                                          listen: false)
+                                      .liked[index]["provider"],
+                                  url: Provider.of<FavouriteProvider>(context,
+                                          listen: false)
+                                      .liked[index]["url"],
+                                  thumbUrl: Provider.of<FavouriteProvider>(
+                                          context,
+                                          listen: false)
+                                      .liked[index]["thumb"])
+                            ]
+                          : <Widget>[
+                              DownloadButton(
+                                link: downloadLinkBackwards,
+                              ),
+                              SetWallpaperButton(
+                                url: Provider.of<FavouriteProvider>(context,
+                                                listen: false)
+                                            .liked[index]["provider"] ==
+                                        null
+                                    ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                    : Provider.of<FavouriteProvider>(context,
+                                            listen: false)
+                                        .liked[index]["url"],
+                              ),
+                              FavouriteWallpaperButton(
+                                id: Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["id"]
+                                    .toString(),
+                                provider: Provider.of<FavouriteProvider>(
+                                        context,
+                                        listen: false)
+                                    .liked[index]["provider"]
+                                    .toString(),
+                                trash: true,
+                              ),
+                              ShareButton(
+                                  id: Provider.of<FavouriteProvider>(context, listen: false)
+                                      .liked[index]["id"],
+                                  provider: Provider.of<FavouriteProvider>(
+                                          context,
+                                          listen: false)
+                                      .liked[index]["provider"],
+                                  url: Provider.of<FavouriteProvider>(context,
+                                          listen: false)
+                                      .liked[index]["url"],
+                                  thumbUrl: Provider.of<FavouriteProvider>(
+                                          context,
+                                          listen: false)
+                                      .liked[index]["thumb"])
+                            ]
+                      : <Widget>[
+                          DownloadButton(
                             link: Provider.of<FavouriteProvider>(context,
+                                    listen: false)
+                                .liked[index]["url"],
+                          ),
+                          SetWallpaperButton(
+                            url: Provider.of<FavouriteProvider>(context,
                                             listen: false)
                                         .liked[index]["provider"] ==
                                     null
-                                ? downloadLinkBackwards
+                                ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
                                 : Provider.of<FavouriteProvider>(context,
                                         listen: false)
                                     .liked[index]["url"],
                           ),
-                    SetWallpaperButton(
-                      url: Provider.of<FavouriteProvider>(context,
+                          FavouriteWallpaperButton(
+                            id: Provider.of<FavouriteProvider>(context,
+                                    listen: false)
+                                .liked[index]["id"]
+                                .toString(),
+                            provider: Provider.of<FavouriteProvider>(context,
+                                    listen: false)
+                                .liked[index]["provider"]
+                                .toString(),
+                            trash: true,
+                          ),
+                          ShareButton(
+                              id: Provider.of<FavouriteProvider>(context,
                                       listen: false)
-                                  .liked[index]["provider"] ==
-                              null
-                          ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
-                          : Provider.of<FavouriteProvider>(context,
-                                  listen: false)
-                              .liked[index]["url"],
-                    ),
-                    FavouriteWallpaperButton(
-                      id: Provider.of<FavouriteProvider>(context, listen: false)
-                          .liked[index]["id"]
-                          .toString(),
-                      provider:
-                          Provider.of<FavouriteProvider>(context, listen: false)
-                              .liked[index]["provider"]
-                              .toString(),
-                      trash: true,
-                    ),
-                    ShareButton(
-                        id: Provider.of<FavouriteProvider>(context,
-                                listen: false)
-                            .liked[index]["id"],
-                        provider: Provider.of<FavouriteProvider>(context,
-                                listen: false)
-                            .liked[index]["provider"],
-                        url: Provider.of<FavouriteProvider>(context,
-                                listen: false)
-                            .liked[index]["url"],
-                        thumbUrl: Provider.of<FavouriteProvider>(context,
-                                listen: false)
-                            .liked[index]["thumb"])
-                  ],
+                                  .liked[index]["id"],
+                              provider: Provider.of<FavouriteProvider>(context,
+                                      listen: false)
+                                  .liked[index]["provider"],
+                              url: Provider.of<FavouriteProvider>(context,
+                                      listen: false)
+                                  .liked[index]["url"],
+                              thumbUrl: Provider.of<FavouriteProvider>(context,
+                                      listen: false)
+                                  .liked[index]["thumb"])
+                        ],
                 ),
               ),
             ],
