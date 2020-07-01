@@ -13,6 +13,7 @@ import 'package:optimized_cached_image/widgets.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class FavWallpaperViewScreen extends StatefulWidget {
   final List arguments;
@@ -38,6 +39,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
   PaletteGenerator paletteGenerator;
   List<Color> colors;
   String downloadLinkBackwards;
+  PanelController panelController = PanelController();
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -65,264 +67,134 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
     super.initState();
   }
 
-  void _showBottomSheetCallback() {
-    _scaffoldKey.currentState.showBottomSheet<void>(
-      (BuildContext context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * .42,
-          width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-            color: Color(0xFF2F2F2F),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    String route = currentRoute;
-                    currentRoute = previousRoute;
-                    previousRoute = route;
-                    print(currentRoute);
-                    Navigator.pop(context);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Icon(
-                      JamIcons.chevron_down,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(
-                    colors.length,
-                    (color) {
-                      return GestureDetector(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: colors[color],
-                              borderRadius: BorderRadius.circular(500),
-                            ),
-                            height: MediaQuery.of(context).size.width / 8,
-                            width: MediaQuery.of(context).size.width / 8,
-                          ),
-                          onTap: () {
-                            String route = currentRoute;
-                            currentRoute = previousRoute;
-                            previousRoute = route;
-                            print(currentRoute);
-                            Navigator.pop(context);
-                            SystemChrome.setEnabledSystemUIOverlays(
-                                [SystemUiOverlay.top, SystemUiOverlay.bottom]);
-                            Navigator.pushNamed(
-                              context,
-                              ColorRoute,
-                              arguments: [
-                                colors[color]
-                                    .toString()
-                                    .replaceAll("Color(0xff", "")
-                                    .replaceAll(")", ""),
-                              ],
-                            );
-                          });
-                    },
-                  ),
-                ),
-              ),
+  @override
+  void dispose() {
+    super.dispose();
+    SystemChrome.setEnabledSystemUIOverlays(
+        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
+    // try {
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: Provider.of<FavouriteProvider>(context, listen: false).liked[index]
+                      ["provider"] ==
+                  "WallHaven" ||
               Provider.of<FavouriteProvider>(context, listen: false)
-                          .liked[index]["provider"] ==
-                      "WallHaven"
-                  ? Expanded(
-                      flex: 4,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                      .liked[index]["provider"] ==
+                  "Pexels"
+          ? Scaffold(
+              key: _scaffoldKey,
+              backgroundColor:
+                  isLoading ? Theme.of(context).primaryColor : colors[0],
+              body: SlidingUpPanel(
+                backdropEnabled: true,
+                backdropTapClosesPanel: true,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                boxShadow: [],
+                collapsed: Container(
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                      color: Color(0xFF2F2F2F)),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height / 20,
+                    child: Center(
+                        child: Icon(
+                      JamIcons.chevron_up,
+                      color: Colors.white,
+                    )),
+                  ),
+                ),
+                minHeight: MediaQuery.of(context).size.height / 20,
+                parallaxEnabled: true,
+                parallaxOffset: 0.54,
+                color: Color(0xFF2F2F2F),
+                maxHeight: MediaQuery.of(context).size.height * .46,
+                controller: panelController,
+                panel: Container(
+                  height: MediaQuery.of(context).size.height * .42,
+                  width: MediaQuery.of(context).size.width,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    color: Color(0xFF2F2F2F),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Center(
+                          child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Icon(
+                          JamIcons.chevron_down,
+                          color: Colors.white,
+                        ),
+                      )),
+                      Expanded(
+                        flex: 2,
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: <Widget>[
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                  child: Text(
-                                    Provider.of<FavouriteProvider>(context,
-                                            listen: false)
-                                        .liked[index]["id"]
-                                        .toString()
-                                        .toUpperCase(),
-                                    style:
-                                        Theme.of(context).textTheme.bodyText1,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: List.generate(
+                            colors == null ? 5 : colors.length,
+                            (color) {
+                              return GestureDetector(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: colors == null
+                                          ? Color(0xFF000000)
+                                          : colors[color],
+                                      borderRadius: BorderRadius.circular(500),
+                                    ),
+                                    height:
+                                        MediaQuery.of(context).size.width / 8,
+                                    width:
+                                        MediaQuery.of(context).size.width / 8,
                                   ),
-                                ),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      JamIcons.eye,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"].toString()}",
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      JamIcons.heart_f,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["fav"].toString()}",
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      JamIcons.save,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      "${double.parse(((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: <Widget>[
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        Provider.of<FavouriteProvider>(context,
-                                                    listen: false)
-                                                .liked[index]["category"]
-                                                .toString()[0]
-                                                .toUpperCase() +
-                                            Provider.of<FavouriteProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .liked[index]["category"]
-                                                .toString()
-                                                .substring(1),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                      SizedBox(width: 10),
-                                      Icon(
-                                        JamIcons.unordered_list,
-                                        size: 20,
-                                        color: Colors.white70,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  children: [
-                                    Text(
-                                      "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString()}",
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Icon(
-                                      JamIcons.set_square,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  children: [
-                                    Text(
-                                      Provider.of<FavouriteProvider>(context,
-                                              listen: false)
-                                          .liked[index]["provider"]
-                                          .toString(),
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Icon(
-                                      JamIcons.database,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
+                                  onTap: () {
+                                    String route = currentRoute;
+                                    currentRoute = previousRoute;
+                                    previousRoute = route;
+                                    print(currentRoute);
+                                    SystemChrome.setEnabledSystemUIOverlays([
+                                      SystemUiOverlay.top,
+                                      SystemUiOverlay.bottom
+                                    ]);
+                                    Navigator.pushNamed(
+                                      context,
+                                      ColorRoute,
+                                      arguments: [
+                                        colors[color]
+                                            .toString()
+                                            .replaceAll("Color(0xff", "")
+                                            .replaceAll(")", ""),
+                                      ],
+                                    );
+                                  });
+                            },
+                          ),
                         ),
                       ),
-                    )
-                  : Provider.of<FavouriteProvider>(context, listen: false)
-                              .liked[index]["provider"] ==
-                          "Pexels"
-                      ? Expanded(
-                          flex: 4,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Padding(
-                                //   padding:
-                                //       const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                //   child: Container(
-                                //     width:
-                                //         MediaQuery.of(context).size.width * .8,
-                                //     child: Text(
-                                //       Provider.of<FavouriteProvider>(context,
-                                //               listen: false)
-                                //           .liked[index]["id"]
-                                //           .toString()
-                                //           .toUpperCase(),
-                                //       style:
-                                //           Theme.of(context).textTheme.bodyText1,
-                                //       overflow: TextOverflow.ellipsis,
-                                //       maxLines: 1,
-                                //     ),
-                                //   ),
-                                // ),
-                                Row(
+                      Provider.of<FavouriteProvider>(context, listen: false)
+                                  .liked[index]["provider"] ==
+                              "WallHaven"
+                          ? Expanded(
+                              flex: 4,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                                child: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -334,31 +206,34 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: <Widget>[
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              0, 5, 0, 10),
+                                          child: Text(
+                                            Provider.of<FavouriteProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["id"]
+                                                .toString()
+                                                .toUpperCase(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText1,
+                                          ),
+                                        ),
                                         Row(
                                           children: [
                                             Icon(
-                                              JamIcons.camera,
+                                              JamIcons.eye,
                                               size: 20,
                                               color: Colors.white70,
                                             ),
                                             SizedBox(width: 10),
-                                            Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  .4,
-                                              child: Text(
-                                                Provider.of<FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .liked[index]
-                                                        ["photographer"]
-                                                    .toString(),
-                                                textAlign: TextAlign.left,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyText2,
-                                              ),
+                                            Text(
+                                              "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"].toString()}",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
                                             ),
                                           ],
                                         ),
@@ -366,16 +241,30 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                                         Row(
                                           children: [
                                             Icon(
-                                              JamIcons.set_square,
+                                              JamIcons.heart_f,
                                               size: 20,
                                               color: Colors.white70,
                                             ),
                                             SizedBox(width: 10),
                                             Text(
-                                              Provider.of<FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["resolution"],
+                                              "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["fav"].toString()}",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.save,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              "${double.parse(((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2,
@@ -391,21 +280,51 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.end,
                                       children: <Widget>[
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              0, 0, 0, 0),
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                Provider.of<FavouriteProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .liked[index]
+                                                            ["category"]
+                                                        .toString()[0]
+                                                        .toUpperCase() +
+                                                    Provider.of<FavouriteProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .liked[index]
+                                                            ["category"]
+                                                        .toString()
+                                                        .substring(1),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.unordered_list,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(height: 5),
                                         Row(
                                           children: [
                                             Text(
-                                              Provider.of<FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["id"]
-                                                  .toString(),
+                                              "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString()}",
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2,
                                             ),
                                             SizedBox(width: 10),
                                             Icon(
-                                              JamIcons.info,
+                                              JamIcons.set_square,
                                               size: 20,
                                               color: Colors.white70,
                                             ),
@@ -436,588 +355,798 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : Expanded(
-                          flex: 4,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: <Widget>[
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          0, 5, 0, 10),
-                                      child: Text(
-                                        Provider.of<FavouriteProvider>(context,
-                                                listen: false)
-                                            .liked[index]["id"]
-                                            .toString()
-                                            .toUpperCase(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText1,
-                                      ),
-                                    ),
-                                    Row(
+                              ),
+                            )
+                          : Provider.of<FavouriteProvider>(context,
+                                          listen: false)
+                                      .liked[index]["provider"] ==
+                                  "Pexels"
+                              ? Expanded(
+                                  flex: 4,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        35, 0, 35, 15),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Icon(
-                                          JamIcons.eye,
-                                          size: 20,
-                                          color: Colors.white70,
-                                        ),
-                                        SizedBox(width: 10),
-                                        Text(
-                                          "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"].toString()}",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2,
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: <Widget>[
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: <Widget>[
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      JamIcons.camera,
+                                                      size: 20,
+                                                      color: Colors.white70,
+                                                    ),
+                                                    SizedBox(width: 10),
+                                                    Container(
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width *
+                                                              .4,
+                                                      child: Text(
+                                                        Provider.of<FavouriteProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .liked[index]
+                                                                ["photographer"]
+                                                            .toString(),
+                                                        textAlign:
+                                                            TextAlign.left,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 5),
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      JamIcons.set_square,
+                                                      size: 20,
+                                                      color: Colors.white70,
+                                                    ),
+                                                    SizedBox(width: 10),
+                                                    Text(
+                                                      Provider.of<FavouriteProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked[index]
+                                                          ["resolution"],
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyText2,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: <Widget>[
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      Provider.of<FavouriteProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]["id"]
+                                                          .toString(),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyText2,
+                                                    ),
+                                                    SizedBox(width: 10),
+                                                    Icon(
+                                                      JamIcons.info,
+                                                      size: 20,
+                                                      color: Colors.white70,
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 5),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      Provider.of<FavouriteProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["provider"]
+                                                          .toString(),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyText2,
+                                                    ),
+                                                    SizedBox(width: 10),
+                                                    Icon(
+                                                      JamIcons.database,
+                                                      size: 20,
+                                                      color: Colors.white70,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 5),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          JamIcons.heart_f,
-                                          size: 20,
-                                          color: Colors.white70,
-                                        ),
-                                        SizedBox(width: 10),
-                                        Text(
-                                          "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["fav"].toString()}",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: <Widget>[
-                                    SizedBox(height: 5),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString()}",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2,
-                                        ),
-                                        SizedBox(width: 10),
-                                        Icon(
-                                          JamIcons.set_square,
-                                          size: 20,
-                                          color: Colors.white70,
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 5),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          "${double.parse(((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2,
-                                        ),
-                                        SizedBox(width: 10),
-                                        Icon(
-                                          JamIcons.save,
-                                          size: 20,
-                                          color: Colors.white70,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-              Expanded(
-                flex: 3,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: Provider.of<FavouriteProvider>(context,
-                                  listen: false)
-                              .liked[index]["provider"] ==
-                          null
-                      ? downloadLinkBackwards == null
-                          ? <Widget>[
-                              SetWallpaperButton(
-                                url: Provider.of<FavouriteProvider>(context,
-                                                listen: false)
-                                            .liked[index]["provider"] ==
-                                        null
-                                    ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
-                                    : Provider.of<FavouriteProvider>(context,
-                                            listen: false)
-                                        .liked[index]["url"],
-                              ),
-                              FavouriteWallpaperButton(
-                                id: Provider.of<FavouriteProvider>(context,
-                                        listen: false)
-                                    .liked[index]["id"]
-                                    .toString(),
-                                provider: Provider.of<FavouriteProvider>(
-                                        context,
-                                        listen: false)
-                                    .liked[index]["provider"]
-                                    .toString(),
-                                trash: true,
-                              ),
-                              ShareButton(
-                                  id: Provider.of<FavouriteProvider>(context, listen: false)
-                                      .liked[index]["id"],
-                                  provider: Provider.of<FavouriteProvider>(
-                                          context,
-                                          listen: false)
-                                      .liked[index]["provider"],
-                                  url: Provider.of<FavouriteProvider>(context,
-                                          listen: false)
-                                      .liked[index]["url"],
-                                  thumbUrl: Provider.of<FavouriteProvider>(
-                                          context,
-                                          listen: false)
-                                      .liked[index]["thumb"])
-                            ]
-                          : <Widget>[
-                              DownloadButton(
-                                link: downloadLinkBackwards,
-                              ),
-                              SetWallpaperButton(
-                                url: Provider.of<FavouriteProvider>(context,
-                                                listen: false)
-                                            .liked[index]["provider"] ==
-                                        null
-                                    ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
-                                    : Provider.of<FavouriteProvider>(context,
-                                            listen: false)
-                                        .liked[index]["url"],
-                              ),
-                              FavouriteWallpaperButton(
-                                id: Provider.of<FavouriteProvider>(context,
-                                        listen: false)
-                                    .liked[index]["id"]
-                                    .toString(),
-                                provider: Provider.of<FavouriteProvider>(
-                                        context,
-                                        listen: false)
-                                    .liked[index]["provider"]
-                                    .toString(),
-                                trash: true,
-                              ),
-                              ShareButton(
-                                  id: Provider.of<FavouriteProvider>(context, listen: false)
-                                      .liked[index]["id"],
-                                  provider: Provider.of<FavouriteProvider>(
-                                          context,
-                                          listen: false)
-                                      .liked[index]["provider"],
-                                  url: Provider.of<FavouriteProvider>(context,
-                                          listen: false)
-                                      .liked[index]["url"],
-                                  thumbUrl: Provider.of<FavouriteProvider>(
-                                          context,
-                                          listen: false)
-                                      .liked[index]["thumb"])
-                            ]
-                      : <Widget>[
-                          DownloadButton(
-                            link: Provider.of<FavouriteProvider>(context,
-                                    listen: false)
-                                .liked[index]["url"],
-                          ),
-                          SetWallpaperButton(
-                            url: Provider.of<FavouriteProvider>(context,
-                                            listen: false)
-                                        .liked[index]["provider"] ==
-                                    null
-                                ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
-                                : Provider.of<FavouriteProvider>(context,
-                                        listen: false)
-                                    .liked[index]["url"],
-                          ),
-                          FavouriteWallpaperButton(
-                            id: Provider.of<FavouriteProvider>(context,
-                                    listen: false)
-                                .liked[index]["id"]
-                                .toString(),
-                            provider: Provider.of<FavouriteProvider>(context,
-                                    listen: false)
-                                .liked[index]["provider"]
-                                .toString(),
-                            trash: true,
-                          ),
-                          ShareButton(
-                              id: Provider.of<FavouriteProvider>(context,
+                                  ),
+                                )
+                              : Expanded(flex: 4, child: Container()),
+                      Expanded(
+                        flex: 3,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: <Widget>[
+                            DownloadButton(
+                              link: Provider.of<FavouriteProvider>(context,
                                       listen: false)
-                                  .liked[index]["id"],
-                              provider: Provider.of<FavouriteProvider>(context,
-                                      listen: false)
-                                  .liked[index]["provider"],
+                                  .liked[index]["url"],
+                            ),
+                            SetWallpaperButton(
                               url: Provider.of<FavouriteProvider>(context,
                                       listen: false)
                                   .liked[index]["url"],
-                              thumbUrl: Provider.of<FavouriteProvider>(context,
+                            ),
+                            FavouriteWallpaperButton(
+                              id: Provider.of<FavouriteProvider>(context,
                                       listen: false)
-                                  .liked[index]["thumb"])
-                        ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
-    // try {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Provider.of<FavouriteProvider>(context, listen: false).liked[index]
-                      ["provider"] ==
-                  "WallHaven" ||
-              Provider.of<FavouriteProvider>(context, listen: false)
-                      .liked[index]["provider"] ==
-                  "Pexels"
-          ? Scaffold(
-              key: _scaffoldKey,
-              backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : colors[0],
-              body: Stack(
-                children: <Widget>[
-                  OptimizedCacheImage(
-                    imageUrl:
-                        Provider.of<FavouriteProvider>(context, listen: false)
-                            .liked[index]["url"],
-                    imageBuilder: (context, imageProvider) => Container(
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: imageProvider,
-                          fit: BoxFit.cover,
+                                  .liked[index]["id"]
+                                  .toString(),
+                              provider: Provider.of<FavouriteProvider>(context,
+                                      listen: false)
+                                  .liked[index]["provider"]
+                                  .toString(),
+                              trash: true,
+                            ),
+                            ShareButton(
+                                id: Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["id"],
+                                provider: Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["provider"],
+                                url: Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["url"],
+                                thumbUrl: Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .liked[index]["thumb"])
+                          ],
                         ),
                       ),
-                    ),
-                    placeholder: (context, url) => Container(
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation(
-                            isLoading
-                                ? Theme.of(context).accentColor
-                                : colors[0].computeLuminance() > 0.5
-                                    ? Colors.black
-                                    : Colors.white,
+                    ],
+                  ),
+                ),
+                body: Stack(
+                  children: <Widget>[
+                    GestureDetector(
+                        child: OptimizedCacheImage(
+                          imageUrl: Provider.of<FavouriteProvider>(context,
+                                  listen: false)
+                              .liked[index]["url"],
+                          imageBuilder: (context, imageProvider) => Container(
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: imageProvider,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          placeholder: (context, url) => Container(
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation(
+                                  isLoading
+                                      ? Theme.of(context).accentColor
+                                      : colors[0].computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            child: Center(
+                              child: Icon(
+                                JamIcons.close_circle_f,
+                                color: isLoading
+                                    ? Theme.of(context).accentColor
+                                    : colors[0].computeLuminance() > 0.5
+                                        ? Colors.black
+                                        : Colors.white,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      child: Center(
-                        child: Icon(
-                          JamIcons.close_circle_f,
+                        onPanUpdate: (details) {
+                          if (details.delta.dy < -10) {
+                            print(details.delta.dy);
+                            panelController.open();
+                          }
+                        }),
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IconButton(
+                          onPressed: () {
+                            String route = currentRoute;
+                            currentRoute = previousRoute;
+                            previousRoute = route;
+                            print(currentRoute);
+                            Navigator.pop(context);
+                          },
                           color: isLoading
                               ? Theme.of(context).accentColor
                               : colors[0].computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: GestureDetector(
-                      child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20),
-                            ),
-                            color: Color(0xFF2F2F2F)),
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          height: MediaQuery.of(context).size.height / 20,
-                          child: Center(
-                            child: Icon(
-                              JamIcons.chevron_up,
-                              color: Colors.white,
-                            ),
+                          icon: Icon(
+                            JamIcons.chevron_left,
                           ),
                         ),
                       ),
-                      onTap: !isLoading
-                          ? () {
-                              return _showBottomSheetCallback();
-                            }
-                          : () {
-                              toasts
-                                  .info("Information is Loading, please wait!");
-                            },
                     ),
-                  ),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        onPressed: () {
-                          String route = currentRoute;
-                          currentRoute = previousRoute;
-                          previousRoute = route;
-                          print(currentRoute);
-                          Navigator.pop(context);
-                        },
-                        color: isLoading
-                            ? Theme.of(context).accentColor
-                            : colors[0].computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                        icon: Icon(
-                          JamIcons.chevron_left,
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IconButton(
+                          onPressed: () {
+                            var link = Provider.of<FavouriteProvider>(context,
+                                    listen: false)
+                                .liked[index]["url"];
+                            Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                    transitionDuration:
+                                        Duration(milliseconds: 300),
+                                    pageBuilder: (context, animation,
+                                        secondaryAnimation) {
+                                      animation = Tween(begin: 0.0, end: 1.0)
+                                          .animate(animation);
+                                      return FadeTransition(
+                                          opacity: animation,
+                                          child: ClockOverlay(
+                                            link: link,
+                                            file: false,
+                                          ));
+                                    },
+                                    fullscreenDialog: true,
+                                    opaque: false));
+                          },
+                          color: isLoading
+                              ? Theme.of(context).accentColor
+                              : colors[0].computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                          icon: Icon(
+                            JamIcons.clock,
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        onPressed: () {
-                          var link = Provider.of<FavouriteProvider>(context,
-                                  listen: false)
-                              .liked[index]["url"];
-                          Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                  transitionDuration:
-                                      Duration(milliseconds: 300),
-                                  pageBuilder:
-                                      (context, animation, secondaryAnimation) {
-                                    animation = Tween(begin: 0.0, end: 1.0)
-                                        .animate(animation);
-                                    return FadeTransition(
-                                        opacity: animation,
-                                        child: ClockOverlay(
-                                          link: link,
-                                          file: false,
-                                        ));
-                                  },
-                                  fullscreenDialog: true,
-                                  opaque: false));
-                        },
-                        color: isLoading
-                            ? Theme.of(context).accentColor
-                            : colors[0].computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                        icon: Icon(
-                          JamIcons.clock,
-                        ),
-                      ),
-                    ),
-                  )
-                ],
+                    )
+                  ],
+                ),
               ),
             )
-          :
-          // Provider.of<FavouriteProvider>(context, listen: false).liked[index]
-          //             ["provider"] ==
-          //         "Pexels"
-          //     ?
-          Scaffold(
+          : Scaffold(
               key: _scaffoldKey,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : colors[0],
-              body: Stack(
-                children: <Widget>[
-                  OptimizedCacheImage(
-                    imageUrl:
-                        "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg",
-                    imageBuilder: (context, imageProvider) {
-                      downloadLinkBackwards =
-                          "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg";
-                      return Container(
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: imageProvider,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      );
-                    },
-                    placeholder: (context, url) => Container(
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation(
-                            isLoading
-                                ? Theme.of(context).accentColor
-                                : colors[0].computeLuminance() > 0.5
-                                    ? Colors.black
-                                    : Colors.white,
-                          ),
-                        ),
+              body: SlidingUpPanel(
+                backdropEnabled: true,
+                backdropTapClosesPanel: true,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                boxShadow: [],
+                collapsed: Container(
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
                       ),
-                    ),
-                    errorWidget: (context, url, error) => OptimizedCacheImage(
-                      imageUrl:
-                          "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png",
-                      imageBuilder: (context, imageProvider) {
-                        downloadLinkBackwards =
-                            "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png";
-                        return Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: imageProvider,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        );
-                      },
-                      placeholder: (context, url) => Container(
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation(
-                              isLoading
-                                  ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        child: Center(
-                          child: Icon(
-                            JamIcons.close_circle_f,
-                            color: isLoading
-                                ? Theme.of(context).accentColor
-                                : colors[0].computeLuminance() > 0.5
-                                    ? Colors.black
-                                    : Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
+                      color: Color(0xFF2F2F2F)),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height / 20,
+                    child: Center(
+                        child: Icon(
+                      JamIcons.chevron_up,
+                      color: Colors.white,
+                    )),
                   ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: GestureDetector(
-                      child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20),
-                            ),
-                            color: Color(0xFF2F2F2F)),
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          height: MediaQuery.of(context).size.height / 20,
-                          child: Center(
-                            child: Icon(
-                              JamIcons.chevron_up,
-                              color: Colors.white,
-                            ),
-                          ),
+                ),
+                minHeight: MediaQuery.of(context).size.height / 20,
+                parallaxEnabled: true,
+                parallaxOffset: 0.54,
+                color: Color(0xFF2F2F2F),
+                maxHeight: MediaQuery.of(context).size.height * .46,
+                controller: panelController,
+                panel: Container(
+                  height: MediaQuery.of(context).size.height * .42,
+                  width: MediaQuery.of(context).size.width,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    color: Color(0xFF2F2F2F),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Center(
+                          child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Icon(
+                          JamIcons.chevron_down,
+                          color: Colors.white,
                         ),
-                      ),
-                      onTap: !isLoading
-                          ? () {
-                              return _showBottomSheetCallback();
-                            }
-                          : () {
-                              toasts
-                                  .info("Information is Loading, please wait!");
+                      )),
+                      Expanded(
+                        flex: 2,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: List.generate(
+                            colors == null ? 5 : colors.length,
+                            (color) {
+                              return GestureDetector(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: colors == null
+                                          ? Color(0xFF000000)
+                                          : colors[color],
+                                      borderRadius: BorderRadius.circular(500),
+                                    ),
+                                    height:
+                                        MediaQuery.of(context).size.width / 8,
+                                    width:
+                                        MediaQuery.of(context).size.width / 8,
+                                  ),
+                                  onTap: () {
+                                    String route = currentRoute;
+                                    currentRoute = previousRoute;
+                                    previousRoute = route;
+                                    print(currentRoute);
+                                    SystemChrome.setEnabledSystemUIOverlays([
+                                      SystemUiOverlay.top,
+                                      SystemUiOverlay.bottom
+                                    ]);
+                                    Navigator.pushNamed(
+                                      context,
+                                      ColorRoute,
+                                      arguments: [
+                                        colors[color]
+                                            .toString()
+                                            .replaceAll("Color(0xff", "")
+                                            .replaceAll(")", ""),
+                                      ],
+                                    );
+                                  });
                             },
-                    ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: <Widget>[
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                    child: Text(
+                                      Provider.of<FavouriteProvider>(context,
+                                              listen: false)
+                                          .liked[index]["id"]
+                                          .toString()
+                                          .toUpperCase(),
+                                      style:
+                                          Theme.of(context).textTheme.bodyText1,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        JamIcons.eye,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"].toString()}",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2,
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        JamIcons.heart_f,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["fav"].toString()}",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: <Widget>[
+                                  SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString()}",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Icon(
+                                        JamIcons.set_square,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "${double.parse(((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Icon(
+                                        JamIcons.save,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: Provider.of<FavouriteProvider>(context,
+                                          listen: false)
+                                      .liked[index]["provider"] ==
+                                  null
+                              ? downloadLinkBackwards == null
+                                  ? <Widget>[
+                                      SetWallpaperButton(
+                                        url: Provider.of<FavouriteProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .liked[index]["provider"] ==
+                                                null
+                                            ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                            : Provider.of<FavouriteProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["url"],
+                                      ),
+                                      FavouriteWallpaperButton(
+                                        id: Provider.of<FavouriteProvider>(
+                                                context,
+                                                listen: false)
+                                            .liked[index]["id"]
+                                            .toString(),
+                                        provider:
+                                            Provider.of<FavouriteProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["provider"]
+                                                .toString(),
+                                        trash: true,
+                                      ),
+                                      ShareButton(
+                                          id: Provider.of<FavouriteProvider>(context, listen: false)
+                                              .liked[index]["id"],
+                                          provider: Provider.of<FavouriteProvider>(context,
+                                                  listen: false)
+                                              .liked[index]["provider"],
+                                          url: Provider.of<FavouriteProvider>(context,
+                                                  listen: false)
+                                              .liked[index]["url"],
+                                          thumbUrl: Provider.of<FavouriteProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["thumb"])
+                                    ]
+                                  : <Widget>[
+                                      DownloadButton(
+                                        link: downloadLinkBackwards,
+                                      ),
+                                      SetWallpaperButton(
+                                        url: Provider.of<FavouriteProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .liked[index]["provider"] ==
+                                                null
+                                            ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                            : Provider.of<FavouriteProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["url"],
+                                      ),
+                                      FavouriteWallpaperButton(
+                                        id: Provider.of<FavouriteProvider>(
+                                                context,
+                                                listen: false)
+                                            .liked[index]["id"]
+                                            .toString(),
+                                        provider:
+                                            Provider.of<FavouriteProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["provider"]
+                                                .toString(),
+                                        trash: true,
+                                      ),
+                                      ShareButton(
+                                          id: Provider.of<FavouriteProvider>(context, listen: false)
+                                              .liked[index]["id"],
+                                          provider: Provider.of<FavouriteProvider>(context,
+                                                  listen: false)
+                                              .liked[index]["provider"],
+                                          url: Provider.of<FavouriteProvider>(context,
+                                                  listen: false)
+                                              .liked[index]["url"],
+                                          thumbUrl: Provider.of<FavouriteProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["thumb"])
+                                    ]
+                              : <Widget>[
+                                  DownloadButton(
+                                    link: Provider.of<FavouriteProvider>(
+                                            context,
+                                            listen: false)
+                                        .liked[index]["url"],
+                                  ),
+                                  SetWallpaperButton(
+                                    url: Provider.of<FavouriteProvider>(context,
+                                                    listen: false)
+                                                .liked[index]["provider"] ==
+                                            null
+                                        ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                        : Provider.of<FavouriteProvider>(
+                                                context,
+                                                listen: false)
+                                            .liked[index]["url"],
+                                  ),
+                                  FavouriteWallpaperButton(
+                                    id: Provider.of<FavouriteProvider>(context,
+                                            listen: false)
+                                        .liked[index]["id"]
+                                        .toString(),
+                                    provider: Provider.of<FavouriteProvider>(
+                                            context,
+                                            listen: false)
+                                        .liked[index]["provider"]
+                                        .toString(),
+                                    trash: true,
+                                  ),
+                                  ShareButton(
+                                      id: Provider.of<FavouriteProvider>(context, listen: false)
+                                          .liked[index]["id"],
+                                      provider: Provider.of<FavouriteProvider>(
+                                              context,
+                                              listen: false)
+                                          .liked[index]["provider"],
+                                      url: Provider.of<FavouriteProvider>(context,
+                                              listen: false)
+                                          .liked[index]["url"],
+                                      thumbUrl: Provider.of<FavouriteProvider>(
+                                              context,
+                                              listen: false)
+                                          .liked[index]["thumb"])
+                                ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        onPressed: () {
-                          String route = currentRoute;
-                          currentRoute = previousRoute;
-                          previousRoute = route;
-                          print(currentRoute);
-                          Navigator.pop(context);
-                        },
-                        color: isLoading
-                            ? Theme.of(context).accentColor
-                            : colors[0].computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                        icon: Icon(
-                          JamIcons.chevron_left,
+                ),
+                body: Stack(
+                  children: <Widget>[
+                    GestureDetector(
+                        child: OptimizedCacheImage(
+                          imageUrl:
+                              "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg",
+                          imageBuilder: (context, imageProvider) {
+                            downloadLinkBackwards =
+                                "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg";
+                            return Container(
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            );
+                          },
+                          placeholder: (context, url) => Container(
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation(
+                                  isLoading
+                                      ? Theme.of(context).accentColor
+                                      : colors[0].computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) =>
+                              OptimizedCacheImage(
+                            imageUrl:
+                                "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png",
+                            imageBuilder: (context, imageProvider) {
+                              downloadLinkBackwards =
+                                  "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png";
+                              return Container(
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: imageProvider,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              );
+                            },
+                            placeholder: (context, url) => Container(
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(
+                                    isLoading
+                                        ? Theme.of(context).accentColor
+                                        : colors[0].computeLuminance() > 0.5
+                                            ? Colors.black
+                                            : Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              child: Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: isLoading
+                                      ? Theme.of(context).accentColor
+                                      : colors[0].computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        onPanUpdate: (details) {
+                          if (details.delta.dy < -10) {
+                            print(details.delta.dy);
+                            panelController.open();
+                          }
+                        }),
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IconButton(
+                          onPressed: () {
+                            String route = currentRoute;
+                            currentRoute = previousRoute;
+                            previousRoute = route;
+                            print(currentRoute);
+                            Navigator.pop(context);
+                          },
+                          color: isLoading
+                              ? Theme.of(context).accentColor
+                              : colors[0].computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                          icon: Icon(
+                            JamIcons.chevron_left,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        onPressed: () {
-                          var link =
-                              "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().substring(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().length - 3, Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().length)}";
-                          Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                  transitionDuration:
-                                      Duration(milliseconds: 300),
-                                  pageBuilder:
-                                      (context, animation, secondaryAnimation) {
-                                    animation = Tween(begin: 0.0, end: 1.0)
-                                        .animate(animation);
-                                    return FadeTransition(
-                                        opacity: animation,
-                                        child: ClockOverlay(
-                                          link: link,
-                                          file: false,
-                                        ));
-                                  },
-                                  fullscreenDialog: true,
-                                  opaque: false));
-                        },
-                        color: isLoading
-                            ? Theme.of(context).accentColor
-                            : colors[0].computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                        icon: Icon(
-                          JamIcons.clock,
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IconButton(
+                          onPressed: () {
+                            var link =
+                                "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().substring(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().length - 3, Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().length)}";
+                            Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                    transitionDuration:
+                                        Duration(milliseconds: 300),
+                                    pageBuilder: (context, animation,
+                                        secondaryAnimation) {
+                                      animation = Tween(begin: 0.0, end: 1.0)
+                                          .animate(animation);
+                                      return FadeTransition(
+                                          opacity: animation,
+                                          child: ClockOverlay(
+                                            link: link,
+                                            file: false,
+                                          ));
+                                    },
+                                    fullscreenDialog: true,
+                                    opaque: false));
+                          },
+                          color: isLoading
+                              ? Theme.of(context).accentColor
+                              : colors[0].computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                          icon: Icon(
+                            JamIcons.clock,
+                          ),
                         ),
                       ),
-                    ),
-                  )
-                ],
+                    )
+                  ],
+                ),
               ),
             ),
     );
