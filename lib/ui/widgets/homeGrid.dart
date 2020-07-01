@@ -232,7 +232,7 @@ class _HomeGridState extends State<HomeGrid>
           } else {
             if (index ==
                     Provider.of<WallHavenProvider>(context).wallsS.length - 1 &&
-                index >= 24) {
+                index >= 23) {
               return FlatButton(
                   color: Provider.of<ThemeModel>(context, listen: false)
                               .returnTheme() ==
