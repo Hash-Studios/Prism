@@ -215,7 +215,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <img src="https://contributors-img.web.app/image?repo=Hash-Studios/Prism" />
 </a>
 
-![Prism UI Mockup](demo/Prism_Mockup2.jpg)
+![Prism UI Mockup](demo/Prism_Mockup2.png)
 
 ## To Do
 
