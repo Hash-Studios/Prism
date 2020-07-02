@@ -14,7 +14,6 @@ import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class ShareWallpaperViewScreen extends StatefulWidget {
@@ -477,62 +476,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                           panelController.open();
                         }
                       }),
-                  // FutureBuilder<WallPaper>(
-                  //     future: future,
-                  //     builder: (context, AsyncSnapshot<WallPaper> snapshot) {
-                  //       if (snapshot == null) {
-                  //         print("Snapshot is null");
-                  //         return CircularProgressIndicator();
-                  //       }
-                  //       if (snapshot.connectionState ==
-                  //               ConnectionState.waiting ||
-                  //           snapshot.connectionState == ConnectionState.none) {
-                  //         print("snapshot none, waiting in share route");
-                  //         return CircularProgressIndicator();
-                  //       } else {
-                  //         return Align(
-                  //           alignment: Alignment.bottomCenter,
-                  //           child: GestureDetector(
-                  //             child: Container(
-                  //               decoration: BoxDecoration(
-                  //                   borderRadius: BorderRadius.only(
-                  //                     topLeft: Radius.circular(20),
-                  //                     topRight: Radius.circular(20),
-                  //                   ),
-                  //                   color: Color(0xFF2F2F2F)),
-                  //               child: SizedBox(
-                  //                 width: MediaQuery.of(context).size.width,
-                  //                 height:
-                  //                     MediaQuery.of(context).size.height / 20,
-                  //                 child: Center(
-                  //                   child: Icon(
-                  //                     JamIcons.chevron_up,
-                  //                     color: Colors.white,
-                  //                   ),
-                  //                 ),
-                  //               ),
-                  //             ),
-                  //             onTap: !isLoading
-                  //                 ? () {
-                  //                     if (Provider.of<WallHavenProvider>(
-                  //                                 context,
-                  //                                 listen: false)
-                  //                             .wall !=
-                  //                         null)
-                  //                       return _showBottomSheetCallback();
-                  //                     else {
-                  //                       toasts.info(
-                  //                           "Information is Loading, please wait!");
-                  //                     }
-                  //                   }
-                  //                 : () {
-                  //                     toasts.info(
-                  //                         "Information is Loading, please wait!");
-                  //                   },
-                  //           ),
-                  //         );
-                  //       }
-                  //     }),
                   Align(
                     alignment: Alignment.topLeft,
                     child: Padding(
@@ -959,62 +902,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                               panelController.open();
                             }
                           }),
-                      // FutureBuilder<WallPaperP>(
-                      //     future: future,
-                      //     builder: (context, AsyncSnapshot<WallPaperP> snapshot) {
-                      //       if (snapshot == null) {
-                      //         print("Snapshot is null");
-                      //         return CircularProgressIndicator();
-                      //       }
-                      //       if (snapshot.connectionState ==
-                      //               ConnectionState.waiting ||
-                      //           snapshot.connectionState ==
-                      //               ConnectionState.none) {
-                      //         print("snapshot none, waiting in share route");
-                      //         return CircularProgressIndicator();
-                      //       } else {
-                      //         return Align(
-                      //           alignment: Alignment.bottomCenter,
-                      //           child: GestureDetector(
-                      //             child: Container(
-                      //               decoration: BoxDecoration(
-                      //                   borderRadius: BorderRadius.only(
-                      //                     topLeft: Radius.circular(20),
-                      //                     topRight: Radius.circular(20),
-                      //                   ),
-                      //                   color: Color(0xFF2F2F2F)),
-                      //               child: SizedBox(
-                      //                 width: MediaQuery.of(context).size.width,
-                      //                 height:
-                      //                     MediaQuery.of(context).size.height / 20,
-                      //                 child: Center(
-                      //                   child: Icon(
-                      //                     JamIcons.chevron_up,
-                      //                     color: Colors.white,
-                      //                   ),
-                      //                 ),
-                      //               ),
-                      //             ),
-                      //             onTap: !isLoading
-                      //                 ? () {
-                      //                     if (Provider.of<PexelsProvider>(context,
-                      //                                 listen: false)
-                      //                             .wall !=
-                      //                         null)
-                      //                       return _showBottomSheetCallback();
-                      //                     else {
-                      //                       toasts.info(
-                      //                           "Information is Loading, please wait!");
-                      //                     }
-                      //                   }
-                      //                 : () {
-                      //                     toasts.info(
-                      //                         "Information is Loading, please wait!");
-                      //                   },
-                      //           ),
-                      //         );
-                      //       }
-                      //     }),
                       Align(
                         alignment: Alignment.topLeft,
                         child: Padding(

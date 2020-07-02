@@ -1,14 +1,10 @@
-import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
-import 'package:Prism/ui/widgets/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/categoriesBar.dart';
 import 'package:Prism/ui/widgets/changelogPopUp.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 
@@ -34,8 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     isNew = true;
-    // Provider.of<CategoryProvider>(context, listen: false)
-    //     .updateSelectedCategory("Home");
     super.initState();
   }
 
