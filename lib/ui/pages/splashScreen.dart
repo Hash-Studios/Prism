@@ -1,5 +1,5 @@
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/pages/homeScreen.dart';
+import 'package:Prism/ui/pages/pageManager.dart';
 import 'package:flutter/material.dart';
 import 'package:flare_splash_screen/flare_splash_screen.dart';
 import 'package:Prism/theme/theme.dart';
@@ -15,7 +15,7 @@ class SplashWidget extends StatelessWidget {
       Provider.of<ThemeModel>(context).currentTheme == kLightTheme
           ? 'assets/animations/Prism Splash.flr'
           : 'assets/animations/Prism Splash Dark.flr',
-      (context) => HomeScreen(),
+      (context) => PageManager(),
       startAnimation:
           Provider.of<ThemeModel>(context).currentTheme == kLightTheme
               ? 'Main'

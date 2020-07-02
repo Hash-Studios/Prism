@@ -1,3 +1,4 @@
+import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
@@ -33,6 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     isNew = true;
+    Provider.of<CategoryProvider>(context, listen: false)
+        .updateSelectedCategory("Home");
     super.initState();
   }
 
@@ -97,21 +100,11 @@ class _HomeScreenState extends State<HomeScreen> {
     initDynamicLinks(context);
     return WillPopScope(
       onWillPop: onWillPop,
-      child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          appBar: PreferredSize(
-            child: CategoriesBar(
-              current: "Home",
-            ),
-            preferredSize: Size(double.infinity, 55),
-          ),
-          body: BottomBar(
-            child: GridLoader(
-              future: Provider.of<WallHavenProvider>(context, listen: false)
-                  .getData(),
-              provider: "WallHaven",
-            ),
-          )),
+      child: GridLoader(
+        future:
+            Provider.of<WallHavenProvider>(context, listen: false).getData(),
+        provider: "WallHaven",
+      ),
     );
   }
 }

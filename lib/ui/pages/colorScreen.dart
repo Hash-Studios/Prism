@@ -29,9 +29,7 @@ class ColorScreen extends StatelessWidget {
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: PreferredSize(
-            child: CategoriesBar(
-              current: "Colors",
-            ),
+            child: CategoriesBar(),
             preferredSize: Size(double.infinity, 55),
           ),
           body: BottomBar(
