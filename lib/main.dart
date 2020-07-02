@@ -1,3 +1,4 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
@@ -74,6 +75,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorObservers: <NavigatorObserver>[observer],
       onGenerateRoute: router.generateRoute,
       onUnknownRoute: (settings) => MaterialPageRoute(
           builder: (context) => UndefinedScreen(

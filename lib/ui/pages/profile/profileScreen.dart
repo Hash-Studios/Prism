@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -267,6 +268,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ListTile(
               onTap: () {
+                main.prefs.getBool("darkMode") == null
+                    ? analytics.logEvent(
+                        name: 'theme_changed', parameters: {'type': 'dark'})
+                    : main.prefs.getBool("darkMode")
+                        ? analytics.logEvent(
+                            name: 'theme_changed',
+                            parameters: {'type': 'light'})
+                        : analytics.logEvent(
+                            name: 'theme_changed',
+                            parameters: {'type': 'dark'});
                 Provider.of<ThemeModel>(context, listen: false).toggleTheme();
                 main.RestartWidget.restartApp(context);
               },

@@ -1,3 +1,4 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
@@ -104,6 +105,8 @@ class _ShareButtonState extends State<ShareButton> {
         "Hey check out this amazing wallpaper. I found it out using Prism Wallpapers. " +
             shortUrl.toString());
     print(shortUrl);
+    analytics.logShare(
+        contentType: 'wallpaperScreen', itemId: widget.id, method: 'link');
     setState(() {
       isLoading = false;
     });
