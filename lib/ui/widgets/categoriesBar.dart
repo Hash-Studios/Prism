@@ -96,23 +96,17 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Curated") {
-                              PM.pageController.animateToPage(1,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(1);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Abstract") {
-                              PM.pageController.animateToPage(2,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(2);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Nature") {
-                              PM.pageController.animateToPage(3,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(3);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -166,9 +160,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                               currentRoute = previousRoute;
                               previousRoute = route;
                               print(currentRoute);
-                              PM.pageController.animateToPage(0,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(0);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -177,16 +169,12 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Abstract") {
-                              PM.pageController.animateToPage(2,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(2);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Nature") {
-                              PM.pageController.animateToPage(3,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(3);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -240,16 +228,12 @@ class _CategoriesBarState extends State<CategoriesBar> {
                               currentRoute = previousRoute;
                               previousRoute = route;
                               print(currentRoute);
-                              PM.pageController.animateToPage(0,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(0);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Curated") {
-                              PM.pageController.animateToPage(1,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(1);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -258,9 +242,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Nature") {
-                              PM.pageController.animateToPage(3,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(3);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -314,23 +296,17 @@ class _CategoriesBarState extends State<CategoriesBar> {
                               currentRoute = previousRoute;
                               previousRoute = route;
                               print(currentRoute);
-                              PM.pageController.animateToPage(0,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(0);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Curated") {
-                              PM.pageController.animateToPage(1,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(1);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Abstract") {
-                              PM.pageController.animateToPage(2,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(2);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -388,30 +364,22 @@ class _CategoriesBarState extends State<CategoriesBar> {
                               currentRoute = previousRoute;
                               previousRoute = route;
                               print(currentRoute);
-                              PM.pageController.animateToPage(0,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(0);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Curated") {
-                              PM.pageController.animateToPage(1,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(1);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Abstract") {
-                              PM.pageController.animateToPage(2,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(2);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Nature") {
-                              PM.pageController.animateToPage(3,
-                                  duration: Duration(milliseconds: 300),
-                                  curve: Curves.easeIn);
+                              PM.pageController.jumpToPage(3);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
