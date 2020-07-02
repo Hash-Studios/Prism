@@ -43,23 +43,24 @@ class PexelsProvider extends ChangeNotifier {
 
   Future<WallPaperP> getWallbyIDP(String id) async {
     print("https://api.pexels.com/v1/photos/$id");
-    wall = null;
+    this.wall = null;
     http.get("https://api.pexels.com/v1/photos/$id", headers: {
       "Authorization":
           "563492ad6f9170000100000107272bb5cab346b68e27263fbf1b6a72"
     }).then(
       (http.Response response) {
         var resp = json.decode(response.body);
-        wall = WallPaperP(
+        this.wall = WallPaperP(
             id: resp["id"].toString(),
             url: resp["url"].toString(),
             width: resp["width"].toString(),
             height: resp["height"].toString(),
             photographer: resp["photographer"].toString(),
             src: resp["category"]);
+        notifyListeners();
+        return this.wall;
       },
     );
-    return wall;
   }
 
   Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
@@ -157,6 +158,7 @@ class PexelsProvider extends ChangeNotifier {
         }).then(
       (http.Response response) {
         var resp = json.decode(response.body);
+        print(resp);
         for (int i = 0; i < resp["photos"].length; i++) {
           this.wallsP.add(
                 WallPaperP(

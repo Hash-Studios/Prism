@@ -1,15 +1,17 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/pages/splashScreen.dart';
+import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
+import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/routes/router.dart' as router;
 import 'package:provider/provider.dart';
-import 'package:Prism/router.dart' as router;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:Prism/globals.dart' as globals;
 import 'package:flutter/cupertino.dart';
 import 'package:Prism/theme/theme.dart';
 
@@ -74,6 +76,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorObservers: <NavigatorObserver>[observer],
       onGenerateRoute: router.generateRoute,
       onUnknownRoute: (settings) => MaterialPageRoute(
           builder: (context) => UndefinedScreen(
@@ -93,6 +96,7 @@ class RestartWidget extends StatefulWidget {
 
   static void restartApp(BuildContext context) {
     router.currentRoute = "Home";
+    observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>().restartApp();
   }
 
