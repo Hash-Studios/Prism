@@ -34,8 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     isNew = true;
-    Provider.of<CategoryProvider>(context, listen: false)
-        .updateSelectedCategory("Home");
+    // Provider.of<CategoryProvider>(context, listen: false)
+    //     .updateSelectedCategory("Home");
     super.initState();
   }
 

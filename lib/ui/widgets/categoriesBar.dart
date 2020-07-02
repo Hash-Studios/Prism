@@ -196,7 +196,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           previousRoute = route;
                                           print(currentRoute);
                                           Navigator.pop(context);
-                                          Navigator.pushReplacementNamed(
+                                          Navigator.pushNamed(
                                             context,
                                             ColorRoute,
                                             arguments: [
@@ -264,7 +264,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           previousRoute = route;
                                           print(currentRoute);
                                           Navigator.pop(context);
-                                          Navigator.pushReplacementNamed(
+                                          Navigator.pushNamed(
                                             context,
                                             ColorRoute,
                                             arguments: [
@@ -332,7 +332,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           previousRoute = route;
                                           print(currentRoute);
                                           Navigator.pop(context);
-                                          Navigator.pushReplacementNamed(
+                                          Navigator.pushNamed(
                                             context,
                                             ColorRoute,
                                             arguments: [

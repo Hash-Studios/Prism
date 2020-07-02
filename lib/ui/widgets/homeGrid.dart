@@ -1,3 +1,4 @@
+import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/router.dart';
@@ -90,7 +91,16 @@ class _HomeGridState extends State<HomeGrid>
       Provider.of<WallHavenProvider>(context, listen: false).getData();
     } else if (widget.provider == "Pexels") {
       Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
-      Provider.of<PexelsProvider>(context, listen: false).getDataP();
+      Provider.of<CategoryProvider>(context, listen: false).selectedCategory ==
+              "Curated"
+          ? Provider.of<PexelsProvider>(context, listen: false).getDataP()
+          : Provider.of<CategoryProvider>(context, listen: false)
+                      .selectedCategory ==
+                  "Abstract"
+              ? Provider.of<PexelsProvider>(context, listen: false)
+                  .getAbstractWalls()
+              : Provider.of<PexelsProvider>(context, listen: false)
+                  .getNatureWalls();
     } else if (widget.provider.length > 6 &&
         widget.provider.substring(0, 6) == "Colors") {
       Provider.of<PexelsProvider>(context, listen: false).wallsC = [];
@@ -180,10 +190,15 @@ class _HomeGridState extends State<HomeGrid>
                       borderRadius: BorderRadius.circular(20)),
                   onPressed: () {
                     if (!seeMoreLoader) {
-                      currentRoute == "Curated"
+                      Provider.of<CategoryProvider>(context, listen: false)
+                                  .selectedCategory ==
+                              "Curated"
                           ? Provider.of<PexelsProvider>(context, listen: false)
                               .getDataP()
-                          : currentRoute == "Abstract"
+                          : Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .selectedCategory ==
+                                  "Abstract"
                               ? Provider.of<PexelsProvider>(context,
                                       listen: false)
                                   .getAbstractWalls()

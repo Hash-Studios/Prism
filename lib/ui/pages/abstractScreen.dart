@@ -28,8 +28,8 @@ class _AbstractScreenState extends State<AbstractScreen> {
 
   @override
   void initState() {
-    Provider.of<CategoryProvider>(context, listen: false)
-        .updateSelectedCategory("Abstract");
+    // Provider.of<CategoryProvider>(context, listen: false)
+    //     .updateSelectedCategory("Abstract");
     super.initState();
   }
 

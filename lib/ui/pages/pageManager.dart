@@ -1,3 +1,4 @@
+import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/ui/pages/abstractScreen.dart';
 import 'package:Prism/ui/pages/curatedScreen.dart';
 import 'package:Prism/ui/pages/homeScreen.dart';
@@ -5,6 +6,7 @@ import 'package:Prism/ui/pages/natureScreen.dart';
 import 'package:Prism/ui/widgets/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/categoriesBar.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 PageController pageController = PageController();
 
@@ -29,6 +31,21 @@ class _PageManagerState extends State<PageManager> {
         ),
         body: BottomBar(
           child: PageView.builder(
+              onPageChanged: (index) {
+                if (index == 0) {
+                  Provider.of<CategoryProvider>(context, listen: false)
+                      .updateSelectedCategory("Home");
+                } else if (index == 1) {
+                  Provider.of<CategoryProvider>(context, listen: false)
+                      .updateSelectedCategory("Curated");
+                } else if (index == 2) {
+                  Provider.of<CategoryProvider>(context, listen: false)
+                      .updateSelectedCategory("Abstract");
+                } else {
+                  Provider.of<CategoryProvider>(context, listen: false)
+                      .updateSelectedCategory("Nature");
+                }
+              },
               controller: pageController,
               itemCount: 4,
               itemBuilder: (context, index) {

@@ -25,8 +25,8 @@ class _NatureScreenState extends State<NatureScreen> {
 
   @override
   void initState() {
-    Provider.of<CategoryProvider>(context, listen: false)
-        .updateSelectedCategory("Nature");
+    // Provider.of<CategoryProvider>(context, listen: false)
+    //     .updateSelectedCategory("Nature");
     super.initState();
   }
 
