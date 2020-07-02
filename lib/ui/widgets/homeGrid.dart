@@ -1,7 +1,6 @@
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
-import 'package:Prism/router.dart';
 import 'package:Prism/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focusedMenu.dart';
