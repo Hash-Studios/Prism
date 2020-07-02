@@ -142,236 +142,295 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                   ),
                   color: Color(0xFF2F2F2F),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Center(
-                        child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Icon(
-                        JamIcons.chevron_down,
-                        color: Colors.white,
-                      ),
-                    )),
-                    Expanded(
-                      flex: 2,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(
-                          colors == null ? 5 : colors.length,
-                          (color) {
-                            return GestureDetector(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: colors == null
-                                        ? Color(0xFF000000)
-                                        : colors[color],
-                                    borderRadius: BorderRadius.circular(500),
-                                  ),
-                                  height: MediaQuery.of(context).size.width / 8,
-                                  width: MediaQuery.of(context).size.width / 8,
-                                ),
-                                onTap: () {
-                                  // String route = currentRoute;
-                                  // currentRoute = previousRoute;
-                                  // previousRoute = route;
-                                  // print(currentRoute);
-                                  SystemChrome.setEnabledSystemUIOverlays([
-                                    SystemUiOverlay.top,
-                                    SystemUiOverlay.bottom
-                                  ]);
-                                  Navigator.pushNamed(
-                                    context,
-                                    ColorRoute,
-                                    arguments: [
-                                      colors[color]
-                                          .toString()
-                                          .replaceAll("Color(0xff", "")
-                                          .replaceAll(")", ""),
-                                    ],
-                                  );
-                                });
-                          },
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 4,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                child: FutureBuilder<WallPaper>(
+                    future: future,
+                    builder: (context, AsyncSnapshot<WallPaper> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting ||
+                          snapshot.connectionState == ConnectionState.none) {
+                        print("snapshot none, waiting in share route");
+                        return CircularProgressIndicator();
+                      } else {
+                        print("done");
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                  child: Text(
-                                    id.toString().toUpperCase(),
-                                    style:
-                                        Theme.of(context).textTheme.bodyText1,
-                                  ),
+                            Center(
+                                child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Icon(
+                                JamIcons.chevron_down,
+                                color: Colors.white,
+                              ),
+                            )),
+                            Expanded(
+                              flex: 2,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: List.generate(
+                                  colors == null ? 5 : colors.length,
+                                  (color) {
+                                    return GestureDetector(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: colors == null
+                                                ? Color(0xFF000000)
+                                                : colors[color],
+                                            borderRadius:
+                                                BorderRadius.circular(500),
+                                          ),
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              8,
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width /
+                                              8,
+                                        ),
+                                        onTap: () {
+                                          // String route = currentRoute;
+                                          // currentRoute = previousRoute;
+                                          // previousRoute = route;
+                                          // print(currentRoute);
+                                          SystemChrome
+                                              .setEnabledSystemUIOverlays([
+                                            SystemUiOverlay.top,
+                                            SystemUiOverlay.bottom
+                                          ]);
+                                          Navigator.pushNamed(
+                                            context,
+                                            ColorRoute,
+                                            arguments: [
+                                              colors[color]
+                                                  .toString()
+                                                  .replaceAll("Color(0xff", "")
+                                                  .replaceAll(")", ""),
+                                            ],
+                                          );
+                                        });
+                                  },
                                 ),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      JamIcons.eye,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      "${Provider.of<WallHavenProvider>(context).wall.views.toString()}",
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      JamIcons.heart_f,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      "${Provider.of<WallHavenProvider>(context).wall.favourites.toString()}",
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      JamIcons.save,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      "${double.parse(((double.parse(Provider.of<WallHavenProvider>(context).wall.file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                  ],
-                                ),
-                              ],
+                              ),
                             ),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: <Widget>[
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        Provider.of<WallHavenProvider>(context)
-                                                .wall
-                                                .category
-                                                .toString()[0]
-                                                .toUpperCase() +
-                                            Provider.of<WallHavenProvider>(
-                                                    context)
-                                                .wall
-                                                .category
-                                                .toString()
-                                                .substring(1),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                      SizedBox(width: 10),
-                                      Icon(
-                                        JamIcons.unordered_list,
-                                        size: 20,
-                                        color: Colors.white70,
-                                      ),
-                                    ],
+                            Expanded(
+                              flex: 4,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: <Widget>[
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              0, 5, 0, 10),
+                                          child: Text(
+                                            id.toString().toUpperCase(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText1,
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.eye,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              "${Provider.of<WallHavenProvider>(context).wall == null ? 0 : Provider.of<WallHavenProvider>(context).wall.views.toString()}",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.heart_f,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              "${Provider.of<WallHavenProvider>(context).wall == null ? 0 : Provider.of<WallHavenProvider>(context).wall.favourites.toString()}",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.save,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              "${Provider.of<WallHavenProvider>(context).wall == null ? 0 : (double.parse(((double.parse(Provider.of<WallHavenProvider>(context).wall.file_size.toString()) / 1000000).toString())).toStringAsFixed(2))} MB",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: <Widget>[
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              0, 0, 0, 0),
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                Provider.of<WallHavenProvider>(
+                                                                context)
+                                                            .wall ==
+                                                        null
+                                                    ? "General"
+                                                    : (Provider.of<WallHavenProvider>(
+                                                                context)
+                                                            .wall
+                                                            .category
+                                                            .toString()[0]
+                                                            .toUpperCase() +
+                                                        Provider.of<WallHavenProvider>(
+                                                                context)
+                                                            .wall
+                                                            .category
+                                                            .toString()
+                                                            .substring(1)),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.unordered_list,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              "${Provider.of<WallHavenProvider>(context).wall == null ? 0x0 : Provider.of<WallHavenProvider>(context).wall.resolution.toString()}",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Icon(
+                                              JamIcons.set_square,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              provider.toString(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Icon(
+                                              JamIcons.database,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: <Widget>[
+                                  DownloadButton(
+                                      link: Provider.of<WallHavenProvider>(
+                                                      context)
+                                                  .wall ==
+                                              null
+                                          ? ""
+                                          : Provider.of<WallHavenProvider>(
+                                                  context)
+                                              .wall
+                                              .path
+                                              .toString()),
+                                  SetWallpaperButton(
+                                    url: Provider.of<WallHavenProvider>(context)
+                                                .wall ==
+                                            null
+                                        ? ""
+                                        : Provider.of<WallHavenProvider>(
+                                                context)
+                                            .wall
+                                            .path
+                                            .toString(),
                                   ),
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  children: [
-                                    Text(
-                                      "${Provider.of<WallHavenProvider>(context).wall.resolution.toString()}",
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Icon(
-                                      JamIcons.set_square,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  children: [
-                                    Text(
-                                      provider.toString(),
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Icon(
-                                      JamIcons.database,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                  FavouriteWallpaperButton(
+                                    id: Provider.of<WallHavenProvider>(context)
+                                                .wall ==
+                                            null
+                                        ? ""
+                                        : Provider.of<WallHavenProvider>(
+                                                context)
+                                            .wall
+                                            .id
+                                            .toString(),
+                                    provider: "WallHaven",
+                                    wallhaven:
+                                        Provider.of<WallHavenProvider>(context)
+                                                    .wall ==
+                                                null
+                                            ? WallPaper()
+                                            : Provider.of<WallHavenProvider>(
+                                                    context)
+                                                .wall,
+                                    trash: false,
+                                  )
+                                ],
+                              ),
                             ),
                           ],
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: <Widget>[
-                          DownloadButton(
-                              link: Provider.of<WallHavenProvider>(context)
-                                  .wall
-                                  .path
-                                  .toString()),
-                          SetWallpaperButton(
-                            url: Provider.of<WallHavenProvider>(context)
-                                .wall
-                                .path
-                                .toString(),
-                          ),
-                          FavouriteWallpaperButton(
-                            id: Provider.of<WallHavenProvider>(context,
-                                    listen: false)
-                                .wall
-                                .id
-                                .toString(),
-                            provider: "WallHaven",
-                            wallhaven: Provider.of<WallHavenProvider>(context,
-                                    listen: false)
-                                .wall,
-                            trash: false,
-                          )
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                        );
+                      }
+                    }),
               ),
               body: Stack(
                 children: <Widget>[
@@ -640,192 +699,183 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                             ),
                           ),
                         ),
-                        Provider.of<PexelsProvider>(context).wall == null
-                            ? Container()
-                            : Expanded(
-                                flex: 4,
-                                child: Padding(
+                        Expanded(
+                          flex: 4,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
                                   padding:
-                                      const EdgeInsets.fromLTRB(35, 0, 35, 15),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            0, 5, 0, 10),
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              .8,
-                                          child: Text(
-                                            Provider.of<PexelsProvider>(context)
-                                                        .wall
-                                                        .url
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")
-                                                        .length >
-                                                    8
-                                                ? Provider.of<PexelsProvider>(context)
-                                                        .wall
-                                                        .url
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")[0]
-                                                        .toUpperCase() +
-                                                    Provider.of<PexelsProvider>(context)
-                                                        .wall
-                                                        .url
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")
-                                                        .substring(
-                                                            1,
-                                                            Provider.of<PexelsProvider>(context).wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
-                                                                7)
-                                                : Provider.of<PexelsProvider>(context)
-                                                        .wall
-                                                        .url
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")[0]
-                                                        .toUpperCase() +
-                                                    Provider.of<PexelsProvider>(context)
-                                                        .wall
-                                                        .url
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")
-                                                        .substring(1),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText1,
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
-                                          ),
-                                        ),
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: <Widget>[
-                                          Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: <Widget>[
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.camera,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Container(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            .4,
-                                                    child: Text(
-                                                      Provider.of<PexelsProvider>(
-                                                              context)
-                                                          .wall
-                                                          .photographer
-                                                          .toString(),
-                                                      textAlign: TextAlign.left,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText2,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 5),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.set_square,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Text(
-                                                    "${Provider.of<PexelsProvider>(context).wall.width.toString()}x${Provider.of<PexelsProvider>(context).wall.height.toString()}",
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2,
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                          Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: <Widget>[
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    id.toString(),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
-                                                    JamIcons.info,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 5),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    provider.toString(),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
-                                                    JamIcons.database,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                      const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                  child: Container(
+                                    width:
+                                        MediaQuery.of(context).size.width * .8,
+                                    child: Text(
+                                      Provider.of<PexelsProvider>(context).wall ==
+                                              null
+                                          ? "Wallpaper"
+                                          : (Provider.of<PexelsProvider>(context).wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                              ? Provider.of<PexelsProvider>(context)
+                                                      .wall
+                                                      .url
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")[0]
+                                                      .toUpperCase() +
+                                                  Provider.of<PexelsProvider>(context)
+                                                      .wall
+                                                      .url
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .substring(
+                                                          1,
+                                                          Provider.of<PexelsProvider>(context).wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                              7)
+                                              : Provider.of<PexelsProvider>(context)
+                                                      .wall
+                                                      .url
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")[0]
+                                                      .toUpperCase() +
+                                                  Provider.of<PexelsProvider>(context)
+                                                      .wall
+                                                      .url
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .substring(1)),
+                                      style:
+                                          Theme.of(context).textTheme.bodyText1,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
                                   ),
                                 ),
-                              ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: <Widget>[
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.camera,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  .4,
+                                              child: Text(
+                                                Provider.of<PexelsProvider>(
+                                                                context)
+                                                            .wall ==
+                                                        null
+                                                    ? "Photographer"
+                                                    : Provider.of<
+                                                                PexelsProvider>(
+                                                            context)
+                                                        .wall
+                                                        .photographer
+                                                        .toString(),
+                                                textAlign: TextAlign.left,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.set_square,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              "${Provider.of<PexelsProvider>(context).wall == null ? 0 : Provider.of<PexelsProvider>(context).wall.width.toString()}x${Provider.of<PexelsProvider>(context).wall == null ? 0 : Provider.of<PexelsProvider>(context).wall.height.toString()}",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: <Widget>[
+                                        Row(
+                                          children: [
+                                            Text(
+                                              id.toString(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Icon(
+                                              JamIcons.info,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              provider.toString(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Icon(
+                                              JamIcons.database,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                         Expanded(
                           flex: 3,
                           child: Row(
@@ -849,9 +899,13 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                         .id
                                         .toString(),
                                 provider: "Pexels",
-                                pexels: Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .wall,
+                                pexels:
+                                    Provider.of<PexelsProvider>(context).wall ==
+                                            null
+                                        ? WallPaperP()
+                                        : Provider.of<PexelsProvider>(context,
+                                                listen: false)
+                                            .wall,
                                 trash: false,
                               )
                             ],
