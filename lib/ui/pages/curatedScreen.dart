@@ -28,8 +28,8 @@ class _CuratedScreenState extends State<CuratedScreen> {
 
   @override
   void initState() {
-    Provider.of<CategoryProvider>(context, listen: false)
-        .updateSelectedCategory("Curated");
+    // Provider.of<CategoryProvider>(context, listen: false)
+    //     .updateSelectedCategory("Curated");
     super.initState();
   }
 
