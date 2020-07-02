@@ -6,8 +6,8 @@ import 'package:Prism/ui/pages/downloadScreen.dart';
 import 'package:Prism/ui/pages/downloadWallpaperViewScreen.dart';
 import 'package:Prism/ui/pages/favouriteScreen.dart';
 import 'package:Prism/ui/pages/favouriteWallpaperScreen.dart';
-import 'package:Prism/ui/pages/homeScreen.dart';
 import 'package:Prism/ui/pages/natureScreen.dart';
+import 'package:Prism/ui/pages/pageManager.dart';
 import 'package:Prism/ui/pages/profileScreen.dart';
 import 'package:Prism/ui/pages/searchScreen.dart';
 import 'package:Prism/ui/pages/shareWallViewScreen.dart';
@@ -43,7 +43,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       currentRoute = "Home";
       print(currentRoute);
       return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => HomeScreen());
+          pageBuilder: (context, animation1, animation2) => PageManager());
     case ProfileRoute:
       previousRoute = currentRoute;
       currentRoute = "Profile";
