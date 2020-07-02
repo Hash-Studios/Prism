@@ -78,12 +78,15 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 SizedBox(
                   width: 20,
                 ),
-                Text(
-                  "The ability to favourite wallpapers.",
-                  style: Theme.of(context)
-                      .textTheme
-                      .headline6
-                      .copyWith(color: Theme.of(context).accentColor),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "The ability to favourite wallpapers.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
                 ),
               ],
             ),
@@ -105,12 +108,15 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 SizedBox(
                   width: 20,
                 ),
-                Text(
-                  "The ability to download wallpapers.",
-                  style: Theme.of(context)
-                      .textTheme
-                      .headline6
-                      .copyWith(color: Theme.of(context).accentColor),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "The ability to download wallpapers.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
                 ),
               ],
             ),
@@ -132,12 +138,15 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 SizedBox(
                   width: 20,
                 ),
-                Text(
-                  "The ability to cloud sync data.",
-                  style: Theme.of(context)
-                      .textTheme
-                      .headline6
-                      .copyWith(color: Theme.of(context).accentColor),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "The ability to cloud sync data.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
                 ),
               ],
             ),
