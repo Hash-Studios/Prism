@@ -41,6 +41,7 @@ dependencies:
   gallery_saver: ^2.0.1
   firebase_dynamic_links: ^0.5.1
   permission_handler: ^5.0.1+1
+  sliding_up_panel: ^1.0.2
 
 dev_dependencies:
   flutter_test:

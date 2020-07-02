@@ -325,3 +325,5 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [ ] centrecrop java for search
 - [x] see more in search
 - [x] favWallScreen downlod button issue
+- [ ] change circular progress indicator with fullscreen loader due to gesture detector
+- [ ]
