@@ -10,7 +10,9 @@ import 'package:Prism/ui/widgets/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -84,10 +86,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Color(0xFFE57697),
                         )
                       : Container(
-                          child: Image.asset(
-                          "assets/images/bgp.png",
-                          fit: BoxFit.cover,
-                        )),
+                          child: SvgPicture.asset(
+                            "assets/images/BG Banner Light.svg",
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                   main.prefs.getBool("isLoggedin")
                       ? Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -226,8 +229,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       "Clear downloaded wallpapers",
                       style: TextStyle(fontSize: 12),
                     ),
-                    onTap: () {
+                    onTap: () async {
                       final dir = Directory("storage/emulated/0/Prism/");
+                      var status = await Permission.storage.status;
+                      if (!status.isGranted) {
+                        await Permission.storage.request();
+                      }
                       try {
                         dir.deleteSync(recursive: true);
                         Fluttertoast.showToast(
@@ -615,24 +622,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () {
                     launch("https://forms.gle/nSt4QtiQVVaZvhdA8");
                   }),
-              ListTile(
-                  leading: Icon(
-                    JamIcons.coffee,
-                  ),
-                  title: new Text(
-                    "Buy us a cup of tea",
-                    style: TextStyle(
-                        color: Theme.of(context).accentColor,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: "Proxima Nova"),
-                  ),
-                  subtitle: Text(
-                    "Support us if you like what we do",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  onTap: () {
-                    launch("https://buymeacoff.ee/HashStudios");
-                  }),
+              // ListTile(
+              //     leading: Icon(
+              //       JamIcons.coffee,
+              //     ),
+              //     title: new Text(
+              //       "Buy us a cup of tea",
+              //       style: TextStyle(
+              //           color: Theme.of(context).accentColor,
+              //           fontWeight: FontWeight.w500,
+              //           fontFamily: "Proxima Nova"),
+              //     ),
+              //     subtitle: Text(
+              //       "Support us if you like what we do",
+              //       style: TextStyle(fontSize: 12),
+              //     ),
+              //     onTap: () {
+              //       launch("https://buymeacoff.ee/HashStudios");
+              //     }),
               ExpansionTile(
                 leading: Icon(
                   JamIcons.users,

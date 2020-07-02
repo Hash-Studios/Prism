@@ -9,12 +9,20 @@ Prism is a beautiful open-source wallpapers app for Android. It is built with Da
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
 ![Stars](https://img.shields.io/github/stars/Hash-Studios/Prism)
 
+<<<<<<< HEAD
 
 ![Prism UI Mockup](demo/Prism_Mockup.jpg)
 
 Prism relies on [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/) API as its source of beautiful and large collection of Wallpapers. By utilising their API, it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to make the smartphone customisation experience, smooth and easy, yet giving the users amazing wallpapers, and features like downloading infinite (as much your storage allows) wallpapers or sharing the ones they like with others.
 
 Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated everyday. It also features categories like Abstract, Nature if you are into these. Then it allows one to find wallpapers on the basis of colors, i.e. you can find wallpapers with a color that matches your icons or homescreen setup. Not even that, it also shows you a pallete of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
+=======
+<a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
+
+Prism relies on [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/) API as its source of beautiful and large collection of Wallpapers. By utilising their API, it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to make the smartphone customisation experience, smooth and easy, yet giving the users amazing wallpapers, and features like downloading infinite (as much your storage allows) wallpapers or sharing the ones they like with others.
+
+Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated every day. It also features categories like Abstract, Nature if you are into these. Then it allows one to find wallpapers on the basis of colors, i.e. you can find wallpapers with a color that matches your icons or homescreen setup. Not even that, it also shows you a palette of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
+>>>>>>> 3814e7810a3b20078ee5f7e171a84dfc3aca67df
 
 Main features like finding and setting up wallpapers don't rquire Google Sign In, while features like Favourites or Downloads require you to sign up using Google. This signup is facilitated by Google Firebase, so it is secure and we only get your name, email and profile photo for identification purposes. The app also has Dark Mode, if you want to save your phone's battery while getting in love with those wallpapers. The app also allows users to share wallpapers with others by giving them a unique link for every wallpaper, using Dynamic Links so that anyone can directly view the wallpaper.
 
@@ -23,19 +31,33 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 1. [Features](#features)
 2. [Changelog](#changelog)
 3. [Demo](#demo)
+<<<<<<< HEAD
 4. [Dependencies](#dependencies)
 5. [Usage](#usage)
 6. [Development](#development)
 7. [License](#license)
 8. [Contributors](#contributors)
 9. [To-Do](#to-do)
+=======
+4. [Support](#support)
+5. [Dependencies](#dependencies)
+6. [Usage](#usage)
+7. [Development](#development)
+8. [License](#license)
+9. [Contributors](#contributors)
+10. [To-Do](#to-do)
+>>>>>>> 3814e7810a3b20078ee5f7e171a84dfc3aca67df
 
 ## Features
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
 - Dark Mode supported
 - Google Sign In is optional
+<<<<<<< HEAD
 - Low Internet usage due to minimal loading and persistant data using Provider
+=======
+- Low Internet usage due to minimal loading and persistent data using Provider
+>>>>>>> 3814e7810a3b20078ee5f7e171a84dfc3aca67df
 - Home Feed is infinite, never ends
 - Save Liked Images for later (works even after uninstalling the app)
 - Download any wallpaper to Gallery
@@ -106,7 +128,11 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 |     Explore     |    Curated    |    Abstract     |     Nature       |     Color Based     |
 
 
+<<<<<<< HEAD
 | ![](demo/7.jpg) | ![](demo/19.jpg) | ![](demo/48.jpg) | ![](demo/17.jpg) | ![](demo/26.jpg) |
+=======
+| ![](demo/7.jpg) | ![](demo/19.jpg) | ![](demo/48.jpg) | ![](demo/52.jpg) | ![](demo/26.jpg) |
+>>>>>>> 3814e7810a3b20078ee5f7e171a84dfc3aca67df
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Color Picker    |    Favourites    |    Downloads     |     Search       |     Profile     |
 
@@ -121,10 +147,27 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 **Light Theme**
 
+<<<<<<< HEAD
 | ![](demo/41.jpg) | ![](demo/42.jpg)| ![](demo/44.jpg)| ![](demo/49.jpg) | ![](demo/45.jpg)|
 | :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
 |  Explore  |Search|  Favourites    |      Downloads   |      Profile  |
 
+=======
+| ![](demo/51.jpg) | ![](demo/53.jpg)| ![](demo/44.jpg)| ![](demo/49.jpg) | ![](demo/45.jpg)|
+| :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
+|  Explore  |Search|  Favourites    |      Downloads   |      Profile  |
+
+
+## Support
+
+If you like what we do, and would want to help us continue doing it, consider sponsoring this project.
+
+<a href="https://www.buymeacoffee.com/HashStudios" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
+
+You can also help by downloading the app from Google Play store and reviewing it.
+
+<a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width=200 /></a>
+>>>>>>> 3814e7810a3b20078ee5f7e171a84dfc3aca67df
 ## Dependencies
 
 The following packages are needed for the development of this application.
@@ -205,7 +248,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <img src="https://contributors-img.web.app/image?repo=Hash-Studios/Prism" />
 </a>
 
+<<<<<<< HEAD
 ![Prism UI Mockup](demo/Prism_Mockup2.jpg)
+=======
+![Prism UI Mockup](demo/Prism_Mockup2.png)
+>>>>>>> 3814e7810a3b20078ee5f7e171a84dfc3aca67df
 
 ## To Do
 
@@ -305,11 +352,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - [x] focussed menu details in fav page download not working
 - [x] abstact page curated shows when see more
 - [x] create a api popup
+<<<<<<< HEAD
 - [ ] replace downloads image in readme
+=======
+- [x] replace downloads image in readme
+>>>>>>> 3814e7810a3b20078ee5f7e171a84dfc3aca67df
 - [ ] notifications (timed, random)
 - [ ] code refactoring
 - [ ] community walls + collections (add users to upload there own walls in the app)
 - [ ] make tags clickable
 - [ ] search tags working
 - [ ] add analytics
+<<<<<<< HEAD
 - [ ] centrecrop java for search
+=======
+- [ ] centrecrop java for search
+- [x] see more in search
+- [x] favWallScreen downlod button issue
+>>>>>>> 3814e7810a3b20078ee5f7e171a84dfc3aca67df
