@@ -1,3 +1,4 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -68,6 +69,7 @@ class GoogleAuth {
     assert(await user.getIdToken() != null);
     final FirebaseUser currentUser = await _auth.currentUser();
     assert(user.uid == currentUser.uid);
+    analytics.logLogin();
     return 'signInWithGoogle succeeded: $user';
   }
 

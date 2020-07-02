@@ -1,3 +1,4 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
@@ -94,6 +95,9 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     Provider.of<FavouriteProvider>(context, listen: false)
         .favCheck(id, provider, wallhaven, pexels)
         .then((value) {
+      analytics.logEvent(
+          name: 'fav_status_changed',
+          parameters: {'id': id, 'provider': provider});
       setState(() {
         isLoading = false;
       });

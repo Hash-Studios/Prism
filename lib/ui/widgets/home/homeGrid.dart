@@ -1,3 +1,4 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
@@ -493,6 +494,8 @@ class _HomeGridState extends State<HomeGrid>
     final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
     final Uri shortUrl = shortDynamicLink.shortUrl;
     Clipboard.setData(ClipboardData(text: shortUrl.toString()));
+    analytics.logShare(
+        contentType: 'focussedMenu', itemId: id, method: 'link');
     toasts.shareWall();
     print(shortUrl);
   }

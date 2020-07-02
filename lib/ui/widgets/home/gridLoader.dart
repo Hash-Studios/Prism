@@ -1,8 +1,8 @@
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/widgets/home/homeGrid.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
-import 'package:Prism/ui/widgets/homeGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

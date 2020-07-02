@@ -1,3 +1,4 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,6 +27,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       });
       if (result) {
         print("Success");
+        analytics.logEvent(
+            name: 'set_wall',
+            parameters: {'type': 'Both', 'result': 'Success'});
         toasts.setWallpaper();
       } else {
         print("Failed");
@@ -37,6 +41,8 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
+      analytics.logEvent(
+          name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       print(e);
     }
   }
@@ -50,6 +56,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       });
       if (result) {
         print("Success");
+        analytics.logEvent(
+            name: 'set_wall',
+            parameters: {'type': 'Lock', 'result': 'Success'});
         toasts.setWallpaper();
       } else {
         print("Failed");
@@ -62,6 +71,8 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       }
     } catch (e) {
       print(e);
+      analytics.logEvent(
+          name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
   }
 
@@ -74,6 +85,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       });
       if (result) {
         print("Success");
+        analytics.logEvent(
+            name: 'set_wall',
+            parameters: {'type': 'Home', 'result': 'Success'});
         toasts.setWallpaper();
       } else {
         print("Failed");
@@ -86,6 +100,8 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       }
     } catch (e) {
       print(e);
+      analytics.logEvent(
+          name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
   }
 
