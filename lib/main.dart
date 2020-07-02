@@ -6,6 +6,7 @@ import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
+import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
@@ -95,6 +96,7 @@ class RestartWidget extends StatefulWidget {
 
   static void restartApp(BuildContext context) {
     router.currentRoute = "Home";
+    observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>().restartApp();
   }
 
