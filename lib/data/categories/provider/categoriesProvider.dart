@@ -11,6 +11,8 @@ class CategoryProvider extends ChangeNotifier {
   String selectedCategory = 'Home';
   void updateSelectedCategory(String newCategory) {
     this.selectedCategory = newCategory;
-    notifyListeners();
+    Future.delayed(Duration(seconds: 0)).then((value) {
+      super.notifyListeners();
+    });
   }
 }

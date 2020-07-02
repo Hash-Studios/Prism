@@ -4,10 +4,10 @@ import 'package:Prism/routing_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:Prism/ui/pages/pageManager.dart' as PM;
 
 class CategoriesBar extends StatefulWidget {
-  final String current;
-  CategoriesBar({Key key, @required this.current}) : super(key: key);
+  CategoriesBar({Key key}) : super(key: key);
 
   @override
   _CategoriesBarState createState() => _CategoriesBarState();
@@ -43,8 +43,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   @override
   Widget build(BuildContext context) {
-    // Provider.of<CategoryProvider>(context).categories.remove(widget.current);
-    // Provider.of<CategoryProvider>(context).categories.insert(0, widget.current);
     return AppBar(
       excludeHeaderSemantics: false,
       automaticallyImplyLeading: false,
@@ -68,7 +66,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
                         padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
                         backgroundColor: Provider.of<CategoryProvider>(context)
                                     .categories[index] ==
-                                widget.current
+                                Provider.of<CategoryProvider>(context)
+                                    .selectedCategory
                             ? Theme.of(context).accentColor
                             : Theme.of(context).hintColor,
                         label: Text(
@@ -76,7 +75,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                 .categories[index],
                             style: Provider.of<CategoryProvider>(context)
                                         .categories[index] ==
-                                    widget.current
+                                    Provider.of<CategoryProvider>(context)
+                                        .selectedCategory
                                 ? Theme.of(context)
                                     .textTheme
                                     .headline4
@@ -84,7 +84,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         color: Theme.of(context).primaryColor)
                                 : Theme.of(context).textTheme.headline4),
                         onPressed: () {
-                          if (widget.current == "Home") {
+                          if (Provider.of<CategoryProvider>(context,
+                                      listen: false)
+                                  .selectedCategory ==
+                              "Home") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -93,17 +96,23 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Curated") {
-                              Navigator.pushNamed(context, CuratedRoute);
+                              PM.pageController.animateToPage(1,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Abstract") {
-                              Navigator.pushNamed(context, AbstractRoute);
+                              PM.pageController.animateToPage(2,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Nature") {
-                              Navigator.pushNamed(context, NatureRoute);
+                              PM.pageController.animateToPage(3,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -145,7 +154,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                 },
                               );
                             }
-                          } else if (widget.current == "Curated") {
+                          } else if (Provider.of<CategoryProvider>(context,
+                                      listen: false)
+                                  .selectedCategory ==
+                              "Curated") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -154,7 +166,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
                               currentRoute = previousRoute;
                               previousRoute = route;
                               print(currentRoute);
-                              Navigator.pop(context);
+                              PM.pageController.animateToPage(0,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -163,14 +177,16 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Abstract") {
-                              Navigator.pushReplacementNamed(
-                                  context, AbstractRoute);
+                              PM.pageController.animateToPage(2,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Nature") {
-                              Navigator.pushReplacementNamed(
-                                  context, NatureRoute);
+                              PM.pageController.animateToPage(3,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -212,7 +228,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                 },
                               );
                             }
-                          } else if (widget.current == "Abstract") {
+                          } else if (Provider.of<CategoryProvider>(context,
+                                      listen: false)
+                                  .selectedCategory ==
+                              "Abstract") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -221,13 +240,16 @@ class _CategoriesBarState extends State<CategoriesBar> {
                               currentRoute = previousRoute;
                               previousRoute = route;
                               print(currentRoute);
-                              Navigator.pop(context);
+                              PM.pageController.animateToPage(0,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Curated") {
-                              Navigator.pushReplacementNamed(
-                                  context, CuratedRoute);
+                              PM.pageController.animateToPage(1,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -236,8 +258,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                         listen: false)
                                     .categories[index] ==
                                 "Nature") {
-                              Navigator.pushReplacementNamed(
-                                  context, NatureRoute);
+                              PM.pageController.animateToPage(3,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -279,7 +302,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                 },
                               );
                             }
-                          } else if (widget.current == "Nature") {
+                          } else if (Provider.of<CategoryProvider>(context,
+                                      listen: false)
+                                  .selectedCategory ==
+                              "Nature") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -288,19 +314,23 @@ class _CategoriesBarState extends State<CategoriesBar> {
                               currentRoute = previousRoute;
                               previousRoute = route;
                               print(currentRoute);
-                              Navigator.pop(context);
+                              PM.pageController.animateToPage(0,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Curated") {
-                              Navigator.pushReplacementNamed(
-                                  context, CuratedRoute);
+                              PM.pageController.animateToPage(1,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Abstract") {
-                              Navigator.pushReplacementNamed(
-                                  context, AbstractRoute);
+                              PM.pageController.animateToPage(2,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -346,7 +376,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                 },
                               );
                             }
-                          } else if (widget.current == "Colors") {
+                          } else if (Provider.of<CategoryProvider>(context,
+                                      listen: false)
+                                  .selectedCategory ==
+                              "Colors") {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
@@ -355,25 +388,30 @@ class _CategoriesBarState extends State<CategoriesBar> {
                               currentRoute = previousRoute;
                               previousRoute = route;
                               print(currentRoute);
-                              Navigator.pop(context);
+                              PM.pageController.animateToPage(0,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Curated") {
-                              Navigator.pushReplacementNamed(
-                                  context, CuratedRoute);
+                              PM.pageController.animateToPage(1,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Abstract") {
-                              Navigator.pushReplacementNamed(
-                                  context, AbstractRoute);
+                              PM.pageController.animateToPage(2,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==
                                 "Nature") {
-                              Navigator.pushReplacementNamed(
-                                  context, NatureRoute);
+                              PM.pageController.animateToPage(3,
+                                  duration: Duration(milliseconds: 300),
+                                  curve: Curves.easeIn);
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .categories[index] ==

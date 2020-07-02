@@ -1,17 +1,20 @@
+import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/router.dart';
-import 'package:Prism/ui/widgets/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/categoriesBar.dart';
 import 'package:Prism/ui/widgets/gridLoader.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
-class NatureScreen extends StatelessWidget {
+class NatureScreen extends StatefulWidget {
   NatureScreen({
     Key key,
   }) : super(key: key);
 
+  @override
+  _NatureScreenState createState() => _NatureScreenState();
+}
+
+class _NatureScreenState extends State<NatureScreen> {
   Future<bool> onWillPop() async {
     String route = currentRoute;
     currentRoute = previousRoute;
@@ -21,24 +24,21 @@ class NatureScreen extends StatelessWidget {
   }
 
   @override
+  void initState() {
+    Provider.of<CategoryProvider>(context, listen: false)
+        .updateSelectedCategory("Nature");
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          appBar: PreferredSize(
-            child: CategoriesBar(
-              current: "Nature",
-            ),
-            preferredSize: Size(double.infinity, 55),
-          ),
-          body: BottomBar(
-            child: GridLoader(
-              future: Provider.of<PexelsProvider>(context, listen: false)
-                  .getNatureWalls(),
-              provider: "Pexels",
-            ),
-          )),
+      child: GridLoader(
+        future: Provider.of<PexelsProvider>(context, listen: false)
+            .getNatureWalls(),
+        provider: "Pexels",
+      ),
     );
   }
 }

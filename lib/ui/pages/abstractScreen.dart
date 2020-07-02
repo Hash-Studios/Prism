@@ -1,3 +1,4 @@
+import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/router.dart';
 import 'package:Prism/ui/widgets/bottomNavBar.dart';
@@ -7,11 +8,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
-class AbstractScreen extends StatelessWidget {
+class AbstractScreen extends StatefulWidget {
   AbstractScreen({
     Key key,
   }) : super(key: key);
 
+  @override
+  _AbstractScreenState createState() => _AbstractScreenState();
+}
+
+class _AbstractScreenState extends State<AbstractScreen> {
   Future<bool> onWillPop() async {
     String route = currentRoute;
     currentRoute = previousRoute;
@@ -21,24 +27,21 @@ class AbstractScreen extends StatelessWidget {
   }
 
   @override
+  void initState() {
+    Provider.of<CategoryProvider>(context, listen: false)
+        .updateSelectedCategory("Abstract");
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          appBar: PreferredSize(
-            child: CategoriesBar(
-              current: "Abstract",
-            ),
-            preferredSize: Size(double.infinity, 55),
-          ),
-          body: BottomBar(
-            child: GridLoader(
-              future: Provider.of<PexelsProvider>(context, listen: false)
-                  .getAbstractWalls(),
-              provider: "Pexels",
-            ),
-          )),
+      child: GridLoader(
+        future: Provider.of<PexelsProvider>(context, listen: false)
+            .getAbstractWalls(),
+        provider: "Pexels",
+      ),
     );
   }
 }
