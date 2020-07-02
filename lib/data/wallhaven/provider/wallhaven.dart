@@ -51,11 +51,11 @@ class WallHavenProvider extends ChangeNotifier {
 
   Future<WallPaper> getWallbyID(String id) async {
     print("https://wallhaven.cc/api/v1/w/$id");
-    wall = null;
+    this.wall = null;
     http.get("https://wallhaven.cc/api/v1/w/$id").then(
       (http.Response response) {
         var resp = json.decode(response.body)["data"];
-        wall = WallPaper(
+        this.wall = WallPaper(
           id: resp["id"].toString(),
           url: resp["url"],
           short_url: resp["short_url"],
@@ -80,9 +80,11 @@ class WallHavenProvider extends ChangeNotifier {
             ),
           ),
         );
+        print("id data done");
+        notifyListeners();
+        return this.wall;
       },
     );
-    return wall;
   }
 
   Future<List<WallPaper>> getWallsbyQuery(String query) async {
