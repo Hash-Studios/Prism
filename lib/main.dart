@@ -3,13 +3,13 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/pages/splashScreen.dart';
+import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/routes/router.dart' as router;
 import 'package:provider/provider.dart';
-import 'package:Prism/router.dart' as router;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:Prism/globals.dart' as globals;
 import 'package:flutter/cupertino.dart';
 import 'package:Prism/theme/theme.dart';
 
