@@ -24,7 +24,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-final String testID = 'support';
+final List<String> supportPurchase = ['support', 'support_more', 'support_max'];
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -52,13 +52,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_available) {
       List<Future> futures = [_getProducts(), _getPastPurchases()];
       await Future.wait(futures);
-      _verifyPurchase();
       _subscription = _iap.purchaseUpdatedStream.listen(
         (data) => setState(
           () {
-            toasts.supportSuccess();
             _purchases.addAll(data);
-            _verifyPurchase();
+            _verifyPurchase(data[data.length - 1].productID);
           },
         ),
       );
@@ -90,8 +88,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void onSupport(BuildContext context) async {
+    showDialog(
+      context: context,
+      child: AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(20),
+          ),
+        ),
+        content: Container(
+          height: 200,
+          width: 250,
+          child: Center(
+            child: ListView.builder(
+                itemCount: 3,
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    leading: Icon(
+                      index == 0
+                          ? JamIcons.coffee
+                          : index == 1 ? Icons.fastfood : JamIcons.pizza_slice,
+                      color: Theme.of(context).accentColor,
+                    ),
+                    title: Text(
+                      index == 0 ? "Tea" : index == 1 ? "Burger" : "Pan Pizza",
+                      style: Theme.of(context).textTheme.headline4,
+                    ),
+                    onTap: index == 0
+                        ? () async {
+                            HapticFeedback.vibrate();
+                            Navigator.of(context).pop();
+                            _buyProduct(_products.firstWhere(
+                                (element) => element.id == 'support'));
+                          }
+                        : index == 1
+                            ? () async {
+                                HapticFeedback.vibrate();
+                                Navigator.of(context).pop();
+                                _buyProduct(_products.firstWhere(
+                                    (element) => element.id == 'support_more'));
+                              }
+                            : () async {
+                                HapticFeedback.vibrate();
+                                Navigator.of(context).pop();
+                                _buyProduct(_products.firstWhere(
+                                    (element) => element.id == 'support_max'));
+                              },
+                  );
+                }),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _getProducts() async {
-    Set<String> ids = Set.from([testID]);
+    Set<String> ids = Set.from(supportPurchase);
     ProductDetailsResponse response = await _iap.queryProductDetails(ids);
     setState(() {
       _products = response.productDetails;
@@ -110,9 +164,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         orElse: () => null);
   }
 
-  void _verifyPurchase() {
-    PurchaseDetails purchase = _hasPurchased(testID);
-    if (purchase != null && purchase.status == PurchaseStatus.purchased) {}
+  void _verifyPurchase(String productID) {
+    PurchaseDetails purchase = _hasPurchased(productID);
+    if (purchase != null) {
+      if (purchase.status == PurchaseStatus.purchased) {
+        toasts.supportSuccess();
+      }
+    } else {
+      toasts.error("Invalid Purchase!");
+    }
   }
 
   void _buyProduct(ProductDetails prod) {
@@ -720,9 +780,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () {
-                    for (var prod in _products) {
-                      _buyProduct(prod);
-                    }
+                    onSupport(context);
                   }),
               ExpansionTile(
                 leading: Icon(
