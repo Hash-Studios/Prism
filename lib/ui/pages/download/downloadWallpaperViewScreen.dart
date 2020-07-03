@@ -43,11 +43,12 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
+    SystemChrome.setEnabledSystemUIOverlays([]);
     try {
       return WillPopScope(
         onWillPop: onWillPop,
         child: Scaffold(
+          resizeToAvoidBottomPadding: false,
           key: _scaffoldKey,
           backgroundColor: Theme.of(context).primaryColor,
           body: Stack(
