@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:flutter/services.dart';
 
 SharedPreferences prefs;
 var darkMode;
@@ -75,6 +76,10 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     return MaterialApp(
       navigatorObservers: <NavigatorObserver>[observer],
       onGenerateRoute: router.generateRoute,
