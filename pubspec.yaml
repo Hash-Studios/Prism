@@ -43,6 +43,7 @@ dependencies:
   permission_handler: ^5.0.1+1
   sliding_up_panel: ^1.0.2
   firebase_analytics: ^5.0.16
+  firebase_messaging: ^6.0.16
 
 dev_dependencies:
   flutter_test:

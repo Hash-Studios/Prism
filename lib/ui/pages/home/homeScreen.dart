@@ -3,7 +3,9 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/widgets/home/gridLoader.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
@@ -30,7 +32,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     isNew = true;
+    _updateToken();
     super.initState();
+  }
+
+  void _updateToken() {
+    FirebaseMessaging f = new FirebaseMessaging();
+    f.getToken().then((value) {
+      print(value);
+      Firestore.instance.collection('tokens').document(value).setData({
+        "devtoken": value.toString(),
+        "createdAt": DateTime.now().toIso8601String()
+      }).then((value) {});
+    }).catchError((onError) {
+      print(onError.toString());
+      // Navigator.pop(context);
+    });
   }
 
   void showChangelogCheck(BuildContext context) {
