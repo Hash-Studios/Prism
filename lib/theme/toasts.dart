@@ -235,3 +235,14 @@ void clearCache() {
       textColor: Colors.white,
       fontSize: 16.0);
 }
+
+void supportSuccess() {
+  Fluttertoast.showToast(
+      msg: "Thanks for your support! It means a lot.",
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green[400],
+      toastLength: Toast.LENGTH_LONG,
+      timeInSecForIosWeb: 1,
+      textColor: Colors.white,
+      fontSize: 16.0);
+}
