@@ -17,7 +17,6 @@ class _IAPWidgetState extends State<IAPWidget> {
   List<PurchaseDetails> _purchases = [];
   StreamSubscription _subscription;
 
-  int _donation = 0;
   @override
   void initState() {
     _initialize();
@@ -37,7 +36,7 @@ class _IAPWidgetState extends State<IAPWidget> {
       await Future.wait(futures);
       _verifyPurchase();
       _subscription = _iap.purchaseUpdatedStream.listen((data) => setState(() {
-            print("New Purchase");
+            print("Supported");
             _purchases.addAll(data);
             _verifyPurchase();
           }));
@@ -54,36 +53,27 @@ class _IAPWidgetState extends State<IAPWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            for (var prod in _products)
-              if (_hasPurchased(prod.id) != null) ...[
-                Text(
-                  "🤑🤑🤑 $_donation",
-                  style: TextStyle(fontSize: 60),
-                ),
-                FlatButton(
-                  onPressed: () => _spendCredits(_hasPurchased(prod.id)),
-                  child: Text('Consume'),
-                  color: Colors.lightGreen,
-                )
-              ] else ...[
-                Text(
-                  prod.title,
-                  style: Theme.of(context).textTheme.headline2,
-                ),
-                Text(
-                  prod.description,
-                  style: Theme.of(context).textTheme.headline3,
-                ),
-                Text(
-                  prod.price,
-                  style: TextStyle(color: Colors.greenAccent, fontSize: 60),
-                ),
-                FlatButton(
-                  onPressed: () => _buyProduct(prod),
-                  child: Text('Buy it'),
-                  color: Colors.lightGreen,
-                )
-              ]
+            for (var prod in _products) ...[
+              Text(
+                prod.title,
+                style: Theme.of(context).textTheme.headline2,
+              ),
+              Text(
+                prod.description,
+                style: Theme.of(context).textTheme.headline3,
+              ),
+              Text(
+                prod.price,
+                style: TextStyle(color: Colors.greenAccent, fontSize: 60),
+              ),
+              FlatButton(
+                onPressed: () {
+                  _buyProduct(prod);
+                },
+                child: Text('Buy it'),
+                color: Colors.lightGreen,
+              )
+            ]
           ],
         ),
       ),
@@ -112,23 +102,11 @@ class _IAPWidgetState extends State<IAPWidget> {
 
   void _verifyPurchase() {
     PurchaseDetails purchase = _hasPurchased(testID);
-    if (purchase != null && purchase.status == PurchaseStatus.purchased) {
-      _donation = 30;
-    }
+    if (purchase != null && purchase.status == PurchaseStatus.purchased) {}
   }
 
   void _buyProduct(ProductDetails prod) {
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: prod);
-    _iap.buyConsumable(purchaseParam: purchaseParam, autoConsume: false);
-  }
-
-  void _spendCredits(PurchaseDetails purchase) async {
-    setState(() {
-      _donation--;
-    });
-    if (_donation == 0) {
-      var res = await _iap.consumePurchase(purchase);
-      await _getPastPurchases();
-    }
+    _iap.buyConsumable(purchaseParam: purchaseParam);
   }
 }
