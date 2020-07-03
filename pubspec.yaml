@@ -44,6 +44,7 @@ dependencies:
   sliding_up_panel: ^1.0.2
   firebase_analytics: ^5.0.16
   firebase_messaging: ^6.0.16
+  in_app_purchase: ^0.3.4+1
 
 dev_dependencies:
   flutter_test:
