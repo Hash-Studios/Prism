@@ -26,32 +26,33 @@ void main() {
       prefs.setBool('darkMode', true);
     else
       prefs.setBool('darkMode', false);
-    runApp(
-      RestartWidget(
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<WallHavenProvider>(
-              create: (context) => WallHavenProvider(),
-            ),
-            ChangeNotifierProvider<PexelsProvider>(
-              create: (context) => PexelsProvider(),
-            ),
-            ChangeNotifierProvider<CategoryProvider>(
-              create: (context) => CategoryProvider(),
-            ),
-            ChangeNotifierProvider<FavouriteProvider>(
-              create: (context) => FavouriteProvider(),
-            ),
-            ChangeNotifierProvider<ThemeModel>(
-              create: (context) => ThemeModel(
-                  darkMode ? kDarkTheme : kLightTheme,
-                  darkMode ? ThemeType.Dark : ThemeType.Light),
-            )
-          ],
-          child: MyApp(),
-        ),
-      ),
-    );
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+        .then((value) => runApp(
+              RestartWidget(
+                child: MultiProvider(
+                  providers: [
+                    ChangeNotifierProvider<WallHavenProvider>(
+                      create: (context) => WallHavenProvider(),
+                    ),
+                    ChangeNotifierProvider<PexelsProvider>(
+                      create: (context) => PexelsProvider(),
+                    ),
+                    ChangeNotifierProvider<CategoryProvider>(
+                      create: (context) => CategoryProvider(),
+                    ),
+                    ChangeNotifierProvider<FavouriteProvider>(
+                      create: (context) => FavouriteProvider(),
+                    ),
+                    ChangeNotifierProvider<ThemeModel>(
+                      create: (context) => ThemeModel(
+                          darkMode ? kDarkTheme : kLightTheme,
+                          darkMode ? ThemeType.Dark : ThemeType.Light),
+                    )
+                  ],
+                  child: MyApp(),
+                ),
+              ),
+            ));
   });
 }
 
@@ -76,10 +77,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
     return MaterialApp(
       navigatorObservers: <NavigatorObserver>[observer],
       onGenerateRoute: router.generateRoute,
