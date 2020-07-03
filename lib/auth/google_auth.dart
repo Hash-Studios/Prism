@@ -47,6 +47,7 @@ class GoogleAuth {
           'name': user.displayName,
           'email': user.email,
           'id': user.uid,
+          'createdAt': DateTime.now().toIso8601String()
         });
         await prefs.setString('id', user.uid);
         await prefs.setString('name', user.displayName);
