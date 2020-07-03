@@ -2,12 +2,14 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/in_app_purchases/inAppPurchases.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/services.dart';
@@ -633,24 +635,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () {
                     launch("https://forms.gle/nSt4QtiQVVaZvhdA8");
                   }),
-              // ListTile(
-              //     leading: Icon(
-              //       JamIcons.coffee,
-              //     ),
-              //     title: new Text(
-              //       "Buy us a cup of tea",
-              //       style: TextStyle(
-              //           color: Theme.of(context).accentColor,
-              //           fontWeight: FontWeight.w500,
-              //           fontFamily: "Proxima Nova"),
-              //     ),
-              //     subtitle: Text(
-              //       "Support us if you like what we do",
-              //       style: TextStyle(fontSize: 12),
-              //     ),
-              //     onTap: () {
-              //       launch("https://buymeacoff.ee/HashStudios");
-              //     }),
+              ListTile(
+                  leading: Icon(
+                    JamIcons.coffee,
+                  ),
+                  title: new Text(
+                    "Buy us a cup of tea",
+                    style: TextStyle(
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: "Proxima Nova"),
+                  ),
+                  subtitle: Text(
+                    "Support us if you like what we do",
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onTap: () {
+                    Navigator.push(context,
+                        CupertinoPageRoute(builder: (context) => IAPWidget()));
+                  }),
               ExpansionTile(
                 leading: Icon(
                   JamIcons.users,

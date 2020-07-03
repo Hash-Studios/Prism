@@ -10,6 +10,7 @@ import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,6 +21,7 @@ SharedPreferences prefs;
 var darkMode;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  InAppPurchaseConnection.enablePendingPurchases();
   SharedPreferences.getInstance().then((prefs) {
     darkMode = prefs.getBool('darkMode') ?? true;
     if (darkMode)
