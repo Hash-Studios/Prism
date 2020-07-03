@@ -135,7 +135,7 @@ class LoadingCards extends StatelessWidget {
               MediaQuery.of(context).orientation == Orientation.portrait
                   ? 300
                   : 250,
-          childAspectRatio: 0.830,
+          childAspectRatio: 0.6625,
           mainAxisSpacing: 8,
           crossAxisSpacing: 8),
       itemBuilder: (context, index) {

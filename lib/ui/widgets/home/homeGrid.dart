@@ -147,7 +147,7 @@ class _HomeGridState extends State<HomeGrid>
                 MediaQuery.of(context).orientation == Orientation.portrait
                     ? 300
                     : 250,
-            childAspectRatio: 0.830,
+            childAspectRatio: 0.6625,
             mainAxisSpacing: 8,
             crossAxisSpacing: 8),
         itemBuilder: (context, index) {
@@ -494,8 +494,7 @@ class _HomeGridState extends State<HomeGrid>
     final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
     final Uri shortUrl = shortDynamicLink.shortUrl;
     Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-    analytics.logShare(
-        contentType: 'focussedMenu', itemId: id, method: 'link');
+    analytics.logShare(contentType: 'focussedMenu', itemId: id, method: 'link');
     toasts.shareWall();
     print(shortUrl);
   }

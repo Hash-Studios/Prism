@@ -121,10 +121,10 @@ class FocusedMenuDetails extends StatelessWidget {
                           child: child))),
               provider == "WallHaven"
                   ? Positioned(
-                      top: childOffset.dy + childSize.height * 2 / 8,
+                      top: childOffset.dy + childSize.height * 4 / 10,
                       left: childOffset.dx,
                       child: TweenAnimationBuilder(
-                        duration: Duration(milliseconds: 200),
+                        duration: Duration(milliseconds: 150),
                         builder: (BuildContext context, value, Widget child) {
                           return Transform.scale(
                             scale: value,
@@ -135,7 +135,7 @@ class FocusedMenuDetails extends StatelessWidget {
                         tween: Tween(begin: 0.0, end: 1.0),
                         child: Container(
                           width: childSize.width,
-                          height: childSize.height * 6 / 8,
+                          height: childSize.height * 6 / 10,
                           decoration: BoxDecoration(
                             color: Color(0xFF2F2F2F),
                             borderRadius:
@@ -325,7 +325,7 @@ class FocusedMenuDetails extends StatelessWidget {
                     )
                   : provider == "Pexels"
                       ? Positioned(
-                          top: childOffset.dy + childSize.height * 2 / 8,
+                          top: childOffset.dy + childSize.height * 4 / 10,
                           left: childOffset.dx,
                           child: TweenAnimationBuilder(
                             duration: Duration(milliseconds: 200),
@@ -340,7 +340,7 @@ class FocusedMenuDetails extends StatelessWidget {
                             tween: Tween(begin: 0.0, end: 1.0),
                             child: Container(
                               width: childSize.width,
-                              height: childSize.height * 6 / 8,
+                              height: childSize.height * 6 / 10,
                               decoration: BoxDecoration(
                                 color: Color(0xFF2F2F2F),
                                 borderRadius: const BorderRadius.all(
