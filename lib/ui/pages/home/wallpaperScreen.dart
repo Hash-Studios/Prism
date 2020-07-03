@@ -78,12 +78,13 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
+    SystemChrome.setEnabledSystemUIOverlays([]);
     // try {
     return WillPopScope(
       onWillPop: onWillPop,
       child: provider == "WallHaven"
           ? Scaffold(
+              resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : colors[0],
@@ -506,6 +507,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
             )
           : provider == "Pexels"
               ? Scaffold(
+                  resizeToAvoidBottomPadding: false,
                   key: _scaffoldKey,
                   backgroundColor:
                       isLoading ? Theme.of(context).primaryColor : colors[0],
@@ -953,6 +955,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                 )
               : provider.length > 6 && provider.substring(0, 6) == "Colors"
                   ? Scaffold(
+                      resizeToAvoidBottomPadding: false,
                       key: _scaffoldKey,
                       backgroundColor: isLoading
                           ? Theme.of(context).primaryColor
@@ -1426,6 +1429,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                       ),
                     )
                   : Scaffold(
+                      resizeToAvoidBottomPadding: false,
                       key: _scaffoldKey,
                       backgroundColor: isLoading
                           ? Theme.of(context).primaryColor

@@ -75,7 +75,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
+    SystemChrome.setEnabledSystemUIOverlays([]);
     // try {
     return WillPopScope(
       onWillPop: onWillPop,
@@ -86,6 +86,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                       .liked[index]["provider"] ==
                   "Pexels"
           ? Scaffold(
+            resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : colors[0],
@@ -655,6 +656,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
             )
           : Scaffold(
               key: _scaffoldKey,
+              resizeToAvoidBottomPadding: false,
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : colors[0],
               body: SlidingUpPanel(

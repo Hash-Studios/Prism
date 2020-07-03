@@ -93,10 +93,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
+    SystemChrome.setEnabledSystemUIOverlays([]);
 
     return provider == "WallHaven"
         ? Scaffold(
+          resizeToAvoidBottomPadding: false,
             key: _scaffoldKey,
             backgroundColor:
                 isLoading ? Theme.of(context).primaryColor : colors[0],
@@ -542,6 +543,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
           )
         : provider == "Pexels"
             ? Scaffold(
+              resizeToAvoidBottomPadding: false,
                 key: _scaffoldKey,
                 backgroundColor:
                     isLoading ? Theme.of(context).primaryColor : colors[0],
