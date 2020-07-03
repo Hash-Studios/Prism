@@ -556,18 +556,23 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                               ),
                             ),
                           ),
-                          placeholder: (context, url) => Container(
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(
-                                  isLoading
-                                      ? Theme.of(context).accentColor
-                                      : colors[0].computeLuminance() > 0.5
-                                          ? Colors.black
-                                          : Colors.white,
+                          placeholder: (context, url) => Stack(
+                            children: <Widget>[
+                              SizedBox.expand(child: Text("")),
+                              Container(
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation(
+                                      isLoading
+                                          ? Theme.of(context).accentColor
+                                          : colors[0].computeLuminance() > 0.5
+                                              ? Colors.black
+                                              : Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                           errorWidget: (context, url, error) => Container(
                             child: Center(
@@ -1023,18 +1028,23 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                               ),
                             );
                           },
-                          placeholder: (context, url) => Container(
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(
-                                  isLoading
-                                      ? Theme.of(context).accentColor
-                                      : colors[0].computeLuminance() > 0.5
-                                          ? Colors.black
-                                          : Colors.white,
+                          placeholder: (context, url) => Stack(
+                            children: <Widget>[
+                              SizedBox.expand(child: Text("")),
+                              Container(
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation(
+                                      isLoading
+                                          ? Theme.of(context).accentColor
+                                          : colors[0].computeLuminance() > 0.5
+                                              ? Colors.black
+                                              : Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                           errorWidget: (context, url, error) =>
                               OptimizedCacheImage(

@@ -97,7 +97,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
 
     return provider == "WallHaven"
         ? Scaffold(
-          resizeToAvoidBottomPadding: false,
+            resizeToAvoidBottomPadding: false,
             key: _scaffoldKey,
             backgroundColor:
                 isLoading ? Theme.of(context).primaryColor : colors[0],
@@ -445,18 +445,23 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                             ),
                           ),
                         ),
-                        placeholder: (context, url) => Container(
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation(
-                                isLoading
-                                    ? Theme.of(context).accentColor
-                                    : colors[0].computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white,
+                        placeholder: (context, url) => Stack(
+                          children: <Widget>[
+                            SizedBox.expand(child: Text("")),
+                            Container(
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(
+                                    isLoading
+                                        ? Theme.of(context).accentColor
+                                        : colors[0].computeLuminance() > 0.5
+                                            ? Colors.black
+                                            : Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
                         errorWidget: (context, url, error) => Container(
                           child: Center(
@@ -543,7 +548,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
           )
         : provider == "Pexels"
             ? Scaffold(
-              resizeToAvoidBottomPadding: false,
+                resizeToAvoidBottomPadding: false,
                 key: _scaffoldKey,
                 backgroundColor:
                     isLoading ? Theme.of(context).primaryColor : colors[0],
@@ -872,18 +877,23 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                 ),
                               ),
                             ),
-                            placeholder: (context, url) => Container(
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation(
-                                    isLoading
-                                        ? Theme.of(context).accentColor
-                                        : colors[0].computeLuminance() > 0.5
-                                            ? Colors.black
-                                            : Colors.white,
+                            placeholder: (context, url) => Stack(
+                              children: <Widget>[
+                                SizedBox.expand(child: Text("")),
+                                Container(
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation(
+                                        isLoading
+                                            ? Theme.of(context).accentColor
+                                            : colors[0].computeLuminance() > 0.5
+                                                ? Colors.black
+                                                : Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
                             errorWidget: (context, url, error) => Container(
                               child: Center(
