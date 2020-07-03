@@ -3,7 +3,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:permission_handler/permission_handler.dart';
 
 class SetWallpaperButton extends StatefulWidget {
   final String url;
@@ -19,37 +18,8 @@ class SetWallpaperButton extends StatefulWidget {
 class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   static const platform = const MethodChannel("flutter.prism.set_wallpaper");
   bool isLoading = false;
-  Permission _permission = Permission.storage;
-  PermissionStatus _permissionStatus = PermissionStatus.undetermined;
-
-  @override
-  void initState() {
-    super.initState();
-    _listenForPermissionStatus();
-  }
-
-  Future<bool> requestPermission(Permission permission) async {
-    final status = await permission.request();
-
-    setState(() {
-      print(status);
-      _permissionStatus = status;
-      print(_permissionStatus);
-    });
-    return true;
-  }
-
-  void _listenForPermissionStatus() async {
-    final status = await _permission.status;
-    setState(() => _permissionStatus = status);
-  }
 
   void _setWallPaper() async {
-    await requestPermission(_permission);
-
-    if (_permissionStatus == PermissionStatus.denied) {
-      toasts.error("Need storage permission to proceed");
-    }
     bool result;
     try {
       result = await platform.invokeMethod("set_wallpaper", <String, dynamic>{
@@ -62,9 +32,6 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
             parameters: {'type': 'Both', 'result': 'Success'});
         toasts.setWallpaper();
       } else {
-        analytics.logEvent(
-            name: 'set_wall',
-            parameters: {'type': 'Both', 'result': 'Failure'});
         print("Failed");
         toasts.error("Something went wrong!");
       }
@@ -81,80 +48,60 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   }
 
   void _setLockWallPaper() async {
-    await requestPermission(_permission);
-
-    if (_permissionStatus == PermissionStatus.denied) {
-      toasts.error("Need storage permission to proceed");
-    } else {
-      bool result;
-      try {
-        result =
-            await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
-          'url': widget.url,
-        });
-        if (result) {
-          print("Success");
-          analytics.logEvent(
-              name: 'set_wall',
-              parameters: {'type': 'Lock', 'result': 'Success'});
-          toasts.setWallpaper();
-        } else {
-          analytics.logEvent(
-              name: 'set_wall',
-              parameters: {'type': 'Lock', 'result': 'Failure'});
-          print("Failed");
-          toasts.error("Something went wrong!");
-        }
-        if (this.mounted) {
-          setState(() {
-            isLoading = false;
-          });
-        }
-      } catch (e) {
-        print(e);
+    bool result;
+    try {
+      result =
+          await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
+        'url': widget.url,
+      });
+      if (result) {
+        print("Success");
         analytics.logEvent(
             name: 'set_wall',
-            parameters: {'type': 'Lock', 'result': 'Failure'});
+            parameters: {'type': 'Lock', 'result': 'Success'});
+        toasts.setWallpaper();
+      } else {
+        print("Failed");
+        toasts.error("Something went wrong!");
       }
+      if (this.mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print(e);
+      analytics.logEvent(
+          name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
   }
 
   void _setHomeWallPaper() async {
-    await requestPermission(_permission);
-
-    if (_permissionStatus == PermissionStatus.denied) {
-      toasts.error("Need storage permission to proceed");
-    } else {
-      bool result;
-      try {
-        result =
-            await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
-          'url': widget.url,
-        });
-        if (result) {
-          print("Success");
-          analytics.logEvent(
-              name: 'set_wall',
-              parameters: {'type': 'Home', 'result': 'Success'});
-          toasts.setWallpaper();
-        } else {
-          analytics.logEvent(
-              name: 'set_wall',
-              parameters: {'type': 'Home', 'result': 'Failure'});
-          print("Failed");
-          toasts.error("Something went wrong!");
-        }
-        if (this.mounted) {
-          setState(() {
-            isLoading = false;
-          });
-        }
-      } catch (e) {
-        print(e);
+    bool result;
+    try {
+      result =
+          await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
+        'url': widget.url,
+      });
+      if (result) {
+        print("Success");
         analytics.logEvent(
             name: 'set_wall',
-            parameters: {'type': 'Home', 'result': 'Failure'});
+            parameters: {'type': 'Home', 'result': 'Success'});
+        toasts.setWallpaper();
+      } else {
+        print("Failed");
+        toasts.error("Something went wrong!");
       }
+      if (this.mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print(e);
+      analytics.logEvent(
+          name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
   }
 
