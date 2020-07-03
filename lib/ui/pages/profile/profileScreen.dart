@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
-import 'package:Prism/in_app_purchases/inAppPurchases.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -15,6 +15,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:share/share.dart';
@@ -23,17 +24,45 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
+final String testID = 'support';
+
 class ProfileScreen extends StatefulWidget {
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  InAppPurchaseConnection _iap = InAppPurchaseConnection.instance;
+  bool _available = true;
+
+  List<ProductDetails> _products = [];
+  List<PurchaseDetails> _purchases = [];
+  StreamSubscription _subscription;
+
   int favCount;
   @override
   void initState() {
+    _initialize();
     checkFav();
     super.initState();
+  }
+
+  void _initialize() async {
+    _available = await _iap.isAvailable();
+    if (_available) {
+      List<Future> futures = [_getProducts(), _getPastPurchases()];
+      await Future.wait(futures);
+      _verifyPurchase();
+      _subscription = _iap.purchaseUpdatedStream.listen(
+        (data) => setState(
+          () {
+            toasts.supportSuccess();
+            _purchases.addAll(data);
+            _verifyPurchase();
+          },
+        ),
+      );
+    }
   }
 
   Future<bool> onWillPop() async {
@@ -48,13 +77,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (main.prefs.getBool("isLoggedin")) {
       await Provider.of<FavouriteProvider>(context, listen: false)
           .countFav()
-          .then((value) {
-        print(value);
-        setState(() {
-          favCount = value;
-        });
-      });
+          .then(
+        (value) {
+          print(value);
+          setState(
+            () {
+              favCount = value;
+            },
+          );
+        },
+      );
     }
+  }
+
+  Future<void> _getProducts() async {
+    Set<String> ids = Set.from([testID]);
+    ProductDetailsResponse response = await _iap.queryProductDetails(ids);
+    setState(() {
+      _products = response.productDetails;
+    });
+  }
+
+  Future<void> _getPastPurchases() async {
+    QueryPurchaseDetailsResponse response = await _iap.queryPastPurchases();
+    setState(() {
+      _purchases = response.pastPurchases;
+    });
+  }
+
+  PurchaseDetails _hasPurchased(String productID) {
+    return _purchases.firstWhere((purchase) => purchase.productID == productID,
+        orElse: () => null);
+  }
+
+  void _verifyPurchase() {
+    PurchaseDetails purchase = _hasPurchased(testID);
+    if (purchase != null && purchase.status == PurchaseStatus.purchased) {}
+  }
+
+  void _buyProduct(ProductDetails prod) {
+    final PurchaseParam purchaseParam = PurchaseParam(productDetails: prod);
+    _iap.buyConsumable(purchaseParam: purchaseParam);
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
   }
 
   @override
@@ -651,8 +720,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () {
-                    Navigator.push(context,
-                        CupertinoPageRoute(builder: (context) => IAPWidget()));
+                    for (var prod in _products) {
+                      _buyProduct(prod);
+                    }
                   }),
               ExpansionTile(
                 leading: Icon(
