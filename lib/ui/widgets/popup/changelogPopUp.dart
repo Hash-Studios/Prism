@@ -173,6 +173,36 @@ void showChangelog(BuildContext context, Function func) {
                     ],
                   ),
                   SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.picture,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added crop wallpaper support.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
                     height: 25,
                   ),
                   Row(
