@@ -26,7 +26,8 @@ class ShareWallpaperViewScreen extends StatefulWidget {
       _ShareWallpaperViewScreenState();
 }
 
-class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
+class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String id;
   String provider;
@@ -35,6 +36,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
   bool isLoading = true;
   PaletteGenerator paletteGenerator;
   List<Color> colors;
+  AnimationController shakeController;
   Future future;
   PanelController panelController = PanelController();
   var image;
@@ -69,6 +71,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
 
   @override
   void initState() {
+    shakeController = AnimationController(
+        duration: const Duration(milliseconds: 300), vsync: this);
     id = widget.arguments[0];
     provider = widget.arguments[1];
     url = widget.arguments[2];
@@ -88,6 +92,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
 
   @override
   void dispose() {
+    shakeController.dispose();
     super.dispose();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
@@ -95,6 +100,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
+        .chain(CurveTween(curve: Curves.easeOutCubic))
+        .animate(shakeController)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              shakeController.reverse();
+            }
+          });
     return provider == "WallHaven"
         ? Scaffold(
             resizeToAvoidBottomPadding: false,
@@ -434,45 +447,65 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
               ),
               body: Stack(
                 children: <Widget>[
-                  GestureDetector(
-                      child: OptimizedCacheImage(
-                        imageUrl: url,
-                        imageBuilder: (context, imageProvider) => Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: imageProvider,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        placeholder: (context, url) => Stack(
-                          children: <Widget>[
-                            SizedBox.expand(child: Text("")),
-                            Container(
-                              child: Center(
-                                child: Loader(),
+                  AnimatedBuilder(
+                      animation: offsetAnimation,
+                      builder: (buildContext, child) {
+                        if (offsetAnimation.value < 0.0)
+                          print('${offsetAnimation.value + 8.0}');
+                        return GestureDetector(
+                          child: OptimizedCacheImage(
+                            imageUrl: url,
+                            imageBuilder: (context, imageProvider) => Container(
+                              margin: EdgeInsets.symmetric(
+                                  vertical: offsetAnimation.value * 1.25,
+                                  horizontal: offsetAnimation.value / 2),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                    offsetAnimation.value),
+                                image: DecorationImage(
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          child: Center(
-                            child: Icon(
-                              JamIcons.close_circle_f,
-                              color: isLoading
-                                  ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
+                            placeholder: (context, url) => Stack(
+                              children: <Widget>[
+                                SizedBox.expand(child: Text("")),
+                                Container(
+                                  child: Center(
+                                    child: Loader(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              child: Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: isLoading
+                                      ? Theme.of(context).accentColor
+                                      : colors[0].computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      onPanUpdate: (details) {
-                        if (details.delta.dy < -10) {
-                          print(details.delta.dy);
-                          panelController.open();
-                        }
+                          onPanUpdate: (details) {
+                            if (details.delta.dy < -10) {
+                              HapticFeedback.vibrate();
+                              panelController.open();
+                            }
+                          },
+                          onLongPress: () {
+                            HapticFeedback.vibrate();
+                            shakeController.forward(from: 0.0);
+                          },
+                          onTap: () {
+                            HapticFeedback.vibrate();
+                            shakeController.forward(from: 0.0);
+                          },
+                        );
                       }),
                   Align(
                     alignment: Alignment.topLeft,
@@ -858,45 +891,66 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                   ),
                   body: Stack(
                     children: <Widget>[
-                      GestureDetector(
-                          child: OptimizedCacheImage(
-                            imageUrl: url,
-                            imageBuilder: (context, imageProvider) => Container(
-                              decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  image: imageProvider,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            placeholder: (context, url) => Stack(
-                              children: <Widget>[
-                                SizedBox.expand(child: Text("")),
-                                Container(
-                                  child: Center(
-                                    child: Loader(),
+                      AnimatedBuilder(
+                          animation: offsetAnimation,
+                          builder: (buildContext, child) {
+                            if (offsetAnimation.value < 0.0)
+                              print('${offsetAnimation.value + 8.0}');
+                            return GestureDetector(
+                              child: OptimizedCacheImage(
+                                imageUrl: url,
+                                imageBuilder: (context, imageProvider) =>
+                                    Container(
+                                  margin: EdgeInsets.symmetric(
+                                      vertical: offsetAnimation.value * 1.25,
+                                      horizontal: offsetAnimation.value / 2),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                        offsetAnimation.value),
+                                    image: DecorationImage(
+                                      image: imageProvider,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              child: Center(
-                                child: Icon(
-                                  JamIcons.close_circle_f,
-                                  color: isLoading
-                                      ? Theme.of(context).accentColor
-                                      : colors[0].computeLuminance() > 0.5
-                                          ? Colors.black
-                                          : Colors.white,
+                                placeholder: (context, url) => Stack(
+                                  children: <Widget>[
+                                    SizedBox.expand(child: Text("")),
+                                    Container(
+                                      child: Center(
+                                        child: Loader(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  child: Center(
+                                    child: Icon(
+                                      JamIcons.close_circle_f,
+                                      color: isLoading
+                                          ? Theme.of(context).accentColor
+                                          : colors[0].computeLuminance() > 0.5
+                                              ? Colors.black
+                                              : Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                          onPanUpdate: (details) {
-                            if (details.delta.dy < -10) {
-                              print(details.delta.dy);
-                              panelController.open();
-                            }
+                              onPanUpdate: (details) {
+                                if (details.delta.dy < -10) {
+                                  HapticFeedback.vibrate();
+                                  panelController.open();
+                                }
+                              },
+                              onLongPress: () {
+                                HapticFeedback.vibrate();
+                                shakeController.forward(from: 0.0);
+                              },
+                              onTap: () {
+                                HapticFeedback.vibrate();
+                                shakeController.forward(from: 0.0);
+                              },
+                            );
                           }),
                       Align(
                         alignment: Alignment.topLeft,

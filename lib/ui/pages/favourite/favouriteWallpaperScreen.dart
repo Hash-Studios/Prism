@@ -23,7 +23,8 @@ class FavWallpaperViewScreen extends StatefulWidget {
   _FavWallpaperViewScreenState createState() => _FavWallpaperViewScreenState();
 }
 
-class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
+class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
+    with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     String route = currentRoute;
     currentRoute = previousRoute;
@@ -40,6 +41,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
   List<Color> colors;
   String downloadLinkBackwards;
   PanelController panelController = PanelController();
+  AnimationController shakeController;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -60,6 +62,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
 
   @override
   void initState() {
+    shakeController = AnimationController(
+        duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments[0];
     thumb = widget.arguments[1];
     isLoading = true;
@@ -70,6 +74,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
 
   @override
   void dispose() {
+    shakeController.dispose();
     super.dispose();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
@@ -78,6 +83,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
   @override
   Widget build(BuildContext context) {
     // try {
+    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
+        .chain(CurveTween(curve: Curves.easeOutCubic))
+        .animate(shakeController)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              shakeController.reverse();
+            }
+          });
     return WillPopScope(
       onWillPop: onWillPop,
       child: Provider.of<FavouriteProvider>(context, listen: false).liked[index]
@@ -544,47 +557,68 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                 ),
                 body: Stack(
                   children: <Widget>[
-                    GestureDetector(
-                        child: OptimizedCacheImage(
-                          imageUrl: Provider.of<FavouriteProvider>(context,
-                                  listen: false)
-                              .liked[index]["url"],
-                          imageBuilder: (context, imageProvider) => Container(
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: imageProvider,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          placeholder: (context, url) => Stack(
-                            children: <Widget>[
-                              SizedBox.expand(child: Text("")),
-                              Container(
-                                child: Center(
-                                  child: Loader(),
+                    AnimatedBuilder(
+                        animation: offsetAnimation,
+                        builder: (buildContext, child) {
+                          if (offsetAnimation.value < 0.0)
+                            print('${offsetAnimation.value + 8.0}');
+                          return GestureDetector(
+                            child: OptimizedCacheImage(
+                              imageUrl: Provider.of<FavouriteProvider>(context,
+                                      listen: false)
+                                  .liked[index]["url"],
+                              imageBuilder: (context, imageProvider) =>
+                                  Container(
+                                margin: EdgeInsets.symmetric(
+                                    vertical: offsetAnimation.value * 1.25,
+                                    horizontal: offsetAnimation.value / 2),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(
+                                      offsetAnimation.value),
+                                  image: DecorationImage(
+                                    image: imageProvider,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
-                            ],
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            child: Center(
-                              child: Icon(
-                                JamIcons.close_circle_f,
-                                color: isLoading
-                                    ? Theme.of(context).accentColor
-                                    : colors[0].computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white,
+                              placeholder: (context, url) => Stack(
+                                children: <Widget>[
+                                  SizedBox.expand(child: Text("")),
+                                  Container(
+                                    child: Center(
+                                      child: Loader(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                child: Center(
+                                  child: Icon(
+                                    JamIcons.close_circle_f,
+                                    color: isLoading
+                                        ? Theme.of(context).accentColor
+                                        : colors[0].computeLuminance() > 0.5
+                                            ? Colors.black
+                                            : Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                        onPanUpdate: (details) {
-                          if (details.delta.dy < -10) {
-                            print(details.delta.dy);
-                            panelController.open();
-                          }
+                            onPanUpdate: (details) {
+                              if (details.delta.dy < -10) {
+                                panelController.open();
+                                HapticFeedback.vibrate();
+                              }
+                            },
+                            onLongPress: () {
+                              HapticFeedback.vibrate();
+                              shakeController.forward(from: 0.0);
+                            },
+                            onTap: () {
+                              HapticFeedback.vibrate();
+                              shakeController.forward(from: 0.0);
+                            },
+                          );
                         }),
                     Align(
                       alignment: Alignment.topLeft,
@@ -1005,72 +1039,97 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
                 ),
                 body: Stack(
                   children: <Widget>[
-                    GestureDetector(
-                        child: OptimizedCacheImage(
-                          imageUrl:
-                              "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg",
-                          imageBuilder: (context, imageProvider) {
-                            downloadLinkBackwards =
-                                "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg";
-                            return Container(
-                              decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  image: imageProvider,
-                                  fit: BoxFit.cover,
-                                ),
+                    AnimatedBuilder(
+                        animation: offsetAnimation,
+                        builder: (buildContext, child) {
+                          if (offsetAnimation.value < 0.0)
+                            print('${offsetAnimation.value + 8.0}');
+                          return GestureDetector(
+                            child: OptimizedCacheImage(
+                              imageUrl:
+                                  "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg",
+                              imageBuilder: (context, imageProvider) {
+                                downloadLinkBackwards =
+                                    "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg";
+                                return Container(
+                                  margin: EdgeInsets.symmetric(
+                                      vertical: offsetAnimation.value * 1.25,
+                                      horizontal: offsetAnimation.value / 2),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                        offsetAnimation.value),
+                                    image: DecorationImage(
+                                      image: imageProvider,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                );
+                              },
+                              placeholder: (context, url) => Stack(
+                                children: <Widget>[
+                                  SizedBox.expand(child: Text("")),
+                                  Container(
+                                    child: Center(
+                                      child: Loader(),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            );
-                          },
-                          placeholder: (context, url) => Stack(
-                            children: <Widget>[
-                              SizedBox.expand(child: Text("")),
-                              Container(
-                                child: Center(
-                                  child: Loader(),
-                                ),
-                              ),
-                            ],
-                          ),
-                          errorWidget: (context, url, error) =>
-                              OptimizedCacheImage(
-                            imageUrl:
-                                "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png",
-                            imageBuilder: (context, imageProvider) {
-                              downloadLinkBackwards =
-                                  "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png";
-                              return Container(
-                                decoration: BoxDecoration(
-                                  image: DecorationImage(
-                                    image: imageProvider,
-                                    fit: BoxFit.cover,
+                              errorWidget: (context, url, error) =>
+                                  OptimizedCacheImage(
+                                imageUrl:
+                                    "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png",
+                                imageBuilder: (context, imageProvider) {
+                                  downloadLinkBackwards =
+                                      "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png";
+                                  return Container(
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: offsetAnimation.value * 1.25,
+                                        horizontal: offsetAnimation.value / 2),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                          offsetAnimation.value),
+                                      image: DecorationImage(
+                                        image: imageProvider,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                placeholder: (context, url) => Container(
+                                  child: Center(
+                                    child: Loader(),
                                   ),
                                 ),
-                              );
-                            },
-                            placeholder: (context, url) => Container(
-                              child: Center(
-                                child: Loader(),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              child: Center(
-                                child: Icon(
-                                  JamIcons.close_circle_f,
-                                  color: isLoading
-                                      ? Theme.of(context).accentColor
-                                      : colors[0].computeLuminance() > 0.5
-                                          ? Colors.black
-                                          : Colors.white,
+                                errorWidget: (context, url, error) => Container(
+                                  child: Center(
+                                    child: Icon(
+                                      JamIcons.close_circle_f,
+                                      color: isLoading
+                                          ? Theme.of(context).accentColor
+                                          : colors[0].computeLuminance() > 0.5
+                                              ? Colors.black
+                                              : Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                        onPanUpdate: (details) {
-                          if (details.delta.dy < -10) {
-                            print(details.delta.dy);
-                            panelController.open();
-                          }
+                            onPanUpdate: (details) {
+                              if (details.delta.dy < -10) {
+                                panelController.open();
+                                HapticFeedback.vibrate();
+                              }
+                            },
+                            onLongPress: () {
+                              HapticFeedback.vibrate();
+                              shakeController.forward(from: 0.0);
+                            },
+                            onTap: () {
+                              HapticFeedback.vibrate();
+                              shakeController.forward(from: 0.0);
+                            },
+                          );
                         }),
                     Align(
                       alignment: Alignment.topLeft,
