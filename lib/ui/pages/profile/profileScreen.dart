@@ -362,29 +362,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(fontSize: 12),
                     ),
                     onTap: () async {
-                      final dir = Directory("storage/emulated/0/Prism/");
-                      var status = await Permission.storage.status;
-                      if (!status.isGranted) {
-                        await Permission.storage.request();
-                      }
-                      try {
-                        dir.deleteSync(recursive: true);
-                        Fluttertoast.showToast(
-                            msg: "Deleted all downloads!",
-                            toastLength: Toast.LENGTH_LONG,
-                            timeInSecForIosWeb: 1,
-                            textColor: Colors.white,
-                            backgroundColor: Colors.green[400],
-                            fontSize: 16.0);
-                      } catch (e) {
-                        Fluttertoast.showToast(
-                            msg: "No downloads!",
-                            toastLength: Toast.LENGTH_LONG,
-                            timeInSecForIosWeb: 1,
-                            textColor: Colors.white,
-                            backgroundColor: Colors.red[400],
-                            fontSize: 16.0);
-                      }
+                      showDialog(
+                        context: context,
+                        child: AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(20),
+                            ),
+                          ),
+                          content: Container(
+                            height: 50,
+                            width: 250,
+                            child: Center(
+                              child: Text(
+                                "Do you want remove all your downloads?",
+                                style: Theme.of(context).textTheme.headline4,
+                              ),
+                            ),
+                          ),
+                          actions: <Widget>[
+                            FlatButton(
+                              shape: StadiumBorder(),
+                              onPressed: () async {
+                                Navigator.of(context).pop();
+                                final dir =
+                                    Directory("storage/emulated/0/Prism/");
+                                var status = await Permission.storage.status;
+                                if (!status.isGranted) {
+                                  await Permission.storage.request();
+                                }
+                                try {
+                                  dir.deleteSync(recursive: true);
+                                  Fluttertoast.showToast(
+                                      msg: "Deleted all downloads!",
+                                      toastLength: Toast.LENGTH_LONG,
+                                      timeInSecForIosWeb: 1,
+                                      textColor: Colors.white,
+                                      backgroundColor: Colors.green[400],
+                                      fontSize: 16.0);
+                                } catch (e) {
+                                  Fluttertoast.showToast(
+                                      msg: "No downloads!",
+                                      toastLength: Toast.LENGTH_LONG,
+                                      timeInSecForIosWeb: 1,
+                                      textColor: Colors.white,
+                                      backgroundColor: Colors.red[400],
+                                      fontSize: 16.0);
+                                }
+                              },
+                              child: Text(
+                                'YES',
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  color: Color(0xFFE57697),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: FlatButton(
+                                shape: StadiumBorder(),
+                                color: Color(0xFFE57697),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text(
+                                  'NO',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
                     })
                 : Container(),
             Padding(
@@ -536,11 +589,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             "Remove all favourites",
                             style: TextStyle(fontSize: 12),
                           ),
-                          onTap: () {
-                            toasts.clearFav();
-                            Provider.of<FavouriteProvider>(context,
-                                    listen: false)
-                                .deleteData();
+                          onTap: () async {
+                            showDialog(
+                              context: context,
+                              child: AlertDialog(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(20),
+                                  ),
+                                ),
+                                content: Container(
+                                  height: 50,
+                                  width: 250,
+                                  child: Center(
+                                    child: Text(
+                                      "Do you want remove all your favourites?",
+                                      style:
+                                          Theme.of(context).textTheme.headline4,
+                                    ),
+                                  ),
+                                ),
+                                actions: <Widget>[
+                                  FlatButton(
+                                    shape: StadiumBorder(),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      toasts.clearFav();
+                                      Provider.of<FavouriteProvider>(context,
+                                              listen: false)
+                                          .deleteData();
+                                    },
+                                    child: Text(
+                                      'YES',
+                                      style: TextStyle(
+                                        fontSize: 16.0,
+                                        color: Color(0xFFE57697),
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: FlatButton(
+                                      shape: StadiumBorder(),
+                                      color: Color(0xFFE57697),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text(
+                                        'NO',
+                                        style: TextStyle(
+                                          fontSize: 16.0,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
                           }),
                       ListTile(
                           leading: Icon(

@@ -14,7 +14,8 @@ class DownloadWallpaperScreen extends StatefulWidget {
       _DownloadWallpaperScreenState();
 }
 
-class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
+class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
+    with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     String route = currentRoute;
     currentRoute = previousRoute;
@@ -23,12 +24,15 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
     return true;
   }
 
+  AnimationController shakeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String provider;
   File file;
 
   @override
   void initState() {
+    shakeController = AnimationController(
+        duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
     SystemChrome.setEnabledSystemUIOverlays([]);
     provider = widget.arguments[0];
@@ -37,6 +41,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
 
   @override
   void dispose() {
+    shakeController.dispose();
     super.dispose();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
@@ -44,6 +49,14 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
+        .chain(CurveTween(curve: Curves.easeOutCubic))
+        .animate(shakeController)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              shakeController.reverse();
+            }
+          });
     try {
       return WillPopScope(
         onWillPop: onWillPop,
@@ -53,14 +66,27 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
           backgroundColor: Theme.of(context).primaryColor,
           body: Stack(
             children: <Widget>[
-              Container(
-                height: MediaQuery.of(context).size.height,
-                width: MediaQuery.of(context).size.width,
-                child: Image.file(
-                  file,
-                  fit: BoxFit.cover,
-                ),
-              ),
+              AnimatedBuilder(
+                  animation: offsetAnimation,
+                  builder: (buildContext, child) {
+                    if (offsetAnimation.value < 0.0)
+                      print('${offsetAnimation.value + 8.0}');
+                    return Container(
+                      margin: EdgeInsets.symmetric(
+                          vertical: offsetAnimation.value * 1.25,
+                          horizontal: offsetAnimation.value / 2),
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(offsetAnimation.value),
+                      ),
+                      height: MediaQuery.of(context).size.height,
+                      width: MediaQuery.of(context).size.width,
+                      child: Image.file(
+                        file,
+                        fit: BoxFit.cover,
+                      ),
+                    );
+                  }),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
