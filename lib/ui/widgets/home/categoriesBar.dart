@@ -61,368 +61,383 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.all(5),
-                    child: ActionChip(
-                        pressElevation: 5,
-                        padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-                        backgroundColor: Provider.of<CategoryProvider>(context)
-                                    .categories[index] ==
-                                Provider.of<CategoryProvider>(context)
-                                    .selectedCategory
-                            ? Theme.of(context).accentColor
-                            : Theme.of(context).hintColor,
-                        label: Text(
-                            Provider.of<CategoryProvider>(context)
-                                .categories[index],
-                            style: Provider.of<CategoryProvider>(context)
-                                        .categories[index] ==
-                                    Provider.of<CategoryProvider>(context)
-                                        .selectedCategory
-                                ? Theme.of(context)
-                                    .textTheme
-                                    .headline4
-                                    .copyWith(
-                                        color: Theme.of(context).primaryColor)
-                                : Theme.of(context).textTheme.headline4),
-                        onPressed: () {
-                          if (Provider.of<CategoryProvider>(context,
-                                      listen: false)
-                                  .selectedCategory ==
-                              "Home") {
+                    child: AnimatedCrossFade(
+                      duration: Duration(milliseconds: 300),
+                      firstCurve: Curves.easeIn,
+                      secondCurve: Curves.easeIn,
+                      secondChild: ActionChip(
+                          backgroundColor: Theme.of(context).hintColor,
+                          pressElevation: 5,
+                          padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+                          label: Text(
+                              Provider.of<CategoryProvider>(context)
+                                  .categories[index],
+                              style: Theme.of(context).textTheme.headline4),
+                          onPressed: () {
                             if (Provider.of<CategoryProvider>(context,
                                         listen: false)
-                                    .categories[index] ==
+                                    .selectedCategory ==
                                 "Home") {
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Curated") {
-                              PM.pageController.jumpToPage(1);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Abstract") {
-                              PM.pageController.jumpToPage(2);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Nature") {
-                              PM.pageController.jumpToPage(3);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Colors") {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('Select a color'),
-                                    content: SingleChildScrollView(
-                                      child: BlockPicker(
-                                        availableColors: colors,
-                                        pickerColor: currentColor,
-                                        onColorChanged: (Color color) =>
-                                            setState(() {
-                                          currentColor = color;
-                                          String route = currentRoute;
-                                          currentRoute = previousRoute;
-                                          previousRoute = route;
-                                          print(currentRoute);
-                                          Navigator.pop(context);
-                                          Navigator.pushNamed(
-                                            context,
-                                            ColorRoute,
-                                            arguments: [
-                                              currentColor
-                                                  .toString()
-                                                  .replaceAll(
-                                                      "MaterialColor(primary value: Color(0xff",
-                                                      "")
-                                                  .replaceAll("Color(0xff", "")
-                                                  .replaceAll(")", ""),
-                                            ],
-                                          );
-                                        }),
+                              if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Home") {
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Curated") {
+                                PM.pageController.jumpToPage(1);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Abstract") {
+                                PM.pageController.jumpToPage(2);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Nature") {
+                                PM.pageController.jumpToPage(3);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Colors") {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Select a color'),
+                                      content: SingleChildScrollView(
+                                        child: BlockPicker(
+                                          availableColors: colors,
+                                          pickerColor: currentColor,
+                                          onColorChanged: (Color color) =>
+                                              setState(() {
+                                            currentColor = color;
+                                            String route = currentRoute;
+                                            currentRoute = previousRoute;
+                                            previousRoute = route;
+                                            print(currentRoute);
+                                            Navigator.pop(context);
+                                            Navigator.pushNamed(
+                                              context,
+                                              ColorRoute,
+                                              arguments: [
+                                                currentColor
+                                                    .toString()
+                                                    .replaceAll(
+                                                        "MaterialColor(primary value: Color(0xff",
+                                                        "")
+                                                    .replaceAll(
+                                                        "Color(0xff", "")
+                                                    .replaceAll(")", ""),
+                                              ],
+                                            );
+                                          }),
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
-                            }
-                          } else if (Provider.of<CategoryProvider>(context,
-                                      listen: false)
-                                  .selectedCategory ==
-                              "Curated") {
-                            if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Home") {
-                              String route = currentRoute;
-                              currentRoute = previousRoute;
-                              previousRoute = route;
-                              print(currentRoute);
-                              PM.pageController.jumpToPage(0);
+                                    );
+                                  },
+                                );
+                              }
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
-                                    .categories[index] ==
+                                    .selectedCategory ==
                                 "Curated") {
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Abstract") {
-                              PM.pageController.jumpToPage(2);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Nature") {
-                              PM.pageController.jumpToPage(3);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Colors") {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('Select a color'),
-                                    content: SingleChildScrollView(
-                                      child: BlockPicker(
-                                        availableColors: colors,
-                                        pickerColor: currentColor,
-                                        onColorChanged: (Color color) =>
-                                            setState(() {
-                                          currentColor = color;
-                                          String route = currentRoute;
-                                          currentRoute = previousRoute;
-                                          previousRoute = route;
-                                          print(currentRoute);
-                                          Navigator.pop(context);
-                                          Navigator.pushNamed(
-                                            context,
-                                            ColorRoute,
-                                            arguments: [
-                                              currentColor
-                                                  .toString()
-                                                  .replaceAll(
-                                                      "MaterialColor(primary value: Color(0xff",
-                                                      "")
-                                                  .replaceAll("Color(0xff", "")
-                                                  .replaceAll(")", ""),
-                                            ],
-                                          );
-                                        }),
+                              if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Home") {
+                                String route = currentRoute;
+                                currentRoute = previousRoute;
+                                previousRoute = route;
+                                print(currentRoute);
+                                PM.pageController.jumpToPage(0);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Curated") {
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Abstract") {
+                                PM.pageController.jumpToPage(2);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Nature") {
+                                PM.pageController.jumpToPage(3);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Colors") {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Select a color'),
+                                      content: SingleChildScrollView(
+                                        child: BlockPicker(
+                                          availableColors: colors,
+                                          pickerColor: currentColor,
+                                          onColorChanged: (Color color) =>
+                                              setState(() {
+                                            currentColor = color;
+                                            String route = currentRoute;
+                                            currentRoute = previousRoute;
+                                            previousRoute = route;
+                                            print(currentRoute);
+                                            Navigator.pop(context);
+                                            Navigator.pushNamed(
+                                              context,
+                                              ColorRoute,
+                                              arguments: [
+                                                currentColor
+                                                    .toString()
+                                                    .replaceAll(
+                                                        "MaterialColor(primary value: Color(0xff",
+                                                        "")
+                                                    .replaceAll(
+                                                        "Color(0xff", "")
+                                                    .replaceAll(")", ""),
+                                              ],
+                                            );
+                                          }),
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
-                            }
-                          } else if (Provider.of<CategoryProvider>(context,
-                                      listen: false)
-                                  .selectedCategory ==
-                              "Abstract") {
-                            if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Home") {
-                              String route = currentRoute;
-                              currentRoute = previousRoute;
-                              previousRoute = route;
-                              print(currentRoute);
-                              PM.pageController.jumpToPage(0);
+                                    );
+                                  },
+                                );
+                              }
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
-                                    .categories[index] ==
-                                "Curated") {
-                              PM.pageController.jumpToPage(1);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
+                                    .selectedCategory ==
                                 "Abstract") {
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Nature") {
-                              PM.pageController.jumpToPage(3);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Colors") {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('Select a color'),
-                                    content: SingleChildScrollView(
-                                      child: BlockPicker(
-                                        availableColors: colors,
-                                        pickerColor: currentColor,
-                                        onColorChanged: (Color color) =>
-                                            setState(() {
-                                          currentColor = color;
-                                          String route = currentRoute;
-                                          currentRoute = previousRoute;
-                                          previousRoute = route;
-                                          print(currentRoute);
-                                          Navigator.pop(context);
-                                          Navigator.pushNamed(
-                                            context,
-                                            ColorRoute,
-                                            arguments: [
-                                              currentColor
-                                                  .toString()
-                                                  .replaceAll(
-                                                      "MaterialColor(primary value: Color(0xff",
-                                                      "")
-                                                  .replaceAll("Color(0xff", "")
-                                                  .replaceAll(")", ""),
-                                            ],
-                                          );
-                                        }),
+                              if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Home") {
+                                String route = currentRoute;
+                                currentRoute = previousRoute;
+                                previousRoute = route;
+                                print(currentRoute);
+                                PM.pageController.jumpToPage(0);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Curated") {
+                                PM.pageController.jumpToPage(1);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Abstract") {
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Nature") {
+                                PM.pageController.jumpToPage(3);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Colors") {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Select a color'),
+                                      content: SingleChildScrollView(
+                                        child: BlockPicker(
+                                          availableColors: colors,
+                                          pickerColor: currentColor,
+                                          onColorChanged: (Color color) =>
+                                              setState(() {
+                                            currentColor = color;
+                                            String route = currentRoute;
+                                            currentRoute = previousRoute;
+                                            previousRoute = route;
+                                            print(currentRoute);
+                                            Navigator.pop(context);
+                                            Navigator.pushNamed(
+                                              context,
+                                              ColorRoute,
+                                              arguments: [
+                                                currentColor
+                                                    .toString()
+                                                    .replaceAll(
+                                                        "MaterialColor(primary value: Color(0xff",
+                                                        "")
+                                                    .replaceAll(
+                                                        "Color(0xff", "")
+                                                    .replaceAll(")", ""),
+                                              ],
+                                            );
+                                          }),
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
-                            }
-                          } else if (Provider.of<CategoryProvider>(context,
-                                      listen: false)
-                                  .selectedCategory ==
-                              "Nature") {
-                            if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Home") {
-                              String route = currentRoute;
-                              currentRoute = previousRoute;
-                              previousRoute = route;
-                              print(currentRoute);
-                              PM.pageController.jumpToPage(0);
+                                    );
+                                  },
+                                );
+                              }
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
-                                    .categories[index] ==
-                                "Curated") {
-                              PM.pageController.jumpToPage(1);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Abstract") {
-                              PM.pageController.jumpToPage(2);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
+                                    .selectedCategory ==
                                 "Nature") {
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Colors") {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('Select a color'),
-                                    content: SingleChildScrollView(
-                                      child: BlockPicker(
-                                        availableColors: colors,
-                                        pickerColor: currentColor,
-                                        onColorChanged: (Color color) =>
-                                            setState(() {
-                                          currentColor = color;
-                                          String route = currentRoute;
-                                          currentRoute = previousRoute;
-                                          previousRoute = route;
-                                          print(currentRoute);
-                                          Navigator.pop(context);
-                                          Navigator.pushNamed(
-                                            context,
-                                            ColorRoute,
-                                            arguments: [
-                                              currentColor
-                                                  .toString()
-                                                  .replaceAll(
-                                                      "MaterialColor(primary value: Color(0xff",
-                                                      "")
-                                                  .replaceAll("Color(0xff", "")
-                                                  .replaceAll(")", ""),
-                                            ],
-                                          );
-                                        }),
+                              if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Home") {
+                                String route = currentRoute;
+                                currentRoute = previousRoute;
+                                previousRoute = route;
+                                print(currentRoute);
+                                PM.pageController.jumpToPage(0);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Curated") {
+                                PM.pageController.jumpToPage(1);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Abstract") {
+                                PM.pageController.jumpToPage(2);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Nature") {
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Colors") {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Select a color'),
+                                      content: SingleChildScrollView(
+                                        child: BlockPicker(
+                                          availableColors: colors,
+                                          pickerColor: currentColor,
+                                          onColorChanged: (Color color) =>
+                                              setState(() {
+                                            currentColor = color;
+                                            String route = currentRoute;
+                                            currentRoute = previousRoute;
+                                            previousRoute = route;
+                                            print(currentRoute);
+                                            Navigator.pop(context);
+                                            Navigator.pushNamed(
+                                              context,
+                                              ColorRoute,
+                                              arguments: [
+                                                currentColor
+                                                    .toString()
+                                                    .replaceAll(
+                                                        "MaterialColor(primary value: Color(0xff",
+                                                        "")
+                                                    .replaceAll(
+                                                        "Color(0xff", "")
+                                                    .replaceAll(")", ""),
+                                              ],
+                                            );
+                                          }),
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
-                            }
-                          } else if (Provider.of<CategoryProvider>(context,
-                                      listen: false)
-                                  .selectedCategory ==
-                              "Colors") {
-                            if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Home") {
-                              String route = currentRoute;
-                              currentRoute = previousRoute;
-                              previousRoute = route;
-                              print(currentRoute);
-                              PM.pageController.jumpToPage(0);
+                                    );
+                                  },
+                                );
+                              }
                             } else if (Provider.of<CategoryProvider>(context,
                                         listen: false)
-                                    .categories[index] ==
-                                "Curated") {
-                              PM.pageController.jumpToPage(1);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Abstract") {
-                              PM.pageController.jumpToPage(2);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
-                                "Nature") {
-                              PM.pageController.jumpToPage(3);
-                            } else if (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index] ==
+                                    .selectedCategory ==
                                 "Colors") {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('Select a color'),
-                                    content: SingleChildScrollView(
-                                      child: BlockPicker(
-                                        availableColors: colors,
-                                        pickerColor: currentColor,
-                                        onColorChanged: (Color color) =>
-                                            setState(() {
-                                          currentColor = color;
-                                          String route = currentRoute;
-                                          currentRoute = previousRoute;
-                                          previousRoute = route;
-                                          print(currentRoute);
-                                          Navigator.pop(context);
-                                          Navigator.pushReplacementNamed(
-                                            context,
-                                            ColorRoute,
-                                            arguments: [
-                                              currentColor
-                                                  .toString()
-                                                  .replaceAll(
-                                                      "MaterialColor(primary value: Color(0xff",
-                                                      "")
-                                                  .replaceAll("Color(0xff", "")
-                                                  .replaceAll(")", ""),
-                                            ],
-                                          );
-                                        }),
+                              if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Home") {
+                                String route = currentRoute;
+                                currentRoute = previousRoute;
+                                previousRoute = route;
+                                print(currentRoute);
+                                PM.pageController.jumpToPage(0);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Curated") {
+                                PM.pageController.jumpToPage(1);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Abstract") {
+                                PM.pageController.jumpToPage(2);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Nature") {
+                                PM.pageController.jumpToPage(3);
+                              } else if (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index] ==
+                                  "Colors") {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Select a color'),
+                                      content: SingleChildScrollView(
+                                        child: BlockPicker(
+                                          availableColors: colors,
+                                          pickerColor: currentColor,
+                                          onColorChanged: (Color color) =>
+                                              setState(() {
+                                            currentColor = color;
+                                            String route = currentRoute;
+                                            currentRoute = previousRoute;
+                                            previousRoute = route;
+                                            print(currentRoute);
+                                            Navigator.pop(context);
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              ColorRoute,
+                                              arguments: [
+                                                currentColor
+                                                    .toString()
+                                                    .replaceAll(
+                                                        "MaterialColor(primary value: Color(0xff",
+                                                        "")
+                                                    .replaceAll(
+                                                        "Color(0xff", "")
+                                                    .replaceAll(")", ""),
+                                              ],
+                                            );
+                                          }),
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
+                                    );
+                                  },
+                                );
+                              }
                             }
-                          }
-                        }),
+                          }),
+                      crossFadeState: Provider.of<CategoryProvider>(context)
+                                  .categories[index] ==
+                              Provider.of<CategoryProvider>(context)
+                                  .selectedCategory
+                          ? CrossFadeState.showFirst
+                          : CrossFadeState.showSecond,
+                      firstChild: ActionChip(
+                          pressElevation: 5,
+                          padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+                          backgroundColor: Theme.of(context).accentColor,
+                          label: Text(
+                              Provider.of<CategoryProvider>(context)
+                                  .categories[index],
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline4
+                                  .copyWith(
+                                      color: Theme.of(context).primaryColor)),
+                          onPressed: () {}),
+                    ),
                   ),
                 ],
               ),
