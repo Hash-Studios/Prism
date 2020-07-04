@@ -5,6 +5,7 @@ import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/gridLoader.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 class FavouriteGrid extends StatefulWidget {
@@ -91,69 +92,91 @@ class _FavouriteGridState extends State<FavouriteGrid>
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
+    // print(Provider.of<FavouriteProvider>(context, listen: false).liked);
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshFavKey,
         onRefresh: refreshList,
         child: Provider.of<FavouriteProvider>(context, listen: false).liked !=
                 null
-            ? GridView.builder(
-                controller: controller,
-                shrinkWrap: true,
-                cacheExtent: 50000,
-                padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
-                itemCount:
-                    Provider.of<FavouriteProvider>(context, listen: false)
-                                .liked
-                                .length ==
-                            0
-                        ? 0
-                        : Provider.of<FavouriteProvider>(context).liked.length,
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: MediaQuery.of(context).orientation ==
-                            Orientation.portrait
-                        ? 300
-                        : 250,
-                    childAspectRatio: 0.6625,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8),
-                itemBuilder: (context, index) {
-                  // print(Provider.of<FavouriteProvider>(context, listen: false)
-                  //     .liked[index]);
-                  // print(index);
-                  return FocusedMenuHolder(
-                    provider: "Liked",
-                    index: index,
-                    child: GestureDetector(
-                      child: Container(
-                        decoration: BoxDecoration(
-                            color: animation.value,
-                            borderRadius: BorderRadius.circular(20),
-                            image: DecorationImage(
-                                image: NetworkImage(
-                                  Provider.of<FavouriteProvider>(context)
-                                      .liked[index]["thumb"],
-                                ),
-                                fit: BoxFit.cover)),
+            ? Provider.of<FavouriteProvider>(context, listen: false)
+                        .liked
+                        .length ==
+                    0
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        child: Provider.of<ThemeModel>(context, listen: false)
+                                    .returnTheme() ==
+                                ThemeType.Dark
+                            ? SvgPicture.asset(
+                                "assets/images/favourites dark.svg",
+                              )
+                            : SvgPicture.asset(
+                                "assets/images/favourites light.svg",
+                              ),
                       ),
-                      onTap: () {
-                        if (Provider.of<FavouriteProvider>(context,
-                                    listen: false)
-                                .liked ==
-                            []) {
-                        } else {
-                          Navigator.pushNamed(context, FavWallViewRoute,
-                              arguments: [
-                                index,
-                                Provider.of<FavouriteProvider>(context,
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height * 0.1,
+                      )
+                    ],
+                  )
+                : GridView.builder(
+                    controller: controller,
+                    shrinkWrap: true,
+                    cacheExtent: 50000,
+                    padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+                    itemCount:
+                        Provider.of<FavouriteProvider>(context).liked.length,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent:
+                            MediaQuery.of(context).orientation ==
+                                    Orientation.portrait
+                                ? 300
+                                : 250,
+                        childAspectRatio: 0.6625,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8),
+                    itemBuilder: (context, index) {
+                      // print(Provider.of<FavouriteProvider>(context, listen: false)
+                      //     .liked[index]);
+                      // print(index);
+                      return FocusedMenuHolder(
+                        provider: "Liked",
+                        index: index,
+                        child: GestureDetector(
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                    image: NetworkImage(
+                                      Provider.of<FavouriteProvider>(context)
+                                          .liked[index]["thumb"],
+                                    ),
+                                    fit: BoxFit.cover)),
+                          ),
+                          onTap: () {
+                            if (Provider.of<FavouriteProvider>(context,
                                         listen: false)
-                                    .liked[index]["thumb"],
-                              ]);
-                        }
-                      },
-                    ),
-                  );
-                })
+                                    .liked ==
+                                []) {
+                            } else {
+                              Navigator.pushNamed(context, FavWallViewRoute,
+                                  arguments: [
+                                    index,
+                                    Provider.of<FavouriteProvider>(context,
+                                            listen: false)
+                                        .liked[index]["thumb"],
+                                  ]);
+                            }
+                          },
+                        ),
+                      );
+                    })
             : LoadingCards(controller: controller, animation: animation));
   }
 }

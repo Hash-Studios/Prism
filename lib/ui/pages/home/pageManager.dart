@@ -18,6 +18,8 @@ class PageManager extends StatefulWidget {
 class _PageManagerState extends State<PageManager> {
   @override
   void initState() {
+    Provider.of<CategoryProvider>(context, listen: false)
+        .updateSelectedCategory("Home");
     super.initState();
   }
 
