@@ -71,20 +71,30 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                   builder: (buildContext, child) {
                     if (offsetAnimation.value < 0.0)
                       print('${offsetAnimation.value + 8.0}');
-                    return Container(
-                      margin: EdgeInsets.symmetric(
-                          vertical: offsetAnimation.value * 1.25,
-                          horizontal: offsetAnimation.value / 2),
-                      decoration: BoxDecoration(
-                        borderRadius:
-                            BorderRadius.circular(offsetAnimation.value),
+                    return GestureDetector(
+                      child: Container(
+                        margin: EdgeInsets.symmetric(
+                            vertical: offsetAnimation.value * 1.25,
+                            horizontal: offsetAnimation.value / 2),
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.circular(offsetAnimation.value),
+                          image: DecorationImage(
+                            image: FileImage(file),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        height: MediaQuery.of(context).size.height,
+                        width: MediaQuery.of(context).size.width,
                       ),
-                      height: MediaQuery.of(context).size.height,
-                      width: MediaQuery.of(context).size.width,
-                      child: Image.file(
-                        file,
-                        fit: BoxFit.cover,
-                      ),
+                      onLongPress: () {
+                        HapticFeedback.vibrate();
+                        shakeController.forward(from: 0.0);
+                      },
+                      onTap: () {
+                        HapticFeedback.vibrate();
+                        shakeController.forward(from: 0.0);
+                      },
                     );
                   }),
               Align(
