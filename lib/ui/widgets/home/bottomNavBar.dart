@@ -39,7 +39,10 @@ class _BottomBarState extends State<BottomBar>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOut,
-    ));
+    ))
+      ..addListener(() {
+        setState(() {});
+      });
   }
 
   void showBottomBar() {
@@ -107,12 +110,36 @@ class BottomNavBar extends StatefulWidget {
   _BottomNavBarState createState() => _BottomNavBarState();
 }
 
-class _BottomNavBarState extends State<BottomNavBar> {
+class _BottomNavBarState extends State<BottomNavBar>
+    with SingleTickerProviderStateMixin {
+  AnimationController _controller2;
+  Animation<double> _paddingAnimation;
   bool isLoggedin = false;
   @override
   void initState() {
     checkSignIn();
     super.initState();
+    _controller2 = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _paddingAnimation = Tween(
+      begin: 18.0,
+      end: 20.0,
+    ).animate(CurvedAnimation(
+      parent: _controller2,
+      curve: Curves.easeOutCubic,
+    ))
+      ..addListener(() {
+        setState(() {});
+      });
+    _controller2.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller2.dispose();
+    super.dispose();
   }
 
   void checkSignIn() async {
@@ -164,19 +191,20 @@ class _BottomNavBarState extends State<BottomNavBar> {
                             //     ? Color(0xFFE57697)
                             //     :
                             Theme.of(context).accentColor),
-                    AnimatedContainer(
-                      duration: Duration(milliseconds: 3000),
+                    Container(
+                      // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: currentRoute == "Home"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
-                      curve: Curves.fastOutSlowIn,
+                      // curve: Curves.fastOutSlowIn,
                       margin: currentRoute == "Home"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
-                      width: currentRoute == "Home" ? 20 : 0,
+                      width:
+                          currentRoute == "Home" ? _paddingAnimation.value : 0,
                       height: currentRoute == "Home" ? 4 : 0,
                     )
                   ],
@@ -203,19 +231,21 @@ class _BottomNavBarState extends State<BottomNavBar> {
                             //     ? Color(0xFFE57697)
                             //     :
                             Theme.of(context).accentColor),
-                    AnimatedContainer(
-                      duration: Duration(milliseconds: 3000),
+                    Container(
+                      // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: currentRoute == "Search"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
-                      curve: Curves.fastOutSlowIn,
+                      // curve: Curves.fastOutSlowIn,
                       margin: currentRoute == "Search"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
-                      width: currentRoute == "Search" ? 20 : 0,
+                      width: currentRoute == "Search"
+                          ? _paddingAnimation.value
+                          : 0,
                       height: currentRoute == "Search" ? 4 : 0,
                     )
                   ],
@@ -243,19 +273,21 @@ class _BottomNavBarState extends State<BottomNavBar> {
                             //     ? Color(0xFFE57697)
                             //     :
                             Theme.of(context).accentColor),
-                    AnimatedContainer(
-                      duration: Duration(milliseconds: 3000),
+                    Container(
+                      // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: currentRoute == "Favourites"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
-                      curve: Curves.fastOutSlowIn,
+                      // curve: Curves.fastOutSlowIn,
                       margin: currentRoute == "Favourites"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
-                      width: currentRoute == "Favourites" ? 20 : 0,
+                      width: currentRoute == "Favourites"
+                          ? _paddingAnimation.value
+                          : 0,
                       height: currentRoute == "Favourites" ? 4 : 0,
                     )
                   ],
@@ -298,19 +330,21 @@ class _BottomNavBarState extends State<BottomNavBar> {
                       child: Icon(JamIcons.user_circle,
                           color: Theme.of(context).primaryColor),
                     ),
-                    AnimatedContainer(
-                      duration: Duration(milliseconds: 3000),
+                    Container(
+                      // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: currentRoute == "Profile"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
-                      curve: Curves.fastOutSlowIn,
+                      // curve: Curves.fastOutSlowIn,
                       margin: currentRoute == "Profile"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
-                      width: currentRoute == "Profile" ? 20 : 0,
+                      width: currentRoute == "Profile"
+                          ? _paddingAnimation.value
+                          : 0,
                       height: currentRoute == "Profile" ? 4 : 0,
                     )
                   ],
