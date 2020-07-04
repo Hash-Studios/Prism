@@ -185,6 +185,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
+                    Container(
+                      height: currentRoute == "Home" ? 9 : 0,
+                    ),
                     Icon(JamIcons.home_f,
                         color:
                             //  currentRoute == "Home"
@@ -205,7 +208,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                           : EdgeInsets.all(0),
                       width:
                           currentRoute == "Home" ? _paddingAnimation.value : 0,
-                      height: currentRoute == "Home" ? 4 : 0,
+                      height: currentRoute == "Home" ? 3 : 0,
                     )
                   ],
                 ),
@@ -225,6 +228,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
+                    Container(
+                      height: currentRoute == "Search" ? 9 : 0,
+                    ),
                     Icon(JamIcons.search,
                         color:
                             // currentRoute == "Search"
@@ -246,7 +252,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                       width: currentRoute == "Search"
                           ? _paddingAnimation.value
                           : 0,
-                      height: currentRoute == "Search" ? 4 : 0,
+                      height: currentRoute == "Search" ? 3 : 0,
                     )
                   ],
                 ),
@@ -267,6 +273,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
+                    Container(
+                      height: currentRoute == "Favourites" ? 9 : 0,
+                    ),
                     Icon(JamIcons.heart_f,
                         color:
                             //  currentRoute == "Favourites"
@@ -288,7 +297,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                       width: currentRoute == "Favourites"
                           ? _paddingAnimation.value
                           : 0,
-                      height: currentRoute == "Favourites" ? 4 : 0,
+                      height: currentRoute == "Favourites" ? 3 : 0,
                     )
                   ],
                 ),
@@ -320,6 +329,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
+                      height: currentRoute == "Profile" ? 9 : 0,
+                    ),
+                    Container(
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(500),
                           color:
@@ -345,7 +357,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                       width: currentRoute == "Profile"
                           ? _paddingAnimation.value
                           : 0,
-                      height: currentRoute == "Profile" ? 4 : 0,
+                      height: currentRoute == "Profile" ? 3 : 0,
                     )
                   ],
                 ),
