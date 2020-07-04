@@ -20,23 +20,18 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^0.5.7
-  # path_provider: ^1.6.7
   share: ^0.6.4
   url_launcher: ^5.4.5
   cloud_firestore: ^0.13.5
   firebase_core: ^0.4.4+3
   firebase_auth: ^0.16.0
   google_sign_in: ^4.4.4
-  # firebase_messaging: ^6.0.16
   flare_splash_screen: ^3.0.1
   provider: ^4.1.3
   flutter_svg: 0.17.4
   optimized_cached_image: ^0.1.13
   palette_generator: ^0.2.2
   flutter_colorpicker: ^0.3.4
-  
-# dependency_overrides:
-#   image: 2.1.12
   fluttertoast: ^4.0.1
   gallery_saver: ^2.0.1
   firebase_dynamic_links: ^0.5.1
