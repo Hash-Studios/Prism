@@ -38,6 +38,53 @@ void showChangelog(BuildContext context, Function func) {
               child: SingleChildScrollView(
                 controller: controller,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  // Row(
+                  //   children: [
+                  //     Padding(
+                  //       padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                  //       child: Text(
+                  //         'v2.5.0',
+                  //         style: TextStyle(
+                  //             fontWeight: FontWeight.w700,
+                  //             fontSize: 16,
+                  //             color: Theme.of(context).accentColor),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
+                  // SizedBox(
+                  //   height: 20,
+                  // ),
+                  // Row(
+                  //   crossAxisAlignment: CrossAxisAlignment.center,
+                  //   mainAxisAlignment: MainAxisAlignment.start,
+                  //   children: [
+                  //     SizedBox(
+                  //       width: 20,
+                  //     ),
+                  //     Icon(
+                  //       JamIcons.picture,
+                  //       size: 22,
+                  //       color: Color(0xFFE57697),
+                  //     ),
+                  //     SizedBox(
+                  //       width: 20,
+                  //     ),
+                  //     Container(
+                  //       width: MediaQuery.of(context).size.width * 0.6,
+                  //       child: Text(
+                  //         "Added crop wallpaper support.",
+                  //         style: Theme.of(context)
+                  //             .textTheme
+                  //             .headline6
+                  //             .copyWith(color: Theme.of(context).accentColor),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
+                  // SizedBox(
+                  //   height: 25,
+                  // ),
                   Row(
                     children: [
                       Padding(
@@ -164,36 +211,6 @@ void showChangelog(BuildContext context, Function func) {
                         width: MediaQuery.of(context).size.width * 0.6,
                         child: Text(
                           "Added Firebase analytics.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.picture,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added crop wallpaper support.",
                           style: Theme.of(context)
                               .textTheme
                               .headline6
