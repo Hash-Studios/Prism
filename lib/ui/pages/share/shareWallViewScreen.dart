@@ -5,6 +5,7 @@ import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/clockOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
@@ -450,15 +451,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                             SizedBox.expand(child: Text("")),
                             Container(
                               child: Center(
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation(
-                                    isLoading
-                                        ? Theme.of(context).accentColor
-                                        : colors[0].computeLuminance() > 0.5
-                                            ? Colors.black
-                                            : Colors.white,
-                                  ),
-                                ),
+                                child: Loader(),
                               ),
                             ),
                           ],
@@ -882,15 +875,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
                                 SizedBox.expand(child: Text("")),
                                 Container(
                                   child: Center(
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation(
-                                        isLoading
-                                            ? Theme.of(context).accentColor
-                                            : colors[0].computeLuminance() > 0.5
-                                                ? Colors.black
-                                                : Colors.white,
-                                      ),
-                                    ),
+                                    child: Loader(),
                                   ),
                                 ),
                               ],

@@ -4,6 +4,7 @@ import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
@@ -173,9 +174,7 @@ class _HomeGridState extends State<HomeGrid>
                       });
                     }
                   },
-                  child: !seeMoreLoader
-                      ? Text("See more")
-                      : CircularProgressIndicator());
+                  child: !seeMoreLoader ? Text("See more") : Loader());
             }
           } else if (widget.provider == "Pexels") {
             if (index ==
@@ -213,9 +212,7 @@ class _HomeGridState extends State<HomeGrid>
                       });
                     }
                   },
-                  child: !seeMoreLoader
-                      ? Text("See more")
-                      : CircularProgressIndicator());
+                  child: !seeMoreLoader ? Text("See more") : Loader());
             }
           } else if (widget.provider.length > 6 &&
               widget.provider.substring(0, 6) == "Colors") {
@@ -240,9 +237,7 @@ class _HomeGridState extends State<HomeGrid>
                       });
                     }
                   },
-                  child: !seeMoreLoader
-                      ? Text("See more")
-                      : CircularProgressIndicator());
+                  child: !seeMoreLoader ? Text("See more") : Loader());
             }
           } else {
             if (index ==
@@ -267,9 +262,7 @@ class _HomeGridState extends State<HomeGrid>
                       });
                     }
                   },
-                  child: !seeMoreLoader
-                      ? Text("See more")
-                      : CircularProgressIndicator());
+                  child: !seeMoreLoader ? Text("See more") : Loader());
             }
           }
           return FocusedMenuHolder(
