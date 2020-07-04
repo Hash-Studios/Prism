@@ -153,8 +153,34 @@ class _BottomNavBarState extends State<BottomNavBar> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
               child: IconButton(
-                icon:
-                    Icon(JamIcons.home_f, color: Theme.of(context).accentColor),
+                padding: EdgeInsets.all(0),
+                icon: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(JamIcons.home_f,
+                        color:
+                            //  currentRoute == "Home"
+                            //     ? Color(0xFFE57697)
+                            //     :
+                            Theme.of(context).accentColor),
+                    AnimatedContainer(
+                      duration: Duration(milliseconds: 3000),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(500),
+                        color: currentRoute == "Home"
+                            ? Color(0xFFE57697)
+                            : Theme.of(context).accentColor,
+                      ),
+                      curve: Curves.fastOutSlowIn,
+                      margin: currentRoute == "Home"
+                          ? EdgeInsets.all(3)
+                          : EdgeInsets.all(0),
+                      width: currentRoute == "Home" ? 20 : 0,
+                      height: currentRoute == "Home" ? 4 : 0,
+                    )
+                  ],
+                ),
                 onPressed: () {
                   currentRoute == "Home"
                       ? print("Currently on Home")
@@ -166,8 +192,34 @@ class _BottomNavBarState extends State<BottomNavBar> {
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                icon:
-                    Icon(JamIcons.search, color: Theme.of(context).accentColor),
+                padding: EdgeInsets.all(0),
+                icon: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(JamIcons.search,
+                        color:
+                            // currentRoute == "Search"
+                            //     ? Color(0xFFE57697)
+                            //     :
+                            Theme.of(context).accentColor),
+                    AnimatedContainer(
+                      duration: Duration(milliseconds: 3000),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(500),
+                        color: currentRoute == "Search"
+                            ? Color(0xFFE57697)
+                            : Theme.of(context).accentColor,
+                      ),
+                      curve: Curves.fastOutSlowIn,
+                      margin: currentRoute == "Search"
+                          ? EdgeInsets.all(3)
+                          : EdgeInsets.all(0),
+                      width: currentRoute == "Search" ? 20 : 0,
+                      height: currentRoute == "Search" ? 4 : 0,
+                    )
+                  ],
+                ),
                 onPressed: () {
                   currentRoute == "Search"
                       ? print("Currently on Search")
@@ -180,8 +232,34 @@ class _BottomNavBarState extends State<BottomNavBar> {
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                icon: Icon(JamIcons.heart_f,
-                    color: Theme.of(context).accentColor),
+                padding: EdgeInsets.all(0),
+                icon: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(JamIcons.heart_f,
+                        color:
+                            //  currentRoute == "Favourites"
+                            //     ? Color(0xFFE57697)
+                            //     :
+                            Theme.of(context).accentColor),
+                    AnimatedContainer(
+                      duration: Duration(milliseconds: 3000),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(500),
+                        color: currentRoute == "Favourites"
+                            ? Color(0xFFE57697)
+                            : Theme.of(context).accentColor,
+                      ),
+                      curve: Curves.fastOutSlowIn,
+                      margin: currentRoute == "Favourites"
+                          ? EdgeInsets.all(3)
+                          : EdgeInsets.all(0),
+                      width: currentRoute == "Favourites" ? 20 : 0,
+                      height: currentRoute == "Favourites" ? 4 : 0,
+                    )
+                  ],
+                ),
                 onPressed: () {
                   showGooglePopUp(() {
                     currentRoute == "Favourites"
@@ -204,12 +282,38 @@ class _BottomNavBarState extends State<BottomNavBar> {
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
               child: IconButton(
-                icon: Container(
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(500),
-                      color: Theme.of(context).accentColor),
-                  child: Icon(JamIcons.user_circle,
-                      color: Theme.of(context).primaryColor),
+                padding: EdgeInsets.all(0),
+                icon: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color:
+                              //  currentRoute == "Profile"
+                              //     ? Color(0xFFE57697)
+                              //     :
+                              Theme.of(context).accentColor),
+                      child: Icon(JamIcons.user_circle,
+                          color: Theme.of(context).primaryColor),
+                    ),
+                    AnimatedContainer(
+                      duration: Duration(milliseconds: 3000),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(500),
+                        color: currentRoute == "Profile"
+                            ? Color(0xFFE57697)
+                            : Theme.of(context).accentColor,
+                      ),
+                      curve: Curves.fastOutSlowIn,
+                      margin: currentRoute == "Profile"
+                          ? EdgeInsets.all(3)
+                          : EdgeInsets.all(0),
+                      width: currentRoute == "Profile" ? 20 : 0,
+                      height: currentRoute == "Profile" ? 4 : 0,
+                    )
+                  ],
                 ),
                 onPressed: () {
                   currentRoute == "Profile"
