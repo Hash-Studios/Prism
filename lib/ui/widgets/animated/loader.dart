@@ -38,7 +38,7 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
       TweenSequenceItem(
         weight: 1.0,
         tween: Tween(
-          begin: 0.8,
+          begin: 1,
           end: 0,
         ),
       ),
@@ -69,8 +69,8 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
             color: Color(0xFFE57697),
           ),
           child: SizedBox(
-            width: 50,
-            height: 50,
+            width: 55,
+            height: 55,
           ),
         ),
       ),
