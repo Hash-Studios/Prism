@@ -83,7 +83,7 @@ class _GridLoaderState extends State<GridLoader>
 
   @override
   dispose() {
-    _controller?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
