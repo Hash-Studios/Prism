@@ -51,6 +51,13 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
   }
 
   @override
+  dispose() {
+    _controller.dispose();
+    _controller2.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Transform.scale(
       scale: animation.value,
