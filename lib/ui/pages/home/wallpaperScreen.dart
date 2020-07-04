@@ -63,6 +63,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
   void initState() {
     print("Wallpaper Screen");
     super.initState();
+    SystemChrome.setEnabledSystemUIOverlays([]);
     provider = widget.arguments[0];
     index = widget.arguments[1];
     link = widget.arguments[2];
@@ -79,7 +80,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([]);
     // try {
     return WillPopScope(
       onWillPop: onWillPop,

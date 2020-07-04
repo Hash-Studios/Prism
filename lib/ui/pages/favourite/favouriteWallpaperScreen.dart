@@ -65,6 +65,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
     isLoading = true;
     _updatePaletteGenerator();
     super.initState();
+    SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
   @override
@@ -76,7 +77,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([]);
     // try {
     return WillPopScope(
       onWillPop: onWillPop,

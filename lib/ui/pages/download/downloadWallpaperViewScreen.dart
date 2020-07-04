@@ -30,6 +30,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIOverlays([]);
     provider = widget.arguments[0];
     file = widget.arguments[1];
   }
@@ -43,7 +44,6 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([]);
     try {
       return WillPopScope(
         onWillPop: onWillPop,
