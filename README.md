@@ -25,7 +25,7 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 4. [Support](#support)
 5. [Dependencies](#dependencies)
 6. [Usage](#usage)
-7. [Development](#development)
+7. [Contributing](#contributing)
 8. [License](#license)
 9. [Contributors](#contributors)
 10. [To-Do](#to-do)
@@ -55,6 +55,13 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 - Adaptive UI (changes colour based on wallpaper)
 
 ## Changelog
+
+### v2.4.0
+- Major bug fixes and improvements
+- Redesigned the wallpaper info sheet
+- Added swipe to change categories
+- Added Firebase analytics
+- Added notifications support
 
 ### v2.3.5
 - Major bug fixes and improvements
@@ -130,9 +137,9 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 If you like what we do, and would want to help us continue doing it, consider sponsoring this project.
 
-<a href="https://www.buymeacoffee.com/HashStudios" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
+<a href="https://www.buymeacoffee.com/HashStudios" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height=51 width=217></a>
 
-You can also help by downloading the app from Google Play store and reviewing it.
+Prism Wallpapers app is now available on Google Play, so you can support us by reviewing the app.
 
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width=200 /></a>
 ## Dependencies
@@ -156,21 +163,24 @@ The following packages are needed for the development of this application.
 - `permission_handler: ^5.0.1+1` for handling required device permissions
 - `flare_splash_screen: ^3.0.1` for the animated splash screen
 - `flutter_svg: 0.17.4` for svg assets
+- `sliding_up_panel: ^1.0.2` for sliding info panel
+- `firebase_analytics: ^5.0.16` for analytics
+- `firebase_messaging: ^6.0.16` for notifications
+- `in_app_purchase: ^0.3.4+1` for in-app purchases
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
 
 ## Usage
 
-The application files for Android devices can be found on [Play Store](https://play.google.com/store/apps/details?id=com.hash.prism).
+The application files for Android devices can be found on [Google Play Store](https://play.google.com/store/apps/details?id=com.hash.prism).
 
 More information about the releases can be found in the [Release](https://github.com/Hash-Studios/Prism/releases) tab.
 
-## Development
+## Contributing
 
-Start by forking the repository, and then run `flutter pub get` in the local repository. Then you need to create a Firebase project and add the `google-services.json` file to this app.
+First off, thank you for considering contributing to Prism. It's people like you that make Prism such a great app.
 
-You are now ready to modify, fix, update, or remove any feature in the app. If you want, you can create pull requests, we will be happy to welcome them.
->Note: This project requires Flutter Framework to be installed on your machine.
+To start your lovely journey with Prism, first read the [`contributing guidelines`](https://github.com/Hash-Studios/Prism/tree/master/CONTRIBUTING.md) and then fork the repo to start contributing!
 
 ## License
 
@@ -209,121 +219,28 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
+```
+DISCLAIMER: Google Play and the Google Play logo are trademarks of Google LLC.
+```
+
 ## Contributors
 
 <a href="https://github.com/Hash-Studios/Prism/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=Hash-Studios/Prism" />
 </a>
 
+## 
 ![Prism UI Mockup](demo/Prism_Mockup2.png)
 
 ## To Do
 
-- [x] double tap animation
-- [x] saving favourites using files
-- [x] wallpaper display page buttons and ui
-- [x] hex color to button accents
-- [x] refresh indictor key
-- [x] toast/snackbar
-- [x] search and favourites
-- [x] primary swatch/themeing
-- [x] google fonts universal
-- [x] navdrawer link to tabs
-- [x] navdrawer active tab highlight
-- [x] redesign navdrawer
-- [x] disable radial button (not needed)
-- [x] sorting (cancelled)
-- [x] adder length dynamic
-- [x] refresh indicator delay
-- [x] inkwell cards (cancelled)
-- [x] fade in image and cache walpaper cards in feed
-- [x] hero animation
-- [x] refactor
-- [x] back button closes radial menu
-- [x] google signin
-- [x] refresh fix fav
-- [x] downloads
-- [x] animation fix
-- [x] remove extra tab
-- [x] like/dislike on fav page (related to local liked list)
-- [x] clear cache button*
-- [x] dislike animation
-- [x] check for internet connection (cancelled)
-- [x] added more loading images
-- [x] add pull to refresh to downloads
-- [x] add pull to refresh to fav page
-- [x] change app icon and name
-- [x] settings (user)
-- [x] fix downloads page lag*
-- [x] show user name in drawer
-- [x] add drawer header images*
-- [x] highlight listitem when clicked about* (cancelled)
-- [x] clear downloaded images*
-- [x] try catch FlutterGallaryPlugin errors*
-- [x] search page ui advanced
-- [x] login page ui advanced (remove google sign in button)
-- [x] login page ui
-- [x] change package name
-- [x] likedimages hero implementation
-- [x] named routing
-- [x] add more themes and remove dumb ones
-- [x] improve the wall cards (tap and hold feature) (look at pinterest app)
-- [x] fix dynamic color cards (looks really bad on 60% images)
-- [x] change info icon, and simplify applying steps
-- [x] improve app icon and use it throughout the app
-- [x] include other APIs too like pexels
-- [x] create sections like abstract, photos and others, other than the random feed
-- [x] improve the overall tab UI (make it simplified)
-- [x] add refresh indicator on home screens
-- [x] clean pexels UI
-- [x] remove numbers from detail card
-- [x] fix bug of add more walls when reloading
-- [x] Add shared pref to save current theme
-- [x] fix pop screen when not login in favs
-- [x] Add color pallette from pexels images
-- [x] remove cupertino page transition from categories tab
-- [x] Add hero animation in bottom sheet arrow
-- [x] fix font in account settings
-- [x] wallpaper download
-- [x] wallpaper set
-- [x] fix favgrid
-- [x] fix about/signin popup headline 5 to 6
-- [x] All rights reserved to provider name
-- [x] Show useful stuff in the info bar
-- [x] colorpicker results are the same (not working except rgb)
-- [x] add share button and implementation
-- [x] widgetize clockoverlay
-- [x] share page info not loading
-- [x] pexels image not setting as wall from focussed menu and not downloading too
-- [x] color download not working
-- [x] second layer deep colors search crash
-- [x] favscreen show trashcan to remove favs
-- [x] png, jpg error in old favs
-- [x] fav wall setbutton, download button
-- [x] found a bug section
-- [x] we are recuiting section
-- [x] refresh indicator in home screen
-- [x] remove animation from bottom bar navigation
-- [x] fix search bar ui (cursor color to pink, top sizedBox)
-- [x] add downloads and fav chips bar
-- [x] fix system overlays
-- [x] fix see more in search
-- [x] download button add permission
-- [x] cloclk overlay fix in downloadwallviewScren
-- [x] fix multiple pushing of screens overall
-- [x] remove toasts errors
-- [x] focussed menu details in fav page download not working
-- [x] abstact page curated shows when see more
-- [x] create a api popup
-- [x] replace downloads image in readme
-- [ ] notifications (timed, random)
+- [x] notifications (timed, random)
 - [ ] code refactoring
 - [ ] community walls + collections (add users to upload there own walls in the app)
 - [ ] make tags clickable
 - [ ] search tags working
-- [ ] add analytics
+- [x] add analytics
 - [ ] centrecrop java for search
 - [x] see more in search
 - [x] favWallScreen downlod button issue
-- [ ] change circular progress indicator with fullscreen loader due to gesture detector
-- [ ]
+- [x] change circular progress indicator with fullscreen loader due to gesture detector
