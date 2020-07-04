@@ -83,6 +83,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
     }
     _updatePaletteGenerator();
     super.initState();
+    SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
   @override
@@ -94,8 +95,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIOverlays([]);
-
     return provider == "WallHaven"
         ? Scaffold(
             resizeToAvoidBottomPadding: false,
