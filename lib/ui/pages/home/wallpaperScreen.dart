@@ -61,7 +61,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
 
   @override
   void initState() {
-    print("Wallpaper Screen");
+    // print("Wallpaper Screen");
     super.initState();
     SystemChrome.setEnabledSystemUIOverlays([]);
     provider = widget.arguments[0];
@@ -162,16 +162,17 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         MediaQuery.of(context).size.width / 8,
                                   ),
                                   onTap: () {
-                                    // // String route = currentRoute;
-                                    // currentRoute = previousRoute;
-                                    // previousRoute = route;
+                                    String route = currentRoute;
+                                    currentRoute = previousRoute;
+                                    previousRoute = route;
                                     // print(currentRoute);
                                     SystemChrome.setEnabledSystemUIOverlays([
                                       SystemUiOverlay.top,
                                       SystemUiOverlay.bottom
                                     ]);
-                                    Future.delayed(Duration(seconds: 0))
-                                        .then((value) => Navigator.pushNamed(
+                                    Future.delayed(Duration(seconds: 0)).then(
+                                        (value) =>
+                                            Navigator.pushReplacementNamed(
                                               context,
                                               ColorRoute,
                                               arguments: [
@@ -585,9 +586,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                 8,
                                       ),
                                       onTap: () {
-                                        // // String route = currentRoute;
-                                        // currentRoute = previousRoute;
-                                        // previousRoute = route;
+                                        String route = currentRoute;
+                                        currentRoute = previousRoute;
+                                        previousRoute = route;
                                         // print(currentRoute);
                                         SystemChrome
                                             .setEnabledSystemUIOverlays([
@@ -596,7 +597,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                         ]);
                                         Future.delayed(Duration(seconds: 0))
                                             .then((value) =>
-                                                Navigator.pushNamed(
+                                                Navigator.pushReplacementNamed(
                                                   context,
                                                   ColorRoute,
                                                   arguments: [
@@ -1034,9 +1035,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                 8,
                                           ),
                                           onTap: () {
-                                            // // String route = currentRoute;
-                                            // currentRoute = previousRoute;
-                                            // previousRoute = route;
+                                            String route = currentRoute;
+                                            currentRoute = previousRoute;
+                                            previousRoute = route;
                                             // print(currentRoute);
                                             SystemChrome
                                                 .setEnabledSystemUIOverlays([
@@ -1044,8 +1045,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                               SystemUiOverlay.bottom
                                             ]);
                                             Future.delayed(Duration(seconds: 0))
-                                                .then((value) =>
-                                                    Navigator.pushNamed(
+                                                .then((value) => Navigator
+                                                        .pushReplacementNamed(
                                                       context,
                                                       ColorRoute,
                                                       arguments: [
@@ -1503,9 +1504,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                                 8,
                                           ),
                                           onTap: () {
-                                            // // String route = currentRoute;
-                                            // currentRoute = previousRoute;
-                                            // previousRoute = route;
+                                            String route = currentRoute;
+                                            currentRoute = previousRoute;
+                                            previousRoute = route;
                                             // print(currentRoute);
                                             SystemChrome
                                                 .setEnabledSystemUIOverlays([
@@ -1513,8 +1514,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> {
                                               SystemUiOverlay.bottom
                                             ]);
                                             Future.delayed(Duration(seconds: 0))
-                                                .then((value) =>
-                                                    Navigator.pushNamed(
+                                                .then((value) => Navigator
+                                                        .pushReplacementNamed(
                                                       context,
                                                       ColorRoute,
                                                       arguments: [
