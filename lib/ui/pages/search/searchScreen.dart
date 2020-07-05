@@ -17,10 +17,8 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   Future<bool> onWillPop() async {
-    String route = currentRoute;
-    currentRoute = previousRoute;
-    previousRoute = route;
-    print(currentRoute);
+    navStack.removeLast();
+    print(navStack);
     return true;
   }
 

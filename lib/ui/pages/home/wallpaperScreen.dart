@@ -26,10 +26,8 @@ class WallpaperScreen extends StatefulWidget {
 class _WallpaperScreenState extends State<WallpaperScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    String route = currentRoute;
-    currentRoute = previousRoute;
-    previousRoute = route;
-    print(currentRoute);
+    navStack.removeLast();
+    print(navStack);
     return true;
   }
 
@@ -174,10 +172,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         MediaQuery.of(context).size.width / 8,
                                   ),
                                   onTap: () {
-                                    String route = currentRoute;
-                                    currentRoute = previousRoute;
-                                    previousRoute = route;
-                                    // print(currentRoute);
+                                    navStack.removeLast();
+                                    print(navStack);
                                     SystemChrome.setEnabledSystemUIOverlays([
                                       SystemUiOverlay.top,
                                       SystemUiOverlay.bottom
@@ -476,10 +472,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
-                            String route = currentRoute;
-                            currentRoute = previousRoute;
-                            previousRoute = route;
-                            print(currentRoute);
+                            navStack.removeLast();
+                            print(navStack);
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -619,10 +613,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 8,
                                       ),
                                       onTap: () {
-                                        String route = currentRoute;
-                                        currentRoute = previousRoute;
-                                        previousRoute = route;
-                                        // print(currentRoute);
+                                        navStack.removeLast();
+                                        print(navStack);
                                         SystemChrome
                                             .setEnabledSystemUIOverlays([
                                           SystemUiOverlay.top,
@@ -941,10 +933,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             padding: const EdgeInsets.all(8.0),
                             child: IconButton(
                               onPressed: () {
-                                String route = currentRoute;
-                                currentRoute = previousRoute;
-                                previousRoute = route;
-                                print(currentRoute);
+                                navStack.removeLast();
+                                print(navStack);
                                 Navigator.pop(context);
                               },
                               color: isLoading
@@ -1089,10 +1079,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 8,
                                           ),
                                           onTap: () {
-                                            String route = currentRoute;
-                                            currentRoute = previousRoute;
-                                            previousRoute = route;
-                                            // print(currentRoute);
+                                            navStack.removeLast();
+                                            print(navStack);
                                             SystemChrome
                                                 .setEnabledSystemUIOverlays([
                                               SystemUiOverlay.top,
@@ -1436,10 +1424,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   onPressed: () {
-                                    String route = currentRoute;
-                                    currentRoute = previousRoute;
-                                    previousRoute = route;
-                                    print(currentRoute);
+                                    navStack.removeLast();
+                                    print(navStack);
                                     Navigator.pop(context);
                                   },
                                   color: isLoading
@@ -1584,10 +1570,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 8,
                                           ),
                                           onTap: () {
-                                            String route = currentRoute;
-                                            currentRoute = previousRoute;
-                                            previousRoute = route;
-                                            // print(currentRoute);
+                                            navStack.removeLast();
+                                            print(navStack);
                                             SystemChrome
                                                 .setEnabledSystemUIOverlays([
                                               SystemUiOverlay.top,
@@ -1916,10 +1900,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   onPressed: () {
-                                    String route = currentRoute;
-                                    currentRoute = previousRoute;
-                                    previousRoute = route;
-                                    print(currentRoute);
+                                       navStack.removeLast();
+    print(navStack);
                                     Navigator.pop(context);
                                   },
                                   color: isLoading
