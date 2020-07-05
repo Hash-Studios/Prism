@@ -313,6 +313,51 @@ class _BottomNavBarState extends State<BottomNavBar>
                 },
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
+              child: IconButton(
+                padding: EdgeInsets.all(0),
+                icon: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Container(
+                      height: navStack.last == "Favourites" ? 9 : 0,
+                    ),
+                    Icon(JamIcons.instant_picture_f,
+                        color:
+                            //  navStack.last == "Favourites"
+                            //     ? Color(0xFFE57697)
+                            //     :
+                            Theme.of(context).accentColor),
+                    Container(
+                      // duration: Duration(milliseconds: 3000),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(500),
+                        color: navStack.last == "Setups"
+                            ? Color(0xFFE57697)
+                            : Theme.of(context).accentColor,
+                      ),
+                      // curve: Curves.fastOutSlowIn,
+                      margin: navStack.last == "Setups"
+                          ? EdgeInsets.all(3)
+                          : EdgeInsets.all(0),
+                      width: navStack.last == "Setups"
+                          ? _paddingAnimation.value
+                          : 0,
+                      height: navStack.last == "Setups" ? 3 : 0,
+                    )
+                  ],
+                ),
+                onPressed: () {
+                  navStack.last == "Setups"
+                      ? print("Currently on Setups")
+                      : navStack.last == "Home"
+                          ? Navigator.of(context).pushNamed(SetupRoute)
+                          : Navigator.of(context).pushNamed(SetupRoute);
+                },
+              ),
+            ),
             // Padding(
             //   padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
             //   child: IconButton(

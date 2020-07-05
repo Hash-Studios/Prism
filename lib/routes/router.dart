@@ -13,6 +13,7 @@ import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/home/wallpaperScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
+import 'package:Prism/ui/pages/setupScreen.dart';
 import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:flutter/cupertino.dart';
@@ -106,6 +107,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               FavWallpaperViewScreen(arguments: settings.arguments));
+    case SetupRoute:
+      navStack.add("Setups");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: SetupRoute);
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => SetupScreen());
     default:
       navStack.add("undefined");
       print(navStack);
