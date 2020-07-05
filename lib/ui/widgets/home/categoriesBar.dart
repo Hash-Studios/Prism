@@ -113,7 +113,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           onColorChanged: (Color color) =>
                                               setState(() {
                                             currentColor = color;
-                                            navStack.removeLast();
                                             print(navStack);
                                             Navigator.pop(context);
                                             Navigator.pushNamed(
@@ -145,7 +144,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           listen: false)
                                       .categories[index] ==
                                   "Home") {
-                                navStack.removeLast();
                                 print(navStack);
                                 PM.pageController.jumpToPage(0);
                               } else if (Provider.of<CategoryProvider>(context,
@@ -178,7 +176,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           onColorChanged: (Color color) =>
                                               setState(() {
                                             currentColor = color;
-                                            navStack.removeLast();
+
                                             print(navStack);
                                             Navigator.pop(context);
                                             Navigator.pushNamed(
@@ -210,7 +208,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           listen: false)
                                       .categories[index] ==
                                   "Home") {
-                                navStack.removeLast();
                                 print(navStack);
                                 PM.pageController.jumpToPage(0);
                               } else if (Provider.of<CategoryProvider>(context,
@@ -243,7 +240,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           onColorChanged: (Color color) =>
                                               setState(() {
                                             currentColor = color;
-                                            navStack.removeLast();
+
                                             print(navStack);
                                             Navigator.pop(context);
                                             Navigator.pushNamed(
@@ -275,7 +272,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           listen: false)
                                       .categories[index] ==
                                   "Home") {
-                                navStack.removeLast();
                                 print(navStack);
                                 PM.pageController.jumpToPage(0);
                               } else if (Provider.of<CategoryProvider>(context,
@@ -308,7 +304,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           onColorChanged: (Color color) =>
                                               setState(() {
                                             currentColor = color;
-                                            navStack.removeLast();
+
                                             print(navStack);
                                             Navigator.pop(context);
                                             Navigator.pushNamed(
@@ -340,7 +336,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           listen: false)
                                       .categories[index] ==
                                   "Home") {
-                                navStack.removeLast();
                                 print(navStack);
                                 PM.pageController.jumpToPage(0);
                               } else if (Provider.of<CategoryProvider>(context,
@@ -374,7 +369,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           onColorChanged: (Color color) =>
                                               setState(() {
                                             currentColor = color;
-                                            navStack.removeLast();
+
                                             print(navStack);
                                             Navigator.pop(context);
                                             Navigator.pushReplacementNamed(
