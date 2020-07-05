@@ -40,6 +40,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   PaletteGenerator paletteGenerator;
   List<Color> colors;
   Color accent;
+  bool colorChanged = false;
   PanelController panelController = PanelController();
 
   Future<void> _updatePaletteGenerator() async {
@@ -67,6 +68,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
       var index = colors.indexOf(accent);
       setState(() {
         accent = colors[(index + 1) % 5];
+      });
+      setState(() {
+        colorChanged = true;
       });
     }
   }
@@ -435,6 +439,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   borderRadius: BorderRadius.circular(
                                       offsetAnimation.value),
                                   image: DecorationImage(
+                                    colorFilter: colorChanged
+                                        ? ColorFilter.mode(
+                                            accent, BlendMode.hue)
+                                        : null,
                                     image: imageProvider,
                                     fit: BoxFit.cover,
                                   ),
@@ -470,6 +478,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               }
                             },
                             onLongPress: () {
+                              setState(() {
+                                colorChanged = false;
+                              });
                               HapticFeedback.vibrate();
                               shakeController.forward(from: 0.0);
                             },
@@ -896,6 +907,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       borderRadius: BorderRadius.circular(
                                           offsetAnimation.value),
                                       image: DecorationImage(
+                                        colorFilter: colorChanged
+                                            ? ColorFilter.mode(
+                                                accent, BlendMode.hue)
+                                            : null,
                                         image: imageProvider,
                                         fit: BoxFit.cover,
                                       ),
@@ -932,6 +947,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   }
                                 },
                                 onLongPress: () {
+                                  setState(() {
+                                    colorChanged = false;
+                                  });
                                   HapticFeedback.vibrate();
                                   shakeController.forward(from: 0.0);
                                 },
@@ -1385,6 +1403,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   BorderRadius.circular(
                                                       offsetAnimation.value),
                                               image: DecorationImage(
+                                                colorFilter: colorChanged
+                                                    ? ColorFilter.mode(
+                                                        accent, BlendMode.hue)
+                                                    : null,
                                                 image: imageProvider,
                                                 fit: BoxFit.cover,
                                               ),
@@ -1423,6 +1445,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           }
                                         },
                                         onLongPress: () {
+                                          setState(() {
+                                            colorChanged = false;
+                                          });
                                           HapticFeedback.vibrate();
                                           shakeController.forward(from: 0.0);
                                         },
@@ -1864,6 +1889,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           borderRadius: BorderRadius.circular(
                                               offsetAnimation.value),
                                           image: DecorationImage(
+                                            colorFilter: colorChanged
+                                                ? ColorFilter.mode(
+                                                    accent, BlendMode.hue)
+                                                : null,
                                             image: imageProvider,
                                             fit: BoxFit.cover,
                                           ),
@@ -1901,6 +1930,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       }
                                     },
                                     onLongPress: () {
+                                      setState(() {
+                                        colorChanged = false;
+                                      });
                                       HapticFeedback.vibrate();
                                       shakeController.forward(from: 0.0);
                                     },
