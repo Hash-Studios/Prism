@@ -37,6 +37,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
   bool isLoading = true;
   PaletteGenerator paletteGenerator;
   List<Color> colors;
+  Color accent;
   String downloadLinkBackwards;
   PanelController panelController = PanelController();
   AnimationController shakeController;
@@ -55,6 +56,18 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     colors = paletteGenerator.colors.toList();
     if (paletteGenerator.colors.length > 5) {
       colors = colors.sublist(0, 5);
+    }
+    setState(() {
+      accent = colors[0];
+    });
+  }
+
+  void updateAccent() {
+    if (colors.contains(accent)) {
+      var index = colors.indexOf(accent);
+      setState(() {
+        accent = colors[(index + 1) % 5];
+      });
     }
   }
 
@@ -101,7 +114,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : colors[0],
+                  isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
@@ -593,7 +606,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     JamIcons.close_circle_f,
                                     color: isLoading
                                         ? Theme.of(context).accentColor
-                                        : colors[0].computeLuminance() > 0.5
+                                        : accent.computeLuminance() > 0.5
                                             ? Colors.black
                                             : Colors.white,
                                   ),
@@ -612,6 +625,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : print("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -628,7 +642,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -667,7 +681,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -684,7 +698,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               key: _scaffoldKey,
               resizeToAvoidBottomPadding: false,
               backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : colors[0],
+                  isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
@@ -1099,7 +1113,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       JamIcons.close_circle_f,
                                       color: isLoading
                                           ? Theme.of(context).accentColor
-                                          : colors[0].computeLuminance() > 0.5
+                                          : accent.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
                                     ),
@@ -1119,6 +1133,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : print("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -1135,7 +1150,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -1173,7 +1188,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
