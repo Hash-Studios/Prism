@@ -36,6 +36,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   bool isLoading = true;
   PaletteGenerator paletteGenerator;
   List<Color> colors;
+  Color accent;
   AnimationController shakeController;
   Future future;
   PanelController panelController = PanelController();
@@ -66,6 +67,18 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
     print(colors.toString());
     if (paletteGenerator.colors.length > 5) {
       colors = colors.sublist(0, 5);
+    }
+    setState(() {
+      accent = colors[0];
+    });
+  }
+
+  void updateAccent() {
+    if (colors.contains(accent)) {
+      var index = colors.indexOf(accent);
+      setState(() {
+        accent = colors[(index + 1) % 5];
+      });
     }
   }
 
@@ -121,7 +134,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
               resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : colors[0],
+                  isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
@@ -497,7 +510,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     JamIcons.close_circle_f,
                                     color: isLoading
                                         ? Theme.of(context).accentColor
-                                        : colors[0].computeLuminance() > 0.5
+                                        : accent.computeLuminance() > 0.5
                                             ? Colors.black
                                             : Colors.white,
                                   ),
@@ -516,6 +529,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : print("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -532,7 +546,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -569,7 +583,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -587,7 +601,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   resizeToAvoidBottomPadding: false,
                   key: _scaffoldKey,
                   backgroundColor:
-                      isLoading ? Theme.of(context).primaryColor : colors[0],
+                      isLoading ? Theme.of(context).primaryColor : accent,
                   body: SlidingUpPanel(
                     backdropEnabled: true,
                     backdropTapClosesPanel: true,
@@ -945,7 +959,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                         JamIcons.close_circle_f,
                                         color: isLoading
                                             ? Theme.of(context).accentColor
-                                            : colors[0].computeLuminance() > 0.5
+                                            : accent.computeLuminance() > 0.5
                                                 ? Colors.black
                                                 : Colors.white,
                                       ),
@@ -964,6 +978,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 },
                                 onTap: () {
                                   HapticFeedback.vibrate();
+                                  !isLoading ? updateAccent() : print("");
                                   shakeController.forward(from: 0.0);
                                 },
                               );
@@ -980,7 +995,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               },
                               color: isLoading
                                   ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
+                                  : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
                               icon: Icon(
@@ -1018,7 +1033,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               },
                               color: isLoading
                                   ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
+                                  : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
                               icon: Icon(
