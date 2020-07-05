@@ -350,11 +350,13 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
-                  navStack.last == "Setups"
-                      ? print("Currently on Setups")
-                      : navStack.last == "Home"
-                          ? Navigator.of(context).pushNamed(SetupRoute)
-                          : Navigator.of(context).pushNamed(SetupRoute);
+                  showGooglePopUp(() {
+                    navStack.last == "Setups"
+                        ? print("Currently on Setups")
+                        : navStack.last == "Home"
+                            ? Navigator.of(context).pushNamed(SetupRoute)
+                            : Navigator.of(context).pushNamed(SetupRoute);
+                  });
                 },
               ),
             ),

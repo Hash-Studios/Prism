@@ -555,14 +555,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                     leading: Icon(JamIcons.log_in),
                     title: Text(
-                      "Log in",
+                      "Sign in with Google",
                       style: TextStyle(
                           color: Theme.of(context).accentColor,
                           fontWeight: FontWeight.w500,
                           fontFamily: "Proxima Nova"),
                     ),
                     subtitle: Text(
-                      "Log in to sync data across devices",
+                      "Sign in to sync data across devices",
                       style: TextStyle(fontSize: 12),
                     ),
                   )
