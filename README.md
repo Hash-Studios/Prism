@@ -56,6 +56,9 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 ## Changelog
 
+### v2.4.1
+- Minor bug fixes
+
 ### v2.4.0
 - Major bug fixes and improvements
 - Redesigned the wallpaper info sheet
