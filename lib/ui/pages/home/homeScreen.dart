@@ -21,10 +21,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Future<bool> onWillPop() async {
-    String route = currentRoute;
-    currentRoute = previousRoute;
-    previousRoute = route;
-    print(currentRoute);
+    navStack.removeLast();
+    print(navStack);
     return true;
   }
 

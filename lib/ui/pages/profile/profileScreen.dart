@@ -64,10 +64,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<bool> onWillPop() async {
-    String route = currentRoute;
-    currentRoute = previousRoute;
-    previousRoute = route;
-    print(currentRoute);
+    navStack.removeLast();
+    print(navStack);
     return true;
   }
 
@@ -201,10 +199,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.white,
                 ),
                 onPressed: () {
-                  String route = currentRoute;
-                  currentRoute = previousRoute;
-                  previousRoute = route;
-                  print(currentRoute);
+                  navStack.removeLast();
+                  print(navStack);
                   Navigator.pop(context);
                 }),
             pinned: true,
