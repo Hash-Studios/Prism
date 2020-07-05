@@ -101,9 +101,7 @@ class _ShareButtonState extends State<ShareButton> {
     final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
     final Uri shortUrl = shortDynamicLink.shortUrl;
     Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-    Share.share(
-        "Hey check out this amazing wallpaper. I found it out using Prism Wallpapers. " +
-            shortUrl.toString());
+    Share.share("🔥Check this out ➜ " + shortUrl.toString());
     print(shortUrl);
     analytics.logShare(
         contentType: 'wallpaperScreen', itemId: widget.id, method: 'link');
