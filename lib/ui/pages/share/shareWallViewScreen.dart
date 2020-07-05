@@ -37,6 +37,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   PaletteGenerator paletteGenerator;
   List<Color> colors;
   Color accent;
+  bool colorChanged = false;
   AnimationController shakeController;
   Future future;
   PanelController panelController = PanelController();
@@ -78,6 +79,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
       var index = colors.indexOf(accent);
       setState(() {
         accent = colors[(index + 1) % 5];
+      });
+      setState(() {
+        colorChanged = true;
       });
     }
   }
@@ -489,6 +493,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   borderRadius: BorderRadius.circular(
                                       offsetAnimation.value),
                                   image: DecorationImage(
+                                    colorFilter: colorChanged
+                                        ? ColorFilter.mode(
+                                            accent, BlendMode.hue)
+                                        : null,
                                     image: imageProvider,
                                     fit: BoxFit.cover,
                                   ),
@@ -524,6 +532,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               }
                             },
                             onLongPress: () {
+                              setState(() {
+                                colorChanged = false;
+                              });
                               HapticFeedback.vibrate();
                               shakeController.forward(from: 0.0);
                             },
@@ -937,6 +948,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       borderRadius: BorderRadius.circular(
                                           offsetAnimation.value),
                                       image: DecorationImage(
+                                        colorFilter: colorChanged
+                                            ? ColorFilter.mode(
+                                                accent, BlendMode.hue)
+                                            : null,
                                         image: imageProvider,
                                         fit: BoxFit.cover,
                                       ),
@@ -973,6 +988,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   }
                                 },
                                 onLongPress: () {
+                                  setState(() {
+                                    colorChanged = false;
+                                  });
                                   HapticFeedback.vibrate();
                                   shakeController.forward(from: 0.0);
                                 },
