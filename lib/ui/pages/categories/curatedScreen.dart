@@ -10,10 +10,8 @@ class CuratedScreen extends StatelessWidget {
   }) : super(key: key);
 
   Future<bool> onWillPop() async {
-    String route = currentRoute;
-    currentRoute = previousRoute;
-    previousRoute = route;
-    print(currentRoute);
+    navStack.removeLast();
+    print(navStack);
     return true;
   }
 

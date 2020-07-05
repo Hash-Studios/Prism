@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
-import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
@@ -94,10 +93,6 @@ class FocusedMenuDetails extends StatelessWidget {
             children: <Widget>[
               GestureDetector(
                   onTap: () {
-                    String route = currentRoute;
-                    currentRoute = previousRoute;
-                    previousRoute = route;
-                    print(currentRoute);
                     Navigator.pop(context);
                   },
                   child: BackdropFilter(
@@ -309,10 +304,6 @@ class FocusedMenuDetails extends StatelessWidget {
                                       ),
                                     ),
                                     onTap: () async {
-                                      String route = currentRoute;
-                                      currentRoute = previousRoute;
-                                      previousRoute = route;
-                                      print(currentRoute);
                                       Navigator.pop(context);
                                     },
                                   ),
@@ -473,10 +464,6 @@ class FocusedMenuDetails extends StatelessWidget {
                                           ),
                                         ),
                                         onTap: () async {
-                                          String route = currentRoute;
-                                          currentRoute = previousRoute;
-                                          previousRoute = route;
-                                          print(currentRoute);
                                           Navigator.pop(context);
                                         },
                                       ),
@@ -646,10 +633,6 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   ),
                                                 ),
                                                 onTap: () async {
-                                                  String route = currentRoute;
-                                                  currentRoute = previousRoute;
-                                                  previousRoute = route;
-                                                  print(currentRoute);
                                                   Navigator.pop(context);
                                                 },
                                               ),
@@ -793,12 +776,6 @@ class FocusedMenuDetails extends StatelessWidget {
                                                       ),
                                                     ),
                                                     onTap: () async {
-                                                      String route =
-                                                          currentRoute;
-                                                      currentRoute =
-                                                          previousRoute;
-                                                      previousRoute = route;
-                                                      print(currentRoute);
                                                       Navigator.pop(context);
                                                     },
                                                   ),
@@ -960,12 +937,6 @@ class FocusedMenuDetails extends StatelessWidget {
                                                       ),
                                                     ),
                                                     onTap: () async {
-                                                      String route =
-                                                          currentRoute;
-                                                      currentRoute =
-                                                          previousRoute;
-                                                      previousRoute = route;
-                                                      print(currentRoute);
                                                       Navigator.pop(context);
                                                     },
                                                   ),
@@ -1134,10 +1105,6 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   ),
                                                 ),
                                                 onTap: () async {
-                                                  String route = currentRoute;
-                                                  currentRoute = previousRoute;
-                                                  previousRoute = route;
-                                                  print(currentRoute);
                                                   Navigator.pop(context);
                                                 },
                                               ),
@@ -1316,10 +1283,6 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   ),
                                                 ),
                                                 onTap: () async {
-                                                  String route = currentRoute;
-                                                  currentRoute = previousRoute;
-                                                  previousRoute = route;
-                                                  print(currentRoute);
                                                   Navigator.pop(context);
                                                 },
                                               ),
@@ -1472,10 +1435,6 @@ class FocusedMenuDetails extends StatelessWidget {
       );
     } catch (e) {
       print(e.toString());
-      String route = currentRoute;
-      currentRoute = previousRoute;
-      previousRoute = route;
-      print(currentRoute);
       Navigator.pop(context);
       return Container();
     }
