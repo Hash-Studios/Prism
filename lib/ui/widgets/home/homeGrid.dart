@@ -609,7 +609,8 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
         ));
     final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
     final Uri shortUrl = shortDynamicLink.shortUrl;
-    Clipboard.setData(ClipboardData(text: shortUrl.toString()));
+    Clipboard.setData(
+        ClipboardData(text: "🔥Check this out ➜ " + shortUrl.toString()));
     analytics.logShare(contentType: 'focussedMenu', itemId: id, method: 'link');
     toasts.shareWall();
     print(shortUrl);
