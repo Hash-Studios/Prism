@@ -41,3 +41,4 @@ lib/generated_plugin_registrant.dart
 android/key.properties
 key.jks
 pubspec.lock
+android/app/google-services.json
