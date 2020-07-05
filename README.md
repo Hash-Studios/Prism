@@ -34,27 +34,30 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
 - Dark Mode supported
-- Google Sign In is optional
+- Google Sign-In is optional
 - Low Internet usage due to minimal loading and persistent data using Provider
 - Home Feed is infinite, never ends
 - Save Liked Images for later (works even after uninstalling the app)
 - Download any wallpaper to Gallery
-- Secure data and favourites storage on Google Firebase
+- Secure data and favorites storage on Google Firebase
 - Search for Wallpapers by keyword
 - Check how the wallpaper will look with fake clock and app icons
 - Search for Wallpapers by color
-- Find wallpapers with similar color to one wallpaper
+- Find wallpapers with a similar color
 - Set any wallpaper on the home screen, lock screen or both
-- Find wallpapers by category (Curated, Abstract and Nature)
+- Find wallpapers by category (Curated, Abstract, and Nature)
 - Extensive settings menu with various options
 - Toast/Snackbar supported buttons
 - Minimal design with smooth transitions
 - Clear Cache, Downloads and Favourites with one-tap
-- Optimised storage using minimal packages
+- Optimized storage using minimal packages
 - Application size under 10 MB
-- Adaptive UI (changes colour based on wallpaper)
+- Adaptive UI (changes color based on wallpaper)
 
 ## Changelog
+
+### v2.4.1
+- Minor bug fixes
 
 ### v2.4.0
 - Major bug fixes and improvements

@@ -99,7 +99,7 @@ class RestartWidget extends StatefulWidget {
   final Widget child;
 
   static void restartApp(BuildContext context) {
-    router.currentRoute = "Home";
+    router.navStack = ["Home"];
     observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>().restartApp();
   }

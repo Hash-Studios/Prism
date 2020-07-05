@@ -14,18 +14,22 @@ class ColorScreen extends StatelessWidget {
     @required this.arguments,
   }) : super(key: key);
 
-  Future<bool> onWillPop() async {
-    String route = currentRoute;
-    currentRoute = previousRoute;
-    previousRoute = route;
-    print(currentRoute);
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: onWillPop,
+      onWillPop: () async {
+        int count = 0;
+        while (navStack.last == "Color") {
+          navStack.removeLast();
+          count++;
+        }
+        print(navStack);
+        print(count);
+        for (int i = 0; i < count; i++) {
+          Navigator.pop(context);
+        }
+        return false;
+      },
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: PreferredSize(
