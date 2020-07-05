@@ -186,7 +186,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: currentRoute == "Home" ? 9 : 0,
+                      height: navStack.last == "Home" ? 9 : 0,
                     ),
                     Icon(JamIcons.home_f,
                         color:
@@ -198,25 +198,26 @@ class _BottomNavBarState extends State<BottomNavBar>
                       // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: currentRoute == "Home"
+                        color: navStack.last == "Home"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
                       // curve: Curves.fastOutSlowIn,
-                      margin: currentRoute == "Home"
+                      margin: navStack.last == "Home"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
                       width:
-                          currentRoute == "Home" ? _paddingAnimation.value : 0,
-                      height: currentRoute == "Home" ? 3 : 0,
+                          navStack.last == "Home" ? _paddingAnimation.value : 0,
+                      height: navStack.last == "Home" ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  currentRoute == "Home"
+                  navStack.last == "Home"
                       ? print("Currently on Home")
                       : Navigator.of(context)
                           .pushNamedAndRemoveUntil(HomeRoute, (route) => false);
+                  // navStack.last == "Home" ? print("") : navStack = ["Home"];
                 },
               ),
             ),
@@ -229,11 +230,11 @@ class _BottomNavBarState extends State<BottomNavBar>
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: currentRoute == "Search" ? 9 : 0,
+                      height: navStack.last == "Search" ? 9 : 0,
                     ),
                     Icon(JamIcons.search,
                         color:
-                            // currentRoute == "Search"
+                            // navStack.last == "Search"
                             //     ? Color(0xFFE57697)
                             //     :
                             Theme.of(context).accentColor),
@@ -241,25 +242,25 @@ class _BottomNavBarState extends State<BottomNavBar>
                       // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: currentRoute == "Search"
+                        color: navStack.last == "Search"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
                       // curve: Curves.fastOutSlowIn,
-                      margin: currentRoute == "Search"
+                      margin: navStack.last == "Search"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
-                      width: currentRoute == "Search"
+                      width: navStack.last == "Search"
                           ? _paddingAnimation.value
                           : 0,
-                      height: currentRoute == "Search" ? 3 : 0,
+                      height: navStack.last == "Search" ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  currentRoute == "Search"
+                  navStack.last == "Search"
                       ? print("Currently on Search")
-                      : currentRoute == "Home"
+                      : navStack.last == "Home"
                           ? Navigator.of(context).pushNamed(SearchRoute)
                           : Navigator.of(context).pushNamed(SearchRoute);
                 },
@@ -274,11 +275,11 @@ class _BottomNavBarState extends State<BottomNavBar>
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: currentRoute == "Favourites" ? 9 : 0,
+                      height: navStack.last == "Favourites" ? 9 : 0,
                     ),
                     Icon(JamIcons.heart_f,
                         color:
-                            //  currentRoute == "Favourites"
+                            //  navStack.last == "Favourites"
                             //     ? Color(0xFFE57697)
                             //     :
                             Theme.of(context).accentColor),
@@ -286,26 +287,26 @@ class _BottomNavBarState extends State<BottomNavBar>
                       // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: currentRoute == "Favourites"
+                        color: navStack.last == "Favourites"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
                       // curve: Curves.fastOutSlowIn,
-                      margin: currentRoute == "Favourites"
+                      margin: navStack.last == "Favourites"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
-                      width: currentRoute == "Favourites"
+                      width: navStack.last == "Favourites"
                           ? _paddingAnimation.value
                           : 0,
-                      height: currentRoute == "Favourites" ? 3 : 0,
+                      height: navStack.last == "Favourites" ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
                   showGooglePopUp(() {
-                    currentRoute == "Favourites"
+                    navStack.last == "Favourites"
                         ? print("Currently on Favourites")
-                        : currentRoute == "Home"
+                        : navStack.last == "Home"
                             ? Navigator.of(context).pushNamed(FavRoute)
                             : Navigator.of(context).pushNamed(FavRoute);
                   });
@@ -329,13 +330,13 @@ class _BottomNavBarState extends State<BottomNavBar>
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: currentRoute == "Profile" ? 9 : 0,
+                      height: navStack.last == "Profile" ? 9 : 0,
                     ),
                     Container(
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(500),
                           color:
-                              //  currentRoute == "Profile"
+                              //  navStack.last == "Profile"
                               //     ? Color(0xFFE57697)
                               //     :
                               Theme.of(context).accentColor),
@@ -346,25 +347,25 @@ class _BottomNavBarState extends State<BottomNavBar>
                       // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: currentRoute == "Profile"
+                        color: navStack.last == "Profile"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
                       // curve: Curves.fastOutSlowIn,
-                      margin: currentRoute == "Profile"
+                      margin: navStack.last == "Profile"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
-                      width: currentRoute == "Profile"
+                      width: navStack.last == "Profile"
                           ? _paddingAnimation.value
                           : 0,
-                      height: currentRoute == "Profile" ? 3 : 0,
+                      height: navStack.last == "Profile" ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
-                  currentRoute == "Profile"
+                  navStack.last == "Profile"
                       ? print("Currently on Profile")
-                      : currentRoute == "Home"
+                      : navStack.last == "Home"
                           ? Navigator.of(context).pushNamed(ProfileRoute)
                           : Navigator.of(context).pushNamed(ProfileRoute);
                 },
