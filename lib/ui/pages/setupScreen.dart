@@ -1,5 +1,6 @@
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
@@ -231,6 +232,10 @@ class _SetupPageState extends State<SetupPage> {
                     curve: Curves.fastOutSlowIn);
                 HapticFeedback.vibrate();
               }
+            },
+            onTap: () {
+              Navigator.pushNamed(context, SetupViewRoute,
+                  arguments: [pageNumber]);
             },
           ),
         ],

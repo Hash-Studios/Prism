@@ -13,3 +13,4 @@ const String DownloadRoute = '/downloads';
 const String ShareRoute = '/share';
 const String FavWallViewRoute = '/favwall';
 const String SetupRoute = '/setups';
+const String SetupViewRoute = '/setupsview';
