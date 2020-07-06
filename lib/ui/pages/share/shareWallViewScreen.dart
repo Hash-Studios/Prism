@@ -616,6 +616,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(
+                                            colorChanged: colorChanged,
+                                            accent:accent,
                                             link: link,
                                             file: false,
                                           ));
@@ -1101,6 +1103,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           return FadeTransition(
                                               opacity: animation,
                                               child: ClockOverlay(
+                                                colorChanged: colorChanged,
+                                            accent:accent,
                                                 link: link,
                                                 file: false,
                                               ));

@@ -713,6 +713,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(
+                                            colorChanged: colorChanged,
+                                            accent:accent,
                                             link: link,
                                             file: false,
                                           ));
@@ -968,7 +970,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               ? downloadLinkBackwards == null
                                   ? <Widget>[
                                       SetWallpaperButton(
-                                        url: Provider.of<FavouriteProvider>(
+                                            colorChanged: colorChanged,
+
+                                        url: screenshotTaken
+                                        ? _imageFile.path
+                                        : Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
                                                     .liked[index]["provider"] ==
@@ -1264,6 +1270,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(
+                                            colorChanged: colorChanged,
+                                            accent:accent,
                                             link: link,
                                             file: false,
                                           ));

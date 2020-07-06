@@ -98,7 +98,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: SetWallpaperButton(url: file.path),
+                child: SetWallpaperButton(colorChanged: false, url: file.path),
               ),
             ),
             Align(
@@ -136,6 +136,8 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                               return FadeTransition(
                                   opacity: animation,
                                   child: ClockOverlay(
+                                    colorChanged: false,
+                                    accent: null,
                                     link: link,
                                     file: true,
                                   ));
