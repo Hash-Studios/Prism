@@ -124,6 +124,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  print('Screenshot Starting');
                   screenshotController
                       .capture(
                     pixelRatio: 2,
@@ -407,7 +408,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         .path
                                         .toString()),
                             SetWallpaperButton(
-                              colorChanged: colorChanged,
+                                colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
                                     : Provider.of<WallHavenProvider>(context)
@@ -594,6 +595,23 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   backgroundColor:
                       isLoading ? Theme.of(context).primaryColor : accent,
                   body: SlidingUpPanel(
+                    onPanelOpened: () {
+                      print('Screenshot Starting');
+                      screenshotController
+                          .capture(
+                        pixelRatio: 2,
+                        delay: Duration(milliseconds: 10),
+                      )
+                          .then((File image) async {
+                        setState(() {
+                          _imageFile = image;
+                          screenshotTaken = true;
+                        });
+                        print('Screenshot Taken');
+                      }).catchError((onError) {
+                        print(onError);
+                      });
+                    },
                     backdropEnabled: true,
                     backdropTapClosesPanel: true,
                     borderRadius: BorderRadius.only(
@@ -884,7 +902,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             .src["original"]
                                             .toString()),
                                 SetWallpaperButton(
-                                  colorChanged: colorChanged,
+                                    colorChanged: colorChanged,
                                     url: screenshotTaken
                                         ? _imageFile.path
                                         : Provider.of<PexelsProvider>(context)
@@ -1075,6 +1093,23 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       backgroundColor:
                           isLoading ? Theme.of(context).primaryColor : accent,
                       body: SlidingUpPanel(
+                        onPanelOpened: () {
+                          print('Screenshot Starting');
+                          screenshotController
+                              .capture(
+                            pixelRatio: 2,
+                            delay: Duration(milliseconds: 10),
+                          )
+                              .then((File image) async {
+                            setState(() {
+                              _imageFile = image;
+                              screenshotTaken = true;
+                            });
+                            print('Screenshot Taken');
+                          }).catchError((onError) {
+                            print(onError);
+                          });
+                        },
                         backdropEnabled: true,
                         backdropTapClosesPanel: true,
                         borderRadius: BorderRadius.only(
@@ -1379,7 +1414,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .toString(),
                                     ),
                                     SetWallpaperButton(
-                                      colorChanged: colorChanged,
+                                        colorChanged: colorChanged,
                                         url: screenshotTaken
                                             ? _imageFile.path
                                             : Provider.of<PexelsProvider>(
@@ -1585,6 +1620,23 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       backgroundColor:
                           isLoading ? Theme.of(context).primaryColor : accent,
                       body: SlidingUpPanel(
+                        onPanelOpened: () {
+                          print('Screenshot Starting');
+                          screenshotController
+                              .capture(
+                            pixelRatio: 2,
+                            delay: Duration(milliseconds: 10),
+                          )
+                              .then((File image) async {
+                            setState(() {
+                              _imageFile = image;
+                              screenshotTaken = true;
+                            });
+                            print('Screenshot Taken');
+                          }).catchError((onError) {
+                            print(onError);
+                          });
+                        },
                         backdropEnabled: true,
                         backdropTapClosesPanel: true,
                         borderRadius: BorderRadius.only(
@@ -1878,7 +1930,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .toString(),
                                     ),
                                     SetWallpaperButton(
-                                      colorChanged: colorChanged,
+                                        colorChanged: colorChanged,
                                         url: screenshotTaken
                                             ? _imageFile.path
                                             : Provider.of<WallHavenProvider>(
