@@ -134,6 +134,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       _imageFile = image;
                       screenshotTaken = true;
                     });
+                    print('Screenshot Taken');
                   }).catchError((onError) {
                     print(onError);
                   });
@@ -397,6 +398,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
                             DownloadButton(
+                                colorChanged: colorChanged,
                                 link: screenshotTaken
                                     ? _imageFile.path
                                     : Provider.of<WallHavenProvider>(context,
@@ -405,6 +407,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         .path
                                         .toString()),
                             SetWallpaperButton(
+                              colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
                                     : Provider.of<WallHavenProvider>(context)
@@ -872,6 +875,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: <Widget>[
                                 DownloadButton(
+                                    colorChanged: colorChanged,
                                     link: screenshotTaken
                                         ? _imageFile.path
                                         : Provider.of<PexelsProvider>(context,
@@ -880,6 +884,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             .src["original"]
                                             .toString()),
                                 SetWallpaperButton(
+                                  colorChanged: colorChanged,
                                     url: screenshotTaken
                                         ? _imageFile.path
                                         : Provider.of<PexelsProvider>(context)
@@ -1364,6 +1369,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       MainAxisAlignment.spaceEvenly,
                                   children: <Widget>[
                                     DownloadButton(
+                                      colorChanged: colorChanged,
                                       link: screenshotTaken
                                           ? _imageFile.path
                                           : Provider.of<PexelsProvider>(context,
@@ -1373,6 +1379,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .toString(),
                                     ),
                                     SetWallpaperButton(
+                                      colorChanged: colorChanged,
                                         url: screenshotTaken
                                             ? _imageFile.path
                                             : Provider.of<PexelsProvider>(
@@ -1860,6 +1867,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       MainAxisAlignment.spaceEvenly,
                                   children: <Widget>[
                                     DownloadButton(
+                                      colorChanged: colorChanged,
                                       link: screenshotTaken
                                           ? _imageFile.path
                                           : Provider.of<WallHavenProvider>(
@@ -1870,6 +1878,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .toString(),
                                     ),
                                     SetWallpaperButton(
+                                      colorChanged: colorChanged,
                                         url: screenshotTaken
                                             ? _imageFile.path
                                             : Provider.of<WallHavenProvider>(
