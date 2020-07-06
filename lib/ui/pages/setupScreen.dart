@@ -89,6 +89,10 @@ class _SetupPageState extends State<SetupPage> {
                   print("snapshot none, waiting");
                   return Loader();
                 } else {
+                  Future.delayed(Duration(seconds: 0))
+                      .then((value) => setState(() {
+                            pageNumber;
+                          }));
                   return SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height,
@@ -125,15 +129,19 @@ class _SetupPageState extends State<SetupPage> {
                                           listen: false)
                                       .setups[index]['image'],
                                   imageBuilder: (context, imageProvider) =>
-                                      Container(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.672,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.72,
-                                    decoration: BoxDecoration(
-                                      image: DecorationImage(
-                                          image: imageProvider,
-                                          fit: BoxFit.fill),
+                                      Hero(
+                                    tag: "CustomHerotag$index",
+                                    child: Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          0.672,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.72,
+                                      decoration: BoxDecoration(
+                                        image: DecorationImage(
+                                            image: imageProvider,
+                                            fit: BoxFit.fill),
+                                      ),
                                     ),
                                   ),
                                   placeholder: (context, url) => Container(
