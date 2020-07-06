@@ -46,8 +46,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   bool colorChanged = false;
   File _imageFile;
   bool screenshotTaken = false;
-  PanelController panelController = PanelController();
   ScreenshotController screenshotController = ScreenshotController();
+  PanelController panelController = PanelController();
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
