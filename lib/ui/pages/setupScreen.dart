@@ -4,8 +4,6 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/home/headingChipBar.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
@@ -44,12 +42,6 @@ class _SetupScreenState extends State<SetupScreen> {
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
-        appBar: PreferredSize(
-          child: HeadingChipBar(
-            current: "Setups",
-          ),
-          preferredSize: Size(double.infinity, 55),
-        ),
         backgroundColor: Theme.of(context).primaryColor,
         body: BottomBar(
           child: SafeArea(
@@ -79,14 +71,13 @@ class _SetupPageState extends State<SetupPage> {
   int pageNumber = 0;
   @override
   Widget build(BuildContext context) {
-    final ScrollController scrollController =
-        InheritedDataProvider.of(context).scrollController;
-    return SingleChildScrollView(
-      controller: scrollController,
-      child: Stack(
-        alignment: Alignment.topCenter,
-        children: <Widget>[
-          FutureBuilder(
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: <Widget>[
+        Padding(
+          padding:
+              EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
+          child: FutureBuilder(
               future: widget.future,
               builder: (context, snapshot) {
                 if (snapshot == null) {
@@ -170,28 +161,39 @@ class _SetupPageState extends State<SetupPage> {
                   );
                 }
               }),
-          Positioned(
-            bottom: MediaQuery.of(context).size.height * 0.116,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.75,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    Provider.of<SetupProvider>(context, listen: false)
-                                .setups
-                                .length ==
-                            0
-                        ? ""
-                        : Provider.of<SetupProvider>(context, listen: false)
-                            .setups[pageNumber]['name'],
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline1
-                        .copyWith(fontSize: 30),
-                  ),
-                  Text(
+        ),
+        Positioned(
+          top: 0,
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height * 0.1,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+              color: Theme.of(context).hintColor,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  Provider.of<SetupProvider>(context, listen: false)
+                              .setups
+                              .length ==
+                          0
+                      ? ""
+                      : Provider.of<SetupProvider>(context, listen: false)
+                          .setups[pageNumber]['name'],
+                  style: Theme.of(context)
+                      .textTheme
+                      .headline1
+                      .copyWith(fontSize: 30),
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.75,
+                  child: Text(
                     Provider.of<SetupProvider>(context, listen: false)
                                 .setups
                                 .length ==
@@ -200,13 +202,20 @@ class _SetupPageState extends State<SetupPage> {
                         : Provider.of<SetupProvider>(context, listen: false)
                             .setups[pageNumber]['desc'],
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headline4,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline4
+                        .copyWith(fontSize: 12),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          GestureDetector(
+        ),
+        Padding(
+          padding:
+              EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
+          child: GestureDetector(
             child: Container(
               width: MediaQuery.of(context).size.width * 0.83,
               height: MediaQuery.of(context).size.height * 0.8,
@@ -238,8 +247,8 @@ class _SetupPageState extends State<SetupPage> {
                   arguments: [pageNumber]);
             },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
