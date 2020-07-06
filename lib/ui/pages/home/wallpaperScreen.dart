@@ -566,6 +566,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(
+                                            colorChanged: colorChanged,
+                                            accent: accent,
                                             link: link,
                                             file: false,
                                           ));
@@ -1064,6 +1066,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           return FadeTransition(
                                               opacity: animation,
                                               child: ClockOverlay(
+                                                colorChanged: colorChanged,
+                                                accent: accent,
                                                 link: link,
                                                 file: false,
                                               ));
@@ -1592,6 +1596,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               return FadeTransition(
                                                   opacity: animation,
                                                   child: ClockOverlay(
+                                                    colorChanged: colorChanged,
+                                                    accent: accent,
                                                     link: link,
                                                     file: false,
                                                   ));
@@ -2101,6 +2107,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               return FadeTransition(
                                                   opacity: animation,
                                                   child: ClockOverlay(
+                                                    colorChanged: colorChanged,
+                                                    accent: accent,
                                                     link: link,
                                                     file: false,
                                                   ));
