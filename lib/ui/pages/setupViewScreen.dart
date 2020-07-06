@@ -141,7 +141,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                           style: Theme.of(context)
                               .textTheme
                               .headline1
-                              .copyWith(fontSize: 30),
+                              .copyWith(fontSize: 30, color: Colors.white),
                         ),
                       ),
                       Padding(
@@ -399,16 +399,19 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                         imageUrl:
                             Provider.of<SetupProvider>(context, listen: false)
                                 .setups[index]["image"],
-                        imageBuilder: (context, imageProvider) => Container(
-                          margin: EdgeInsets.symmetric(
-                              vertical: offsetAnimation.value * 1.25,
-                              horizontal: offsetAnimation.value / 2),
-                          decoration: BoxDecoration(
-                            borderRadius:
-                                BorderRadius.circular(offsetAnimation.value),
-                            image: DecorationImage(
-                              image: imageProvider,
-                              fit: BoxFit.cover,
+                        imageBuilder: (context, imageProvider) => Hero(
+                          tag: "CustomHerotag$index",
+                          child: Container(
+                            margin: EdgeInsets.symmetric(
+                                vertical: offsetAnimation.value * 1.25,
+                                horizontal: offsetAnimation.value / 2),
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(offsetAnimation.value),
+                              image: DecorationImage(
+                                image: imageProvider,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
