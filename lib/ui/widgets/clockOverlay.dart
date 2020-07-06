@@ -6,7 +6,14 @@ import 'package:optimized_cached_image/widgets.dart';
 class ClockOverlay extends StatefulWidget {
   final String link;
   final bool file;
-  ClockOverlay({@required this.link, @required this.file});
+  final Color accent;
+  final bool colorChanged;
+  ClockOverlay({
+    @required this.link,
+    @required this.file,
+    @required this.accent,
+    @required this.colorChanged,
+  });
   @override
   _ClockOverlayState createState() => _ClockOverlayState();
 }
@@ -25,6 +32,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
                   imageBuilder: (context, imageProvider) => Container(
                     decoration: BoxDecoration(
                       image: DecorationImage(
+                        colorFilter: widget.colorChanged
+                            ? ColorFilter.mode(widget.accent, BlendMode.hue)
+                            : null,
                         image: imageProvider,
                         fit: BoxFit.cover,
                       ),
@@ -36,6 +46,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
                   width: MediaQuery.of(context).size.width,
                   child: Image.file(
                     File(widget.link),
+                    color: widget.accent,
+                    colorBlendMode:
+                        widget.colorChanged ? BlendMode.color : null,
                     fit: BoxFit.cover,
                   ),
                 ),
