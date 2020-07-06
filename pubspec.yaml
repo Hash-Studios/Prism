@@ -40,6 +40,7 @@ dependencies:
   firebase_analytics: ^5.0.16
   firebase_messaging: ^6.0.16
   in_app_purchase: ^0.3.4+1
+  screenshot: ^0.2.0
 
 dev_dependencies:
   flutter_test:

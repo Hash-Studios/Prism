@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routes/router.dart';
@@ -15,6 +17,7 @@ import 'package:optimized_cached_image/widgets.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:screenshot/screenshot.dart';
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -39,6 +42,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   bool isLoading = true;
   PaletteGenerator paletteGenerator;
   List<Color> colors;
+  Color accent;
+  bool colorChanged = false;
+  File _imageFile;
+  bool screenshotTaken = false;
+  ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
 
   Future<void> _updatePaletteGenerator() async {
@@ -55,6 +63,21 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     colors = paletteGenerator.colors.toList();
     if (paletteGenerator.colors.length > 5) {
       colors = colors.sublist(0, 5);
+    }
+    setState(() {
+      accent = colors[0];
+    });
+  }
+
+  void updateAccent() {
+    if (colors.contains(accent)) {
+      var index = colors.indexOf(accent);
+      setState(() {
+        accent = colors[(index + 1) % 5];
+      });
+      setState(() {
+        colorChanged = true;
+      });
     }
   }
 
@@ -98,8 +121,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
               resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : colors[0],
+                  isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
+                onPanelOpened: () {
+                  print('Screenshot Starting');
+                  screenshotController
+                      .capture(
+                    pixelRatio: 2,
+                    delay: Duration(milliseconds: 10),
+                  )
+                      .then((File image) async {
+                    setState(() {
+                      _imageFile = image;
+                      screenshotTaken = true;
+                    });
+                    print('Screenshot Taken');
+                  }).catchError((onError) {
+                    print(onError);
+                  });
+                },
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
                 borderRadius: BorderRadius.only(
@@ -359,15 +399,21 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
                             DownloadButton(
-                                link: Provider.of<WallHavenProvider>(context,
-                                        listen: false)
-                                    .walls[index]
-                                    .path
-                                    .toString()),
+                                colorChanged: colorChanged,
+                                link: screenshotTaken
+                                    ? _imageFile.path
+                                    : Provider.of<WallHavenProvider>(context,
+                                            listen: false)
+                                        .walls[index]
+                                        .path
+                                        .toString()),
                             SetWallpaperButton(
-                                url: Provider.of<WallHavenProvider>(context)
-                                    .walls[index]
-                                    .path),
+                                colorChanged: colorChanged,
+                                url: screenshotTaken
+                                    ? _imageFile.path
+                                    : Provider.of<WallHavenProvider>(context)
+                                        .walls[index]
+                                        .path),
                             FavouriteWallpaperButton(
                               id: Provider.of<WallHavenProvider>(context,
                                       listen: false)
@@ -414,16 +460,23 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   .walls[index]
                                   .path,
                               imageBuilder: (context, imageProvider) =>
-                                  Container(
-                                margin: EdgeInsets.symmetric(
-                                    vertical: offsetAnimation.value * 1.25,
-                                    horizontal: offsetAnimation.value / 2),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                      offsetAnimation.value),
-                                  image: DecorationImage(
-                                    image: imageProvider,
-                                    fit: BoxFit.cover,
+                                  Screenshot(
+                                controller: screenshotController,
+                                child: Container(
+                                  margin: EdgeInsets.symmetric(
+                                      vertical: offsetAnimation.value * 1.25,
+                                      horizontal: offsetAnimation.value / 2),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                        offsetAnimation.value),
+                                    image: DecorationImage(
+                                      colorFilter: colorChanged
+                                          ? ColorFilter.mode(
+                                              accent, BlendMode.hue)
+                                          : null,
+                                      image: imageProvider,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -443,7 +496,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     JamIcons.close_circle_f,
                                     color: isLoading
                                         ? Theme.of(context).accentColor
-                                        : colors[0].computeLuminance() > 0.5
+                                        : accent.computeLuminance() > 0.5
                                             ? Colors.black
                                             : Colors.white,
                                   ),
@@ -457,11 +510,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               }
                             },
                             onLongPress: () {
+                              setState(() {
+                                colorChanged = false;
+                              });
                               HapticFeedback.vibrate();
                               shakeController.forward(from: 0.0);
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : print("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -478,7 +535,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -518,7 +575,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -536,8 +593,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   resizeToAvoidBottomPadding: false,
                   key: _scaffoldKey,
                   backgroundColor:
-                      isLoading ? Theme.of(context).primaryColor : colors[0],
+                      isLoading ? Theme.of(context).primaryColor : accent,
                   body: SlidingUpPanel(
+                    onPanelOpened: () {
+                      print('Screenshot Starting');
+                      screenshotController
+                          .capture(
+                        pixelRatio: 2,
+                        delay: Duration(milliseconds: 10),
+                      )
+                          .then((File image) async {
+                        setState(() {
+                          _imageFile = image;
+                          screenshotTaken = true;
+                        });
+                        print('Screenshot Taken');
+                      }).catchError((onError) {
+                        print(onError);
+                      });
+                    },
                     backdropEnabled: true,
                     backdropTapClosesPanel: true,
                     borderRadius: BorderRadius.only(
@@ -819,15 +893,21 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: <Widget>[
                                 DownloadButton(
-                                    link: Provider.of<PexelsProvider>(context,
-                                            listen: false)
-                                        .wallsP[index]
-                                        .src["original"]
-                                        .toString()),
+                                    colorChanged: colorChanged,
+                                    link: screenshotTaken
+                                        ? _imageFile.path
+                                        : Provider.of<PexelsProvider>(context,
+                                                listen: false)
+                                            .wallsP[index]
+                                            .src["original"]
+                                            .toString()),
                                 SetWallpaperButton(
-                                    url: Provider.of<PexelsProvider>(context)
-                                        .wallsP[index]
-                                        .src["original"]),
+                                    colorChanged: colorChanged,
+                                    url: screenshotTaken
+                                        ? _imageFile.path
+                                        : Provider.of<PexelsProvider>(context)
+                                            .wallsP[index]
+                                            .src["original"]),
                                 FavouriteWallpaperButton(
                                   id: Provider.of<PexelsProvider>(context,
                                           listen: false)
@@ -874,16 +954,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       .wallsP[index]
                                       .src["portrait"],
                                   imageBuilder: (context, imageProvider) =>
-                                      Container(
-                                    margin: EdgeInsets.symmetric(
-                                        vertical: offsetAnimation.value * 1.25,
-                                        horizontal: offsetAnimation.value / 2),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(
-                                          offsetAnimation.value),
-                                      image: DecorationImage(
-                                        image: imageProvider,
-                                        fit: BoxFit.cover,
+                                      Screenshot(
+                                    controller: screenshotController,
+                                    child: Container(
+                                      margin: EdgeInsets.symmetric(
+                                          vertical:
+                                              offsetAnimation.value * 1.25,
+                                          horizontal:
+                                              offsetAnimation.value / 2),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                            offsetAnimation.value),
+                                        image: DecorationImage(
+                                          colorFilter: colorChanged
+                                              ? ColorFilter.mode(
+                                                  accent, BlendMode.hue)
+                                              : null,
+                                          image: imageProvider,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -904,7 +993,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         JamIcons.close_circle_f,
                                         color: isLoading
                                             ? Theme.of(context).accentColor
-                                            : colors[0].computeLuminance() > 0.5
+                                            : accent.computeLuminance() > 0.5
                                                 ? Colors.black
                                                 : Colors.white,
                                       ),
@@ -918,11 +1007,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   }
                                 },
                                 onLongPress: () {
+                                  setState(() {
+                                    colorChanged = false;
+                                  });
                                   HapticFeedback.vibrate();
                                   shakeController.forward(from: 0.0);
                                 },
                                 onTap: () {
                                   HapticFeedback.vibrate();
+                                  !isLoading ? updateAccent() : print("");
                                   shakeController.forward(from: 0.0);
                                 },
                               );
@@ -939,7 +1032,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               },
                               color: isLoading
                                   ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
+                                  : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
                               icon: Icon(
@@ -980,7 +1073,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               },
                               color: isLoading
                                   ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
+                                  : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
                               icon: Icon(
@@ -997,10 +1090,26 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   ? Scaffold(
                       resizeToAvoidBottomPadding: false,
                       key: _scaffoldKey,
-                      backgroundColor: isLoading
-                          ? Theme.of(context).primaryColor
-                          : colors[0],
+                      backgroundColor:
+                          isLoading ? Theme.of(context).primaryColor : accent,
                       body: SlidingUpPanel(
+                        onPanelOpened: () {
+                          print('Screenshot Starting');
+                          screenshotController
+                              .capture(
+                            pixelRatio: 2,
+                            delay: Duration(milliseconds: 10),
+                          )
+                              .then((File image) async {
+                            setState(() {
+                              _imageFile = image;
+                              screenshotTaken = true;
+                            });
+                            print('Screenshot Taken');
+                          }).catchError((onError) {
+                            print(onError);
+                          });
+                        },
                         backdropEnabled: true,
                         backdropTapClosesPanel: true,
                         borderRadius: BorderRadius.only(
@@ -1295,15 +1404,21 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       MainAxisAlignment.spaceEvenly,
                                   children: <Widget>[
                                     DownloadButton(
-                                      link: Provider.of<PexelsProvider>(context,
-                                              listen: false)
-                                          .wallsC[index]
-                                          .src["original"]
-                                          .toString(),
+                                      colorChanged: colorChanged,
+                                      link: screenshotTaken
+                                          ? _imageFile.path
+                                          : Provider.of<PexelsProvider>(context,
+                                                  listen: false)
+                                              .wallsC[index]
+                                              .src["original"]
+                                              .toString(),
                                     ),
                                     SetWallpaperButton(
-                                        url:
-                                            Provider.of<PexelsProvider>(context)
+                                        colorChanged: colorChanged,
+                                        url: screenshotTaken
+                                            ? _imageFile.path
+                                            : Provider.of<PexelsProvider>(
+                                                    context)
                                                 .wallsC[index]
                                                 .src["original"]),
                                     FavouriteWallpaperButton(
@@ -1359,20 +1474,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .src["portrait"],
                                           imageBuilder:
                                               (context, imageProvider) =>
-                                                  Container(
-                                            margin: EdgeInsets.symmetric(
-                                                vertical:
-                                                    offsetAnimation.value *
-                                                        1.25,
-                                                horizontal:
-                                                    offsetAnimation.value / 2),
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                      offsetAnimation.value),
-                                              image: DecorationImage(
-                                                image: imageProvider,
-                                                fit: BoxFit.cover,
+                                                  Screenshot(
+                                            controller: screenshotController,
+                                            child: Container(
+                                              margin: EdgeInsets.symmetric(
+                                                  vertical:
+                                                      offsetAnimation.value *
+                                                          1.25,
+                                                  horizontal:
+                                                      offsetAnimation.value /
+                                                          2),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        offsetAnimation.value),
+                                                image: DecorationImage(
+                                                  colorFilter: colorChanged
+                                                      ? ColorFilter.mode(
+                                                          accent, BlendMode.hue)
+                                                      : null,
+                                                  image: imageProvider,
+                                                  fit: BoxFit.cover,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -1394,7 +1517,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 color: isLoading
                                                     ? Theme.of(context)
                                                         .accentColor
-                                                    : colors[0].computeLuminance() >
+                                                    : accent.computeLuminance() >
                                                             0.5
                                                         ? Colors.black
                                                         : Colors.white,
@@ -1409,11 +1532,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           }
                                         },
                                         onLongPress: () {
+                                          setState(() {
+                                            colorChanged = false;
+                                          });
                                           HapticFeedback.vibrate();
                                           shakeController.forward(from: 0.0);
                                         },
                                         onTap: () {
                                           HapticFeedback.vibrate();
+                                          !isLoading
+                                              ? updateAccent()
+                                              : print("");
                                           shakeController.forward(from: 0.0);
                                         },
                                       );
@@ -1430,7 +1559,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   },
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : colors[0].computeLuminance() > 0.5
+                                      : accent.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                   icon: Icon(
@@ -1472,7 +1601,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   },
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : colors[0].computeLuminance() > 0.5
+                                      : accent.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                   icon: Icon(
@@ -1488,10 +1617,26 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   : Scaffold(
                       resizeToAvoidBottomPadding: false,
                       key: _scaffoldKey,
-                      backgroundColor: isLoading
-                          ? Theme.of(context).primaryColor
-                          : colors[0],
+                      backgroundColor:
+                          isLoading ? Theme.of(context).primaryColor : accent,
                       body: SlidingUpPanel(
+                        onPanelOpened: () {
+                          print('Screenshot Starting');
+                          screenshotController
+                              .capture(
+                            pixelRatio: 2,
+                            delay: Duration(milliseconds: 10),
+                          )
+                              .then((File image) async {
+                            setState(() {
+                              _imageFile = image;
+                              screenshotTaken = true;
+                            });
+                            print('Screenshot Taken');
+                          }).catchError((onError) {
+                            print(onError);
+                          });
+                        },
                         backdropEnabled: true,
                         backdropTapClosesPanel: true,
                         borderRadius: BorderRadius.only(
@@ -1774,18 +1919,24 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       MainAxisAlignment.spaceEvenly,
                                   children: <Widget>[
                                     DownloadButton(
-                                      link: Provider.of<WallHavenProvider>(
-                                              context,
-                                              listen: false)
-                                          .wallsS[index]
-                                          .path
-                                          .toString(),
+                                      colorChanged: colorChanged,
+                                      link: screenshotTaken
+                                          ? _imageFile.path
+                                          : Provider.of<WallHavenProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .wallsS[index]
+                                              .path
+                                              .toString(),
                                     ),
                                     SetWallpaperButton(
-                                        url: Provider.of<WallHavenProvider>(
-                                                context)
-                                            .wallsS[index]
-                                            .path),
+                                        colorChanged: colorChanged,
+                                        url: screenshotTaken
+                                            ? _imageFile.path
+                                            : Provider.of<WallHavenProvider>(
+                                                    context)
+                                                .wallsS[index]
+                                                .path),
                                     FavouriteWallpaperButton(
                                       id: Provider.of<WallHavenProvider>(
                                               context,
@@ -1838,18 +1989,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           .wallsS[index]
                                           .path,
                                       imageBuilder: (context, imageProvider) =>
-                                          Container(
-                                        margin: EdgeInsets.symmetric(
-                                            vertical:
-                                                offsetAnimation.value * 1.25,
-                                            horizontal:
-                                                offsetAnimation.value / 2),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                              offsetAnimation.value),
-                                          image: DecorationImage(
-                                            image: imageProvider,
-                                            fit: BoxFit.cover,
+                                          Screenshot(
+                                        controller: screenshotController,
+                                        child: Container(
+                                          margin: EdgeInsets.symmetric(
+                                              vertical:
+                                                  offsetAnimation.value * 1.25,
+                                              horizontal:
+                                                  offsetAnimation.value / 2),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                                offsetAnimation.value),
+                                            image: DecorationImage(
+                                              colorFilter: colorChanged
+                                                  ? ColorFilter.mode(
+                                                      accent, BlendMode.hue)
+                                                  : null,
+                                              image: imageProvider,
+                                              fit: BoxFit.cover,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1870,7 +2028,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             JamIcons.close_circle_f,
                                             color: isLoading
                                                 ? Theme.of(context).accentColor
-                                                : colors[0].computeLuminance() >
+                                                : accent.computeLuminance() >
                                                         0.5
                                                     ? Colors.black
                                                     : Colors.white,
@@ -1885,11 +2043,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       }
                                     },
                                     onLongPress: () {
+                                      setState(() {
+                                        colorChanged = false;
+                                      });
                                       HapticFeedback.vibrate();
                                       shakeController.forward(from: 0.0);
                                     },
                                     onTap: () {
                                       HapticFeedback.vibrate();
+                                      !isLoading ? updateAccent() : print("");
                                       shakeController.forward(from: 0.0);
                                     },
                                   );
@@ -1900,13 +2062,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   onPressed: () {
-                                       navStack.removeLast();
-    print(navStack);
+                                    navStack.removeLast();
+                                    print(navStack);
                                     Navigator.pop(context);
                                   },
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : colors[0].computeLuminance() > 0.5
+                                      : accent.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                   icon: Icon(
@@ -1948,7 +2110,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   },
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : colors[0].computeLuminance() > 0.5
+                                      : accent.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                   icon: Icon(
