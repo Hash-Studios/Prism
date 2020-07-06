@@ -15,6 +15,8 @@ import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
+import 'package:screenshot/screenshot.dart';
+import 'dart:io';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class ShareWallpaperViewScreen extends StatefulWidget {
@@ -38,6 +40,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   List<Color> colors;
   Color accent;
   bool colorChanged = false;
+  File _imageFile;
+  bool screenshotTaken = false;
+  ScreenshotController screenshotController = ScreenshotController();
   AnimationController shakeController;
   Future future;
   PanelController panelController = PanelController();
@@ -140,6 +145,22 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
+                onPanelOpened: () {
+                  screenshotController
+                      .capture(
+                    pixelRatio: 2,
+                    delay: Duration(milliseconds: 10),
+                  )
+                      .then((File image) async {
+                    setState(() {
+                      _imageFile = image;
+                      screenshotTaken = true;
+                    });
+                    print('Screenshot Taken');
+                  }).catchError((onError) {
+                    print(onError);
+                  });
+                },
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
                 borderRadius: BorderRadius.only(
@@ -422,27 +443,34 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       MainAxisAlignment.spaceEvenly,
                                   children: <Widget>[
                                     DownloadButton(
-                                        link: Provider.of<WallHavenProvider>(
-                                                        context)
-                                                    .wall ==
-                                                null
-                                            ? ""
+                                        colorChanged: colorChanged,
+                                        link: screenshotTaken
+                                            ? _imageFile.path
                                             : Provider.of<WallHavenProvider>(
-                                                    context)
-                                                .wall
-                                                .path
-                                                .toString()),
+                                                            context)
+                                                        .wall ==
+                                                    null
+                                                ? ""
+                                                : Provider.of<
+                                                            WallHavenProvider>(
+                                                        context)
+                                                    .wall
+                                                    .path
+                                                    .toString()),
                                     SetWallpaperButton(
-                                      url: Provider.of<WallHavenProvider>(
-                                                      context)
-                                                  .wall ==
-                                              null
-                                          ? ""
+                                      colorChanged: colorChanged,
+                                      url: screenshotTaken
+                                          ? _imageFile.path
                                           : Provider.of<WallHavenProvider>(
-                                                  context)
-                                              .wall
-                                              .path
-                                              .toString(),
+                                                          context)
+                                                      .wall ==
+                                                  null
+                                              ? ""
+                                              : Provider.of<WallHavenProvider>(
+                                                      context)
+                                                  .wall
+                                                  .path
+                                                  .toString(),
                                     ),
                                     FavouriteWallpaperButton(
                                       id: Provider.of<WallHavenProvider>(
@@ -485,20 +513,23 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             child: OptimizedCacheImage(
                               imageUrl: url,
                               imageBuilder: (context, imageProvider) =>
-                                  Container(
-                                margin: EdgeInsets.symmetric(
-                                    vertical: offsetAnimation.value * 1.25,
-                                    horizontal: offsetAnimation.value / 2),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                      offsetAnimation.value),
-                                  image: DecorationImage(
-                                    colorFilter: colorChanged
-                                        ? ColorFilter.mode(
-                                            accent, BlendMode.hue)
-                                        : null,
-                                    image: imageProvider,
-                                    fit: BoxFit.cover,
+                                  Screenshot(
+                                controller: screenshotController,
+                                child: Container(
+                                  margin: EdgeInsets.symmetric(
+                                      vertical: offsetAnimation.value * 1.25,
+                                      horizontal: offsetAnimation.value / 2),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                        offsetAnimation.value),
+                                    image: DecorationImage(
+                                      colorFilter: colorChanged
+                                          ? ColorFilter.mode(
+                                              accent, BlendMode.hue)
+                                          : null,
+                                      image: imageProvider,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -897,10 +928,16 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: <Widget>[
                                 DownloadButton(
-                                  link: url.toString(),
+                                  colorChanged: colorChanged,
+                                  link: screenshotTaken
+                                      ? _imageFile.path
+                                      : url.toString(),
                                 ),
                                 SetWallpaperButton(
-                                  url: url.toString(),
+                                  colorChanged: colorChanged,
+                                  url: screenshotTaken
+                                      ? _imageFile.path
+                                      : url.toString(),
                                 ),
                                 FavouriteWallpaperButton(
                                   id: Provider.of<PexelsProvider>(context,
@@ -940,20 +977,25 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 child: OptimizedCacheImage(
                                   imageUrl: url,
                                   imageBuilder: (context, imageProvider) =>
-                                      Container(
-                                    margin: EdgeInsets.symmetric(
-                                        vertical: offsetAnimation.value * 1.25,
-                                        horizontal: offsetAnimation.value / 2),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(
-                                          offsetAnimation.value),
-                                      image: DecorationImage(
-                                        colorFilter: colorChanged
-                                            ? ColorFilter.mode(
-                                                accent, BlendMode.hue)
-                                            : null,
-                                        image: imageProvider,
-                                        fit: BoxFit.cover,
+                                      Screenshot(
+                                    controller: screenshotController,
+                                    child: Container(
+                                      margin: EdgeInsets.symmetric(
+                                          vertical:
+                                              offsetAnimation.value * 1.25,
+                                          horizontal:
+                                              offsetAnimation.value / 2),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                            offsetAnimation.value),
+                                        image: DecorationImage(
+                                          colorFilter: colorChanged
+                                              ? ColorFilter.mode(
+                                                  accent, BlendMode.hue)
+                                              : null,
+                                          image: imageProvider,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
                                     ),
                                   ),
