@@ -52,7 +52,11 @@ class _PageManagerState extends State<PageManager> {
           });
         }
       });
-      globals.updateAvailable ? showUpdate(context) : print("No update");
+      globals.updateAvailable
+          ? !globals.noNewNotification
+              ? showUpdate(context)
+              : print("No new notification")
+          : print("No update");
     });
   }
 
