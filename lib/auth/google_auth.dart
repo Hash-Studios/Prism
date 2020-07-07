@@ -47,17 +47,20 @@ class GoogleAuth {
           'name': user.displayName,
           'email': user.email,
           'id': user.uid,
-          'createdAt': DateTime.now().toIso8601String()
+          'createdAt': DateTime.now().toIso8601String(),
+          'premium': false,
         });
         await prefs.setString('id', user.uid);
         await prefs.setString('name', user.displayName);
         await prefs.setString('email', user.email);
         await prefs.setString('logged', "true");
+        await prefs.setBool('premium', false);
       } else {
         await prefs.setString('id', documents[0]['id']);
         await prefs.setString('name', documents[0]['name']);
         await prefs.setString('email', documents[0]['email']);
         await prefs.setString('logged', "true");
+        await prefs.setBool('premium', documents[0]['premium'] ?? false);
       }
       isLoading = false;
     }
@@ -84,6 +87,7 @@ class GoogleAuth {
       value.setString('name', "");
       value.setString('email', "");
       value.setString('logged', "false");
+      value.setBool('premium', false);
     });
     print("User Sign Out");
   }
