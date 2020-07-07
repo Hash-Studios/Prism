@@ -384,8 +384,14 @@ class _SetupPageState extends State<SetupPage> {
               }
             },
             onTap: () {
-              Navigator.pushNamed(context, SetupViewRoute,
-                  arguments: [pageNumber]);
+              if (pageNumber == 5) {
+                showPremiumPopUp(() {
+                  main.RestartWidget.restartApp(context);
+                });
+              } else {
+                Navigator.pushNamed(context, SetupViewRoute,
+                    arguments: [pageNumber]);
+              }
             },
           ),
         ),
