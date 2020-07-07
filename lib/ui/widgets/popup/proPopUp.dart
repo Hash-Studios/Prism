@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
@@ -8,7 +9,14 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 void premiumPopUp(BuildContext context, Function func) {
-  final List<String> supportPurchase = ['premium'];
+  final List<String> premiumPurchase = ['prism_pro'];
+  void createPremiumFirestore(bool premium) async {
+    Firestore firestore = Firestore.instance;
+    var uid = main.prefs.getString("id");
+    await firestore.collection("users").document(uid).updateData({
+      "premium": premium,
+    });
+  }
 
   InAppPurchaseConnection _iap = InAppPurchaseConnection.instance;
   bool _available = true;
@@ -18,14 +26,16 @@ void premiumPopUp(BuildContext context, Function func) {
   StreamSubscription _subscription;
 
   Future<void> _getProducts() async {
-    Set<String> ids = Set.from(supportPurchase);
+    Set<String> ids = Set.from(premiumPurchase);
     ProductDetailsResponse response = await _iap.queryProductDetails(ids);
     _products = response.productDetails;
+    print("products:${_products[0].title}");
   }
 
   Future<void> _getPastPurchases() async {
     QueryPurchaseDetailsResponse response = await _iap.queryPastPurchases();
     _purchases = response.pastPurchases;
+    print("purchases:$_purchases");
   }
 
   void cancelSubscription() {
@@ -41,10 +51,19 @@ void premiumPopUp(BuildContext context, Function func) {
     PurchaseDetails purchase = _hasPurchased(productID);
     if (purchase != null) {
       if (purchase.status == PurchaseStatus.purchased) {
-        toasts.supportSuccess();
+        toasts.premiumSuccess();
+        main.prefs.setBool("premium", true);
+        createPremiumFirestore(true);
+        cancelSubscription();
+        Navigator.pop(context);
+        func();
       }
     } else {
       toasts.error("Invalid Purchase!");
+      main.prefs.setBool("premium", false);
+      createPremiumFirestore(false);
+      cancelSubscription();
+      Navigator.pop(context);
     }
   }
 
@@ -163,7 +182,7 @@ void premiumPopUp(BuildContext context, Function func) {
                   width: 20,
                 ),
                 Icon(
-                  JamIcons.color,
+                  JamIcons.filter,
                   size: 22,
                   color: Color(0xFFE57697),
                 ),
@@ -218,26 +237,14 @@ void premiumPopUp(BuildContext context, Function func) {
             FlatButton(
               shape: StadiumBorder(),
               color: Color(0xFFE57697),
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop();
                 showDialog(
                     barrierDismissible: false,
                     context: context,
                     builder: (BuildContext context) => loaderDialog);
-                _buyProduct(_products.firstWhere(
-                    (element) => element.id == 'premium')).then((value) {
-                  // toasts.successLog();
-                  main.prefs.setBool("isLoggedin", true);
-                  Navigator.pop(context);
-                  cancelSubscription();
-                  func();
-                }).catchError((e) {
-                  print(e);
-                  Navigator.pop(context);
-                  cancelSubscription();
-                  main.prefs.setBool("isLoggedin", false);
-                  toasts.error("Something went wrong, please try again!");
-                });
+                await _buyProduct(_products
+                    .firstWhere((element) => element.id == premiumPurchase[0]));
               },
               child: Text(
                 'BUY PREMIUM',

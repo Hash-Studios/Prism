@@ -4,10 +4,12 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
+import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/main.dart' as main;
 
 class SetupScreen extends StatefulWidget {
   SetupScreen({
@@ -69,6 +71,14 @@ class SetupPage extends StatefulWidget {
 
 class _SetupPageState extends State<SetupPage> {
   int pageNumber = 0;
+  void showPremiumPopUp(Function func) {
+    if (!main.prefs.getBool("premium")) {
+      premiumPopUp(context, func);
+    } else {
+      func();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -103,68 +113,169 @@ class _SetupPageState extends State<SetupPage> {
                         });
                       },
                       controller: widget.controller,
-                      itemCount: Provider.of<SetupProvider>(context,
+                      itemCount: main.prefs.getBool("premium")
+                          ? Provider.of<SetupProvider>(context, listen: false)
+                                      .setups
+                                      .length ==
+                                  0
+                              ? 1
+                              : Provider.of<SetupProvider>(context,
                                       listen: false)
                                   .setups
-                                  .length ==
-                              0
-                          ? 1
-                          : Provider.of<SetupProvider>(context, listen: false)
-                              .setups
-                              .length,
-                      itemBuilder: (context, index) => Provider.of<
-                                      SetupProvider>(context, listen: false)
-                                  .setups
-                                  .length ==
-                              0
-                          ? Loader()
-                          : Padding(
-                              padding: EdgeInsets.only(
-                                  top: MediaQuery.of(context).size.height *
-                                      0.0299),
-                              child: Align(
-                                alignment: Alignment.topCenter,
-                                child: OptimizedCacheImage(
-                                  imageUrl: Provider.of<SetupProvider>(context,
-                                          listen: false)
-                                      .setups[index]['image'],
-                                  imageBuilder: (context, imageProvider) =>
-                                      Hero(
-                                    tag: "CustomHerotag$index",
-                                    child: Container(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.672,
-                                      height:
-                                          MediaQuery.of(context).size.height *
+                                  .length
+                          : 6,
+                      itemBuilder: (context, index) => main.prefs
+                              .getBool("premium")
+                          ? Provider.of<SetupProvider>(context, listen: false)
+                                      .setups
+                                      .length ==
+                                  0
+                              ? Loader()
+                              : Padding(
+                                  padding: EdgeInsets.only(
+                                      top: MediaQuery.of(context).size.height *
+                                          0.0299),
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: OptimizedCacheImage(
+                                      imageUrl: Provider.of<SetupProvider>(
+                                              context,
+                                              listen: false)
+                                          .setups[index]['image'],
+                                      imageBuilder: (context, imageProvider) =>
+                                          Hero(
+                                        tag: "CustomHerotag$index",
+                                        child: Container(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.672,
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
                                               0.72,
-                                      decoration: BoxDecoration(
-                                        image: DecorationImage(
-                                            image: imageProvider,
-                                            fit: BoxFit.fill),
+                                          decoration: BoxDecoration(
+                                            image: DecorationImage(
+                                                image: imageProvider,
+                                                fit: BoxFit.fill),
+                                          ),
+                                        ),
+                                      ),
+                                      placeholder: (context, url) => Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.672,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.72,
+                                        child: Center(
+                                          child: Loader(),
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Container(
+                                        child: Center(
+                                          child: Icon(
+                                            JamIcons.close_circle_f,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  placeholder: (context, url) => Container(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.672,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.72,
-                                    child: Center(
-                                      child: Loader(),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                    child: Center(
-                                      child: Icon(
-                                        JamIcons.close_circle_f,
-                                        color: Theme.of(context).accentColor,
+                                )
+                          : (index == 5)
+                              ? Padding(
+                                  padding: EdgeInsets.only(
+                                      top: MediaQuery.of(context).size.height *
+                                          0.0299),
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: Hero(
+                                      tag: "CustomHerotag$index",
+                                      child: Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.672,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.72,
+                                        decoration: BoxDecoration(
+                                          image: DecorationImage(
+                                              image: AssetImage(
+                                                  'assets/images/Premium.png'),
+                                              fit: BoxFit.fill),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            ),
+                                )
+                              : Provider.of<SetupProvider>(context,
+                                              listen: false)
+                                          .setups
+                                          .length ==
+                                      0
+                                  ? Loader()
+                                  : Padding(
+                                      padding: EdgeInsets.only(
+                                          top: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.0299),
+                                      child: Align(
+                                        alignment: Alignment.topCenter,
+                                        child: OptimizedCacheImage(
+                                          imageUrl: Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]['image'],
+                                          imageBuilder:
+                                              (context, imageProvider) => Hero(
+                                            tag: "CustomHerotag$index",
+                                            child: Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.672,
+                                              height: MediaQuery.of(context)
+                                                      .size
+                                                      .height *
+                                                  0.72,
+                                              decoration: BoxDecoration(
+                                                image: DecorationImage(
+                                                    image: imageProvider,
+                                                    fit: BoxFit.fill),
+                                              ),
+                                            ),
+                                          ),
+                                          placeholder: (context, url) =>
+                                              Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.672,
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.72,
+                                            child: Center(
+                                              child: Loader(),
+                                            ),
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              Container(
+                                            child: Center(
+                                              child: Icon(
+                                                JamIcons.close_circle_f,
+                                                color: Theme.of(context)
+                                                    .accentColor,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                     ),
                   );
                 }
@@ -187,13 +298,24 @@ class _SetupPageState extends State<SetupPage> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Text(
-                  Provider.of<SetupProvider>(context, listen: false)
-                              .setups
-                              .length ==
-                          0
-                      ? ""
-                      : Provider.of<SetupProvider>(context, listen: false)
-                          .setups[pageNumber]['name'],
+                  main.prefs.getBool("premium")
+                      ? Provider.of<SetupProvider>(context, listen: false)
+                                  .setups
+                                  .length ==
+                              0
+                          ? ""
+                          : Provider.of<SetupProvider>(context, listen: false)
+                              .setups[pageNumber]['name']
+                      : (pageNumber == 5)
+                          ? "Buy Premium"
+                          : Provider.of<SetupProvider>(context, listen: false)
+                                      .setups
+                                      .length ==
+                                  0
+                              ? ""
+                              : Provider.of<SetupProvider>(context,
+                                      listen: false)
+                                  .setups[pageNumber]['name'],
                   style: Theme.of(context)
                       .textTheme
                       .headline1
@@ -202,13 +324,24 @@ class _SetupPageState extends State<SetupPage> {
                 Container(
                   width: MediaQuery.of(context).size.width * 0.75,
                   child: Text(
-                    Provider.of<SetupProvider>(context, listen: false)
-                                .setups
-                                .length ==
-                            0
-                        ? ""
-                        : Provider.of<SetupProvider>(context, listen: false)
-                            .setups[pageNumber]['desc'],
+                    main.prefs.getBool("premium")
+                        ? Provider.of<SetupProvider>(context, listen: false)
+                                    .setups
+                                    .length ==
+                                0
+                            ? ""
+                            : Provider.of<SetupProvider>(context, listen: false)
+                                .setups[pageNumber]['desc']
+                        : (pageNumber == 5)
+                            ? "to view more setups, or apply any setup to your homescreen."
+                            : Provider.of<SetupProvider>(context, listen: false)
+                                        .setups
+                                        .length ==
+                                    0
+                                ? ""
+                                : Provider.of<SetupProvider>(context,
+                                        listen: false)
+                                    .setups[pageNumber]['desc'],
                     textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme
