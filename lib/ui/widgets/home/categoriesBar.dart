@@ -59,19 +59,24 @@ class _CategoriesBarState extends State<CategoriesBar> {
                   width: MediaQuery.of(context).size.width * 0.1,
                   height: 100,
                   child: IconButton(
-                    icon: new Stack(children: <Widget>[
-                      new Icon(JamIcons.bell_f),
-                      new Positioned(
-                        top: 0.0,
-                        right: 0.0,
-                        child: new Icon(
-                          Icons.brightness_1,
-                          size: 9.0,
-                          color: Color(0xFFE57697),
-                        ),
-                      )
-                    ]),
+                    icon: globals.noNewNotification
+                        ? Icon(JamIcons.bell)
+                        : Stack(children: <Widget>[
+                            Icon(JamIcons.bell_f),
+                            Positioned(
+                              top: 0.0,
+                              right: 0.0,
+                              child: Icon(
+                                Icons.brightness_1,
+                                size: 9.0,
+                                color: Color(0xFFE57697),
+                              ),
+                            )
+                          ]),
                     onPressed: () {
+                      setState(() {
+                        globals.noNewNotification = true;
+                      });
                       showUpdate(context);
                     },
                   ),
