@@ -1,11 +1,10 @@
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:Prism/ui/pages/home/pageManager.dart' as PM;
 import 'package:Prism/global/globals.dart' as globals;
 
@@ -17,33 +16,6 @@ class CategoriesBar extends StatefulWidget {
 }
 
 class _CategoriesBarState extends State<CategoriesBar> {
-  List<Color> colors = [
-    Color(0xFFFF0000),
-    Color(0xFFF44436),
-    Color(0xFFe91e63),
-    Color(0xFF9c27b0),
-    Color(0xFF673ab7),
-    Color(0xFF0000FF),
-    Color(0xFF1976D2),
-    Color(0xFF03a9f4),
-    Color(0xFF00bcd4),
-    Color(0xFF009688),
-    Color(0xFF4caf50),
-    Color(0xFF00FF00),
-    Color(0xFF8bc34a),
-    Color(0xFFcddc39),
-    Color(0xFFffeb3b),
-    Color(0xFFffc107),
-    Color(0xFFff9800),
-    Color(0xFFff5722),
-    Color(0xFF795548),
-    Color(0xFF9e9e9e),
-    Color(0xFF607d8b),
-    Color(0xFF000000),
-    Color(0xFFFFFFFF)
-  ];
-  Color currentColor = Color(0xFFFF0000);
-
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -142,40 +114,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                               listen: false)
                                           .categories[index] ==
                                       "Colors") {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text('Select a color'),
-                                          content: SingleChildScrollView(
-                                            child: BlockPicker(
-                                              availableColors: colors,
-                                              pickerColor: currentColor,
-                                              onColorChanged: (Color color) =>
-                                                  setState(() {
-                                                currentColor = color;
-                                                print(navStack);
-                                                Navigator.pop(context);
-                                                Navigator.pushNamed(
-                                                  context,
-                                                  ColorRoute,
-                                                  arguments: [
-                                                    currentColor
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "MaterialColor(primary value: Color(0xff",
-                                                            "")
-                                                        .replaceAll(
-                                                            "Color(0xff", "")
-                                                        .replaceAll(")", ""),
-                                                  ],
-                                                );
-                                              }),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
+                                    showColors(context);
                                   }
                                 } else if (Provider.of<CategoryProvider>(
                                             context,
@@ -210,41 +149,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                               listen: false)
                                           .categories[index] ==
                                       "Colors") {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text('Select a color'),
-                                          content: SingleChildScrollView(
-                                            child: BlockPicker(
-                                              availableColors: colors,
-                                              pickerColor: currentColor,
-                                              onColorChanged: (Color color) =>
-                                                  setState(() {
-                                                currentColor = color;
-
-                                                print(navStack);
-                                                Navigator.pop(context);
-                                                Navigator.pushNamed(
-                                                  context,
-                                                  ColorRoute,
-                                                  arguments: [
-                                                    currentColor
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "MaterialColor(primary value: Color(0xff",
-                                                            "")
-                                                        .replaceAll(
-                                                            "Color(0xff", "")
-                                                        .replaceAll(")", ""),
-                                                  ],
-                                                );
-                                              }),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
+                                    showColors(context);
                                   }
                                 } else if (Provider.of<CategoryProvider>(
                                             context,
@@ -279,41 +184,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                               listen: false)
                                           .categories[index] ==
                                       "Colors") {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text('Select a color'),
-                                          content: SingleChildScrollView(
-                                            child: BlockPicker(
-                                              availableColors: colors,
-                                              pickerColor: currentColor,
-                                              onColorChanged: (Color color) =>
-                                                  setState(() {
-                                                currentColor = color;
-
-                                                print(navStack);
-                                                Navigator.pop(context);
-                                                Navigator.pushNamed(
-                                                  context,
-                                                  ColorRoute,
-                                                  arguments: [
-                                                    currentColor
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "MaterialColor(primary value: Color(0xff",
-                                                            "")
-                                                        .replaceAll(
-                                                            "Color(0xff", "")
-                                                        .replaceAll(")", ""),
-                                                  ],
-                                                );
-                                              }),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
+                                    showColors(context);
                                   }
                                 } else if (Provider.of<CategoryProvider>(
                                             context,
@@ -348,41 +219,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                               listen: false)
                                           .categories[index] ==
                                       "Colors") {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text('Select a color'),
-                                          content: SingleChildScrollView(
-                                            child: BlockPicker(
-                                              availableColors: colors,
-                                              pickerColor: currentColor,
-                                              onColorChanged: (Color color) =>
-                                                  setState(() {
-                                                currentColor = color;
-
-                                                print(navStack);
-                                                Navigator.pop(context);
-                                                Navigator.pushNamed(
-                                                  context,
-                                                  ColorRoute,
-                                                  arguments: [
-                                                    currentColor
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "MaterialColor(primary value: Color(0xff",
-                                                            "")
-                                                        .replaceAll(
-                                                            "Color(0xff", "")
-                                                        .replaceAll(")", ""),
-                                                  ],
-                                                );
-                                              }),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
+                                    showColors(context);
                                   }
                                 } else if (Provider.of<CategoryProvider>(
                                             context,
@@ -418,41 +255,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                               listen: false)
                                           .categories[index] ==
                                       "Colors") {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text('Select a color'),
-                                          content: SingleChildScrollView(
-                                            child: BlockPicker(
-                                              availableColors: colors,
-                                              pickerColor: currentColor,
-                                              onColorChanged: (Color color) =>
-                                                  setState(() {
-                                                currentColor = color;
-
-                                                print(navStack);
-                                                Navigator.pop(context);
-                                                Navigator.pushReplacementNamed(
-                                                  context,
-                                                  ColorRoute,
-                                                  arguments: [
-                                                    currentColor
-                                                        .toString()
-                                                        .replaceAll(
-                                                            "MaterialColor(primary value: Color(0xff",
-                                                            "")
-                                                        .replaceAll(
-                                                            "Color(0xff", "")
-                                                        .replaceAll(")", ""),
-                                                  ],
-                                                );
-                                              }),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
+                                    showColors(context);
                                   }
                                 }
                               }),
