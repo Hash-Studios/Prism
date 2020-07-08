@@ -149,12 +149,14 @@ class _SetupPageState extends State<SetupPage> {
                                           width: MediaQuery.of(context)
                                                   .size
                                                   .width *
-                                              0.672,
+                                              0.712,
                                           height: MediaQuery.of(context)
                                                   .size
                                                   .height *
                                               0.72,
                                           decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
                                             image: DecorationImage(
                                                 image: imageProvider,
                                                 fit: BoxFit.fill),
@@ -164,7 +166,7 @@ class _SetupPageState extends State<SetupPage> {
                                       placeholder: (context, url) => Container(
                                         width:
                                             MediaQuery.of(context).size.width *
-                                                0.672,
+                                                0.712,
                                         height:
                                             MediaQuery.of(context).size.height *
                                                 0.72,
@@ -197,11 +199,13 @@ class _SetupPageState extends State<SetupPage> {
                                       child: Container(
                                         width:
                                             MediaQuery.of(context).size.width *
-                                                0.672,
+                                                0.712,
                                         height:
                                             MediaQuery.of(context).size.height *
                                                 0.72,
                                         decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
                                           image: DecorationImage(
                                               image: AssetImage(
                                                   'assets/images/Premium.png'),
@@ -237,12 +241,14 @@ class _SetupPageState extends State<SetupPage> {
                                               width: MediaQuery.of(context)
                                                       .size
                                                       .width *
-                                                  0.672,
+                                                  0.712,
                                               height: MediaQuery.of(context)
                                                       .size
                                                       .height *
                                                   0.72,
                                               decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
                                                 image: DecorationImage(
                                                     image: imageProvider,
                                                     fit: BoxFit.fill),
@@ -254,7 +260,7 @@ class _SetupPageState extends State<SetupPage> {
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
-                                                0.672,
+                                                0.712,
                                             height: MediaQuery.of(context)
                                                     .size
                                                     .height *
@@ -358,7 +364,7 @@ class _SetupPageState extends State<SetupPage> {
               EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
           child: GestureDetector(
             child: Container(
-              width: MediaQuery.of(context).size.width * 0.83,
+              width: MediaQuery.of(context).size.width * 0.87,
               height: MediaQuery.of(context).size.height * 0.8,
               decoration: BoxDecoration(
                 image: DecorationImage(
