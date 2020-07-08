@@ -323,7 +323,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: navStack.last == "Favourites" ? 9 : 0,
+                      height: navStack.last == "Setups" ? 9 : 0,
                     ),
                     Icon(JamIcons.instant_picture_f,
                         color:
