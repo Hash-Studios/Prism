@@ -9,6 +9,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({
@@ -20,6 +22,40 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  //Check for update if available
+  String currentAppVersion = "2.4.2";
+  final databaseReference = Firestore.instance;
+
+  Future<void> _checkUpdate() async {
+    print("checking for update");
+    databaseReference.collection("appConfig").getDocuments().then((value) {
+      print("Current App Version :" + currentAppVersion);
+      print(
+          "Latest Version :" + value.documents[0]["currentVersion"].toString());
+      setState(() {
+        if (currentAppVersion !=
+            value.documents[0]["currentVersion"].toString()) {
+          setState(() {
+            globals.updateAvailable = true;
+            globals.versionInfo = {
+              "version_number": value.documents[0]["currentVersion"].toString(),
+              "version_desc": value.documents[0]["versionDesc"],
+            };
+          });
+        } else {
+          setState(() {
+            globals.updateAvailable = false;
+          });
+        }
+      });
+      globals.updateAvailable
+          ? !globals.noNewNotification
+              ? showUpdate(context)
+              : print("No new notification")
+          : print("No update");
+    });
+  }
+
   Future<bool> onWillPop() async {
     navStack.removeLast();
     print(navStack);
@@ -29,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isNew;
   @override
   void initState() {
+    _checkUpdate();
     isNew = true;
     _updateToken();
     super.initState();
