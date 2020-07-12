@@ -20,7 +20,7 @@ class PageManager extends StatefulWidget {
 
 class _PageManagerState extends State<PageManager> {
   //Check for update if available
-  String currentAppVersion = "2.4.1";
+  String currentAppVersion = "2.4.2";
   final databaseReference = Firestore.instance;
   @override
   void initState() {
