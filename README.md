@@ -58,6 +58,8 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 
 ### v2.4.2
 - Improved overall notifications and permissions
+- Added new color picker popup
+- Added new notification center
 - Minor bug fixes
 
 ### v2.4.1

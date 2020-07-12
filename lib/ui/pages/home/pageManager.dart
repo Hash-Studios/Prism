@@ -34,6 +34,7 @@ class _PageManagerState extends State<PageManager> {
         body: BottomBar(
           child: PageView.builder(
               onPageChanged: (index) {
+                print("Index cat: " + index.toString());
                 if (index == 0) {
                   Provider.of<CategoryProvider>(context, listen: false)
                       .updateSelectedCategory("Home");
@@ -43,7 +44,7 @@ class _PageManagerState extends State<PageManager> {
                 } else if (index == 2) {
                   Provider.of<CategoryProvider>(context, listen: false)
                       .updateSelectedCategory("Abstract");
-                } else {
+                } else if (index == 3) {
                   Provider.of<CategoryProvider>(context, listen: false)
                       .updateSelectedCategory("Nature");
                 }
@@ -51,13 +52,14 @@ class _PageManagerState extends State<PageManager> {
               controller: pageController,
               itemCount: 4,
               itemBuilder: (context, index) {
+                print("Index : " + index.toString());
                 if (index == 0) {
                   return HomeScreen();
                 } else if (index == 1) {
                   return CuratedScreen();
-                } else if (index == 2) {
+                } else if (index == 2 && index != 3) {
                   return AbstractScreen();
-                } else {
+                } else if (index == 3) {
                   return NatureScreen();
                 }
               }),
