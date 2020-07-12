@@ -2,6 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
@@ -45,6 +46,9 @@ void main() {
                     ),
                     ChangeNotifierProvider<FavouriteProvider>(
                       create: (context) => FavouriteProvider(),
+                    ),
+                    ChangeNotifierProvider<PrismProvider>(
+                      create: (context) => PrismProvider(),
                     ),
                     ChangeNotifierProvider<ThemeModel>(
                       create: (context) => ThemeModel(

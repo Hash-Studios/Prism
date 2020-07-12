@@ -216,13 +216,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.2.1"
-  flutter_colorpicker:
-    dependency: "direct main"
-    description:
-      name: flutter_colorpicker
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.3.4"
   flutter_image_compress:
     dependency: transitive
     description:
@@ -373,13 +366,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.13"
-  package_info:
-    dependency: "direct main"
-    description:
-      name: package_info
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.4.1"
   palette_generator:
     dependency: "direct main"
     description:
@@ -492,13 +478,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.23.1"
-  screenshot:
-    dependency: "direct main"
-    description:
-      name: screenshot
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.2.0"
   share:
     dependency: "direct main"
     description:

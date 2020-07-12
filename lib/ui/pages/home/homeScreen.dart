@@ -1,3 +1,4 @@
+import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -148,8 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
       onWillPop: onWillPop,
       child: GridLoader(
         future:
-            Provider.of<WallHavenProvider>(context, listen: false).getData(),
-        provider: "WallHaven",
+            Provider.of<PrismProvider>(context, listen: false).getDataBase(),
+        provider: "Prism",
       ),
     );
   }
