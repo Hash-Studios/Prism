@@ -54,12 +54,15 @@ void showUpdate(BuildContext context) {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                child: Text(
-                  'Version ' +
-                      globals.versionInfo["version_number"] +
-                      ' includes -',
-                  style: TextStyle(
-                      fontSize: 14, color: Theme.of(context).accentColor),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    'Version ' +
+                        globals.versionInfo["version_number"] +
+                        ' includes -',
+                    style: TextStyle(
+                        fontSize: 14, color: Theme.of(context).accentColor),
+                  ),
                 ),
               ),
             ],
@@ -102,10 +105,13 @@ void showUpdate(BuildContext context) {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                child: Text(
-                  'Update now available on the Google Play Store.',
-                  style: TextStyle(
-                      fontSize: 14, color: Theme.of(context).accentColor),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    'Update now available on the Google Play Store.',
+                    style: TextStyle(
+                        fontSize: 14, color: Theme.of(context).accentColor),
+                  ),
                 ),
               ),
             ],
