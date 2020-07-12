@@ -40,8 +40,8 @@ class FavouriteProvider extends ChangeNotifier {
     await getDataBase();
   }
 
-  void createDataByWall(
-      String provider, WallPaper wallhaven, WallPaperP pexels) async {
+  void createDataByWall(String provider, WallPaper wallhaven, WallPaperP pexels,
+      Map prism) async {
     var uid = main.prefs.getString("id");
     if (provider == "WallHaven") {
       await databaseReference
@@ -79,12 +79,30 @@ class FavouriteProvider extends ChangeNotifier {
         "size": "",
         "photographer": pexels.photographer.toString()
       });
+    } else if (provider == "Prism") {
+      await databaseReference
+          .collection("users")
+          .document(uid)
+          .collection("images")
+          .document(prism["id"].toString())
+          .setData({
+        "id": prism["id"].toString(),
+        "url": prism["wallpaper_url"].toString(),
+        "thumb": prism["wallpaper_thumb"].toString(),
+        "category": prism["desc"].toString(),
+        "provider": "Prism",
+        "views": "",
+        "resolution": prism["resolution"].toString(),
+        "fav": "",
+        "size": prism["size"].toString(),
+        "photographer": prism["by"].toString()
+      });
     }
     // await getDataBase();
   }
 
   Future favCheck(String id, String provider, WallPaper wallhaven,
-      WallPaperP pexels) async {
+      WallPaperP pexels, Map prism) async {
     int index;
     await getDataBase().then(
       (value) {
@@ -97,7 +115,7 @@ class FavouriteProvider extends ChangeNotifier {
         );
         if (index == null) {
           print("Fav");
-          createDataByWall(provider, wallhaven, pexels);
+          createDataByWall(provider, wallhaven, pexels, prism);
           toasts.favWall();
         } else {
           toasts.unfavWall();

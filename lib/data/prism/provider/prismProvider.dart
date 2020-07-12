@@ -20,9 +20,9 @@ class PrismProvider extends ChangeNotifier {
   }
 
   List seeMorePrism() {
-    this.subPrismWalls.addAll(this
-        .prismWalls
-        .sublist(this.subPrismWalls.length, this.subPrismWalls.length + 24));
+    this.subPrismWalls.addAll(this.prismWalls.sublist(this.subPrismWalls.length
+        // , this.subPrismWalls.length + 24
+        ));
     return this.subPrismWalls;
   }
 }
