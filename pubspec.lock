@@ -310,13 +310,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.12"
-  image_downloader:
-    dependency: "direct main"
-    description:
-      name: image_downloader
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.20.0"
   in_app_purchase:
     dependency: "direct main"
     description:
