@@ -2,6 +2,7 @@ import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
+import 'package:Prism/ui/widgets/popup/tutorialCompletePopUp.dart';
 import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ import 'package:tutorial_coach_mark/content_target.dart';
 import 'package:tutorial_coach_mark/target_focus.dart';
 import 'package:tutorial_coach_mark/target_position.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:Prism/main.dart' as main;
 
 class CategoriesBar extends StatefulWidget {
   CategoriesBar({Key key}) : super(key: key);
@@ -21,11 +23,16 @@ class CategoriesBar extends StatefulWidget {
 }
 
 class _CategoriesBarState extends State<CategoriesBar> {
+  bool isNew;
   List<TargetFocus> targets = List();
   @override
   void initState() {
+    isNew = true;
     initTargets();
-    WidgetsBinding.instance.addPostFrameCallback(_afterLayout);
+    if (isNew) {
+      Future.delayed(Duration(seconds: 0)).then(
+          (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
+    }
     super.initState();
   }
 
@@ -216,37 +223,37 @@ class _CategoriesBarState extends State<CategoriesBar> {
       ],
       shape: ShapeLightFocus.Circle,
     ));
-    targets.add(TargetFocus(
-      identify: "Target 7",
-      targetPosition: TargetPosition(Size(0, 0), Offset(300 * 0.6625, 370)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.bottom,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "Congratulations.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "You have successfully completed the tutorial and are ready to revamp your home screen.\n\nThank you for your awesomeness.",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
+    // targets.add(TargetFocus(
+    //   identify: "Target 7",
+    //   targetPosition: TargetPosition(Size(0, 0), Offset(300 * 0.6625, 370)),
+    //   contents: [
+    //     ContentTarget(
+    //         align: AlignContent.bottom,
+    //         child: Container(
+    //           child: Column(
+    //             mainAxisSize: MainAxisSize.min,
+    //             crossAxisAlignment: CrossAxisAlignment.start,
+    //             children: <Widget>[
+    //               Text(
+    //                 "Congratulations.",
+    //                 style: TextStyle(
+    //                     fontWeight: FontWeight.bold,
+    //                     color: Colors.white,
+    //                     fontSize: 20.0),
+    //               ),
+    //               Padding(
+    //                 padding: const EdgeInsets.only(top: 10.0),
+    //                 child: Text(
+    //                   "You have successfully completed the tutorial and are ready to revamp your home screen.\n\nThank you for your awesomeness.",
+    //                   style: TextStyle(color: Colors.white),
+    //                 ),
+    //               )
+    //             ],
+    //           ),
+    //         ))
+    //   ],
+    //   shape: ShapeLightFocus.Circle,
+    // ));
   }
 
   void showTutorial() {
@@ -255,8 +262,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
         colorShadow: Color(0xFFE57697),
         textSkip: "SKIP",
         paddingFocus: 1,
-        opacityShadow: 0.8, finish: () {
-      print("finish");
+        opacityShadow: 0.9, finish: () {
+      showTutorialComplete(context);
     }, clickTarget: (target) {
       print(target);
     }, clickSkip: () {
@@ -265,10 +272,16 @@ class _CategoriesBarState extends State<CategoriesBar> {
       ..show();
   }
 
-  void _afterLayout(_) {
-    Future.delayed(Duration(milliseconds: 100), () {
-      showTutorial();
-    });
+  void afterLayout(_) {
+    var newApp = main.prefs.getBool("newApp");
+    if (newApp == null) {
+      Future.delayed(Duration(milliseconds: 100), () {
+        showTutorial();
+      });
+      main.prefs.setBool("newApp", false);
+    } else {
+      main.prefs.setBool("newApp", false);
+    }
   }
 
   @override

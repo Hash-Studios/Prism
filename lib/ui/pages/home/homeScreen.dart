@@ -139,10 +139,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (isNew) {
-      Future.delayed(Duration(seconds: 0))
-          .then((value) => showChangelogCheck(context));
-    }
+    // if (isNew) {
+    //   Future.delayed(Duration(seconds: 0))
+    //       .then((value) => showChangelogCheck(context));
+    // }
     initDynamicLinks(context);
     return WillPopScope(
       onWillPop: onWillPop,
