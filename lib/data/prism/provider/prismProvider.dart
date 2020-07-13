@@ -5,6 +5,7 @@ class PrismProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
   List prismWalls;
   List subPrismWalls;
+  Map wall;
   Future<List> getDataBase() async {
     this.prismWalls = [];
     await databaseReference.collection("walls").getDocuments().then((value) {
@@ -23,5 +24,18 @@ class PrismProvider extends ChangeNotifier {
         // , this.subPrismWalls.length + 24
         ));
     return this.subPrismWalls;
+  }
+
+  Future<Map> getDataByID(String id) async {
+    this.wall = null;
+    await databaseReference.collection("walls").getDocuments().then((value) {
+      value.documents.forEach((element) {
+        if (element.data["id"] == id) {
+          this.wall = element.data;
+        }
+      });
+      notifyListeners();
+      return this.wall;
+    });
   }
 }
