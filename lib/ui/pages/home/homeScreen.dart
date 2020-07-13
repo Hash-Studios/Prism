@@ -1,5 +1,4 @@
 import 'package:Prism/data/prism/provider/prismProvider.dart';
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/widgets/home/gridLoader.dart';

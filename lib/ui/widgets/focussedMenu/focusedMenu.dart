@@ -1,5 +1,4 @@
 import 'package:Prism/data/prism/provider/prismProvider.dart';
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenuDetails.dart';
 import 'package:flutter/material.dart';
