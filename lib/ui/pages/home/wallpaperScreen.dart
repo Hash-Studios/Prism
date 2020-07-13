@@ -48,6 +48,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   bool screenshotTaken = false;
   ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
+  bool panelClosed = true;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -124,20 +125,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
-                  print('Screenshot Starting');
-                  screenshotController
-                      .capture(
-                    pixelRatio: 2,
-                    delay: Duration(milliseconds: 10),
-                  )
-                      .then((File image) async {
-                    setState(() {
-                      _imageFile = image;
-                      screenshotTaken = true;
+                  if (panelClosed) {
+                    print('Screenshot Starting');
+                    screenshotController
+                        .capture(
+                      pixelRatio: 2,
+                      delay: Duration(milliseconds: 10),
+                    )
+                        .then((File image) async {
+                      setState(() {
+                        _imageFile = image;
+                        screenshotTaken = true;
+                        panelClosed = false;
+                      });
+                      print('Screenshot Taken');
+                    }).catchError((onError) {
+                      print(onError);
                     });
-                    print('Screenshot Taken');
-                  }).catchError((onError) {
-                    print(onError);
+                  }
+                },
+                onPanelClosed: () {
+                  setState(() {
+                    panelClosed = true;
                   });
                 },
                 backdropEnabled: true,
@@ -598,20 +607,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       isLoading ? Theme.of(context).primaryColor : colors[0],
                   body: SlidingUpPanel(
                     onPanelOpened: () {
-                      print('Screenshot Starting');
-                      screenshotController
-                          .capture(
-                        pixelRatio: 2,
-                        delay: Duration(milliseconds: 10),
-                      )
-                          .then((File image) async {
-                        setState(() {
-                          _imageFile = image;
-                          screenshotTaken = true;
+                      if (panelClosed) {
+                        print('Screenshot Starting');
+                        screenshotController
+                            .capture(
+                          pixelRatio: 2,
+                          delay: Duration(milliseconds: 10),
+                        )
+                            .then((File image) async {
+                          setState(() {
+                            _imageFile = image;
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          print('Screenshot Taken');
+                        }).catchError((onError) {
+                          print(onError);
                         });
-                        print('Screenshot Taken');
-                      }).catchError((onError) {
-                        print(onError);
+                      }
+                    },
+                    onPanelClosed: () {
+                      setState(() {
+                        panelClosed = true;
                       });
                     },
                     backdropEnabled: true,
@@ -1069,20 +1086,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           isLoading ? Theme.of(context).primaryColor : accent,
                       body: SlidingUpPanel(
                         onPanelOpened: () {
-                          print('Screenshot Starting');
-                          screenshotController
-                              .capture(
-                            pixelRatio: 2,
-                            delay: Duration(milliseconds: 10),
-                          )
-                              .then((File image) async {
-                            setState(() {
-                              _imageFile = image;
-                              screenshotTaken = true;
+                          if (panelClosed) {
+                            print('Screenshot Starting');
+                            screenshotController
+                                .capture(
+                              pixelRatio: 2,
+                              delay: Duration(milliseconds: 10),
+                            )
+                                .then((File image) async {
+                              setState(() {
+                                _imageFile = image;
+                                screenshotTaken = true;
+                                panelClosed = false;
+                              });
+                              print('Screenshot Taken');
+                            }).catchError((onError) {
+                              print(onError);
                             });
-                            print('Screenshot Taken');
-                          }).catchError((onError) {
-                            print(onError);
+                          }
+                        },
+                        onPanelClosed: () {
+                          setState(() {
+                            panelClosed = true;
                           });
                         },
                         backdropEnabled: true,
@@ -1590,20 +1615,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               : accent,
                           body: SlidingUpPanel(
                             onPanelOpened: () {
-                              print('Screenshot Starting');
-                              screenshotController
-                                  .capture(
-                                pixelRatio: 2,
-                                delay: Duration(milliseconds: 10),
-                              )
-                                  .then((File image) async {
-                                setState(() {
-                                  _imageFile = image;
-                                  screenshotTaken = true;
+                              if (panelClosed) {
+                                print('Screenshot Starting');
+                                screenshotController
+                                    .capture(
+                                  pixelRatio: 2,
+                                  delay: Duration(milliseconds: 10),
+                                )
+                                    .then((File image) async {
+                                  setState(() {
+                                    _imageFile = image;
+                                    screenshotTaken = true;
+                                    panelClosed = false;
+                                  });
+                                  print('Screenshot Taken');
+                                }).catchError((onError) {
+                                  print(onError);
                                 });
-                                print('Screenshot Taken');
-                              }).catchError((onError) {
-                                print(onError);
+                              }
+                            },
+                            onPanelClosed: () {
+                              setState(() {
+                                panelClosed = true;
                               });
                             },
                             backdropEnabled: true,
@@ -2137,20 +2170,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               : accent,
                           body: SlidingUpPanel(
                             onPanelOpened: () {
-                              print('Screenshot Starting');
-                              screenshotController
-                                  .capture(
-                                pixelRatio: 2,
-                                delay: Duration(milliseconds: 10),
-                              )
-                                  .then((File image) async {
-                                setState(() {
-                                  _imageFile = image;
-                                  screenshotTaken = true;
+                              if (panelClosed) {
+                                print('Screenshot Starting');
+                                screenshotController
+                                    .capture(
+                                  pixelRatio: 2,
+                                  delay: Duration(milliseconds: 10),
+                                )
+                                    .then((File image) async {
+                                  setState(() {
+                                    _imageFile = image;
+                                    screenshotTaken = true;
+                                    panelClosed = false;
+                                  });
+                                  print('Screenshot Taken');
+                                }).catchError((onError) {
+                                  print(onError);
                                 });
-                                print('Screenshot Taken');
-                              }).catchError((onError) {
-                                print(onError);
+                              }
+                            },
+                            onPanelClosed: () {
+                              setState(() {
+                                panelClosed = true;
                               });
                             },
                             backdropEnabled: true,
