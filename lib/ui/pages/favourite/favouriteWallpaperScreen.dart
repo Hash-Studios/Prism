@@ -47,6 +47,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
   ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
   AnimationController shakeController;
+  bool panelClosed = true;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -129,20 +130,29 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
-                onPanelOpened: () {
-                  screenshotController
-                      .capture(
-                    pixelRatio: 2,
-                    delay: Duration(milliseconds: 10),
-                  )
-                      .then((File image) async {
-                    setState(() {
-                      _imageFile = image;
-                      screenshotTaken = true;
+               onPanelOpened: () {
+                  if (panelClosed) {
+                    print('Screenshot Starting');
+                    screenshotController
+                        .capture(
+                      pixelRatio: 2,
+                      delay: Duration(milliseconds: 10),
+                    )
+                        .then((File image) async {
+                      setState(() {
+                        _imageFile = image;
+                        screenshotTaken = true;
+                        panelClosed = false;
+                      });
+                      print('Screenshot Taken');
+                    }).catchError((onError) {
+                      print(onError);
                     });
-                    print('Screenshot Taken');
-                  }).catchError((onError) {
-                    print(onError);
+                  }
+                },
+                onPanelClosed: () {
+                  setState(() {
+                    panelClosed = true;
                   });
                 },
                 backdropEnabled: true,
@@ -895,21 +905,29 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
-                onPanelOpened: () {
-                  print('Screenshot Starting');
-                  screenshotController
-                      .capture(
-                    pixelRatio: 2,
-                    delay: Duration(milliseconds: 10),
-                  )
-                      .then((File image) async {
-                    setState(() {
-                      _imageFile = image;
-                      screenshotTaken = true;
+               onPanelOpened: () {
+                  if (panelClosed) {
+                    print('Screenshot Starting');
+                    screenshotController
+                        .capture(
+                      pixelRatio: 2,
+                      delay: Duration(milliseconds: 10),
+                    )
+                        .then((File image) async {
+                      setState(() {
+                        _imageFile = image;
+                        screenshotTaken = true;
+                        panelClosed = false;
+                      });
+                      print('Screenshot Taken');
+                    }).catchError((onError) {
+                      print(onError);
                     });
-                    print('Screenshot Taken');
-                  }).catchError((onError) {
-                    print(onError);
+                  }
+                },
+                onPanelClosed: () {
+                  setState(() {
+                    panelClosed = true;
                   });
                 },
                 backdropEnabled: true,

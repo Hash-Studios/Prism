@@ -48,6 +48,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   Future future;
   PanelController panelController = PanelController();
   var image;
+  bool panelClosed = true;
+  
   Future<void> _updatePaletteGenerator() async {
     setState(() {
       isLoading = true;
@@ -149,20 +151,29 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
-                onPanelOpened: () {
-                  screenshotController
-                      .capture(
-                    pixelRatio: 2,
-                    delay: Duration(milliseconds: 10),
-                  )
-                      .then((File image) async {
-                    setState(() {
-                      _imageFile = image;
-                      screenshotTaken = true;
+              onPanelOpened: () {
+                  if (panelClosed) {
+                    print('Screenshot Starting');
+                    screenshotController
+                        .capture(
+                      pixelRatio: 2,
+                      delay: Duration(milliseconds: 10),
+                    )
+                        .then((File image) async {
+                      setState(() {
+                        _imageFile = image;
+                        screenshotTaken = true;
+                        panelClosed = false;
+                      });
+                      print('Screenshot Taken');
+                    }).catchError((onError) {
+                      print(onError);
                     });
-                    print('Screenshot Taken');
-                  }).catchError((onError) {
-                    print(onError);
+                  }
+                },
+                onPanelClosed: () {
+                  setState(() {
+                    panelClosed = true;
                   });
                 },
                 backdropEnabled: true,
@@ -651,23 +662,31 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   backgroundColor:
                       isLoading ? Theme.of(context).primaryColor : accent,
                   body: SlidingUpPanel(
-                    onPanelOpened: () {
-                      print('Screenshot Starting');
-                      screenshotController
-                          .capture(
-                        pixelRatio: 2,
-                        delay: Duration(milliseconds: 10),
-                      )
-                          .then((File image) async {
-                        setState(() {
-                          _imageFile = image;
-                          screenshotTaken = true;
-                        });
-                        print('Screenshot Taken');
-                      }).catchError((onError) {
-                        print(onError);
+                   onPanelOpened: () {
+                  if (panelClosed) {
+                    print('Screenshot Starting');
+                    screenshotController
+                        .capture(
+                      pixelRatio: 2,
+                      delay: Duration(milliseconds: 10),
+                    )
+                        .then((File image) async {
+                      setState(() {
+                        _imageFile = image;
+                        screenshotTaken = true;
+                        panelClosed = false;
                       });
-                    },
+                      print('Screenshot Taken');
+                    }).catchError((onError) {
+                      print(onError);
+                    });
+                  }
+                },
+                onPanelClosed: () {
+                  setState(() {
+                    panelClosed = true;
+                  });
+                },
                     backdropEnabled: true,
                     backdropTapClosesPanel: true,
                     borderRadius: BorderRadius.only(
