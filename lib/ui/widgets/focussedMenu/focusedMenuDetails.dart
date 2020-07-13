@@ -398,7 +398,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                         Row(
                                           children: [
                                             Icon(
-                                              JamIcons.file,
+                                              JamIcons.save,
                                               size: 20,
                                               color: Colors.white70,
                                             ),
@@ -1461,7 +1461,7 @@ class FocusedMenuDetails extends StatelessWidget {
                         .toString()
                     : provider == "Prism"
                         ? Provider.of<PrismProvider>(context, listen: false)
-                            .subPrismWalls[index]["wallpaper_thumb"]
+                            .subPrismWalls[index]["wallpaper_url"]
                             .toString()
                         : provider == "Pexels"
                             ? Provider.of<PexelsProvider>(context,
@@ -1582,8 +1582,10 @@ class FocusedMenuDetails extends StatelessWidget {
                     : provider == "Prism"
                         ? Provider.of<PrismProvider>(context, listen: false)
                             .subPrismWalls[index]["wallpaper_url"]
+                            .toString()
                         : provider == "Pexels"
-                            ? Provider.of<PexelsProvider>(context, listen: false)
+                            ? Provider.of<PexelsProvider>(context,
+                                    listen: false)
                                 .wallsP[index]
                                 .src["original"]
                                 .toString()
