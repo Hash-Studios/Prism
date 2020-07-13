@@ -9,7 +9,7 @@ var noNewNotification = false;
 
 GlobalKey keyCategoriesBar = GlobalKey();
 GlobalKey keyBottomBar = GlobalKey();
-GlobalKey keyFocussedMenuButton = GlobalKey();
-GlobalKey keyFocussedMenuClose = GlobalKey();
-GlobalKey keyWallpaperOpen = GlobalKey();
+GlobalKey keySearchButton = GlobalKey();
+GlobalKey keyFavButton = GlobalKey();
+GlobalKey keyProfileButton = GlobalKey();
 GlobalKey keyHomeWallpaperList = GlobalKey();

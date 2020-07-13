@@ -226,6 +226,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
+                key: globals.keySearchButton,
                 padding: EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -271,6 +272,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
+                key: globals.keyFavButton,
                 padding: EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -326,6 +328,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
               child: IconButton(
+                key: globals.keyProfileButton,
                 padding: EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
