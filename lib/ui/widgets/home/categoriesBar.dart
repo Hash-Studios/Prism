@@ -92,9 +92,40 @@ class _CategoriesBarState extends State<CategoriesBar> {
       ],
       shape: ShapeLightFocus.RRect,
     ));
+    // targets.add(TargetFocus(
+    //   identify: "Target 3",
+    //   keyTarget: globals.keyBottomBar,
+    //   contents: [
+    //     ContentTarget(
+    //         align: AlignContent.top,
+    //         child: Container(
+    //           child: Column(
+    //             mainAxisSize: MainAxisSize.min,
+    //             crossAxisAlignment: CrossAxisAlignment.start,
+    //             children: <Widget>[
+    //               Text(
+    //                 "This is the Navigation Bar.",
+    //                 style: TextStyle(
+    //                     fontWeight: FontWeight.bold,
+    //                     color: Colors.white,
+    //                     fontSize: 20.0),
+    //               ),
+    //               Padding(
+    //                 padding: const EdgeInsets.only(top: 10.0),
+    //                 child: Text(
+    //                   "It lets you quickly switch between Home, Search, Favorites and Profile.",
+    //                   style: TextStyle(color: Colors.white),
+    //                 ),
+    //               )
+    //             ],
+    //           ),
+    //         ))
+    //   ],
+    //   shape: ShapeLightFocus.RRect,
+    // ));
     targets.add(TargetFocus(
-      identify: "Target 3",
-      keyTarget: globals.keyBottomBar,
+      identify: "Target 4",
+      keyTarget: globals.keySearchButton,
       contents: [
         ContentTarget(
             align: AlignContent.top,
@@ -104,7 +135,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    "This is the Navigation Bar.",
+                    "This is the Search Page.",
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -113,7 +144,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                   Padding(
                     padding: const EdgeInsets.only(top: 10.0),
                     child: Text(
-                      "It lets you quickly switch between Home, Search, Favorites and Profile.",
+                      "Head over here to search Wallpapers, and apply them.",
                       style: TextStyle(color: Colors.white),
                     ),
                   )
@@ -121,7 +152,100 @@ class _CategoriesBarState extends State<CategoriesBar> {
               ),
             ))
       ],
-      shape: ShapeLightFocus.RRect,
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Target 5",
+      keyTarget: globals.keyFavButton,
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the Favorites Page.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "All your saved favorites are visible here, and you can apply them straight away from here.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Target 6",
+      keyTarget: globals.keyProfileButton,
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the Profile Page.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "It lets you view your downloads, set wallpapers from downloaded ones, sign in or log out, change themes, clear your downloads and cache, and more experimental features. Clearly this is the next best thing in this app after wallpapers, so make sure to check it out.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Target 7",
+      targetPosition: TargetPosition(Size(0, 0), Offset(300 * 0.6625, 370)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.bottom,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "Congratulations.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "You have successfully completed the tutorial and are ready to revamp your home screen.\n\nThank you for your awesomeness.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
     ));
   }
 
