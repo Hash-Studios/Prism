@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:Prism/data/color/provider/colorProvider.dart';
+import 'package:provider/provider.dart';
 
 Color _currentColor;
 
@@ -19,14 +21,14 @@ class _SliderIndicatorPainter extends CustomPainter {
 
 class HuePicker extends StatefulWidget {
   final double width;
-  final Function onHueChanged;
-  HuePicker({@required this.width, @required this.onHueChanged});
+  HuePicker({@required this.width});
   @override
   _HuePickerState createState() => _HuePickerState();
 }
 
 class _HuePickerState extends State<HuePicker> {
   final List<Color> _colors = [
+    Color.fromARGB(0, 0, 0, 0),
     Color.fromARGB(255, 255, 0, 0),
     Color.fromARGB(255, 255, 128, 0),
     Color.fromARGB(255, 255, 255, 0),
@@ -40,6 +42,7 @@ class _HuePickerState extends State<HuePicker> {
     Color.fromARGB(255, 255, 0, 255),
     Color.fromARGB(255, 255, 0, 127),
     Color.fromARGB(255, 128, 128, 128),
+    Color.fromARGB(0, 0, 0, 0),
   ];
   double _colorSliderPosition = 0;
   @override
@@ -63,7 +66,8 @@ class _HuePickerState extends State<HuePicker> {
       // print(
       // "r: ${_currentColor.red}, g: ${_currentColor.green}, b: ${_currentColor.blue}");
     });
-    widget.onHueChanged(_currentColor);
+    Provider.of<ColorProvider>(context, listen: false)
+        .hueChanger(_currentColor);
   }
 
   Color _calculateSelectedColor(double position) {

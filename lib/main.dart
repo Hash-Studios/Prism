@@ -4,6 +4,7 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/data/color/provider/colorProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
@@ -35,6 +36,9 @@ void main() {
               RestartWidget(
                 child: MultiProvider(
                   providers: [
+                    ChangeNotifierProvider<ColorProvider>(
+                      create: (context) => ColorProvider(),
+                    ),
                     ChangeNotifierProvider<WallHavenProvider>(
                       create: (context) => WallHavenProvider(),
                     ),

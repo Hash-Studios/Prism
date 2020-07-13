@@ -79,7 +79,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
         colorChanged = true;
       });
     }
-    
   }
 
   @override
@@ -130,7 +129,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
-               onPanelOpened: () {
+                onPanelOpened: () {
                   if (panelClosed) {
                     print('Screenshot Starting');
                     screenshotController
@@ -713,20 +712,20 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
                             DownloadButton(
-                                    colorChanged: colorChanged,
+                              colorChanged: colorChanged,
                               link: screenshotTaken
-                                        ? _imageFile.path
-                                        :Provider.of<FavouriteProvider>(context,
-                                      listen: false)
-                                  .liked[index]["url"],
+                                  ? _imageFile.path
+                                  : Provider.of<FavouriteProvider>(context,
+                                          listen: false)
+                                      .liked[index]["url"],
                             ),
                             SetWallpaperButton(
-                                    colorChanged: colorChanged,
+                              colorChanged: colorChanged,
                               url: screenshotTaken
-                                        ? _imageFile.path
-                                        :Provider.of<FavouriteProvider>(context,
-                                      listen: false)
-                                  .liked[index]["url"],
+                                  ? _imageFile.path
+                                  : Provider.of<FavouriteProvider>(context,
+                                          listen: false)
+                                      .liked[index]["url"],
                             ),
                             FavouriteWallpaperButton(
                               id: Provider.of<FavouriteProvider>(context,
@@ -772,11 +771,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   .liked[index]["url"],
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
-                                            controller: screenshotController,                          child: Container(
-                                margin: EdgeInsets.symmetric(
+                                key: Key("Unique"),
+                                controller: screenshotController,
+                                child: Container(
+                                  margin: EdgeInsets.symmetric(
                                       vertical: offsetAnimation.value * 1.25,
                                       horizontal: offsetAnimation.value / 2),
-                                decoration: BoxDecoration(
+                                  decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(
                                         offsetAnimation.value),
                                     image: DecorationImage(
@@ -787,9 +788,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       image: imageProvider,
                                       fit: BoxFit.cover,
                                     ),
+                                  ),
                                 ),
                               ),
-                                  ),
                               placeholder: (context, url) => Stack(
                                 children: <Widget>[
                                   SizedBox.expand(child: Text("")),
@@ -876,7 +877,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                           opacity: animation,
                                           child: ClockOverlay(
                                             colorChanged: colorChanged,
-                                            accent:accent,
+                                            accent: accent,
                                             link: link,
                                             file: false,
                                           ));
@@ -905,7 +906,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
-               onPanelOpened: () {
+                onPanelOpened: () {
                   if (panelClosed) {
                     print('Screenshot Starting');
                     screenshotController
@@ -1140,20 +1141,21 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               ? downloadLinkBackwards == null
                                   ? <Widget>[
                                       SetWallpaperButton(
-                                            colorChanged: colorChanged,
-
+                                        colorChanged: colorChanged,
                                         url: screenshotTaken
-                                        ? _imageFile.path
-                                        : Provider.of<FavouriteProvider>(
+                                            ? _imageFile.path
+                                            : Provider.of<FavouriteProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .liked[index]
+                                                        ["provider"] ==
+                                                    null
+                                                ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                                : Provider.of<
+                                                            FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["provider"] ==
-                                                null
-                                            ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
-                                            : Provider.of<FavouriteProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .liked[index]["url"],
+                                                    .liked[index]["url"],
                                       ),
                                       FavouriteWallpaperButton(
                                         id: Provider.of<FavouriteProvider>(
@@ -1185,25 +1187,27 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     ]
                                   : <Widget>[
                                       DownloadButton(
-                                    colorChanged: colorChanged,
+                                        colorChanged: colorChanged,
                                         link: screenshotTaken
-                                        ? _imageFile.path
-                                        :downloadLinkBackwards,
+                                            ? _imageFile.path
+                                            : downloadLinkBackwards,
                                       ),
                                       SetWallpaperButton(
-                                    colorChanged: colorChanged,
+                                        colorChanged: colorChanged,
                                         url: screenshotTaken
-                                        ? _imageFile.path
-                                        :Provider.of<FavouriteProvider>(
+                                            ? _imageFile.path
+                                            : Provider.of<FavouriteProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .liked[index]
+                                                        ["provider"] ==
+                                                    null
+                                                ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                                : Provider.of<
+                                                            FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["provider"] ==
-                                                null
-                                            ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
-                                            : Provider.of<FavouriteProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .liked[index]["url"],
+                                                    .liked[index]["url"],
                                       ),
                                       FavouriteWallpaperButton(
                                         id: Provider.of<FavouriteProvider>(
@@ -1238,24 +1242,25 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     colorChanged: colorChanged,
                                     link: screenshotTaken
                                         ? _imageFile.path
-                                        :Provider.of<FavouriteProvider>(
-                                            context,
-                                            listen: false)
-                                        .liked[index]["url"],
+                                        : Provider.of<FavouriteProvider>(
+                                                context,
+                                                listen: false)
+                                            .liked[index]["url"],
                                   ),
                                   SetWallpaperButton(
                                     colorChanged: colorChanged,
                                     url: screenshotTaken
                                         ? _imageFile.path
-                                        :Provider.of<FavouriteProvider>(context,
-                                                    listen: false)
-                                                .liked[index]["provider"] ==
-                                            null
-                                        ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
                                         : Provider.of<FavouriteProvider>(
-                                                context,
-                                                listen: false)
-                                            .liked[index]["url"],
+                                                        context,
+                                                        listen: false)
+                                                    .liked[index]["provider"] ==
+                                                null
+                                            ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                            : Provider.of<FavouriteProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["url"],
                                   ),
                                   FavouriteWallpaperButton(
                                     id: Provider.of<FavouriteProvider>(context,
@@ -1304,7 +1309,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 downloadLinkBackwards =
                                     "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg";
                                 return Screenshot(
-                                                 controller: screenshotController,                 child: Container(
+                                  key: Key("Unique2"),
+                                  controller: screenshotController,
+                                  child: Container(
                                     margin: EdgeInsets.symmetric(
                                         vertical: offsetAnimation.value * 1.25,
                                         horizontal: offsetAnimation.value / 2),
@@ -1313,9 +1320,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                           offsetAnimation.value),
                                       image: DecorationImage(
                                         colorFilter: colorChanged
-                                          ? ColorFilter.mode(
-                                              accent, BlendMode.hue)
-                                          : null,
+                                            ? ColorFilter.mode(
+                                                accent, BlendMode.hue)
+                                            : null,
                                         image: imageProvider,
                                         fit: BoxFit.cover,
                                       ),
@@ -1341,18 +1348,22 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   downloadLinkBackwards =
                                       "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png";
                                   return Screenshot(
-                                                   controller: screenshotController,                   child: Container(
+                                    key: Key("Unique3"),
+                                    controller: screenshotController,
+                                    child: Container(
                                       margin: EdgeInsets.symmetric(
-                                          vertical: offsetAnimation.value * 1.25,
-                                          horizontal: offsetAnimation.value / 2),
+                                          vertical:
+                                              offsetAnimation.value * 1.25,
+                                          horizontal:
+                                              offsetAnimation.value / 2),
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(
                                             offsetAnimation.value),
                                         image: DecorationImage(
                                           colorFilter: colorChanged
-                                          ? ColorFilter.mode(
-                                              accent, BlendMode.hue)
-                                          : null,
+                                              ? ColorFilter.mode(
+                                                  accent, BlendMode.hue)
+                                              : null,
                                           image: imageProvider,
                                           fit: BoxFit.cover,
                                         ),
@@ -1441,7 +1452,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                           opacity: animation,
                                           child: ClockOverlay(
                                             colorChanged: colorChanged,
-                                            accent:accent,
+                                            accent: accent,
                                             link: link,
                                             file: false,
                                           ));
