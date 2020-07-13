@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 class PrismProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
@@ -12,6 +10,7 @@ class PrismProvider extends ChangeNotifier {
     await databaseReference.collection("walls").getDocuments().then((value) {
       value.documents.forEach((f) => this.prismWalls.add(f.data));
       print(this.prismWalls);
+      this.prismWalls.shuffle();
       this.subPrismWalls = this.prismWalls.sublist(0, 24);
     }).catchError((e) {
       print("data done with error");
