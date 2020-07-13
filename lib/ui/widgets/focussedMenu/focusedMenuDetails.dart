@@ -1692,6 +1692,7 @@ class FocusedMenuDetails extends StatelessWidget {
               top: topOffset,
               left: leftOffset,
               child: SetWallpaperButton(
+                colorChanged: false,
                 url: provider == "WallHaven"
                     ? Provider.of<WallHavenProvider>(context, listen: false)
                         .walls[index]
@@ -1812,6 +1813,7 @@ class FocusedMenuDetails extends StatelessWidget {
               top: topOffset + fabWallTopOffset,
               left: leftOffset + fabWallLeftOffset,
               child: DownloadButton(
+                colorChanged: false,
                 link: provider == "WallHaven"
                     ? Provider.of<WallHavenProvider>(context, listen: false)
                         .walls[index]

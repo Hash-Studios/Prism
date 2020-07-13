@@ -13,7 +13,9 @@ import 'package:flutter/services.dart';
 import 'package:optimized_cached_image/widgets.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
+import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'dart:io';
 
 class FavWallpaperViewScreen extends StatefulWidget {
   final List arguments;
@@ -37,7 +39,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
   bool isLoading = true;
   PaletteGenerator paletteGenerator;
   List<Color> colors;
+  Color accent;
+  bool colorChanged = false;
   String downloadLinkBackwards;
+  File _imageFile;
+  bool screenshotTaken = false;
+  ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
   AnimationController shakeController;
 
@@ -56,6 +63,22 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     if (paletteGenerator.colors.length > 5) {
       colors = colors.sublist(0, 5);
     }
+    setState(() {
+      accent = colors[0];
+    });
+  }
+
+  void updateAccent() {
+    if (colors.contains(accent)) {
+      var index = colors.indexOf(accent);
+      setState(() {
+        accent = colors[(index + 1) % 5];
+      });
+      setState(() {
+        colorChanged = true;
+      });
+    }
+    
   }
 
   @override
@@ -104,8 +127,24 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               resizeToAvoidBottomPadding: false,
               key: _scaffoldKey,
               backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : colors[0],
+                  isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
+                onPanelOpened: () {
+                  screenshotController
+                      .capture(
+                    pixelRatio: 2,
+                    delay: Duration(milliseconds: 10),
+                  )
+                      .then((File image) async {
+                    setState(() {
+                      _imageFile = image;
+                      screenshotTaken = true;
+                    });
+                    print('Screenshot Taken');
+                  }).catchError((onError) {
+                    print(onError);
+                  });
+                },
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
                 borderRadius: BorderRadius.only(
@@ -664,12 +703,18 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
                             DownloadButton(
-                              link: Provider.of<FavouriteProvider>(context,
+                                    colorChanged: colorChanged,
+                              link: screenshotTaken
+                                        ? _imageFile.path
+                                        :Provider.of<FavouriteProvider>(context,
                                       listen: false)
                                   .liked[index]["url"],
                             ),
                             SetWallpaperButton(
-                              url: Provider.of<FavouriteProvider>(context,
+                                    colorChanged: colorChanged,
+                              url: screenshotTaken
+                                        ? _imageFile.path
+                                        :Provider.of<FavouriteProvider>(context,
                                       listen: false)
                                   .liked[index]["url"],
                             ),
@@ -716,19 +761,25 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       listen: false)
                                   .liked[index]["url"],
                               imageBuilder: (context, imageProvider) =>
-                                  Container(
+                                  Screenshot(
+                                            controller: screenshotController,                          child: Container(
                                 margin: EdgeInsets.symmetric(
-                                    vertical: offsetAnimation.value * 1.25,
-                                    horizontal: offsetAnimation.value / 2),
+                                      vertical: offsetAnimation.value * 1.25,
+                                      horizontal: offsetAnimation.value / 2),
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                      offsetAnimation.value),
-                                  image: DecorationImage(
-                                    image: imageProvider,
-                                    fit: BoxFit.cover,
-                                  ),
+                                    borderRadius: BorderRadius.circular(
+                                        offsetAnimation.value),
+                                    image: DecorationImage(
+                                      colorFilter: colorChanged
+                                          ? ColorFilter.mode(
+                                              accent, BlendMode.hue)
+                                          : null,
+                                      image: imageProvider,
+                                      fit: BoxFit.cover,
+                                    ),
                                 ),
                               ),
+                                  ),
                               placeholder: (context, url) => Stack(
                                 children: <Widget>[
                                   SizedBox.expand(child: Text("")),
@@ -745,7 +796,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     JamIcons.close_circle_f,
                                     color: isLoading
                                         ? Theme.of(context).accentColor
-                                        : colors[0].computeLuminance() > 0.5
+                                        : accent.computeLuminance() > 0.5
                                             ? Colors.black
                                             : Colors.white,
                                   ),
@@ -759,11 +810,15 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               }
                             },
                             onLongPress: () {
+                              setState(() {
+                                colorChanged = false;
+                              });
                               HapticFeedback.vibrate();
                               shakeController.forward(from: 0.0);
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : print("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -780,7 +835,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -810,6 +865,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(
+                                            colorChanged: colorChanged,
+                                            accent:accent,
                                             link: link,
                                             file: false,
                                           ));
@@ -819,7 +876,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -836,8 +893,25 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               key: _scaffoldKey,
               resizeToAvoidBottomPadding: false,
               backgroundColor:
-                  isLoading ? Theme.of(context).primaryColor : colors[0],
+                  isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
+                onPanelOpened: () {
+                  print('Screenshot Starting');
+                  screenshotController
+                      .capture(
+                    pixelRatio: 2,
+                    delay: Duration(milliseconds: 10),
+                  )
+                      .then((File image) async {
+                    setState(() {
+                      _imageFile = image;
+                      screenshotTaken = true;
+                    });
+                    print('Screenshot Taken');
+                  }).catchError((onError) {
+                    print(onError);
+                  });
+                },
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
                 borderRadius: BorderRadius.only(
@@ -1048,7 +1122,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               ? downloadLinkBackwards == null
                                   ? <Widget>[
                                       SetWallpaperButton(
-                                        url: Provider.of<FavouriteProvider>(
+                                            colorChanged: colorChanged,
+
+                                        url: screenshotTaken
+                                        ? _imageFile.path
+                                        : Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
                                                     .liked[index]["provider"] ==
@@ -1089,10 +1167,16 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     ]
                                   : <Widget>[
                                       DownloadButton(
-                                        link: downloadLinkBackwards,
+                                    colorChanged: colorChanged,
+                                        link: screenshotTaken
+                                        ? _imageFile.path
+                                        :downloadLinkBackwards,
                                       ),
                                       SetWallpaperButton(
-                                        url: Provider.of<FavouriteProvider>(
+                                    colorChanged: colorChanged,
+                                        url: screenshotTaken
+                                        ? _imageFile.path
+                                        :Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
                                                     .liked[index]["provider"] ==
@@ -1133,13 +1217,19 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     ]
                               : <Widget>[
                                   DownloadButton(
-                                    link: Provider.of<FavouriteProvider>(
+                                    colorChanged: colorChanged,
+                                    link: screenshotTaken
+                                        ? _imageFile.path
+                                        :Provider.of<FavouriteProvider>(
                                             context,
                                             listen: false)
                                         .liked[index]["url"],
                                   ),
                                   SetWallpaperButton(
-                                    url: Provider.of<FavouriteProvider>(context,
+                                    colorChanged: colorChanged,
+                                    url: screenshotTaken
+                                        ? _imageFile.path
+                                        :Provider.of<FavouriteProvider>(context,
                                                     listen: false)
                                                 .liked[index]["provider"] ==
                                             null
@@ -1195,16 +1285,22 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               imageBuilder: (context, imageProvider) {
                                 downloadLinkBackwards =
                                     "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg";
-                                return Container(
-                                  margin: EdgeInsets.symmetric(
-                                      vertical: offsetAnimation.value * 1.25,
-                                      horizontal: offsetAnimation.value / 2),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(
-                                        offsetAnimation.value),
-                                    image: DecorationImage(
-                                      image: imageProvider,
-                                      fit: BoxFit.cover,
+                                return Screenshot(
+                                                 controller: screenshotController,                 child: Container(
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: offsetAnimation.value * 1.25,
+                                        horizontal: offsetAnimation.value / 2),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                          offsetAnimation.value),
+                                      image: DecorationImage(
+                                        colorFilter: colorChanged
+                                          ? ColorFilter.mode(
+                                              accent, BlendMode.hue)
+                                          : null,
+                                        image: imageProvider,
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                 );
@@ -1226,16 +1322,22 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 imageBuilder: (context, imageProvider) {
                                   downloadLinkBackwards =
                                       "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png";
-                                  return Container(
-                                    margin: EdgeInsets.symmetric(
-                                        vertical: offsetAnimation.value * 1.25,
-                                        horizontal: offsetAnimation.value / 2),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(
-                                          offsetAnimation.value),
-                                      image: DecorationImage(
-                                        image: imageProvider,
-                                        fit: BoxFit.cover,
+                                  return Screenshot(
+                                                   controller: screenshotController,                   child: Container(
+                                      margin: EdgeInsets.symmetric(
+                                          vertical: offsetAnimation.value * 1.25,
+                                          horizontal: offsetAnimation.value / 2),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                            offsetAnimation.value),
+                                        image: DecorationImage(
+                                          colorFilter: colorChanged
+                                          ? ColorFilter.mode(
+                                              accent, BlendMode.hue)
+                                          : null,
+                                          image: imageProvider,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
                                     ),
                                   );
@@ -1251,7 +1353,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       JamIcons.close_circle_f,
                                       color: isLoading
                                           ? Theme.of(context).accentColor
-                                          : colors[0].computeLuminance() > 0.5
+                                          : accent.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
                                     ),
@@ -1266,11 +1368,15 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               }
                             },
                             onLongPress: () {
+                              setState(() {
+                                colorChanged = false;
+                              });
                               HapticFeedback.vibrate();
                               shakeController.forward(from: 0.0);
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : print("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -1287,7 +1393,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
@@ -1316,6 +1422,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       return FadeTransition(
                                           opacity: animation,
                                           child: ClockOverlay(
+                                            colorChanged: colorChanged,
+                                            accent:accent,
                                             link: link,
                                             file: false,
                                           ));
@@ -1325,7 +1433,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : colors[0].computeLuminance() > 0.5
+                              : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: Icon(
