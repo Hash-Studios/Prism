@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -106,6 +107,10 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                   .getAbstractWalls()
               : Provider.of<PexelsProvider>(context, listen: false)
                   .getNatureWalls();
+    } else if (widget.provider == "Prism") {
+      Provider.of<PrismProvider>(context, listen: false).prismWalls = [];
+      Provider.of<PrismProvider>(context, listen: false).subPrismWalls = [];
+      Provider.of<PrismProvider>(context, listen: false).getDataBase();
     } else if (widget.provider.length > 6 &&
         widget.provider.substring(0, 6) == "Colors") {
       Provider.of<PexelsProvider>(context, listen: false).wallsC = [];
@@ -142,6 +147,16 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
               if (!seeMoreLoader) {
                 Provider.of<WallHavenProvider>(context, listen: false)
                     .getData();
+                setState(() {
+                  seeMoreLoader = true;
+                  Future.delayed(Duration(seconds: 4))
+                      .then((value) => seeMoreLoader = false);
+                });
+              }
+            } else if (widget.provider == "Prism") {
+              if (!seeMoreLoader) {
+                Provider.of<PrismProvider>(context, listen: false)
+                    .seeMorePrism();
                 setState(() {
                   seeMoreLoader = true;
                   Future.delayed(Duration(seconds: 4))
@@ -200,21 +215,33 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
               ? Provider.of<WallHavenProvider>(context).walls.length == 0
                   ? 24
                   : Provider.of<WallHavenProvider>(context).walls.length
-              : widget.provider == "Pexels"
-                  ? Provider.of<PexelsProvider>(context).wallsP.length == 0
+              : widget.provider == "Prism"
+                  ? Provider.of<PrismProvider>(context).subPrismWalls.length ==
+                          0
                       ? 24
-                      : Provider.of<PexelsProvider>(context).wallsP.length
-                  : widget.provider.length > 6 &&
-                          widget.provider.substring(0, 6) == "Colors"
-                      ? Provider.of<PexelsProvider>(context).wallsC.length == 0
+                      : Provider.of<PrismProvider>(context).subPrismWalls.length
+                  : widget.provider == "Pexels"
+                      ? Provider.of<PexelsProvider>(context).wallsP.length == 0
                           ? 24
-                          : Provider.of<PexelsProvider>(context).wallsC.length
-                      : Provider.of<WallHavenProvider>(context).wallsS.length ==
-                              0
-                          ? 24
+                          : Provider.of<PexelsProvider>(context).wallsP.length
+                      : widget.provider.length > 6 &&
+                              widget.provider.substring(0, 6) == "Colors"
+                          ? Provider.of<PexelsProvider>(context)
+                                      .wallsC
+                                      .length ==
+                                  0
+                              ? 24
+                              : Provider.of<PexelsProvider>(context)
+                                  .wallsC
+                                  .length
                           : Provider.of<WallHavenProvider>(context)
-                              .wallsS
-                              .length,
+                                      .wallsS
+                                      .length ==
+                                  0
+                              ? 24
+                              : Provider.of<WallHavenProvider>(context)
+                                  .wallsS
+                                  .length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent:
@@ -240,6 +267,31 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                       if (!seeMoreLoader) {
                         Provider.of<WallHavenProvider>(context, listen: false)
                             .getData();
+                        setState(() {
+                          seeMoreLoader = true;
+                          Future.delayed(Duration(seconds: 4))
+                              .then((value) => seeMoreLoader = false);
+                        });
+                      }
+                    },
+                    child: !seeMoreLoader ? Text("See more") : Loader());
+              }
+            } else if (widget.provider == "Prism") {
+              if (index ==
+                  Provider.of<PrismProvider>(context).subPrismWalls.length -
+                      1) {
+                return FlatButton(
+                    color: Provider.of<ThemeModel>(context, listen: false)
+                                .returnTheme() ==
+                            ThemeType.Dark
+                        ? Colors.white10
+                        : Colors.black.withOpacity(.1),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    onPressed: () {
+                      if (!seeMoreLoader) {
+                        Provider.of<PrismProvider>(context, listen: false)
+                            .seeMorePrism();
                         setState(() {
                           seeMoreLoader = true;
                           Future.delayed(Duration(seconds: 4))
@@ -357,9 +409,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                               : EdgeInsets.all(0),
                           child: Container(
                             decoration: widget.provider == "WallHaven"
-                                ? Provider.of<WallHavenProvider>(context)
-                                            .walls
-                                            .length ==
+                                ? Provider.of<WallHavenProvider>(context).walls.length ==
                                         0
                                     ? BoxDecoration(
                                         color: animation.value,
@@ -374,10 +424,8 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                                                     .walls[index]
                                                     .thumbs["original"]),
                                             fit: BoxFit.cover))
-                                : widget.provider == "Pexels"
-                                    ? Provider.of<PexelsProvider>(context)
-                                                .wallsP
-                                                .length ==
+                                : widget.provider == "Prism"
+                                    ? Provider.of<PrismProvider>(context).subPrismWalls.length ==
                                             0
                                         ? BoxDecoration(
                                             color: animation.value,
@@ -389,28 +437,39 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                                             borderRadius:
                                                 BorderRadius.circular(20),
                                             image: DecorationImage(
-                                                image: NetworkImage(
-                                                    Provider.of<PexelsProvider>(context)
-                                                        .wallsP[index]
-                                                        .src["medium"]),
+                                                image: NetworkImage(Provider.of<PrismProvider>(context)
+                                                        .subPrismWalls[index]
+                                                    ["wallpaper_thumb"]),
                                                 fit: BoxFit.cover))
-                                    : widget.provider.length > 6 &&
-                                            widget.provider.substring(0, 6) ==
-                                                "Colors"
-                                        ? Provider.of<PexelsProvider>(context).wallsC.length == 0
+                                    : widget.provider == "Pexels"
+                                        ? Provider.of<PexelsProvider>(context).wallsP.length ==
+                                                0
                                             ? BoxDecoration(
                                                 color: animation.value,
                                                 borderRadius:
                                                     BorderRadius.circular(20),
                                               )
-                                            : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<PexelsProvider>(context).wallsC[index].src["medium"]), fit: BoxFit.cover))
-                                        : Provider.of<WallHavenProvider>(context).wallsS.length == 0
-                                            ? BoxDecoration(
+                                            : BoxDecoration(
                                                 color: animation.value,
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              )
-                                            : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<WallHavenProvider>(context).wallsS[index].thumbs["original"]), fit: BoxFit.cover)),
+                                                borderRadius: BorderRadius.circular(20),
+                                                image: DecorationImage(image: NetworkImage(Provider.of<PexelsProvider>(context).wallsP[index].src["medium"]), fit: BoxFit.cover))
+                                        : widget.provider.length > 6 && widget.provider.substring(0, 6) == "Colors"
+                                            ? Provider.of<PexelsProvider>(context).wallsC.length == 0
+                                                ? BoxDecoration(
+                                                    color: animation.value,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
+                                                  )
+                                                : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<PexelsProvider>(context).wallsC[index].src["medium"]), fit: BoxFit.cover))
+                                            : Provider.of<WallHavenProvider>(context).wallsS.length == 0
+                                                ? BoxDecoration(
+                                                    color: animation.value,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
+                                                  )
+                                                : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<WallHavenProvider>(context).wallsS[index].thumbs["original"]), fit: BoxFit.cover)),
                           ),
                         ),
                         onTap: () {
@@ -428,6 +487,22 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                                             listen: false)
                                         .walls[index]
                                         .thumbs["small"],
+                                  ]);
+                            }
+                          } else if (widget.provider == "Prism") {
+                            if (Provider.of<PrismProvider>(context,
+                                        listen: false)
+                                    .subPrismWalls ==
+                                []) {
+                            } else {
+                              Navigator.pushNamed(context, WallpaperRoute,
+                                  arguments: [
+                                    widget.provider,
+                                    index,
+                                    Provider.of<PrismProvider>(context,
+                                                listen: false)
+                                            .subPrismWalls[index]
+                                        ["wallpaper_thumb"],
                                   ]);
                             }
                           } else if (widget.provider == "Pexels") {
@@ -507,6 +582,25 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                                           listen: false)
                                       .walls[index]
                                       .thumbs["original"]);
+                            }
+                          } else if (widget.provider == "Prism") {
+                            if (Provider.of<PrismProvider>(context,
+                                        listen: false)
+                                    .subPrismWalls ==
+                                []) {
+                            } else {
+                              HapticFeedback.vibrate();
+                              createDynamicLink(
+                                  Provider.of<PrismProvider>(context,
+                                          listen: false)
+                                      .subPrismWalls[index]["id"],
+                                  widget.provider,
+                                  Provider.of<PrismProvider>(context,
+                                          listen: false)
+                                      .subPrismWalls[index]["wallpaper_url"],
+                                  Provider.of<PrismProvider>(context,
+                                          listen: false)
+                                      .subPrismWalls[index]["wallpaper_thumb"]);
                             }
                           } else if (widget.provider == "Pexels") {
                             if (Provider.of<PexelsProvider>(context,

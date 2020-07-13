@@ -11,7 +11,7 @@ description: A new Flutter project.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.4.1+7
+version: 2.4.2+8
 
 environment:
   sdk: ">=2.6.0 <3.0.0"
@@ -31,7 +31,6 @@ dependencies:
   flutter_svg: 0.17.4
   optimized_cached_image: ^0.1.13
   palette_generator: ^0.2.2
-  flutter_colorpicker: ^0.3.4
   fluttertoast: ^4.0.1
   gallery_saver: ^2.0.1
   firebase_dynamic_links: ^0.5.1
@@ -40,6 +39,7 @@ dependencies:
   firebase_analytics: ^5.0.16
   firebase_messaging: ^6.0.16
   in_app_purchase: ^0.3.4+1
+  flutter_local_notifications: ^1.4.4+2
   screenshot: ^0.2.0
 
 dev_dependencies:
@@ -92,7 +92,7 @@ flutter:
         - asset: assets/fonts/Proxima Nova Black.otf
           weight: 900
 
-    - family:  JamIcons
+    - family: JamIcons
       fonts:
         - asset: assets/fonts/JamIcons.ttf
   #
