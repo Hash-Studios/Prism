@@ -19,11 +19,11 @@ class _SliderIndicatorPainter extends CustomPainter {
 
 class ExposurePicker extends StatefulWidget {
   final double width;
-  Color color;
+  double position;
   final Function onExposureChanged;
   ExposurePicker(
       {@required this.width,
-      @required this.color,
+      @required this.position,
       @required this.onExposureChanged});
   @override
   _ExposurePickerState createState() => _ExposurePickerState();
@@ -31,27 +31,14 @@ class ExposurePicker extends StatefulWidget {
 
 class _ExposurePickerState extends State<ExposurePicker> {
   final List<Color> _colors = [
-    Color.fromARGB(255, 255, 0, 0),
-    Color.fromARGB(255, 255, 128, 0),
-    Color.fromARGB(255, 255, 255, 0),
-    Color.fromARGB(255, 128, 255, 0),
-    Color.fromARGB(255, 0, 255, 0),
-    Color.fromARGB(255, 0, 255, 128),
-    Color.fromARGB(255, 0, 255, 255),
-    Color.fromARGB(255, 0, 128, 255),
-    Color.fromARGB(255, 0, 0, 255),
-    Color.fromARGB(255, 127, 0, 255),
-    Color.fromARGB(255, 255, 0, 255),
-    Color.fromARGB(255, 255, 0, 127),
-    Color.fromARGB(255, 128, 128, 128),
+    Color.fromARGB(255, 0, 0, 0),
+    Color.fromARGB(255, 255, 255, 255),
   ];
-  double _colorSliderPosition = 0;
   double _shadeSliderPosition;
   @override
   initState() {
     super.initState();
-    widget.color = _calculateSelectedColor(_colorSliderPosition);
-    _shadeSliderPosition = widget.width / 2; //center the shader selector
+    _shadeSliderPosition = widget.position; //center the shader selector
     _shadedColor = _calculateShadedColor(_shadeSliderPosition);
   }
 
@@ -62,6 +49,7 @@ class _ExposurePickerState extends State<ExposurePicker> {
     setState(() {
       _shadeSliderPosition = position;
       _shadedColor = _calculateShadedColor(_shadeSliderPosition);
+      widget.position = position;
       // print(
       // "r: ${_shadedColor.red}, g: ${_shadedColor.green}, b: ${_shadedColor.blue}");
     });
@@ -70,70 +58,8 @@ class _ExposurePickerState extends State<ExposurePicker> {
 
   Color _calculateShadedColor(double position) {
     double ratio = position / widget.width;
-    if (ratio > 0.5) {
-      //Calculate new color (values converge to 255 to make the color lighter)
-      int redVal = widget.color.red != 255
-          ? (widget.color.red + (255 - widget.color.red) * (ratio - 0.5) / 0.5)
-              .round()
-          : 255;
-      int greenVal = widget.color.green != 255
-          ? (widget.color.green +
-                  (255 - widget.color.green) * (ratio - 0.5) / 0.5)
-              .round()
-          : 255;
-      int blueVal = widget.color.blue != 255
-          ? (widget.color.blue +
-                  (255 - widget.color.blue) * (ratio - 0.5) / 0.5)
-              .round()
-          : 255;
-      return Color.fromARGB(255, redVal, greenVal, blueVal);
-    } else if (ratio < 0.5) {
-      //Calculate new color (values converge to 0 to make the color darker)
-      int redVal =
-          widget.color.red != 0 ? (widget.color.red * ratio / 0.5).round() : 0;
-      int greenVal = widget.color.green != 0
-          ? (widget.color.green * ratio / 0.5).round()
-          : 0;
-      int blueVal = widget.color.blue != 0
-          ? (widget.color.blue * ratio / 0.5).round()
-          : 0;
-      return Color.fromARGB(255, redVal, greenVal, blueVal);
-    } else {
-      //return the base color
-      return widget.color;
-    }
-  }
-
-  Color _calculateSelectedColor(double position) {
-    //determine color
-    double positionInColorArray =
-        (position / widget.width * (_colors.length - 1));
-    // print(positionInColorArray);
-    int index = positionInColorArray.truncate();
-    // print(index);
-    double remainder = positionInColorArray - index;
-    if (remainder == 0.0) {
-      widget.color = _colors[index];
-    } else {
-      //calculate new color
-      int redValue = _colors[index].red == _colors[index + 1].red
-          ? _colors[index].red
-          : (_colors[index].red +
-                  (_colors[index + 1].red - _colors[index].red) * remainder)
-              .round();
-      int greenValue = _colors[index].green == _colors[index + 1].green
-          ? _colors[index].green
-          : (_colors[index].green +
-                  (_colors[index + 1].green - _colors[index].green) * remainder)
-              .round();
-      int blueValue = _colors[index].blue == _colors[index + 1].blue
-          ? _colors[index].blue
-          : (_colors[index].blue +
-                  (_colors[index + 1].blue - _colors[index].blue) * remainder)
-              .round();
-      widget.color = Color.fromARGB(255, redValue, greenValue, blueValue);
-    }
-    return widget.color;
+    int val = (ratio * 255).round();
+    return Color.fromARGB(255, val, val, val);
   }
 
   @override
@@ -196,14 +122,6 @@ class _ExposurePickerState extends State<ExposurePicker> {
             ),
           ),
         ),
-        // Container(
-        //   height: 50,
-        //   width: 50,
-        //   decoration: BoxDecoration(
-        //     color: _shadedColor,
-        //     shape: BoxShape.circle,
-        //   ),
-        // )
       ],
     );
   }
