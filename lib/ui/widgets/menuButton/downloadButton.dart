@@ -80,6 +80,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     });
     print(widget.link);
     toasts.startDownload();
+
     GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
       analytics.logEvent(
           name: 'download_wallpaper', parameters: {'link': widget.link});
