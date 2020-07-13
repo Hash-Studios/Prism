@@ -18,6 +18,8 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:Prism/ui/widgets/filters/panel.dart';
+import 'package:Prism/data/color/provider/colorProvider.dart';
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -94,6 +96,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     link = widget.arguments[2];
     isLoading = true;
     _updatePaletteGenerator();
+    Provider.of<ColorProvider>(context, listen: false)
+        .hueChanger(Colors.transparent);
+    Provider.of<ColorProvider>(context, listen: false)
+        .exposureChanger(Colors.transparent);
   }
 
   @override
@@ -463,73 +469,108 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0)
                             print('${offsetAnimation.value + 8.0}');
-                          return GestureDetector(
-                            child: OptimizedCacheImage(
-                              imageUrl: Provider.of<WallHavenProvider>(context)
-                                  .walls[index]
-                                  .path,
-                              imageBuilder: (context, imageProvider) =>
-                                  Screenshot(
-                                controller: screenshotController,
-                                child: Container(
-                                  margin: EdgeInsets.symmetric(
-                                      vertical: offsetAnimation.value * 1.25,
-                                      horizontal: offsetAnimation.value / 2),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(
-                                        offsetAnimation.value),
-                                    image: DecorationImage(
-                                      colorFilter: colorChanged
-                                          ? ColorFilter.mode(
-                                              accent, BlendMode.hue)
-                                          : null,
-                                      image: imageProvider,
-                                      fit: BoxFit.cover,
+                          return Stack(
+                            children: <Widget>[
+                              GestureDetector(
+                                child: OptimizedCacheImage(
+                                  imageUrl:
+                                      Provider.of<WallHavenProvider>(context)
+                                          .walls[index]
+                                          .path,
+                                  imageBuilder: (context, imageProvider) =>
+                                      Screenshot(
+                                    controller: screenshotController,
+                                    child: ColorFiltered(
+                                      colorFilter: ColorFilter.mode(
+                                        Provider.of<ColorProvider>(context)
+                                            .exposure,
+                                        BlendMode.softLight,
+                                      ),
+                                      child: ColorFiltered(
+                                        colorFilter: ColorFilter.mode(
+                                          Provider.of<ColorProvider>(context)
+                                              .hue,
+                                          BlendMode.hue,
+                                        ),
+                                        child: Container(
+                                          margin: EdgeInsets.symmetric(
+                                              vertical:
+                                                  offsetAnimation.value * 1.25,
+                                              horizontal:
+                                                  offsetAnimation.value / 2),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                                offsetAnimation.value),
+                                            image: DecorationImage(
+                                              colorFilter: colorChanged
+                                                  ? ColorFilter.mode(
+                                                      accent, BlendMode.hue)
+                                                  : null,
+                                              image: imageProvider,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                              placeholder: (context, url) => Stack(
-                                children: <Widget>[
-                                  SizedBox.expand(child: Text("")),
-                                  Container(
+                                  placeholder: (context, url) => Stack(
+                                    children: <Widget>[
+                                      SizedBox.expand(child: Text("")),
+                                      Container(
+                                        child: Center(
+                                          child: Loader(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      Container(
                                     child: Center(
-                                      child: Loader(),
+                                      child: Icon(
+                                        JamIcons.close_circle_f,
+                                        color: isLoading
+                                            ? Theme.of(context).accentColor
+                                            : accent.computeLuminance() > 0.5
+                                                ? Colors.black
+                                                : Colors.white,
+                                      ),
                                     ),
                                   ),
-                                ],
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                child: Center(
-                                  child: Icon(
-                                    JamIcons.close_circle_f,
-                                    color: isLoading
-                                        ? Theme.of(context).accentColor
-                                        : accent.computeLuminance() > 0.5
-                                            ? Colors.black
-                                            : Colors.white,
-                                  ),
                                 ),
+                                onPanUpdate: (details) {
+                                  if (details.delta.dy < -10) {
+                                    panelController.open();
+                                    HapticFeedback.vibrate();
+                                  } else if (details.delta.dy > 10) {}
+                                },
+                                onLongPress: () {
+                                  Provider.of<ColorProvider>(context,
+                                          listen: false)
+                                      .hueChanger(Colors.transparent);
+                                  Provider.of<ColorProvider>(context,
+                                          listen: false)
+                                      .exposureChanger(Colors.transparent);
+                                  setState(() {
+                                    colorChanged = false;
+                                  });
+                                  HapticFeedback.vibrate();
+                                  shakeController.forward(from: 0.0);
+                                },
+                                onTap: () {
+                                  Provider.of<ColorProvider>(context,
+                                          listen: false)
+                                      .hueChanger(Colors.transparent);
+                                  Provider.of<ColorProvider>(context,
+                                          listen: false)
+                                      .exposureChanger(Colors.transparent);
+                                  HapticFeedback.vibrate();
+                                  !isLoading ? updateAccent() : print("");
+                                  shakeController.forward(from: 0.0);
+                                },
                               ),
-                            ),
-                            onPanUpdate: (details) {
-                              if (details.delta.dy < -10) {
-                                panelController.open();
-                                HapticFeedback.vibrate();
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                colorChanged = false;
-                              });
-                              HapticFeedback.vibrate();
-                              shakeController.forward(from: 0.0);
-                            },
-                            onTap: () {
-                              HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : print("");
-                              shakeController.forward(from: 0.0);
-                            },
+                              FilterPanel(),
+                            ],
                           );
                         }),
                     Align(
@@ -940,75 +981,113 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             builder: (buildContext, child) {
                               if (offsetAnimation.value < 0.0)
                                 print('${offsetAnimation.value + 8.0}');
-                              return GestureDetector(
-                                child: OptimizedCacheImage(
-                                  imageUrl: Provider.of<PrismProvider>(context)
-                                      .subPrismWalls[index]["wallpaper_url"],
-                                  imageBuilder: (context, imageProvider) =>
-                                      Screenshot(
-                                    controller: screenshotController,
-                                    child: Container(
-                                      margin: EdgeInsets.symmetric(
-                                          vertical:
-                                              offsetAnimation.value * 1.25,
-                                          horizontal:
-                                              offsetAnimation.value / 2),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                            offsetAnimation.value),
-                                        image: DecorationImage(
-                                          colorFilter: colorChanged
-                                              ? ColorFilter.mode(
-                                                  accent, BlendMode.hue)
-                                              : null,
-                                          image: imageProvider,
-                                          fit: BoxFit.cover,
+                              return Stack(
+                                children: <Widget>[
+                                  GestureDetector(
+                                    child: OptimizedCacheImage(
+                                      imageUrl:
+                                          Provider.of<PrismProvider>(context)
+                                                  .subPrismWalls[index]
+                                              ["wallpaper_url"],
+                                      imageBuilder: (context, imageProvider) =>
+                                          Screenshot(
+                                        controller: screenshotController,
+                                        child: ColorFiltered(
+                                          colorFilter: ColorFilter.mode(
+                                            Provider.of<ColorProvider>(context)
+                                                .exposure,
+                                            BlendMode.softLight,
+                                          ),
+                                          child: ColorFiltered(
+                                            colorFilter: ColorFilter.mode(
+                                              Provider.of<ColorProvider>(
+                                                      context)
+                                                  .hue,
+                                              BlendMode.hue,
+                                            ),
+                                            child: Container(
+                                              margin: EdgeInsets.symmetric(
+                                                  vertical:
+                                                      offsetAnimation.value *
+                                                          1.25,
+                                                  horizontal:
+                                                      offsetAnimation.value /
+                                                          2),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        offsetAnimation.value),
+                                                image: DecorationImage(
+                                                  colorFilter: colorChanged
+                                                      ? ColorFilter.mode(
+                                                          accent, BlendMode.hue)
+                                                      : null,
+                                                  image: imageProvider,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                  placeholder: (context, url) => Stack(
-                                    children: <Widget>[
-                                      SizedBox.expand(child: Text("")),
-                                      Container(
+                                      placeholder: (context, url) => Stack(
+                                        children: <Widget>[
+                                          SizedBox.expand(child: Text("")),
+                                          Container(
+                                            child: Center(
+                                              child: Loader(),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Container(
                                         child: Center(
-                                          child: Loader(),
+                                          child: Icon(
+                                            JamIcons.close_circle_f,
+                                            color: isLoading
+                                                ? Theme.of(context).accentColor
+                                                : colors[0].computeLuminance() >
+                                                        0.5
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                          ),
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                    child: Center(
-                                      child: Icon(
-                                        JamIcons.close_circle_f,
-                                        color: isLoading
-                                            ? Theme.of(context).accentColor
-                                            : colors[0].computeLuminance() > 0.5
-                                                ? Colors.black
-                                                : Colors.white,
-                                      ),
                                     ),
+                                    onPanUpdate: (details) {
+                                      if (details.delta.dy < -10) {
+                                        panelController.open();
+                                        HapticFeedback.vibrate();
+                                      }
+                                    },
+                                    onLongPress: () {
+                                      Provider.of<ColorProvider>(context,
+                                              listen: false)
+                                          .hueChanger(Colors.transparent);
+                                      Provider.of<ColorProvider>(context,
+                                              listen: false)
+                                          .exposureChanger(Colors.transparent);
+                                      setState(() {
+                                        colorChanged = false;
+                                      });
+                                      HapticFeedback.vibrate();
+                                      shakeController.forward(from: 0.0);
+                                    },
+                                    onTap: () {
+                                      Provider.of<ColorProvider>(context,
+                                              listen: false)
+                                          .hueChanger(Colors.transparent);
+                                      Provider.of<ColorProvider>(context,
+                                              listen: false)
+                                          .exposureChanger(Colors.transparent);
+                                      HapticFeedback.vibrate();
+                                      !isLoading ? updateAccent() : print("");
+                                      shakeController.forward(from: 0.0);
+                                    },
                                   ),
-                                ),
-                                onPanUpdate: (details) {
-                                  if (details.delta.dy < -10) {
-                                    panelController.open();
-                                    HapticFeedback.vibrate();
-                                  }
-                                },
-                                onLongPress: () {
-                                  setState(() {
-                                    colorChanged = false;
-                                  });
-                                  HapticFeedback.vibrate();
-                                  shakeController.forward(from: 0.0);
-                                },
-                                onTap: () {
-                                  HapticFeedback.vibrate();
-                                  !isLoading ? updateAccent() : print("");
-                                  shakeController.forward(from: 0.0);
-                                },
+                                  FilterPanel(),
+                                ],
                               );
                             }),
                         Align(
@@ -1463,78 +1542,123 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 builder: (buildContext, child) {
                                   if (offsetAnimation.value < 0.0)
                                     print('${offsetAnimation.value + 8.0}');
-                                  return GestureDetector(
-                                    child: OptimizedCacheImage(
-                                      imageUrl:
-                                          Provider.of<PexelsProvider>(context)
+                                  return Stack(
+                                    children: <Widget>[
+                                      GestureDetector(
+                                        child: OptimizedCacheImage(
+                                          imageUrl: Provider.of<PexelsProvider>(
+                                                  context)
                                               .wallsP[index]
                                               .src["portrait"],
-                                      imageBuilder: (context, imageProvider) =>
-                                          Screenshot(
-                                        controller: screenshotController,
-                                        child: Container(
-                                          margin: EdgeInsets.symmetric(
-                                              vertical:
-                                                  offsetAnimation.value * 1.25,
-                                              horizontal:
-                                                  offsetAnimation.value / 2),
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                                offsetAnimation.value),
-                                            image: DecorationImage(
-                                              colorFilter: colorChanged
-                                                  ? ColorFilter.mode(
-                                                      accent, BlendMode.hue)
-                                                  : null,
-                                              image: imageProvider,
-                                              fit: BoxFit.cover,
+                                          imageBuilder:
+                                              (context, imageProvider) =>
+                                                  Screenshot(
+                                            controller: screenshotController,
+                                            child: ColorFiltered(
+                                              colorFilter: ColorFilter.mode(
+                                                Provider.of<ColorProvider>(
+                                                        context)
+                                                    .exposure,
+                                                BlendMode.softLight,
+                                              ),
+                                              child: ColorFiltered(
+                                                colorFilter: ColorFilter.mode(
+                                                  Provider.of<ColorProvider>(
+                                                          context)
+                                                      .hue,
+                                                  BlendMode.hue,
+                                                ),
+                                                child: Container(
+                                                  margin: EdgeInsets.symmetric(
+                                                      vertical: offsetAnimation
+                                                              .value *
+                                                          1.25,
+                                                      horizontal:
+                                                          offsetAnimation
+                                                                  .value /
+                                                              2),
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            offsetAnimation
+                                                                .value),
+                                                    image: DecorationImage(
+                                                      colorFilter: colorChanged
+                                                          ? ColorFilter.mode(
+                                                              accent,
+                                                              BlendMode.hue)
+                                                          : null,
+                                                      image: imageProvider,
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                      placeholder: (context, url) => Stack(
-                                        children: <Widget>[
-                                          SizedBox.expand(child: Text("")),
-                                          Container(
+                                          placeholder: (context, url) => Stack(
+                                            children: <Widget>[
+                                              SizedBox.expand(child: Text("")),
+                                              Container(
+                                                child: Center(
+                                                  child: Loader(),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              Container(
                                             child: Center(
-                                              child: Loader(),
+                                              child: Icon(
+                                                JamIcons.close_circle_f,
+                                                color: isLoading
+                                                    ? Theme.of(context)
+                                                        .accentColor
+                                                    : accent.computeLuminance() >
+                                                            0.5
+                                                        ? Colors.black
+                                                        : Colors.white,
+                                              ),
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                      errorWidget: (context, url, error) =>
-                                          Container(
-                                        child: Center(
-                                          child: Icon(
-                                            JamIcons.close_circle_f,
-                                            color: isLoading
-                                                ? Theme.of(context).accentColor
-                                                : accent.computeLuminance() >
-                                                        0.5
-                                                    ? Colors.black
-                                                    : Colors.white,
-                                          ),
                                         ),
+                                        onPanUpdate: (details) {
+                                          if (details.delta.dy < -10) {
+                                            HapticFeedback.vibrate();
+                                            panelController.open();
+                                          }
+                                        },
+                                        onLongPress: () {
+                                          Provider.of<ColorProvider>(context,
+                                                  listen: false)
+                                              .hueChanger(Colors.transparent);
+                                          Provider.of<ColorProvider>(context,
+                                                  listen: false)
+                                              .exposureChanger(
+                                                  Colors.transparent);
+                                          setState(() {
+                                            colorChanged = false;
+                                          });
+                                          HapticFeedback.vibrate();
+                                          shakeController.forward(from: 0.0);
+                                        },
+                                        onTap: () {
+                                          Provider.of<ColorProvider>(context,
+                                                  listen: false)
+                                              .hueChanger(Colors.transparent);
+                                          Provider.of<ColorProvider>(context,
+                                                  listen: false)
+                                              .exposureChanger(
+                                                  Colors.transparent);
+                                          HapticFeedback.vibrate();
+                                          !isLoading
+                                              ? updateAccent()
+                                              : print("");
+                                          shakeController.forward(from: 0.0);
+                                        },
                                       ),
-                                    ),
-                                    onPanUpdate: (details) {
-                                      if (details.delta.dy < -10) {
-                                        HapticFeedback.vibrate();
-                                        panelController.open();
-                                      }
-                                    },
-                                    onLongPress: () {
-                                      setState(() {
-                                        colorChanged = false;
-                                      });
-                                      HapticFeedback.vibrate();
-                                      shakeController.forward(from: 0.0);
-                                    },
-                                    onTap: () {
-                                      HapticFeedback.vibrate();
-                                      !isLoading ? updateAccent() : print("");
-                                      shakeController.forward(from: 0.0);
-                                    },
+                                      FilterPanel(),
+                                    ],
                                   );
                                 }),
                             Align(
@@ -1999,96 +2123,144 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           if (offsetAnimation.value < 0.0)
                                             print(
                                                 '${offsetAnimation.value + 8.0}');
-                                          return GestureDetector(
-                                            child: OptimizedCacheImage(
-                                              imageUrl:
-                                                  Provider.of<PexelsProvider>(
+                                          return Stack(
+                                            children: <Widget>[
+                                              GestureDetector(
+                                                child: OptimizedCacheImage(
+                                                  imageUrl: Provider.of<
+                                                              PexelsProvider>(
                                                           context,
                                                           listen: false)
                                                       .wallsC[index]
                                                       .src["portrait"],
-                                              imageBuilder:
-                                                  (context, imageProvider) =>
+                                                  imageBuilder: (context,
+                                                          imageProvider) =>
                                                       Screenshot(
-                                                controller:
-                                                    screenshotController,
-                                                child: Container(
-                                                  margin: EdgeInsets.symmetric(
-                                                      vertical: offsetAnimation
-                                                              .value *
-                                                          1.25,
-                                                      horizontal:
-                                                          offsetAnimation
-                                                                  .value /
-                                                              2),
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            offsetAnimation
-                                                                .value),
-                                                    image: DecorationImage(
-                                                      colorFilter: colorChanged
-                                                          ? ColorFilter.mode(
-                                                              accent,
-                                                              BlendMode.hue)
-                                                          : null,
-                                                      image: imageProvider,
-                                                      fit: BoxFit.cover,
+                                                    controller:
+                                                        screenshotController,
+                                                    child: ColorFiltered(
+                                                      colorFilter:
+                                                          ColorFilter.mode(
+                                                        Provider.of<ColorProvider>(
+                                                                context)
+                                                            .exposure,
+                                                        BlendMode.softLight,
+                                                      ),
+                                                      child: ColorFiltered(
+                                                        colorFilter:
+                                                            ColorFilter.mode(
+                                                          Provider.of<ColorProvider>(
+                                                                  context)
+                                                              .hue,
+                                                          BlendMode.hue,
+                                                        ),
+                                                        child: Container(
+                                                          margin: EdgeInsets.symmetric(
+                                                              vertical:
+                                                                  offsetAnimation
+                                                                          .value *
+                                                                      1.25,
+                                                              horizontal:
+                                                                  offsetAnimation
+                                                                          .value /
+                                                                      2),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                    offsetAnimation
+                                                                        .value),
+                                                            image:
+                                                                DecorationImage(
+                                                              colorFilter: colorChanged
+                                                                  ? ColorFilter.mode(
+                                                                      accent,
+                                                                      BlendMode
+                                                                          .hue)
+                                                                  : null,
+                                                              image:
+                                                                  imageProvider,
+                                                              fit: BoxFit.cover,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              ),
-                                              placeholder: (context, url) =>
-                                                  Stack(
-                                                children: <Widget>[
-                                                  SizedBox.expand(
-                                                      child: Text("")),
-                                                  Container(
-                                                    child: Center(
-                                                      child: Loader(),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              errorWidget:
-                                                  (context, url, error) =>
+                                                  placeholder: (context, url) =>
+                                                      Stack(
+                                                    children: <Widget>[
+                                                      SizedBox.expand(
+                                                          child: Text("")),
                                                       Container(
-                                                child: Center(
-                                                  child: Icon(
-                                                    JamIcons.close_circle_f,
-                                                    color: isLoading
-                                                        ? Theme.of(context)
-                                                            .accentColor
-                                                        : accent.computeLuminance() >
-                                                                0.5
-                                                            ? Colors.black
-                                                            : Colors.white,
+                                                        child: Center(
+                                                          child: Loader(),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  errorWidget:
+                                                      (context, url, error) =>
+                                                          Container(
+                                                    child: Center(
+                                                      child: Icon(
+                                                        JamIcons.close_circle_f,
+                                                        color: isLoading
+                                                            ? Theme.of(context)
+                                                                .accentColor
+                                                            : accent.computeLuminance() >
+                                                                    0.5
+                                                                ? Colors.black
+                                                                : Colors.white,
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
+                                                onPanUpdate: (details) {
+                                                  if (details.delta.dy < -10) {
+                                                    HapticFeedback.vibrate();
+                                                    panelController.open();
+                                                  }
+                                                },
+                                                onLongPress: () {
+                                                  Provider.of<ColorProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .hueChanger(
+                                                          Colors.transparent);
+                                                  Provider.of<ColorProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .exposureChanger(
+                                                          Colors.transparent);
+                                                  setState(() {
+                                                    colorChanged = false;
+                                                  });
+                                                  HapticFeedback.vibrate();
+                                                  shakeController.forward(
+                                                      from: 0.0);
+                                                },
+                                                onTap: () {
+                                                  Provider.of<ColorProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .hueChanger(
+                                                          Colors.transparent);
+                                                  Provider.of<ColorProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .exposureChanger(
+                                                          Colors.transparent);
+                                                  HapticFeedback.vibrate();
+                                                  !isLoading
+                                                      ? updateAccent()
+                                                      : print("");
+                                                  shakeController.forward(
+                                                      from: 0.0);
+                                                },
                                               ),
-                                            ),
-                                            onPanUpdate: (details) {
-                                              if (details.delta.dy < -10) {
-                                                HapticFeedback.vibrate();
-                                                panelController.open();
-                                              }
-                                            },
-                                            onLongPress: () {
-                                              setState(() {
-                                                colorChanged = false;
-                                              });
-                                              HapticFeedback.vibrate();
-                                              shakeController.forward(
-                                                  from: 0.0);
-                                            },
-                                            onTap: () {
-                                              HapticFeedback.vibrate();
-                                              !isLoading
-                                                  ? updateAccent()
-                                                  : print("");
-                                              shakeController.forward(
-                                                  from: 0.0);
-                                            },
+                                              FilterPanel(),
+                                            ],
                                           );
                                         }),
                                 Align(
@@ -2546,86 +2718,140 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     builder: (buildContext, child) {
                                       if (offsetAnimation.value < 0.0)
                                         print('${offsetAnimation.value + 8.0}');
-                                      return GestureDetector(
-                                        child: OptimizedCacheImage(
-                                          imageUrl:
-                                              Provider.of<WallHavenProvider>(
+                                      return Stack(
+                                        children: <Widget>[
+                                          GestureDetector(
+                                            child: OptimizedCacheImage(
+                                              imageUrl: Provider.of<
+                                                          WallHavenProvider>(
                                                       context)
                                                   .wallsS[index]
                                                   .path,
-                                          imageBuilder:
-                                              (context, imageProvider) =>
-                                                  Screenshot(
-                                            controller: screenshotController,
-                                            child: Container(
-                                              margin: EdgeInsets.symmetric(
-                                                  vertical:
-                                                      offsetAnimation.value *
-                                                          1.25,
-                                                  horizontal:
-                                                      offsetAnimation.value /
-                                                          2),
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        offsetAnimation.value),
-                                                image: DecorationImage(
-                                                  colorFilter: colorChanged
-                                                      ? ColorFilter.mode(
-                                                          accent, BlendMode.hue)
-                                                      : null,
-                                                  image: imageProvider,
-                                                  fit: BoxFit.cover,
+                                              imageBuilder:
+                                                  (context, imageProvider) =>
+                                                      Screenshot(
+                                                controller:
+                                                    screenshotController,
+                                                child: ColorFiltered(
+                                                  colorFilter: ColorFilter.mode(
+                                                    Provider.of<ColorProvider>(
+                                                            context)
+                                                        .exposure,
+                                                    BlendMode.softLight,
+                                                  ),
+                                                  child: ColorFiltered(
+                                                    colorFilter:
+                                                        ColorFilter.mode(
+                                                      Provider.of<ColorProvider>(
+                                                              context)
+                                                          .hue,
+                                                      BlendMode.hue,
+                                                    ),
+                                                    child: Container(
+                                                      margin: EdgeInsets.symmetric(
+                                                          vertical:
+                                                              offsetAnimation
+                                                                      .value *
+                                                                  1.25,
+                                                          horizontal:
+                                                              offsetAnimation
+                                                                      .value /
+                                                                  2),
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                offsetAnimation
+                                                                    .value),
+                                                        image: DecorationImage(
+                                                          colorFilter: colorChanged
+                                                              ? ColorFilter
+                                                                  .mode(
+                                                                      accent,
+                                                                      BlendMode
+                                                                          .hue)
+                                                              : null,
+                                                          image: imageProvider,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ),
-                                          placeholder: (context, url) => Stack(
-                                            children: <Widget>[
-                                              SizedBox.expand(child: Text("")),
-                                              Container(
+                                              placeholder: (context, url) =>
+                                                  Stack(
+                                                children: <Widget>[
+                                                  SizedBox.expand(
+                                                      child: Text("")),
+                                                  Container(
+                                                    child: Center(
+                                                      child: Loader(),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      Container(
                                                 child: Center(
-                                                  child: Loader(),
+                                                  child: Icon(
+                                                    JamIcons.close_circle_f,
+                                                    color: isLoading
+                                                        ? Theme.of(context)
+                                                            .accentColor
+                                                        : accent.computeLuminance() >
+                                                                0.5
+                                                            ? Colors.black
+                                                            : Colors.white,
+                                                  ),
                                                 ),
                                               ),
-                                            ],
-                                          ),
-                                          errorWidget: (context, url, error) =>
-                                              Container(
-                                            child: Center(
-                                              child: Icon(
-                                                JamIcons.close_circle_f,
-                                                color: isLoading
-                                                    ? Theme.of(context)
-                                                        .accentColor
-                                                    : accent.computeLuminance() >
-                                                            0.5
-                                                        ? Colors.black
-                                                        : Colors.white,
-                                              ),
                                             ),
+                                            onPanUpdate: (details) {
+                                              if (details.delta.dy < -10) {
+                                                HapticFeedback.vibrate();
+                                                panelController.open();
+                                              }
+                                            },
+                                            onLongPress: () {
+                                              Provider.of<ColorProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .hueChanger(
+                                                      Colors.transparent);
+                                              Provider.of<ColorProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .exposureChanger(
+                                                      Colors.transparent);
+                                              setState(() {
+                                                colorChanged = false;
+                                              });
+                                              HapticFeedback.vibrate();
+                                              shakeController.forward(
+                                                  from: 0.0);
+                                            },
+                                            onTap: () {
+                                              Provider.of<ColorProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .hueChanger(
+                                                      Colors.transparent);
+                                              Provider.of<ColorProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .exposureChanger(
+                                                      Colors.transparent);
+                                              HapticFeedback.vibrate();
+                                              !isLoading
+                                                  ? updateAccent()
+                                                  : print("");
+                                              shakeController.forward(
+                                                  from: 0.0);
+                                            },
                                           ),
-                                        ),
-                                        onPanUpdate: (details) {
-                                          if (details.delta.dy < -10) {
-                                            HapticFeedback.vibrate();
-                                            panelController.open();
-                                          }
-                                        },
-                                        onLongPress: () {
-                                          setState(() {
-                                            colorChanged = false;
-                                          });
-                                          HapticFeedback.vibrate();
-                                          shakeController.forward(from: 0.0);
-                                        },
-                                        onTap: () {
-                                          HapticFeedback.vibrate();
-                                          !isLoading
-                                              ? updateAccent()
-                                              : print("");
-                                          shakeController.forward(from: 0.0);
-                                        },
+                                          FilterPanel(),
+                                        ],
                                       );
                                     }),
                                 Align(

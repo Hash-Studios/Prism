@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:Prism/data/color/provider/colorProvider.dart';
+import 'package:provider/provider.dart';
 
 Color _shadedColor;
 
@@ -20,11 +22,10 @@ class _SliderIndicatorPainter extends CustomPainter {
 class ExposurePicker extends StatefulWidget {
   final double width;
   double position;
-  final Function onExposureChanged;
-  ExposurePicker(
-      {@required this.width,
-      @required this.position,
-      @required this.onExposureChanged});
+  ExposurePicker({
+    @required this.width,
+    @required this.position,
+  });
   @override
   _ExposurePickerState createState() => _ExposurePickerState();
 }
@@ -53,7 +54,8 @@ class _ExposurePickerState extends State<ExposurePicker> {
       // print(
       // "r: ${_shadedColor.red}, g: ${_shadedColor.green}, b: ${_shadedColor.blue}");
     });
-    widget.onExposureChanged(_shadedColor);
+    Provider.of<ColorProvider>(context, listen: false)
+        .exposureChanger(_shadedColor);
   }
 
   Color _calculateShadedColor(double position) {
