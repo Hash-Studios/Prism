@@ -6,6 +6,7 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 
 class BottomBar extends StatefulWidget {
   final Widget child;
@@ -174,6 +175,7 @@ class _BottomNavBarState extends State<BottomNavBar>
       child: Material(
         color: Colors.transparent,
         child: Row(
+          key: globals.keyBottomBar,
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
