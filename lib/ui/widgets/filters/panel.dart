@@ -3,13 +3,15 @@ import 'package:Prism/ui/widgets/filters/hue.dart';
 import 'package:Prism/ui/widgets/filters/exposure.dart';
 
 class FilterPanel extends StatefulWidget {
+  Color accent;
+  Color exposure;
+  FilterPanel({@required this.accent, @required this.exposure});
   @override
   _FilterPanelState createState() => _FilterPanelState();
 }
 
 class _FilterPanelState extends State<FilterPanel> {
-  Color color = Colors.white;
-  Color finalColor = Colors.white;
+  double position = 150;
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -27,18 +29,19 @@ class _FilterPanelState extends State<FilterPanel> {
               width: 300,
               onHueChanged: (newColor) {
                 setState(() {
-                  color = newColor;
-                  print(color);
+                  widget.accent = newColor;
+                  print(widget.accent);
+                  position = 150;
                 });
               },
             ),
             ExposurePicker(
+              position: position,
               width: 300,
-              color: color,
               onExposureChanged: (newColor) {
                 setState(() {
-                  finalColor = newColor;
-                  print(finalColor);
+                  widget.exposure = newColor;
+                  print(widget.exposure);
                 });
               },
             ),
