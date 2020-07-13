@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/global/globals.dart' as globals;
 
 class HomeGrid extends StatefulWidget {
   final String provider;
@@ -209,6 +210,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
           }
         },
         child: GridView.builder(
+          key: globals.keyHomeWallpaperList,
           controller: controller,
           padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
           itemCount: widget.provider == "WallHaven"
