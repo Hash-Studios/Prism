@@ -13,6 +13,7 @@ import 'package:tutorial_coach_mark/target_focus.dart';
 import 'package:tutorial_coach_mark/target_position.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:scroll_to_index/scroll_to_index.dart';
 
 class CategoriesBar extends StatefulWidget {
   CategoriesBar({Key key}) : super(key: key);
@@ -283,6 +284,14 @@ class _CategoriesBarState extends State<CategoriesBar> {
     }
   }
 
+  Widget _wrapScrollTag({int index, Widget child}) => AutoScrollTag(
+        key: ValueKey(index),
+        controller: globals.categoryController,
+        index: index,
+        child: child,
+        highlightColor: Colors.black.withOpacity(0.1),
+      );
+
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -329,100 +338,106 @@ class _CategoriesBarState extends State<CategoriesBar> {
             height: 100,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
+              controller: globals.categoryController,
               itemCount:
                   Provider.of<CategoryProvider>(context).categories.length,
               itemBuilder: (context, index) {
-                return Align(
-                  alignment: Alignment.center,
-                  child: Stack(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.all(5),
-                        child: AnimatedCrossFade(
-                          duration: Duration(milliseconds: 300),
-                          firstCurve: Curves.easeIn,
-                          secondCurve: Curves.easeIn,
-                          secondChild: ActionChip(
-                              backgroundColor: Theme.of(context).hintColor,
-                              pressElevation: 5,
-                              padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-                              label: Text(
-                                  Provider.of<CategoryProvider>(context)
-                                      .categories[index],
-                                  style: Theme.of(context).textTheme.headline4),
-                              onPressed: () {
-                                switch (Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .categories[index]) {
-                                  case "Home":
-                                    PM.pageController.jumpToPage(0);
-                                    break;
-                                  case "Curated":
-                                    PM.pageController.jumpToPage(1);
-                                    break;
-                                  case "Abstract":
-                                    PM.pageController.jumpToPage(2);
-                                    break;
-                                  case "Nature":
-                                    PM.pageController.jumpToPage(3);
-                                    break;
-                                  case "Art":
-                                    PM.pageController.jumpToPage(4);
-                                    break;
-                                  case "Minimal":
-                                    PM.pageController.jumpToPage(5);
-                                    break;
-                                  case "Textures":
-                                    PM.pageController.jumpToPage(6);
-                                    break;
-                                  case "Monochrome":
-                                    PM.pageController.jumpToPage(7);
-                                    break;
-                                  case "Space":
-                                    PM.pageController.jumpToPage(8);
-                                    break;
-                                  case "Animals":
-                                    PM.pageController.jumpToPage(9);
-                                    break;
-                                  case "Neon":
-                                    PM.pageController.jumpToPage(10);
-                                    break;
-                                  case "Sports":
-                                    PM.pageController.jumpToPage(11);
-                                    break;
-                                  case "Music":
-                                    PM.pageController.jumpToPage(12);
-                                    break;
-                                  case "Colors":
-                                    showColors(context);
-                                    break;
-                                  default:
-                                    break;
-                                }
-                              }),
-                          crossFadeState: Provider.of<CategoryProvider>(context)
-                                      .categories[index] ==
-                                  Provider.of<CategoryProvider>(context)
-                                      .selectedCategory
-                              ? CrossFadeState.showFirst
-                              : CrossFadeState.showSecond,
-                          firstChild: ActionChip(
-                              pressElevation: 5,
-                              padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-                              backgroundColor: Theme.of(context).accentColor,
-                              label: Text(
-                                  Provider.of<CategoryProvider>(context)
-                                      .categories[index],
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headline4
-                                      .copyWith(
-                                          color:
-                                              Theme.of(context).primaryColor)),
-                              onPressed: () {}),
+                return _wrapScrollTag(
+                  index: index,
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Stack(
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.all(5),
+                          child: AnimatedCrossFade(
+                            duration: Duration(milliseconds: 300),
+                            firstCurve: Curves.easeIn,
+                            secondCurve: Curves.easeIn,
+                            secondChild: ActionChip(
+                                backgroundColor: Theme.of(context).hintColor,
+                                pressElevation: 5,
+                                padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                label: Text(
+                                    Provider.of<CategoryProvider>(context)
+                                        .categories[index],
+                                    style:
+                                        Theme.of(context).textTheme.headline4),
+                                onPressed: () {
+                                  switch (Provider.of<CategoryProvider>(context,
+                                          listen: false)
+                                      .categories[index]) {
+                                    case "Home":
+                                      PM.pageController.jumpToPage(0);
+                                      break;
+                                    case "Curated":
+                                      PM.pageController.jumpToPage(1);
+                                      break;
+                                    case "Abstract":
+                                      PM.pageController.jumpToPage(2);
+                                      break;
+                                    case "Nature":
+                                      PM.pageController.jumpToPage(3);
+                                      break;
+                                    case "Art":
+                                      PM.pageController.jumpToPage(4);
+                                      break;
+                                    case "Minimal":
+                                      PM.pageController.jumpToPage(5);
+                                      break;
+                                    case "Textures":
+                                      PM.pageController.jumpToPage(6);
+                                      break;
+                                    case "Monochrome":
+                                      PM.pageController.jumpToPage(7);
+                                      break;
+                                    case "Space":
+                                      PM.pageController.jumpToPage(8);
+                                      break;
+                                    case "Animals":
+                                      PM.pageController.jumpToPage(9);
+                                      break;
+                                    case "Neon":
+                                      PM.pageController.jumpToPage(10);
+                                      break;
+                                    case "Sports":
+                                      PM.pageController.jumpToPage(11);
+                                      break;
+                                    case "Music":
+                                      PM.pageController.jumpToPage(12);
+                                      break;
+                                    case "Colors":
+                                      showColors(context);
+                                      break;
+                                    default:
+                                      break;
+                                  }
+                                }),
+                            crossFadeState:
+                                Provider.of<CategoryProvider>(context)
+                                            .categories[index] ==
+                                        Provider.of<CategoryProvider>(context)
+                                            .selectedCategory
+                                    ? CrossFadeState.showFirst
+                                    : CrossFadeState.showSecond,
+                            firstChild: ActionChip(
+                                pressElevation: 5,
+                                padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                backgroundColor: Theme.of(context).accentColor,
+                                label: Text(
+                                    Provider.of<CategoryProvider>(context)
+                                        .categories[index],
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headline4
+                                        .copyWith(
+                                            color: Theme.of(context)
+                                                .primaryColor)),
+                                onPressed: () {}),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },
