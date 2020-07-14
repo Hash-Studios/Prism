@@ -148,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onWillPop: onWillPop,
       child: GridLoader(
         future:
-            Provider.of<PrismProvider>(context, listen: false).getDataBase(),
+            Provider.of<PrismProvider>(context, listen: false).getPrismWalls(),
         provider: "Prism",
       ),
     );
