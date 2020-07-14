@@ -28,32 +28,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _checkUpdate() async {
     print("checking for update");
-    databaseReference.collection("appConfig").getDocuments().then((value) {
-      print("Current App Version :" + currentAppVersion);
-      print(
-          "Latest Version :" + value.documents[0]["currentVersion"].toString());
-      setState(() {
-        if (currentAppVersion !=
-            value.documents[0]["currentVersion"].toString()) {
-          setState(() {
-            globals.updateAvailable = true;
-            globals.versionInfo = {
-              "version_number": value.documents[0]["currentVersion"].toString(),
-              "version_desc": value.documents[0]["versionDesc"],
-            };
-          });
-        } else {
-          setState(() {
-            globals.updateAvailable = false;
-          });
-        }
+    try {
+      databaseReference.collection("appConfig").getDocuments().then((value) {
+        print("Current App Version :" + currentAppVersion);
+        print("Latest Version :" +
+            value.documents[0]["currentVersion"].toString());
+        setState(() {
+          if (currentAppVersion !=
+              value.documents[0]["currentVersion"].toString()) {
+            setState(() {
+              globals.updateAvailable = true;
+              globals.versionInfo = {
+                "version_number":
+                    value.documents[0]["currentVersion"].toString(),
+                "version_desc": value.documents[0]["versionDesc"],
+              };
+            });
+          } else {
+            setState(() {
+              globals.updateAvailable = false;
+            });
+          }
+        });
+        globals.updateAvailable
+            ? !globals.noNewNotification
+                ? showUpdate(context)
+                : print("No new notification")
+            : print("No update");
       });
-      globals.updateAvailable
-          ? !globals.noNewNotification
-              ? showUpdate(context)
-              : print("No new notification")
-          : print("No update");
-    });
+    } catch (e) {
+      print("Error while checking for updates!");
+    }
   }
 
   Future<bool> onWillPop() async {

@@ -22,14 +22,14 @@ class _SearchScreenState extends State<SearchScreen> {
     return true;
   }
 
-  final List<String> tags = [
-    'Home',
-    'Abstract',
-    'Community',
-    'Nature',
-    'Cars',
-    'Comics',
-  ];
+  // final List<String> tags = [
+  //   'Home',
+  //   'Abstract',
+  //   'Community',
+  //   'Nature',
+  //   'Cars',
+  //   'Comics',
+  // ];
   bool isSubmitted;
   TextEditingController searchController = TextEditingController();
   Future _future;

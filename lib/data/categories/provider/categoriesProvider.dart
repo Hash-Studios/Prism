@@ -4,9 +4,18 @@ class CategoryProvider extends ChangeNotifier {
   List<String> categories = [
     'Home',
     'Curated',
+    'Colors',
     'Abstract',
     'Nature',
-    'Colors',
+    'Art',
+    'Minimal',
+    'Textures',
+    'Monochrome',
+    'Space',
+    'Animals',
+    'Neon',
+    'Sports',
+    'Music',
   ];
   String selectedCategory = 'Home';
   void updateSelectedCategory(String newCategory) {
