@@ -1,7 +1,5 @@
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
-import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
