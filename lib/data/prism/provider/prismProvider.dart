@@ -6,12 +6,20 @@ class PrismProvider extends ChangeNotifier {
   List prismWalls;
   List subPrismWalls;
   Map wall;
-  Future<List> getDataBase() async {
+  int page = 1;
+  Future<List> getPrismWalls() async {
     this.prismWalls = [];
-    await databaseReference.collection("walls").getDocuments().then((value) {
-      value.documents.forEach((f) => this.prismWalls.add(f.data));
-      print(this.prismWalls);
-      this.prismWalls.shuffle();
+    this.subPrismWalls = [];
+    await databaseReference
+        .collection("walls")
+        .orderBy("id")
+        .getDocuments()
+        .then((value) {
+      this.prismWalls = [];
+      value.documents.forEach((f) {
+        this.prismWalls.add(f.data);
+      });
+      print(this.prismWalls.length);
       this.subPrismWalls = this.prismWalls.sublist(0, 24);
     }).catchError((e) {
       print("data done with error");
@@ -20,9 +28,21 @@ class PrismProvider extends ChangeNotifier {
   }
 
   List seeMorePrism() {
-    this.subPrismWalls.addAll(this.prismWalls.sublist(this.subPrismWalls.length
-        // , this.subPrismWalls.length + 24
-        ));
+    int len = this.prismWalls.length;
+    double pages = len / 24;
+    print(len);
+    print(pages);
+    print(this.page);
+    if (this.page < pages.round()) {
+      this.subPrismWalls.addAll(this
+          .prismWalls
+          .sublist(this.subPrismWalls.length, this.subPrismWalls.length + 24));
+      this.page += 1;
+    } else {
+      this
+          .subPrismWalls
+          .addAll(this.prismWalls.sublist(this.subPrismWalls.length));
+    }
     return this.subPrismWalls;
   }
 

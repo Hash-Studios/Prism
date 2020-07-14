@@ -111,7 +111,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
     } else if (widget.provider == "Prism") {
       Provider.of<PrismProvider>(context, listen: false).prismWalls = [];
       Provider.of<PrismProvider>(context, listen: false).subPrismWalls = [];
-      Provider.of<PrismProvider>(context, listen: false).getDataBase();
+      Provider.of<PrismProvider>(context, listen: false).getPrismWalls();
     } else if (widget.provider.length > 6 &&
         widget.provider.substring(0, 6) == "Colors") {
       Provider.of<PexelsProvider>(context, listen: false).wallsC = [];
