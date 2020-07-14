@@ -96,16 +96,33 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
       Provider.of<WallHavenProvider>(context, listen: false).getData();
     } else if (widget.provider == "Pexels") {
       Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
-      Provider.of<CategoryProvider>(context, listen: false).selectedCategory ==
-              "Curated"
+      Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Curated"
           ? Provider.of<PexelsProvider>(context, listen: false).getDataP()
-          : Provider.of<CategoryProvider>(context, listen: false)
-                      .selectedCategory ==
-                  "Abstract"
+          : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Abstract"
               ? Provider.of<PexelsProvider>(context, listen: false)
                   .getAbstractWalls()
-              : Provider.of<PexelsProvider>(context, listen: false)
-                  .getNatureWalls();
+              : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Nature"
+                  ? Provider.of<PexelsProvider>(context, listen: false)
+                      .getNatureWalls()
+                  : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Art"
+                      ? Provider.of<PexelsProvider>(context, listen: false)
+                          .getArtWalls()
+                      : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Minimal"
+                          ? Provider.of<PexelsProvider>(context, listen: false)
+                              .getMinimalWalls()
+                          : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Textures"
+                              ? Provider.of<PexelsProvider>(context, listen: false)
+                                  .getTexturesWalls()
+                              : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Monochrome"
+                                  ? Provider.of<PexelsProvider>(context, listen: false)
+                                      .getMonochromeWalls()
+                                  : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Space"
+                                      ? Provider.of<PexelsProvider>(context, listen: false)
+                                          .getSpaceWalls()
+                                      : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Animals"
+                                          ? Provider.of<PexelsProvider>(context, listen: false)
+                                              .getAnimalsWalls()
+                                          : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Neon" ? Provider.of<PexelsProvider>(context, listen: false).getNeonWalls() : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Sports" ? Provider.of<PexelsProvider>(context, listen: false).getSportsWalls() : Provider.of<PexelsProvider>(context, listen: false).getMusicWalls();
     } else if (widget.provider.length > 6 &&
         widget.provider.substring(0, 6) == "Colors") {
       Provider.of<PexelsProvider>(context, listen: false).wallsC = [];
@@ -150,18 +167,31 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
               }
             } else if (widget.provider == "Pexels") {
               if (!seeMoreLoader) {
-                Provider.of<CategoryProvider>(context, listen: false)
-                            .selectedCategory ==
-                        "Curated"
+                Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Curated"
                     ? Provider.of<PexelsProvider>(context, listen: false)
                         .getDataP()
-                    : Provider.of<CategoryProvider>(context, listen: false)
-                                .selectedCategory ==
-                            "Abstract"
+                    : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Abstract"
                         ? Provider.of<PexelsProvider>(context, listen: false)
                             .getAbstractWalls()
-                        : Provider.of<PexelsProvider>(context, listen: false)
-                            .getNatureWalls();
+                        : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Nature"
+                            ? Provider.of<PexelsProvider>(context, listen: false)
+                                .getNatureWalls()
+                            : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Art"
+                                ? Provider.of<PexelsProvider>(context, listen: false)
+                                    .getArtWalls()
+                                : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Minimal"
+                                    ? Provider.of<PexelsProvider>(context, listen: false)
+                                        .getMinimalWalls()
+                                    : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Textures"
+                                        ? Provider.of<PexelsProvider>(context, listen: false)
+                                            .getTexturesWalls()
+                                        : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Monochrome"
+                                            ? Provider.of<PexelsProvider>(context, listen: false)
+                                                .getMonochromeWalls()
+                                            : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Space"
+                                                ? Provider.of<PexelsProvider>(context, listen: false)
+                                                    .getSpaceWalls()
+                                                : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Animals" ? Provider.of<PexelsProvider>(context, listen: false).getAnimalsWalls() : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Neon" ? Provider.of<PexelsProvider>(context, listen: false).getNeonWalls() : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Sports" ? Provider.of<PexelsProvider>(context, listen: false).getSportsWalls() : Provider.of<PexelsProvider>(context, listen: false).getMusicWalls();
 
                 setState(() {
                   seeMoreLoader = true;
@@ -262,22 +292,30 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        Provider.of<CategoryProvider>(context, listen: false)
-                                    .selectedCategory ==
-                                "Curated"
-                            ? Provider.of<PexelsProvider>(context,
-                                    listen: false)
+                        Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Curated"
+                            ? Provider.of<PexelsProvider>(context, listen: false)
                                 .getDataP()
-                            : Provider.of<CategoryProvider>(context,
-                                            listen: false)
-                                        .selectedCategory ==
-                                    "Abstract"
-                                ? Provider.of<PexelsProvider>(context,
-                                        listen: false)
+                            : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Abstract"
+                                ? Provider.of<PexelsProvider>(context, listen: false)
                                     .getAbstractWalls()
-                                : Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .getNatureWalls();
+                                : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Nature"
+                                    ? Provider.of<PexelsProvider>(context, listen: false)
+                                        .getNatureWalls()
+                                    : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Art"
+                                        ? Provider.of<PexelsProvider>(context, listen: false)
+                                            .getArtWalls()
+                                        : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Minimal"
+                                            ? Provider.of<PexelsProvider>(context, listen: false)
+                                                .getMinimalWalls()
+                                            : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Textures"
+                                                ? Provider.of<PexelsProvider>(context, listen: false)
+                                                    .getTexturesWalls()
+                                                : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Monochrome"
+                                                    ? Provider.of<PexelsProvider>(context, listen: false)
+                                                        .getMonochromeWalls()
+                                                    : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Space"
+                                                        ? Provider.of<PexelsProvider>(context, listen: false).getSpaceWalls()
+                                                        : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Animals" ? Provider.of<PexelsProvider>(context, listen: false).getAnimalsWalls() : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Neon" ? Provider.of<PexelsProvider>(context, listen: false).getNeonWalls() : Provider.of<CategoryProvider>(context, listen: false).selectedCategory == "Sports" ? Provider.of<PexelsProvider>(context, listen: false).getSportsWalls() : Provider.of<PexelsProvider>(context, listen: false).getMusicWalls();
 
                         setState(() {
                           seeMoreLoader = true;
