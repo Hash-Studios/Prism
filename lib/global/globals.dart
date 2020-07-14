@@ -12,4 +12,3 @@ GlobalKey keyBottomBar = GlobalKey();
 GlobalKey keySearchButton = GlobalKey();
 GlobalKey keyFavButton = GlobalKey();
 GlobalKey keyProfileButton = GlobalKey();
-GlobalKey keyHomeWallpaperList = GlobalKey();

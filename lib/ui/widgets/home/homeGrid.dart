@@ -284,7 +284,6 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
           }
         },
         child: GridView.builder(
-          key: globals.keyHomeWallpaperList,
           controller: controller,
           padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
           itemCount: widget.provider == "WallHaven"
