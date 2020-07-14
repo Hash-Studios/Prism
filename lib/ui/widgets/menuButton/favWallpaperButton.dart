@@ -13,6 +13,7 @@ class FavouriteWallpaperButton extends StatefulWidget {
   final String provider;
   final WallPaper wallhaven;
   final WallPaperP pexels;
+  final Map prism;
   final bool trash;
   const FavouriteWallpaperButton({
     @required this.id,
@@ -20,6 +21,7 @@ class FavouriteWallpaperButton extends StatefulWidget {
     @required this.trash,
     this.wallhaven,
     this.pexels,
+    this.prism,
     Key key,
   }) : super(key: key);
 
@@ -43,10 +45,12 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       onTap: () {
         if (!main.prefs.getBool("isLoggedin")) {
           googleSignInPopUp(context, () {
-            onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels);
+            onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels,
+                widget.prism);
           });
         } else {
-          onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels);
+          onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels,
+              widget.prism);
         }
         // if (widget.provider == "Liked") {
         //   String route = currentRoute;
@@ -87,13 +91,13 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     );
   }
 
-  void onFav(String id, String provider, WallPaper wallhaven,
-      WallPaperP pexels) async {
+  void onFav(String id, String provider, WallPaper wallhaven, WallPaperP pexels,
+      Map prism) async {
     setState(() {
       isLoading = true;
     });
     Provider.of<FavouriteProvider>(context, listen: false)
-        .favCheck(id, provider, wallhaven, pexels)
+        .favCheck(id, provider, wallhaven, pexels, prism)
         .then((value) {
       analytics.logEvent(
           name: 'fav_status_changed',

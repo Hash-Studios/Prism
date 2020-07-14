@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -314,12 +315,12 @@ class FocusedMenuDetails extends StatelessWidget {
                         ),
                       ),
                     )
-                  : provider == "Pexels"
+                  : provider == "Prism"
                       ? Positioned(
                           top: childOffset.dy + childSize.height * 4 / 10,
                           left: childOffset.dx,
                           child: TweenAnimationBuilder(
-                            duration: Duration(milliseconds: 200),
+                            duration: Duration(milliseconds: 150),
                             builder:
                                 (BuildContext context, value, Widget child) {
                               return Transform.scale(
@@ -356,17 +357,27 @@ class FocusedMenuDetails extends StatelessWidget {
                                               pressElevation: 5,
                                               padding: EdgeInsets.fromLTRB(
                                                   14, 11, 14, 11),
+                                              avatar: Icon(
+                                                JamIcons.camera,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
                                               backgroundColor: Colors.black,
-                                              avatar: Icon(JamIcons.camera,
-                                                  color: Colors.white,
-                                                  size: 20),
                                               label: Text(
-                                                Provider.of<PexelsProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .wallsP[index]
-                                                    .photographer
-                                                    .toString(),
+                                                Provider.of<PrismProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .subPrismWalls[index]
+                                                            ["by"]
+                                                        .toString()[0]
+                                                        .toUpperCase() +
+                                                    Provider.of<PrismProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .subPrismWalls[index]
+                                                            ["by"]
+                                                        .toString()
+                                                        .substring(1),
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .headline4
@@ -379,46 +390,12 @@ class FocusedMenuDetails extends StatelessWidget {
                                             padding: const EdgeInsets.fromLTRB(
                                                 0, 5, 0, 10),
                                             child: Text(
-                                              Provider.of<PexelsProvider>(context, listen: false)
-                                                          .wallsP[index]
-                                                          .url
-                                                          .toString()
-                                                          .replaceAll(
-                                                              "https://www.pexels.com/photo/", "")
-                                                          .replaceAll("-", " ")
-                                                          .replaceAll("/", "")
-                                                          .length >
-                                                      8
-                                                  ? Provider.of<PexelsProvider>(context, listen: false)
-                                                          .wallsP[index]
-                                                          .url
-                                                          .toString()
-                                                          .replaceAll(
-                                                              "https://www.pexels.com/photo/", "")
-                                                          .replaceAll("-", " ")
-                                                          .replaceAll(
-                                                              "/", "")[0]
-                                                          .toUpperCase() +
-                                                      Provider.of<PexelsProvider>(context, listen: false)
-                                                          .wallsP[index]
-                                                          .url
-                                                          .toString()
-                                                          .replaceAll(
-                                                              "https://www.pexels.com/photo/", "")
-                                                          .replaceAll("-", " ")
-                                                          .replaceAll("/", "")
-                                                          .substring(
-                                                              1,
-                                                              Provider.of<PexelsProvider>(context, listen: false)
-                                                                      .wallsP[index]
-                                                                      .url
-                                                                      .toString()
-                                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                                      .replaceAll("-", " ")
-                                                                      .replaceAll("/", "")
-                                                                      .length -
-                                                                  7)
-                                                  : Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
+                                              Provider.of<PrismProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .subPrismWalls[index]["id"]
+                                                  .toString()
+                                                  .toUpperCase(),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .headline5,
@@ -427,16 +404,32 @@ class FocusedMenuDetails extends StatelessWidget {
                                           Row(
                                             children: [
                                               Icon(
-                                                JamIcons.set_square,
-                                                color: Colors.white70,
+                                                JamIcons.save,
                                                 size: 20,
+                                                color: Colors.white70,
                                               ),
-                                              SizedBox(width: 5),
+                                              SizedBox(width: 10),
                                               Text(
-                                                "${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].height.toString()}",
+                                                "${Provider.of<PrismProvider>(context, listen: false).subPrismWalls[index]["size"].toString()}",
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .headline6,
+                                                    .bodyText2,
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.set_square,
+                                                size: 20,
+                                                color: Colors.white70,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Text(
+                                                "${Provider.of<PrismProvider>(context, listen: false).subPrismWalls[index]["resolution"].toString()}",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
                                               ),
                                             ],
                                           ),
@@ -474,182 +467,174 @@ class FocusedMenuDetails extends StatelessWidget {
                             ),
                           ),
                         )
-                      : provider == "Liked"
-                          ? Provider.of<FavouriteProvider>(context,
-                                          listen: false)
-                                      .liked[index]["provider"] ==
-                                  "WallHaven"
-                              ? Positioned(
-                                  top:
-                                      childOffset.dy + childSize.height * 2 / 8,
-                                  left: childOffset.dx,
-                                  child: TweenAnimationBuilder(
-                                    duration: Duration(milliseconds: 200),
-                                    builder: (BuildContext context, value,
-                                        Widget child) {
-                                      return Transform.scale(
-                                        scale: value,
-                                        alignment: Alignment.bottomRight,
-                                        child: child,
-                                      );
-                                    },
-                                    tween: Tween(begin: 0.0, end: 1.0),
-                                    child: Container(
-                                      width: childSize.width,
-                                      height: childSize.height * 6 / 8,
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFF2F2F2F),
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(20.0)),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(20.0)),
-                                        child: Stack(
-                                          fit: StackFit.expand,
-                                          children: <Widget>[
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      15, 7, 15, 15),
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceEvenly,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: <Widget>[
-                                                  ActionChip(
-                                                      pressElevation: 5,
-                                                      padding:
-                                                          EdgeInsets.fromLTRB(
-                                                              14, 11, 14, 11),
-                                                      avatar: Icon(
-                                                        JamIcons.ordered_list,
-                                                        color: Colors.white,
-                                                        size: 20,
-                                                      ),
-                                                      backgroundColor:
-                                                          Colors.black,
-                                                      label: Text(
-                                                        Provider.of<FavouriteProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .liked[index]
-                                                                    ["category"]
-                                                                .toString()[0]
-                                                                .toUpperCase() +
-                                                            Provider.of<FavouriteProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .liked[index]
-                                                                    ["category"]
-                                                                .toString()
-                                                                .substring(1),
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .headline4
-                                                            .copyWith(
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                      ),
-                                                      onPressed: () {}),
-                                                  Padding(
-                                                    padding: const EdgeInsets
-                                                        .fromLTRB(0, 5, 0, 10),
-                                                    child: Text(
-                                                      Provider.of<FavouriteProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .liked[index]["id"]
-                                                          .toString()
-                                                          .toUpperCase(),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .headline5,
-                                                    ),
+                      : provider == "Pexels"
+                          ? Positioned(
+                              top: childOffset.dy + childSize.height * 4 / 10,
+                              left: childOffset.dx,
+                              child: TweenAnimationBuilder(
+                                duration: Duration(milliseconds: 200),
+                                builder: (BuildContext context, value,
+                                    Widget child) {
+                                  return Transform.scale(
+                                    scale: value,
+                                    alignment: Alignment.bottomRight,
+                                    child: child,
+                                  );
+                                },
+                                tween: Tween(begin: 0.0, end: 1.0),
+                                child: Container(
+                                  width: childSize.width,
+                                  height: childSize.height * 6 / 10,
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFF2F2F2F),
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(20.0)),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(20.0)),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: <Widget>[
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              15, 7, 15, 15),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              ActionChip(
+                                                  pressElevation: 5,
+                                                  padding: EdgeInsets.fromLTRB(
+                                                      14, 11, 14, 11),
+                                                  backgroundColor: Colors.black,
+                                                  avatar: Icon(JamIcons.camera,
+                                                      color: Colors.white,
+                                                      size: 20),
+                                                  label: Text(
+                                                    Provider.of<PexelsProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .wallsP[index]
+                                                        .photographer
+                                                        .toString(),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .headline4
+                                                        .copyWith(
+                                                          color: Colors.white,
+                                                        ),
                                                   ),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.eye,
-                                                        size: 20,
-                                                        color: Colors.white70,
-                                                      ),
-                                                      SizedBox(width: 10),
-                                                      Text(
-                                                        "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"].toString()}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyText2,
-                                                      ),
-                                                    ],
+                                                  onPressed: () {}),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        0, 5, 0, 10),
+                                                child: Text(
+                                                  Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                                      ? Provider.of<PexelsProvider>(context, listen: false)
+                                                              .wallsP[index]
+                                                              .url
+                                                              .toString()
+                                                              .replaceAll(
+                                                                  "https://www.pexels.com/photo/", "")
+                                                              .replaceAll(
+                                                                  "-", " ")
+                                                              .replaceAll(
+                                                                  "/", "")[0]
+                                                              .toUpperCase() +
+                                                          Provider.of<PexelsProvider>(context, listen: false)
+                                                              .wallsP[index]
+                                                              .url
+                                                              .toString()
+                                                              .replaceAll(
+                                                                  "https://www.pexels.com/photo/", "")
+                                                              .replaceAll(
+                                                                  "-", " ")
+                                                              .replaceAll(
+                                                                  "/", "")
+                                                              .substring(
+                                                                  1,
+                                                                  Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                                      7)
+                                                      : Provider.of<PexelsProvider>(context, listen: false)
+                                                              .wallsP[index]
+                                                              .url
+                                                              .toString()
+                                                              .replaceAll("https://www.pexels.com/photo/", "")
+                                                              .replaceAll("-", " ")
+                                                              .replaceAll("/", "")[0]
+                                                              .toUpperCase() +
+                                                          Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .headline5,
+                                                ),
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.set_square,
+                                                    color: Colors.white70,
+                                                    size: 20,
                                                   ),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.set_square,
-                                                        size: 20,
-                                                        color: Colors.white70,
-                                                      ),
-                                                      SizedBox(width: 10),
-                                                      Text(
-                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString()}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyText2,
-                                                      ),
-                                                    ],
+                                                  SizedBox(width: 5),
+                                                  Text(
+                                                    "${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].height.toString()}",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .headline6,
                                                   ),
                                                 ],
                                               ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.bottomRight,
-                                              child: GestureDetector(
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                      color: Color(0xFF2F2F2F),
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                              topLeft: Radius
-                                                                  .circular(20),
-                                                              bottomRight:
-                                                                  Radius
-                                                                      .circular(
-                                                                          20))),
-                                                  padding: EdgeInsets.all(0),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.fromLTRB(
-                                                            10, 5, 10, 5),
-                                                    child: Icon(
-                                                      JamIcons.close,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                                onTap: () async {
-                                                  Navigator.pop(context);
-                                                },
-                                              ),
-                                            )
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
+                                        Align(
+                                          alignment: Alignment.bottomRight,
+                                          child: GestureDetector(
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                  color: Color(0xFF2F2F2F),
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                          topLeft:
+                                                              Radius.circular(
+                                                                  20),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  20))),
+                                              padding: EdgeInsets.all(0),
+                                              child: Padding(
+                                                padding: EdgeInsets.fromLTRB(
+                                                    10, 5, 10, 5),
+                                                child: Icon(
+                                                  JamIcons.close,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                            onTap: () async {
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                        )
+                                      ],
                                     ),
                                   ),
-                                )
-                              : Provider.of<FavouriteProvider>(context,
+                                ),
+                              ),
+                            )
+                          : provider == "Liked"
+                              ? Provider.of<FavouriteProvider>(context,
                                               listen: false)
                                           .liked[index]["provider"] ==
-                                      "Pexels"
+                                      "WallHaven"
                                   ? Positioned(
                                       top: childOffset.dy +
-                                          childSize.height * 1 / 2,
+                                          childSize.height * 2 / 8,
                                       left: childOffset.dx,
                                       child: TweenAnimationBuilder(
                                         duration: Duration(milliseconds: 200),
@@ -664,7 +649,750 @@ class FocusedMenuDetails extends StatelessWidget {
                                         tween: Tween(begin: 0.0, end: 1.0),
                                         child: Container(
                                           width: childSize.width,
-                                          height: childSize.height * 1 / 2,
+                                          height: childSize.height * 6 / 8,
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFF2F2F2F),
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(20.0)),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(20.0)),
+                                            child: Stack(
+                                              fit: StackFit.expand,
+                                              children: <Widget>[
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          15, 7, 15, 15),
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceEvenly,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: <Widget>[
+                                                      ActionChip(
+                                                          pressElevation: 5,
+                                                          padding: EdgeInsets
+                                                              .fromLTRB(14, 11,
+                                                                  14, 11),
+                                                          avatar: Icon(
+                                                            JamIcons
+                                                                .ordered_list,
+                                                            color: Colors.white,
+                                                            size: 20,
+                                                          ),
+                                                          backgroundColor:
+                                                              Colors.black,
+                                                          label: Text(
+                                                            Provider.of<FavouriteProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .liked[
+                                                                        index][
+                                                                        "category"]
+                                                                    .toString()[
+                                                                        0]
+                                                                    .toUpperCase() +
+                                                                Provider.of<FavouriteProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .liked[
+                                                                        index][
+                                                                        "category"]
+                                                                    .toString()
+                                                                    .substring(
+                                                                        1),
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .headline4
+                                                                .copyWith(
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                          ),
+                                                          onPressed: () {}),
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .fromLTRB(
+                                                                0, 5, 0, 10),
+                                                        child: Text(
+                                                          Provider.of<FavouriteProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked[index]
+                                                                  ["id"]
+                                                              .toString()
+                                                              .toUpperCase(),
+                                                          style:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .headline5,
+                                                        ),
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            JamIcons.eye,
+                                                            size: 20,
+                                                            color:
+                                                                Colors.white70,
+                                                          ),
+                                                          SizedBox(width: 10),
+                                                          Text(
+                                                            "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"].toString()}",
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodyText2,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            JamIcons.set_square,
+                                                            size: 20,
+                                                            color:
+                                                                Colors.white70,
+                                                          ),
+                                                          SizedBox(width: 10),
+                                                          Text(
+                                                            "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString()}",
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodyText2,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Align(
+                                                  alignment:
+                                                      Alignment.bottomRight,
+                                                  child: GestureDetector(
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                          color:
+                                                              Color(0xFF2F2F2F),
+                                                          borderRadius:
+                                                              BorderRadius.only(
+                                                                  topLeft: Radius
+                                                                      .circular(
+                                                                          20),
+                                                                  bottomRight: Radius
+                                                                      .circular(
+                                                                          20))),
+                                                      padding:
+                                                          EdgeInsets.all(0),
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.fromLTRB(
+                                                                10, 5, 10, 5),
+                                                        child: Icon(
+                                                          JamIcons.close,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    onTap: () async {
+                                                      Navigator.pop(context);
+                                                    },
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Provider.of<FavouriteProvider>(context,
+                                                  listen: false)
+                                              .liked[index]["provider"] ==
+                                          "Prism"
+                                      ? Positioned(
+                                          top: childOffset.dy +
+                                              childSize.height * 2 / 8,
+                                          left: childOffset.dx,
+                                          child: TweenAnimationBuilder(
+                                            duration:
+                                                Duration(milliseconds: 200),
+                                            builder: (BuildContext context,
+                                                value, Widget child) {
+                                              return Transform.scale(
+                                                scale: value,
+                                                alignment:
+                                                    Alignment.bottomRight,
+                                                child: child,
+                                              );
+                                            },
+                                            tween: Tween(begin: 0.0, end: 1.0),
+                                            child: Container(
+                                              width: childSize.width,
+                                              height: childSize.height * 6 / 8,
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF2F2F2F),
+                                                borderRadius:
+                                                    const BorderRadius.all(
+                                                        Radius.circular(20.0)),
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    const BorderRadius.all(
+                                                        Radius.circular(20.0)),
+                                                child: Stack(
+                                                  fit: StackFit.expand,
+                                                  children: <Widget>[
+                                                    Padding(
+                                                      padding: const EdgeInsets
+                                                              .fromLTRB(
+                                                          15, 7, 15, 15),
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceEvenly,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: <Widget>[
+                                                          ActionChip(
+                                                              pressElevation: 5,
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .fromLTRB(
+                                                                          14,
+                                                                          11,
+                                                                          14,
+                                                                          11),
+                                                              avatar: Icon(
+                                                                JamIcons.camera,
+                                                                color: Colors
+                                                                    .white,
+                                                                size: 20,
+                                                              ),
+                                                              backgroundColor:
+                                                                  Colors.black,
+                                                              label: Text(
+                                                                Provider.of<FavouriteProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .liked[
+                                                                            index]
+                                                                            [
+                                                                            "photographer"]
+                                                                        .toString()[
+                                                                            0]
+                                                                        .toUpperCase() +
+                                                                    Provider.of<FavouriteProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .liked[
+                                                                            index]
+                                                                            [
+                                                                            "photographer"]
+                                                                        .toString()
+                                                                        .substring(
+                                                                            1),
+                                                                style: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .headline4
+                                                                    .copyWith(
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                              ),
+                                                              onPressed: () {}),
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                        .fromLTRB(
+                                                                    0,
+                                                                    5,
+                                                                    0,
+                                                                    10),
+                                                            child: Text(
+                                                              Provider.of<FavouriteProvider>(
+                                                                      context,
+                                                                      listen:
+                                                                          false)
+                                                                  .liked[index]
+                                                                      ["id"]
+                                                                  .toString()
+                                                                  .toUpperCase(),
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .headline5,
+                                                            ),
+                                                          ),
+                                                          Row(
+                                                            children: [
+                                                              Icon(
+                                                                JamIcons.save,
+                                                                size: 20,
+                                                                color: Colors
+                                                                    .white70,
+                                                              ),
+                                                              SizedBox(
+                                                                  width: 10),
+                                                              Text(
+                                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()}",
+                                                                style: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .bodyText2,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          Row(
+                                                            children: [
+                                                              Icon(
+                                                                JamIcons
+                                                                    .set_square,
+                                                                size: 20,
+                                                                color: Colors
+                                                                    .white70,
+                                                              ),
+                                                              SizedBox(
+                                                                  width: 10),
+                                                              Text(
+                                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString()}",
+                                                                style: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .bodyText2,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.bottomRight,
+                                                      child: GestureDetector(
+                                                        child: Container(
+                                                          decoration: BoxDecoration(
+                                                              color: Color(
+                                                                  0xFF2F2F2F),
+                                                              borderRadius: BorderRadius.only(
+                                                                  topLeft: Radius
+                                                                      .circular(
+                                                                          20),
+                                                                  bottomRight: Radius
+                                                                      .circular(
+                                                                          20))),
+                                                          padding:
+                                                              EdgeInsets.all(0),
+                                                          child: Padding(
+                                                            padding: EdgeInsets
+                                                                .fromLTRB(10, 5,
+                                                                    10, 5),
+                                                            child: Icon(
+                                                              JamIcons.close,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        onTap: () async {
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Provider.of<FavouriteProvider>(context,
+                                                      listen: false)
+                                                  .liked[index]["provider"] ==
+                                              "Pexels"
+                                          ? Positioned(
+                                              top: childOffset.dy +
+                                                  childSize.height * 1 / 2,
+                                              left: childOffset.dx,
+                                              child: TweenAnimationBuilder(
+                                                duration:
+                                                    Duration(milliseconds: 200),
+                                                builder: (BuildContext context,
+                                                    value, Widget child) {
+                                                  return Transform.scale(
+                                                    scale: value,
+                                                    alignment:
+                                                        Alignment.bottomRight,
+                                                    child: child,
+                                                  );
+                                                },
+                                                tween:
+                                                    Tween(begin: 0.0, end: 1.0),
+                                                child: Container(
+                                                  width: childSize.width,
+                                                  height:
+                                                      childSize.height * 1 / 2,
+                                                  decoration: BoxDecoration(
+                                                    color: Color(0xFF2F2F2F),
+                                                    borderRadius:
+                                                        const BorderRadius.all(
+                                                            Radius.circular(
+                                                                20.0)),
+                                                  ),
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        const BorderRadius.all(
+                                                            Radius.circular(
+                                                                20.0)),
+                                                    child: Stack(
+                                                      fit: StackFit.expand,
+                                                      children: <Widget>[
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .fromLTRB(
+                                                                  15,
+                                                                  7,
+                                                                  15,
+                                                                  15),
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceEvenly,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: <Widget>[
+                                                              ActionChip(
+                                                                  pressElevation:
+                                                                      5,
+                                                                  padding: EdgeInsets
+                                                                      .fromLTRB(
+                                                                          14,
+                                                                          11,
+                                                                          14,
+                                                                          11),
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .black,
+                                                                  avatar: Icon(
+                                                                      JamIcons
+                                                                          .camera,
+                                                                      color: Colors
+                                                                          .white,
+                                                                      size: 20),
+                                                                  label: Text(
+                                                                    Provider.of<FavouriteProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .liked[
+                                                                            index]
+                                                                            [
+                                                                            "photographer"]
+                                                                        .toString(),
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .headline4
+                                                                        .copyWith(
+                                                                          color:
+                                                                              Colors.white,
+                                                                        ),
+                                                                  ),
+                                                                  onPressed:
+                                                                      () {}),
+                                                              Row(
+                                                                children: [
+                                                                  Icon(
+                                                                    JamIcons
+                                                                        .set_square,
+                                                                    color: Colors
+                                                                        .white70,
+                                                                    size: 20,
+                                                                  ),
+                                                                  SizedBox(
+                                                                      width: 5),
+                                                                  Text(
+                                                                    Provider.of<FavouriteProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .liked[
+                                                                            index]
+                                                                            [
+                                                                            "resolution"]
+                                                                        .toString(),
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .headline6,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .bottomRight,
+                                                          child:
+                                                              GestureDetector(
+                                                            child: Container(
+                                                              decoration: BoxDecoration(
+                                                                  color: Color(
+                                                                      0xFF2F2F2F),
+                                                                  borderRadius: BorderRadius.only(
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              20),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              20))),
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(0),
+                                                              child: Padding(
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .fromLTRB(
+                                                                            10,
+                                                                            5,
+                                                                            10,
+                                                                            5),
+                                                                child: Icon(
+                                                                  JamIcons
+                                                                      .close,
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            onTap: () async {
+                                                              Navigator.pop(
+                                                                  context);
+                                                            },
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : Positioned(
+                                              top: childOffset.dy +
+                                                  childSize.height * 1 / 2,
+                                              left: childOffset.dx,
+                                              child: TweenAnimationBuilder(
+                                                duration:
+                                                    Duration(milliseconds: 200),
+                                                builder: (BuildContext context,
+                                                    value, Widget child) {
+                                                  return Transform.scale(
+                                                    scale: value,
+                                                    alignment:
+                                                        Alignment.bottomRight,
+                                                    child: child,
+                                                  );
+                                                },
+                                                tween:
+                                                    Tween(begin: 0.0, end: 1.0),
+                                                child: Container(
+                                                  width: childSize.width,
+                                                  height:
+                                                      childSize.height * 1 / 2,
+                                                  decoration: BoxDecoration(
+                                                    color: Color(0xFF2F2F2F),
+                                                    borderRadius:
+                                                        const BorderRadius.all(
+                                                            Radius.circular(
+                                                                20.0)),
+                                                  ),
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        const BorderRadius.all(
+                                                            Radius.circular(
+                                                                20.0)),
+                                                    child: Stack(
+                                                      fit: StackFit.expand,
+                                                      children: <Widget>[
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .fromLTRB(
+                                                                  15,
+                                                                  7,
+                                                                  15,
+                                                                  15),
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceEvenly,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: <Widget>[
+                                                              Row(
+                                                                children: [
+                                                                  Icon(
+                                                                    JamIcons
+                                                                        .heart_f,
+                                                                    color: Colors
+                                                                        .white70,
+                                                                    size: 20,
+                                                                  ),
+                                                                  SizedBox(
+                                                                      width: 5),
+                                                                  Text(
+                                                                    "Likes: " +
+                                                                        Provider.of<FavouriteProvider>(context,
+                                                                                listen: false)
+                                                                            .liked[index]["fav"]
+                                                                            .toString(),
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .headline6,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Row(
+                                                                children: [
+                                                                  Icon(
+                                                                    JamIcons
+                                                                        .eye,
+                                                                    color: Colors
+                                                                        .white70,
+                                                                    size: 20,
+                                                                  ),
+                                                                  SizedBox(
+                                                                      width: 5),
+                                                                  Text(
+                                                                    "Views: " +
+                                                                        Provider.of<FavouriteProvider>(context,
+                                                                                listen: false)
+                                                                            .liked[index]["views"]
+                                                                            .toString(),
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .headline6,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Row(
+                                                                children: [
+                                                                  Icon(
+                                                                    JamIcons
+                                                                        .set_square,
+                                                                    color: Colors
+                                                                        .white70,
+                                                                    size: 20,
+                                                                  ),
+                                                                  SizedBox(
+                                                                      width: 5),
+                                                                  Text(
+                                                                    Provider.of<FavouriteProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .liked[
+                                                                            index]
+                                                                            [
+                                                                            "resolution"]
+                                                                        .toString(),
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .headline6,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .bottomRight,
+                                                          child:
+                                                              GestureDetector(
+                                                            child: Container(
+                                                              decoration: BoxDecoration(
+                                                                  color: Color(
+                                                                      0xFF2F2F2F),
+                                                                  borderRadius: BorderRadius.only(
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              20),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              20))),
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(0),
+                                                              child: Padding(
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .fromLTRB(
+                                                                            10,
+                                                                            5,
+                                                                            10,
+                                                                            5),
+                                                                child: Icon(
+                                                                  JamIcons
+                                                                      .close,
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            onTap: () async {
+                                                              Navigator.pop(
+                                                                  context);
+                                                            },
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                              : provider.length > 6 &&
+                                      provider.substring(0, 6) == "Colors"
+                                  ? Positioned(
+                                      top: childOffset.dy +
+                                          childSize.height * 2 / 8,
+                                      left: childOffset.dx,
+                                      child: TweenAnimationBuilder(
+                                        duration: Duration(milliseconds: 200),
+                                        builder: (BuildContext context, value,
+                                            Widget child) {
+                                          return Transform.scale(
+                                            scale: value,
+                                            alignment: Alignment.bottomRight,
+                                            child: child,
+                                          );
+                                        },
+                                        tween: Tween(begin: 0.0, end: 1.0),
+                                        child: Container(
+                                          width: childSize.width,
+                                          height: childSize.height * 6 / 8,
                                           decoration: BoxDecoration(
                                             color: Color(0xFF2F2F2F),
                                             borderRadius:
@@ -703,12 +1431,12 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                   Colors.white,
                                                               size: 20),
                                                           label: Text(
-                                                            Provider.of<FavouriteProvider>(
+                                                            Provider.of<PexelsProvider>(
                                                                     context,
                                                                     listen:
                                                                         false)
-                                                                .liked[index][
-                                                                    "photographer"]
+                                                                .wallsC[index]
+                                                                .photographer
                                                                 .toString(),
                                                             style: Theme.of(
                                                                     context)
@@ -720,6 +1448,53 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                 ),
                                                           ),
                                                           onPressed: () {}),
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .fromLTRB(
+                                                                0, 5, 0, 10),
+                                                        child: Text(
+                                                          Provider.of<PexelsProvider>(context, listen: false)
+                                                                      .wallsC[
+                                                                          index]
+                                                                      .url
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          "https://www.pexels.com/photo/", "")
+                                                                      .replaceAll(
+                                                                          "-", " ")
+                                                                      .replaceAll(
+                                                                          "/", "")
+                                                                      .length >
+                                                                  8
+                                                              ? Provider.of<PexelsProvider>(context, listen: false)
+                                                                      .wallsC[
+                                                                          index]
+                                                                      .url
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          "https://www.pexels.com/photo/", "")
+                                                                      .replaceAll(
+                                                                          "-", " ")
+                                                                      .replaceAll(
+                                                                          "/",
+                                                                          "")[0]
+                                                                      .toUpperCase() +
+                                                                  Provider.of<PexelsProvider>(context, listen: false)
+                                                                      .wallsC[index]
+                                                                      .url
+                                                                      .toString()
+                                                                      .replaceAll("https://www.pexels.com/photo/", "")
+                                                                      .replaceAll("-", " ")
+                                                                      .replaceAll("/", "")
+                                                                      .substring(1, Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length - 7)
+                                                              : Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
+                                                          style:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .headline5,
+                                                        ),
+                                                      ),
                                                       Row(
                                                         children: [
                                                           Icon(
@@ -730,13 +1505,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                           ),
                                                           SizedBox(width: 5),
                                                           Text(
-                                                            Provider.of<FavouriteProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .liked[index][
-                                                                    "resolution"]
-                                                                .toString(),
+                                                            "${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].height.toString()}",
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
@@ -788,7 +1557,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                     )
                                   : Positioned(
                                       top: childOffset.dy +
-                                          childSize.height * 1 / 2,
+                                          childSize.height * 2 / 8,
                                       left: childOffset.dx,
                                       child: TweenAnimationBuilder(
                                         duration: Duration(milliseconds: 200),
@@ -803,7 +1572,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                         tween: Tween(begin: 0.0, end: 1.0),
                                         child: Container(
                                           width: childSize.width,
-                                          height: childSize.height * 1 / 2,
+                                          height: childSize.height * 6 / 8,
                                           decoration: BoxDecoration(
                                             color: Color(0xFF2F2F2F),
                                             borderRadius:
@@ -829,55 +1598,96 @@ class FocusedMenuDetails extends StatelessWidget {
                                                         CrossAxisAlignment
                                                             .start,
                                                     children: <Widget>[
-                                                      Row(
-                                                        children: [
-                                                          Icon(
-                                                            JamIcons.heart_f,
-                                                            color:
-                                                                Colors.white70,
-                                                            size: 20,
-                                                          ),
-                                                          SizedBox(width: 5),
-                                                          Text(
-                                                            "Likes: " +
-                                                                Provider.of<FavouriteProvider>(
+                                                      ActionChip(
+                                                          pressElevation: 5,
+                                                          padding:
+                                                              EdgeInsets.fromLTRB(
+                                                                  14, 11, 14, 11),
+                                                          avatar: Icon(JamIcons.ordered_list,
+                                                              color: HexColor(Provider.of<WallHavenProvider>(context, listen: false).walls[index].colors[Provider.of<WallHavenProvider>(context, listen: false).walls[index].colors.length - 1]).computeLuminance() > 0.5
+                                                                  ? Colors.black
+                                                                  : Colors
+                                                                      .white,
+                                                              size: 20),
+                                                          backgroundColor: HexColor(Provider.of<WallHavenProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .wallsS[index]
+                                                              .colors[Provider.of<WallHavenProvider>(context, listen: false)
+                                                                  .wallsS[index]
+                                                                  .colors
+                                                                  .length -
+                                                              1]),
+                                                          label: Text(
+                                                            Provider.of<WallHavenProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .liked[
+                                                                    .wallsS[
                                                                         index]
-                                                                        ["fav"]
-                                                                    .toString(),
-                                                            style: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .headline6,
+                                                                    .category
+                                                                    .toString()[
+                                                                        0]
+                                                                    .toUpperCase() +
+                                                                Provider.of<WallHavenProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .wallsS[
+                                                                        index]
+                                                                    .category
+                                                                    .toString()
+                                                                    .substring(
+                                                                        1),
+                                                            style:
+                                                                Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .headline4
+                                                                    .copyWith(
+                                                                      color: HexColor(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors[Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors.length - 1]).computeLuminance() >
+                                                                              0.5
+                                                                          ? Colors
+                                                                              .black
+                                                                          : Colors
+                                                                              .white,
+                                                                    ),
                                                           ),
-                                                        ],
+                                                          onPressed: () {}),
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .fromLTRB(
+                                                                0, 5, 0, 10),
+                                                        child: Text(
+                                                          Provider.of<WallHavenProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .wallsS[index]
+                                                              .id
+                                                              .toString()
+                                                              .toUpperCase(),
+                                                          style:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .headline5,
+                                                        ),
                                                       ),
                                                       Row(
                                                         children: [
                                                           Icon(
                                                             JamIcons.eye,
+                                                            size: 20,
                                                             color:
                                                                 Colors.white70,
-                                                            size: 20,
                                                           ),
-                                                          SizedBox(width: 5),
+                                                          SizedBox(width: 10),
                                                           Text(
-                                                            "Views: " +
-                                                                Provider.of<FavouriteProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .liked[
-                                                                        index][
-                                                                        "views"]
-                                                                    .toString(),
+                                                            "Views: ${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()}",
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .headline6,
+                                                                .bodyText2,
                                                           ),
                                                         ],
                                                       ),
@@ -885,23 +1695,17 @@ class FocusedMenuDetails extends StatelessWidget {
                                                         children: [
                                                           Icon(
                                                             JamIcons.set_square,
+                                                            size: 20,
                                                             color:
                                                                 Colors.white70,
-                                                            size: 20,
                                                           ),
-                                                          SizedBox(width: 5),
+                                                          SizedBox(width: 10),
                                                           Text(
-                                                            Provider.of<FavouriteProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .liked[index][
-                                                                    "resolution"]
-                                                                .toString(),
+                                                            "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].resolution.toString()}",
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .headline6,
+                                                                .bodyText2,
                                                           ),
                                                         ],
                                                       ),
@@ -946,384 +1750,44 @@ class FocusedMenuDetails extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                    )
-                          : provider.length > 6 &&
-                                  provider.substring(0, 6) == "Colors"
-                              ? Positioned(
-                                  top:
-                                      childOffset.dy + childSize.height * 2 / 8,
-                                  left: childOffset.dx,
-                                  child: TweenAnimationBuilder(
-                                    duration: Duration(milliseconds: 200),
-                                    builder: (BuildContext context, value,
-                                        Widget child) {
-                                      return Transform.scale(
-                                        scale: value,
-                                        alignment: Alignment.bottomRight,
-                                        child: child,
-                                      );
-                                    },
-                                    tween: Tween(begin: 0.0, end: 1.0),
-                                    child: Container(
-                                      width: childSize.width,
-                                      height: childSize.height * 6 / 8,
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFF2F2F2F),
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(20.0)),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(20.0)),
-                                        child: Stack(
-                                          fit: StackFit.expand,
-                                          children: <Widget>[
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      15, 7, 15, 15),
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceEvenly,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: <Widget>[
-                                                  ActionChip(
-                                                      pressElevation: 5,
-                                                      padding:
-                                                          EdgeInsets.fromLTRB(
-                                                              14, 11, 14, 11),
-                                                      backgroundColor:
-                                                          Colors.black,
-                                                      avatar: Icon(
-                                                          JamIcons.camera,
-                                                          color: Colors.white,
-                                                          size: 20),
-                                                      label: Text(
-                                                        Provider.of<PexelsProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .wallsC[index]
-                                                            .photographer
-                                                            .toString(),
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .headline4
-                                                            .copyWith(
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                      ),
-                                                      onPressed: () {}),
-                                                  Padding(
-                                                    padding: const EdgeInsets
-                                                        .fromLTRB(0, 5, 0, 10),
-                                                    child: Text(
-                                                      Provider.of<PexelsProvider>(context, listen: false)
-                                                                  .wallsC[index]
-                                                                  .url
-                                                                  .toString()
-                                                                  .replaceAll(
-                                                                      "https://www.pexels.com/photo/", "")
-                                                                  .replaceAll(
-                                                                      "-", " ")
-                                                                  .replaceAll(
-                                                                      "/", "")
-                                                                  .length >
-                                                              8
-                                                          ? Provider.of<PexelsProvider>(context, listen: false)
-                                                                  .wallsC[index]
-                                                                  .url
-                                                                  .toString()
-                                                                  .replaceAll(
-                                                                      "https://www.pexels.com/photo/", "")
-                                                                  .replaceAll(
-                                                                      "-", " ")
-                                                                  .replaceAll(
-                                                                      "/",
-                                                                      "")[0]
-                                                                  .toUpperCase() +
-                                                              Provider.of<PexelsProvider>(
-                                                                      context,
-                                                                      listen: false)
-                                                                  .wallsC[index]
-                                                                  .url
-                                                                  .toString()
-                                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                                  .replaceAll("-", " ")
-                                                                  .replaceAll("/", "")
-                                                                  .substring(1, Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length - 7)
-                                                          : Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .headline5,
-                                                    ),
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.set_square,
-                                                        color: Colors.white70,
-                                                        size: 20,
-                                                      ),
-                                                      SizedBox(width: 5),
-                                                      Text(
-                                                        "${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].height.toString()}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .headline6,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.bottomRight,
-                                              child: GestureDetector(
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                      color: Color(0xFF2F2F2F),
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                              topLeft: Radius
-                                                                  .circular(20),
-                                                              bottomRight:
-                                                                  Radius
-                                                                      .circular(
-                                                                          20))),
-                                                  padding: EdgeInsets.all(0),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.fromLTRB(
-                                                            10, 5, 10, 5),
-                                                    child: Icon(
-                                                      JamIcons.close,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                                onTap: () async {
-                                                  Navigator.pop(context);
-                                                },
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                      ),
                                     ),
-                                  ),
-                                )
-                              : Positioned(
-                                  top:
-                                      childOffset.dy + childSize.height * 2 / 8,
-                                  left: childOffset.dx,
-                                  child: TweenAnimationBuilder(
-                                    duration: Duration(milliseconds: 200),
-                                    builder: (BuildContext context, value,
-                                        Widget child) {
-                                      return Transform.scale(
-                                        scale: value,
-                                        alignment: Alignment.bottomRight,
-                                        child: child,
-                                      );
-                                    },
-                                    tween: Tween(begin: 0.0, end: 1.0),
-                                    child: Container(
-                                      width: childSize.width,
-                                      height: childSize.height * 6 / 8,
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFF2F2F2F),
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(20.0)),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(20.0)),
-                                        child: Stack(
-                                          fit: StackFit.expand,
-                                          children: <Widget>[
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      15, 7, 15, 15),
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceEvenly,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: <Widget>[
-                                                  ActionChip(
-                                                      pressElevation: 5,
-                                                      padding: EdgeInsets.fromLTRB(
-                                                          14, 11, 14, 11),
-                                                      avatar: Icon(
-                                                          JamIcons.ordered_list,
-                                                          color: HexColor(Provider.of<WallHavenProvider>(context, listen: false).walls[index].colors[Provider.of<WallHavenProvider>(context, listen: false).walls[index].colors.length - 1]).computeLuminance() > 0.5
-                                                              ? Colors.black
-                                                              : Colors.white,
-                                                          size: 20),
-                                                      backgroundColor: HexColor(
-                                                          Provider.of<WallHavenProvider>(context,
-                                                                  listen: false)
-                                                              .wallsS[index]
-                                                              .colors[Provider.of<WallHavenProvider>(context, listen: false)
-                                                                  .wallsS[index]
-                                                                  .colors
-                                                                  .length -
-                                                              1]),
-                                                      label: Text(
-                                                        Provider.of<WallHavenProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .wallsS[index]
-                                                                .category
-                                                                .toString()[0]
-                                                                .toUpperCase() +
-                                                            Provider.of<WallHavenProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .wallsS[index]
-                                                                .category
-                                                                .toString()
-                                                                .substring(1),
-                                                        style:
-                                                            Theme.of(context)
-                                                                .textTheme
-                                                                .headline4
-                                                                .copyWith(
-                                                                  color: HexColor(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors[Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors.length - 1])
-                                                                              .computeLuminance() >
-                                                                          0.5
-                                                                      ? Colors
-                                                                          .black
-                                                                      : Colors
-                                                                          .white,
-                                                                ),
-                                                      ),
-                                                      onPressed: () {}),
-                                                  Padding(
-                                                    padding: const EdgeInsets
-                                                        .fromLTRB(0, 5, 0, 10),
-                                                    child: Text(
-                                                      Provider.of<WallHavenProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .wallsS[index]
-                                                          .id
-                                                          .toString()
-                                                          .toUpperCase(),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .headline5,
-                                                    ),
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.eye,
-                                                        size: 20,
-                                                        color: Colors.white70,
-                                                      ),
-                                                      SizedBox(width: 10),
-                                                      Text(
-                                                        "Views: ${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyText2,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.set_square,
-                                                        size: 20,
-                                                        color: Colors.white70,
-                                                      ),
-                                                      SizedBox(width: 10),
-                                                      Text(
-                                                        "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].resolution.toString()}",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyText2,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.bottomRight,
-                                              child: GestureDetector(
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                      color: Color(0xFF2F2F2F),
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                              topLeft: Radius
-                                                                  .circular(20),
-                                                              bottomRight:
-                                                                  Radius
-                                                                      .circular(
-                                                                          20))),
-                                                  padding: EdgeInsets.all(0),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.fromLTRB(
-                                                            10, 5, 10, 5),
-                                                    child: Icon(
-                                                      JamIcons.close,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                                onTap: () async {
-                                                  Navigator.pop(context);
-                                                },
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
               Positioned(
                 top: topOffset,
                 left: leftOffset,
                 child: SetWallpaperButton(
+                  colorChanged: false,
                   url: provider == "WallHaven"
                       ? Provider.of<WallHavenProvider>(context, listen: false)
                           .walls[index]
                           .path
                           .toString()
-                      : provider == "Pexels"
-                          ? Provider.of<PexelsProvider>(context, listen: false)
-                              .wallsP[index]
-                              .src["original"]
+                      : provider == "Prism"
+                          ? Provider.of<PrismProvider>(context, listen: false)
+                              .subPrismWalls[index]["wallpaper_url"]
                               .toString()
-                          : provider == "Liked"
-                              ? Provider.of<FavouriteProvider>(context,
+                          : provider == "Pexels"
+                              ? Provider.of<PexelsProvider>(context,
                                       listen: false)
-                                  .liked[index]["url"]
+                                  .wallsP[index]
+                                  .src["original"]
                                   .toString()
-                              : provider.length > 6 &&
-                                      provider.substring(0, 6) == "Colors"
-                                  ? Provider.of<PexelsProvider>(context,
+                              : provider == "Liked"
+                                  ? Provider.of<FavouriteProvider>(context,
                                           listen: false)
-                                      .wallsC[index]
-                                      .src["original"]
+                                      .liked[index]["url"]
                                       .toString()
-                                  : Provider.of<WallHavenProvider>(context,
-                                          listen: false)
-                                      .wallsS[index]
-                                      .path
-                                      .toString(),
+                                  : provider.length > 6 &&
+                                          provider.substring(0, 6) == "Colors"
+                                      ? Provider.of<PexelsProvider>(context,
+                                              listen: false)
+                                          .wallsC[index]
+                                          .src["original"]
+                                          .toString()
+                                      : Provider.of<WallHavenProvider>(context,
+                                              listen: false)
+                                          .wallsS[index]
+                                          .path
+                                          .toString(),
                 ),
               ),
               Positioned(
@@ -1342,91 +1806,112 @@ class FocusedMenuDetails extends StatelessWidget {
                             .walls[index],
                         trash: false,
                       )
-                    : provider == "Pexels"
+                    : provider == "Prism"
                         ? FavouriteWallpaperButton(
-                            id: Provider.of<PexelsProvider>(context,
+                            id: Provider.of<PrismProvider>(context,
                                     listen: false)
-                                .wallsP[index]
-                                .id
+                                .subPrismWalls[index]["id"]
                                 .toString(),
-                            provider: "Pexels",
-                            pexels: Provider.of<PexelsProvider>(context,
+                            provider: "Prism",
+                            prism: Provider.of<PrismProvider>(context,
                                     listen: false)
-                                .wallsP[index],
+                                .subPrismWalls[index],
                             trash: false,
                           )
-                        : provider == "Liked"
+                        : provider == "Pexels"
                             ? FavouriteWallpaperButton(
-                                id: Provider.of<FavouriteProvider>(context,
+                                id: Provider.of<PexelsProvider>(context,
                                         listen: false)
-                                    .liked[index]["id"]
+                                    .wallsP[index]
+                                    .id
                                     .toString(),
-                                provider: Provider.of<FavouriteProvider>(
-                                        context,
+                                provider: "Pexels",
+                                pexels: Provider.of<PexelsProvider>(context,
                                         listen: false)
-                                    .liked[index]["provider"]
-                                    .toString(),
-                                trash: true,
+                                    .wallsP[index],
+                                trash: false,
                               )
-                            : provider.length > 6 &&
-                                    provider.substring(0, 6) == "Colors"
+                            : provider == "Liked"
                                 ? FavouriteWallpaperButton(
-                                    id: Provider.of<PexelsProvider>(context,
+                                    id: Provider.of<FavouriteProvider>(context,
                                             listen: false)
-                                        .wallsC[index]
-                                        .id
+                                        .liked[index]["id"]
                                         .toString(),
-                                    provider: "Pexels",
-                                    pexels: Provider.of<PexelsProvider>(context,
-                                            listen: false)
-                                        .wallsC[index],
-                                    trash: false,
-                                  )
-                                : FavouriteWallpaperButton(
-                                    id: Provider.of<WallHavenProvider>(context,
-                                            listen: false)
-                                        .wallsS[index]
-                                        .id
-                                        .toString(),
-                                    provider: "WallHaven",
-                                    wallhaven: Provider.of<WallHavenProvider>(
+                                    provider: Provider.of<FavouriteProvider>(
                                             context,
                                             listen: false)
-                                        .wallsS[index],
-                                    trash: false,
-                                  ),
+                                        .liked[index]["provider"]
+                                        .toString(),
+                                    trash: true,
+                                  )
+                                : provider.length > 6 &&
+                                        provider.substring(0, 6) == "Colors"
+                                    ? FavouriteWallpaperButton(
+                                        id: Provider.of<PexelsProvider>(context,
+                                                listen: false)
+                                            .wallsC[index]
+                                            .id
+                                            .toString(),
+                                        provider: "Pexels",
+                                        pexels: Provider.of<PexelsProvider>(
+                                                context,
+                                                listen: false)
+                                            .wallsC[index],
+                                        trash: false,
+                                      )
+                                    : FavouriteWallpaperButton(
+                                        id: Provider.of<WallHavenProvider>(
+                                                context,
+                                                listen: false)
+                                            .wallsS[index]
+                                            .id
+                                            .toString(),
+                                        provider: "WallHaven",
+                                        wallhaven:
+                                            Provider.of<WallHavenProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .wallsS[index],
+                                        trash: false,
+                                      ),
               ),
               Positioned(
                 top: topOffset + fabWallTopOffset,
                 left: leftOffset + fabWallLeftOffset,
                 child: DownloadButton(
+                  colorChanged: false,
                   link: provider == "WallHaven"
                       ? Provider.of<WallHavenProvider>(context, listen: false)
                           .walls[index]
                           .path
                           .toString()
-                      : provider == "Pexels"
-                          ? Provider.of<PexelsProvider>(context, listen: false)
-                              .wallsP[index]
-                              .src["original"]
+                      : provider == "Prism"
+                          ? Provider.of<PrismProvider>(context, listen: false)
+                              .subPrismWalls[index]["wallpaper_url"]
                               .toString()
-                          : provider == "Liked"
-                              ? Provider.of<FavouriteProvider>(context,
+                          : provider == "Pexels"
+                              ? Provider.of<PexelsProvider>(context,
                                       listen: false)
-                                  .liked[index]["url"]
+                                  .wallsP[index]
+                                  .src["original"]
                                   .toString()
-                              : provider.length > 6 &&
-                                      provider.substring(0, 6) == "Colors"
-                                  ? Provider.of<PexelsProvider>(context,
+                              : provider == "Liked"
+                                  ? Provider.of<FavouriteProvider>(context,
                                           listen: false)
-                                      .wallsC[index]
-                                      .src["original"]
+                                      .liked[index]["url"]
                                       .toString()
-                                  : Provider.of<WallHavenProvider>(context,
-                                          listen: false)
-                                      .wallsS[index]
-                                      .path
-                                      .toString(),
+                                  : provider.length > 6 &&
+                                          provider.substring(0, 6) == "Colors"
+                                      ? Provider.of<PexelsProvider>(context,
+                                              listen: false)
+                                          .wallsC[index]
+                                          .src["original"]
+                                          .toString()
+                                      : Provider.of<WallHavenProvider>(context,
+                                              listen: false)
+                                          .wallsS[index]
+                                          .path
+                                          .toString(),
                 ),
               ),
             ],

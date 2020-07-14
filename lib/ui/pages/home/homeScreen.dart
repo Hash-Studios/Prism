@@ -1,4 +1,4 @@
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/widgets/home/gridLoader.dart';
@@ -144,17 +144,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (isNew) {
-      Future.delayed(Duration(seconds: 0))
-          .then((value) => showChangelogCheck(context));
-    }
+    // if (isNew) {
+    //   Future.delayed(Duration(seconds: 0))
+    //       .then((value) => showChangelogCheck(context));
+    // }
     initDynamicLinks(context);
     return WillPopScope(
       onWillPop: onWillPop,
       child: GridLoader(
         future:
-            Provider.of<WallHavenProvider>(context, listen: false).getData(),
-        provider: "WallHaven",
+            Provider.of<PrismProvider>(context, listen: false).getPrismWalls(),
+        provider: "Prism",
       ),
     );
   }
