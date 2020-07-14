@@ -1,4 +1,3 @@
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 void showTutorialComplete(BuildContext context) {

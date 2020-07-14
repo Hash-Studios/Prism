@@ -1604,7 +1604,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                               EdgeInsets.fromLTRB(
                                                                   14, 11, 14, 11),
                                                           avatar: Icon(JamIcons.ordered_list,
-                                                              color: HexColor(Provider.of<WallHavenProvider>(context, listen: false).walls[index].colors[Provider.of<WallHavenProvider>(context, listen: false).walls[index].colors.length - 1]).computeLuminance() > 0.5
+                                                              color: HexColor(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors[Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors.length - 1]).computeLuminance() > 0.5
                                                                   ? Colors.black
                                                                   : Colors
                                                                       .white,
