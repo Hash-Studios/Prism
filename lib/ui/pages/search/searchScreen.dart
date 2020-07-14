@@ -22,14 +22,21 @@ class _SearchScreenState extends State<SearchScreen> {
     return true;
   }
 
-  // final List<String> tags = [
-  //   'Home',
-  //   'Abstract',
-  //   'Community',
-  //   'Nature',
-  //   'Cars',
-  //   'Comics',
-  // ];
+  final List<String> tags = [
+    'Art',
+    'Abstract',
+    'Patterns',
+    'Geometry',
+    'Cyber',
+    'Cars',
+    'Comics',
+    'Anime',
+    'Illustrations',
+    'Games',
+    'Street',
+    'Flowers',
+    'Epic',
+  ];
   bool isSubmitted;
   TextEditingController searchController = TextEditingController();
   Future _future;
@@ -97,36 +104,49 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-            // bottom: PreferredSize(
-            //     child: SizedBox(
-            //       width: MediaQuery.of(context).size.width,
-            //       height: 60,
-            //       child: ListView.builder(
-            //         scrollDirection: Axis.horizontal,
-            //         itemCount: tags.length,
-            //         itemBuilder: (context, index) {
-            //           return Align(
-            //             alignment: Alignment.center,
-            //             child: Stack(
-            //               children: <Widget>[
-            //                 Padding(
-            //                   padding: const EdgeInsets.all(5),
-            //                   child: ActionChip(
-            //                       pressElevation: 5,
-            //                       padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-            //                       backgroundColor: Theme.of(context).hintColor,
-            //                       label: Text(tags[index],
-            //                           style:
-            //                               Theme.of(context).textTheme.headline4),
-            //                       onPressed: () {}),
-            //                 ),
-            //               ],
-            //             ),
-            //           );
-            //         },
-            //       ),
-            //     ),
-            //     preferredSize: Size(double.infinity, 55)),
+            bottom: PreferredSize(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: 60,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: tags.length,
+                    itemBuilder: (context, index) {
+                      return Align(
+                        alignment: Alignment.center,
+                        child: Stack(
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
+                              child: ActionChip(
+                                  pressElevation: 5,
+                                  padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                  backgroundColor: Theme.of(context).hintColor,
+                                  label: Text(tags[index],
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline4),
+                                  onPressed: () {
+                                    setState(() {
+                                      searchController.text = tags[index];
+                                      isSubmitted = true;
+                                      Provider.of<WallHavenProvider>(context,
+                                              listen: false)
+                                          .wallsS = [];
+                                      _future = Provider.of<WallHavenProvider>(
+                                              context,
+                                              listen: false)
+                                          .getWallsbyQuery(tags[index]);
+                                    });
+                                  }),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                preferredSize: Size(double.infinity, 55)),
           ),
           body: BottomBar(
             child: isSubmitted
