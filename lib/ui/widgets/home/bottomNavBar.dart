@@ -175,7 +175,7 @@ class _BottomNavBarState extends State<BottomNavBar>
       child: Material(
         color: Colors.transparent,
         child: Row(
-          key: globals.keyBottomBar,
+          // key: globals.keyBottomBar,
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -217,8 +217,17 @@ class _BottomNavBarState extends State<BottomNavBar>
                 onPressed: () {
                   navStack.last == "Home"
                       ? print("Currently on Home")
-                      : Navigator.of(context)
-                          .pushNamedAndRemoveUntil(HomeRoute, (route) => false);
+                      : Navigator.of(context).popUntil((route) {
+                          if (navStack.last != "Home") {
+                            navStack.removeLast();
+                            print(navStack);
+                            return false;
+                          } else {
+                            print(navStack);
+                            return true;
+                          }
+                        });
+                  // .pushNamedAndRemoveUntil(HomeRoute, (route) => false);
                   // navStack.last == "Home" ? print("") : navStack = ["Home"];
                 },
               ),
@@ -226,7 +235,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                key: globals.keySearchButton,
+                // key: globals.keySearchButton,
                 padding: EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -272,7 +281,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                key: globals.keyFavButton,
+                // key: globals.keyFavButton,
                 padding: EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -328,7 +337,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
               child: IconButton(
-                key: globals.keyProfileButton,
+                // key: globals.keyProfileButton,
                 padding: EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
