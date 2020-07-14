@@ -9,19 +9,11 @@ var updateAvailable = false;
 var versionInfo = {};
 var noNewNotification = false;
 
-<<<<<<< HEAD
-GlobalKey keyCategoriesBar = GlobalKey();
-GlobalKey keyBottomBar = GlobalKey();
-GlobalKey keySearchButton = GlobalKey();
-GlobalKey keyFavButton = GlobalKey();
-GlobalKey keyProfileButton = GlobalKey();
-
-AutoScrollController categoryController =
-    AutoScrollController(axis: Axis.horizontal);
-=======
 // GlobalKey keyCategoriesBar = GlobalKey();
 // GlobalKey keyBottomBar = GlobalKey();
 // GlobalKey keySearchButton = GlobalKey();
 // GlobalKey keyFavButton = GlobalKey();
 // GlobalKey keyProfileButton = GlobalKey();
->>>>>>> e008c86... fixed global key bugs 🤟😀😀
+
+AutoScrollController categoryController =
+    AutoScrollController(axis: Axis.horizontal);
