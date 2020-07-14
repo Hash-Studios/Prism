@@ -1,10 +1,7 @@
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 final databaseReference = Firestore.instance;
 List<Color> colors = [
