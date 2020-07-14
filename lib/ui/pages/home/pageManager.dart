@@ -46,8 +46,14 @@ class _PageManagerState extends State<PageManager> {
           child: PageView.builder(
               onPageChanged: (index) {
                 print("Index cat: " + index.toString());
-                categoryController.scrollToIndex(index,
-                    preferPosition: AutoScrollPosition.begin);
+                if (index < 2) {
+                  categoryController.scrollToIndex(index,
+                      preferPosition: AutoScrollPosition.begin);
+                } else {
+                  categoryController.scrollToIndex(index + 1,
+                      preferPosition: AutoScrollPosition.begin);
+                }
+
                 if (index == 0) {
                   Provider.of<CategoryProvider>(context, listen: false)
                       .updateSelectedCategory("Home");
