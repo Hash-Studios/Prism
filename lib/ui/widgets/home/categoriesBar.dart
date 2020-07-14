@@ -83,180 +83,50 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                       .categories[index],
                                   style: Theme.of(context).textTheme.headline4),
                               onPressed: () {
-                                if (Provider.of<CategoryProvider>(context,
-                                            listen: false)
-                                        .selectedCategory ==
-                                    "Home") {
-                                  if (Provider.of<CategoryProvider>(context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Home") {
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Curated") {
-                                    PM.pageController.jumpToPage(1);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Abstract") {
-                                    PM.pageController.jumpToPage(2);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Nature") {
-                                    PM.pageController.jumpToPage(3);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Colors") {
-                                    showColors(context);
-                                  }
-                                } else if (Provider.of<CategoryProvider>(
-                                            context,
-                                            listen: false)
-                                        .selectedCategory ==
-                                    "Curated") {
-                                  if (Provider.of<CategoryProvider>(context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Home") {
-                                    print(navStack);
+                                switch (Provider.of<CategoryProvider>(context,
+                                        listen: false)
+                                    .categories[index]) {
+                                  case "Home":
                                     PM.pageController.jumpToPage(0);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Curated") {
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Abstract") {
-                                    PM.pageController.jumpToPage(2);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Nature") {
-                                    PM.pageController.jumpToPage(3);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Colors") {
-                                    showColors(context);
-                                  }
-                                } else if (Provider.of<CategoryProvider>(
-                                            context,
-                                            listen: false)
-                                        .selectedCategory ==
-                                    "Abstract") {
-                                  if (Provider.of<CategoryProvider>(context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Home") {
-                                    print(navStack);
-                                    PM.pageController.jumpToPage(0);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Curated") {
+                                    break;
+                                  case "Curated":
                                     PM.pageController.jumpToPage(1);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Abstract") {
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Nature") {
-                                    PM.pageController.jumpToPage(3);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Colors") {
-                                    showColors(context);
-                                  }
-                                } else if (Provider.of<CategoryProvider>(
-                                            context,
-                                            listen: false)
-                                        .selectedCategory ==
-                                    "Nature") {
-                                  if (Provider.of<CategoryProvider>(context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Home") {
-                                    print(navStack);
-                                    PM.pageController.jumpToPage(0);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Curated") {
-                                    PM.pageController.jumpToPage(1);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Abstract") {
+                                    break;
+                                  case "Abstract":
                                     PM.pageController.jumpToPage(2);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Nature") {
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Colors") {
-                                    showColors(context);
-                                  }
-                                } else if (Provider.of<CategoryProvider>(
-                                            context,
-                                            listen: false)
-                                        .selectedCategory ==
-                                    "Colors") {
-                                  if (Provider.of<CategoryProvider>(context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Home") {
-                                    print(navStack);
-                                    PM.pageController.jumpToPage(0);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Curated") {
-                                    PM.pageController.jumpToPage(1);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Abstract") {
-                                    PM.pageController.jumpToPage(2);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Nature") {
+                                    break;
+                                  case "Nature":
                                     PM.pageController.jumpToPage(3);
-                                  } else if (Provider.of<CategoryProvider>(
-                                              context,
-                                              listen: false)
-                                          .categories[index] ==
-                                      "Colors") {
-                                    showColors(context);
-                                  }
+                                    break;
+                                  case "Art":
+                                    PM.pageController.jumpToPage(4);
+                                    break;
+                                  case "Minimal":
+                                    PM.pageController.jumpToPage(5);
+                                    break;
+                                  case "Textures":
+                                    PM.pageController.jumpToPage(6);
+                                    break;
+                                  case "Monochrome":
+                                    PM.pageController.jumpToPage(7);
+                                    break;
+                                  case "Space":
+                                    PM.pageController.jumpToPage(8);
+                                    break;
+                                  case "Animals":
+                                    PM.pageController.jumpToPage(9);
+                                    break;
+                                  case "Neon":
+                                    PM.pageController.jumpToPage(10);
+                                    break;
+                                  case "Sports":
+                                    PM.pageController.jumpToPage(11);
+                                    break;
+                                  case "Music":
+                                    PM.pageController.jumpToPage(12);
+                                    break;
+                                  default:
+                                    break;
                                 }
                               }),
                           crossFadeState: Provider.of<CategoryProvider>(context)
