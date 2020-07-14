@@ -9,8 +9,10 @@ import 'package:permission_handler/permission_handler.dart';
 
 class DownloadButton extends StatefulWidget {
   final String link;
+  final bool colorChanged;
   const DownloadButton({
     @required this.link,
+    @required this.colorChanged,
     Key key,
   }) : super(key: key);
 
@@ -80,18 +82,35 @@ class _DownloadButtonState extends State<DownloadButton> {
     });
     print(widget.link);
     toasts.startDownload();
-    GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
-      analytics.logEvent(
-          name: 'download_wallpaper', parameters: {'link': widget.link});
-      toasts.completedDownload();
-      setState(() {
-        isLoading = false;
+    if (widget.colorChanged) {
+      Future.delayed(Duration(seconds: 2)).then((value) =>
+          GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
+            analytics.logEvent(
+                name: 'download_wallpaper', parameters: {'link': widget.link});
+            toasts.completedDownload();
+            setState(() {
+              isLoading = false;
+            });
+          }).catchError((e) {
+            // toasts.error(e.toString());
+            setState(() {
+              isLoading = false;
+            });
+          }));
+    } else {
+      GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
+        analytics.logEvent(
+            name: 'download_wallpaper', parameters: {'link': widget.link});
+        toasts.completedDownload();
+        setState(() {
+          isLoading = false;
+        });
+      }).catchError((e) {
+        // toasts.error(e.toString());
+        setState(() {
+          isLoading = false;
+        });
       });
-    }).catchError((e) {
-      // toasts.error(e.toString());
-      setState(() {
-        isLoading = false;
-      });
-    });
+    }
   }
 }

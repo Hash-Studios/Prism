@@ -6,9 +6,11 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 
 class SetWallpaperButton extends StatefulWidget {
   final String url;
+  final bool colorChanged;
   const SetWallpaperButton({
     Key key,
     @required this.url,
+    @required this.colorChanged,
   }) : super(key: key);
 
   @override
@@ -142,8 +144,15 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                             setState(() {
                               isLoading = true;
                             });
-                            Future.delayed(Duration(seconds: 1))
-                                .then((value) => _setHomeWallPaper());
+                            if (widget.colorChanged) {
+                              Future.delayed(Duration(seconds: 2)).then(
+                                  (value) =>
+                                      Future.delayed(Duration(seconds: 1)).then(
+                                          (value) => _setHomeWallPaper()));
+                            } else {
+                              Future.delayed(Duration(seconds: 1))
+                                  .then((value) => _setHomeWallPaper());
+                            }
                           }
                         : index == 1
                             ? () async {
@@ -152,8 +161,16 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                                 setState(() {
                                   isLoading = true;
                                 });
-                                Future.delayed(Duration(seconds: 1))
-                                    .then((value) => _setLockWallPaper());
+                                if (widget.colorChanged) {
+                                  Future.delayed(Duration(seconds: 2)).then(
+                                      (value) =>
+                                          Future.delayed(Duration(seconds: 1))
+                                              .then((value) =>
+                                                  _setLockWallPaper()));
+                                } else {
+                                  Future.delayed(Duration(seconds: 1))
+                                      .then((value) => _setLockWallPaper());
+                                }
                               }
                             : () async {
                                 HapticFeedback.vibrate();
@@ -161,8 +178,15 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                                 setState(() {
                                   isLoading = true;
                                 });
-                                Future.delayed(Duration(seconds: 1))
-                                    .then((value) => _setWallPaper());
+                                if (widget.colorChanged) {
+                                  Future.delayed(Duration(seconds: 2)).then(
+                                      (value) => Future.delayed(
+                                              Duration(seconds: 1))
+                                          .then((value) => _setWallPaper()));
+                                } else {
+                                  Future.delayed(Duration(seconds: 1))
+                                      .then((value) => _setWallPaper());
+                                }
                               },
                   );
                 }),
