@@ -1,4 +1,5 @@
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/global/globals.dart';
 import 'package:Prism/ui/pages/categories/abstractScreen.dart';
 import 'package:Prism/ui/pages/categories/animalsScreen.dart';
 import 'package:Prism/ui/pages/categories/artScreen.dart';
@@ -16,6 +17,7 @@ import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/categoriesBar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
 
 PageController pageController = PageController();
 
@@ -44,6 +46,8 @@ class _PageManagerState extends State<PageManager> {
           child: PageView.builder(
               onPageChanged: (index) {
                 print("Index cat: " + index.toString());
+                categoryController.scrollToIndex(index,
+                    preferPosition: AutoScrollPosition.begin);
                 if (index == 0) {
                   Provider.of<CategoryProvider>(context, listen: false)
                       .updateSelectedCategory("Home");
