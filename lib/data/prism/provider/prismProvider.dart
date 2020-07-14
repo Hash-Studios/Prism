@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -19,6 +21,7 @@ class PrismProvider extends ChangeNotifier {
       value.documents.forEach((f) {
         this.prismWalls.add(f.data);
       });
+      this.prismWalls.shuffle(Random.secure());
       print(this.prismWalls.length);
       this.subPrismWalls = this.prismWalls.sublist(0, 24);
     }).catchError((e) {
