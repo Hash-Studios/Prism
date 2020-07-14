@@ -98,16 +98,50 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
       Provider.of<WallHavenProvider>(context, listen: false).getData();
     } else if (widget.provider == "Pexels") {
       Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
-      Provider.of<CategoryProvider>(context, listen: false).selectedCategory ==
-              "Curated"
-          ? Provider.of<PexelsProvider>(context, listen: false).getDataP()
-          : Provider.of<CategoryProvider>(context, listen: false)
-                      .selectedCategory ==
-                  "Abstract"
-              ? Provider.of<PexelsProvider>(context, listen: false)
-                  .getAbstractWalls()
-              : Provider.of<PexelsProvider>(context, listen: false)
-                  .getNatureWalls();
+      switch (Provider.of<CategoryProvider>(context, listen: false)
+          .selectedCategory) {
+        case "Curated":
+          Provider.of<PexelsProvider>(context, listen: false).getDataP();
+          break;
+        case "Abstract":
+          Provider.of<PexelsProvider>(context, listen: false)
+            ..getAbstractWalls();
+          break;
+        case "Nature":
+          Provider.of<PexelsProvider>(context, listen: false).getNatureWalls();
+          break;
+        case "Art":
+          Provider.of<PexelsProvider>(context, listen: false).getArtWalls();
+          break;
+        case "Minimal":
+          Provider.of<PexelsProvider>(context, listen: false).getMinimalWalls();
+          break;
+        case "Textures":
+          Provider.of<PexelsProvider>(context, listen: false)
+              .getTexturesWalls();
+          break;
+        case "MOnochrome":
+          Provider.of<PexelsProvider>(context, listen: false)
+              .getMonochromeWalls();
+          break;
+        case "Space":
+          Provider.of<PexelsProvider>(context, listen: false).getSpaceWalls();
+          break;
+        case "Animals":
+          Provider.of<PexelsProvider>(context, listen: false).getAnimalsWalls();
+          break;
+        case "Neon":
+          Provider.of<PexelsProvider>(context, listen: false).getNeonWalls();
+          break;
+        case "Sports":
+          Provider.of<PexelsProvider>(context, listen: false).getSportsWalls();
+          break;
+        case "Music":
+          Provider.of<PexelsProvider>(context, listen: false).getMusicWalls();
+          break;
+        default:
+          break;
+      }
     } else if (widget.provider == "Prism") {
       Provider.of<PrismProvider>(context, listen: false).prismWalls = [];
       Provider.of<PrismProvider>(context, listen: false).subPrismWalls = [];
@@ -166,19 +200,59 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
               }
             } else if (widget.provider == "Pexels") {
               if (!seeMoreLoader) {
-                Provider.of<CategoryProvider>(context, listen: false)
-                            .selectedCategory ==
-                        "Curated"
-                    ? Provider.of<PexelsProvider>(context, listen: false)
-                        .getDataP()
-                    : Provider.of<CategoryProvider>(context, listen: false)
-                                .selectedCategory ==
-                            "Abstract"
-                        ? Provider.of<PexelsProvider>(context, listen: false)
-                            .getAbstractWalls()
-                        : Provider.of<PexelsProvider>(context, listen: false)
-                            .getNatureWalls();
-
+                switch (Provider.of<CategoryProvider>(context, listen: false)
+                    .selectedCategory) {
+                  case "Curated":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getDataP();
+                    break;
+                  case "Abstract":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                      ..getAbstractWalls();
+                    break;
+                  case "Nature":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getNatureWalls();
+                    break;
+                  case "Art":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getArtWalls();
+                    break;
+                  case "Minimal":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getMinimalWalls();
+                    break;
+                  case "Textures":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getTexturesWalls();
+                    break;
+                  case "MOnochrome":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getMonochromeWalls();
+                    break;
+                  case "Space":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getSpaceWalls();
+                    break;
+                  case "Animals":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getAnimalsWalls();
+                    break;
+                  case "Neon":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getNeonWalls();
+                    break;
+                  case "Sports":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getSportsWalls();
+                    break;
+                  case "Music":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getMusicWalls();
+                    break;
+                  default:
+                    break;
+                }
                 setState(() {
                   seeMoreLoader = true;
                   Future.delayed(Duration(seconds: 4))
@@ -316,23 +390,60 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        Provider.of<CategoryProvider>(context, listen: false)
-                                    .selectedCategory ==
-                                "Curated"
-                            ? Provider.of<PexelsProvider>(context,
-                                    listen: false)
-                                .getDataP()
-                            : Provider.of<CategoryProvider>(context,
-                                            listen: false)
-                                        .selectedCategory ==
-                                    "Abstract"
-                                ? Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .getAbstractWalls()
-                                : Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .getNatureWalls();
-
+                        switch (Provider.of<CategoryProvider>(context,
+                                listen: false)
+                            .selectedCategory) {
+                          case "Curated":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getDataP();
+                            break;
+                          case "Abstract":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                              ..getAbstractWalls();
+                            break;
+                          case "Nature":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getNatureWalls();
+                            break;
+                          case "Art":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getArtWalls();
+                            break;
+                          case "Minimal":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getMinimalWalls();
+                            break;
+                          case "Textures":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getTexturesWalls();
+                            break;
+                          case "MOnochrome":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getMonochromeWalls();
+                            break;
+                          case "Space":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getSpaceWalls();
+                            break;
+                          case "Animals":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getAnimalsWalls();
+                            break;
+                          case "Neon":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getNeonWalls();
+                            break;
+                          case "Sports":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getSportsWalls();
+                            break;
+                          case "Music":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getMusicWalls();
+                            break;
+                          default:
+                            break;
+                        }
                         setState(() {
                           seeMoreLoader = true;
                           Future.delayed(Duration(seconds: 4))

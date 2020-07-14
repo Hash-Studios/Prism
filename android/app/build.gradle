@@ -58,7 +58,12 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            useProguard true
+            proguardFiles getDefaultProguardFile(
+                    'proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
         }
     }
 }
@@ -72,3 +77,4 @@ flutter {
     source '../..'
 }
 apply plugin: 'com.google.gms.google-services'
+apply plugin: 'io.fabric'
