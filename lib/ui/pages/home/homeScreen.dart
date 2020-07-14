@@ -59,6 +59,9 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       print("Error while checking for updates!");
     }
+    setState(() {
+      globals.updateChecked = true;
+    });
   }
 
   Future<bool> onWillPop() async {
@@ -70,7 +73,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isNew;
   @override
   void initState() {
-    _checkUpdate();
+    if (!globals.updateChecked) {
+      _checkUpdate();
+    }
     isNew = true;
     _updateToken();
     super.initState();
