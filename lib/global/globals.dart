@@ -4,6 +4,7 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 
 var gAuth = GoogleAuth();
 
+var updateChecked = false;
 var updateAvailable = false;
 var versionInfo = {};
 var noNewNotification = false;
