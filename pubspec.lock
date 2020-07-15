@@ -282,6 +282,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.1"
+  github:
+    dependency: "direct main"
+    description:
+      name: github
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "6.2.2"
   google_sign_in:
     dependency: "direct main"
     description:
@@ -318,7 +325,7 @@ packages:
     source: hosted
     version: "3.1.4"
   image:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: image
       url: "https://pub.dartlang.org"
@@ -471,6 +478,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.4.0"
+  photo_view:
+    dependency: "direct main"
+    description:
+      name: photo_view
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.9.2"
   platform:
     dependency: transitive
     description:
