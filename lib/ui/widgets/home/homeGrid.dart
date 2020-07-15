@@ -94,7 +94,51 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
     await Future.delayed(Duration(milliseconds: 500));
     if (widget.provider == "WallHaven") {
       Provider.of<WallHavenProvider>(context, listen: false).walls = [];
-      Provider.of<WallHavenProvider>(context, listen: false).getData();
+      switch (Provider.of<CategoryProvider>(context, listen: false)
+          .selectedCategory) {
+        case "For you":
+          Provider.of<WallHavenProvider>(context, listen: false).getData();
+          break;
+        case "Landscape":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getLandscapeWalls();
+          break;
+        case "4K":
+          Provider.of<WallHavenProvider>(context, listen: false).get4KWalls();
+          break;
+        case "Pattern":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getPatternWalls();
+          break;
+        case "Anime":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getAnimeWalls();
+          break;
+        case "Technology":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getTechnologyWalls();
+          break;
+        case "Code":
+          Provider.of<WallHavenProvider>(context, listen: false).getCodeWalls();
+          break;
+        case "Cars":
+          Provider.of<WallHavenProvider>(context, listen: false).getCarsWalls();
+          break;
+        case "Skyscape":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getSkyscapeWalls();
+          break;
+        case "Architecture":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getArchitectureWalls();
+          break;
+        case "Marvel":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getMarvelWalls();
+          break;
+        default:
+          break;
+      }
     } else if (widget.provider == "Pexels") {
       Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
       switch (Provider.of<CategoryProvider>(context, listen: false)
@@ -104,7 +148,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
           break;
         case "Abstract":
           Provider.of<PexelsProvider>(context, listen: false)
-            ..getAbstractWalls();
+              .getAbstractWalls();
           break;
         case "Nature":
           Provider.of<PexelsProvider>(context, listen: false).getNatureWalls();
@@ -119,7 +163,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
           Provider.of<PexelsProvider>(context, listen: false)
               .getTexturesWalls();
           break;
-        case "MOnochrome":
+        case "Monochrome":
           Provider.of<PexelsProvider>(context, listen: false)
               .getMonochromeWalls();
           break;
@@ -179,8 +223,55 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
             if (widget.provider == "WallHaven") {
               if (!seeMoreLoader) {
-                Provider.of<WallHavenProvider>(context, listen: false)
-                    .getData();
+                switch (Provider.of<CategoryProvider>(context, listen: false)
+                    .selectedCategory) {
+                  case "For you":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getData();
+                    break;
+                  case "Landscape":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getLandscapeWalls();
+                    break;
+                  case "4K":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .get4KWalls();
+                    break;
+                  case "Pattern":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getPatternWalls();
+                    break;
+                  case "Anime":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getAnimeWalls();
+                    break;
+                  case "Technology":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getTechnologyWalls();
+                    break;
+                  case "Code":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getCodeWalls();
+                    break;
+                  case "Cars":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getCarsWalls();
+                    break;
+                  case "Skyscape":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getSkyscapeWalls();
+                    break;
+                  case "Architecture":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getArchitectureWalls();
+                    break;
+                  case "Marvel":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getMarvelWalls();
+                    break;
+                  default:
+                    break;
+                }
                 setState(() {
                   seeMoreLoader = true;
                   Future.delayed(Duration(seconds: 4))
@@ -207,7 +298,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                     break;
                   case "Abstract":
                     Provider.of<PexelsProvider>(context, listen: false)
-                      ..getAbstractWalls();
+                        .getAbstractWalls();
                     break;
                   case "Nature":
                     Provider.of<PexelsProvider>(context, listen: false)
@@ -225,7 +316,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                     Provider.of<PexelsProvider>(context, listen: false)
                         .getTexturesWalls();
                     break;
-                  case "MOnochrome":
+                  case "Monochrome":
                     Provider.of<PexelsProvider>(context, listen: false)
                         .getMonochromeWalls();
                     break;
@@ -339,8 +430,67 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        Provider.of<WallHavenProvider>(context, listen: false)
-                            .getData();
+                        switch (Provider.of<CategoryProvider>(context,
+                                listen: false)
+                            .selectedCategory) {
+                          case "For you":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getData();
+                            break;
+                          case "Landscape":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getLandscapeWalls();
+                            break;
+                          case "4K":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .get4KWalls();
+                            break;
+                          case "Pattern":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getPatternWalls();
+                            break;
+                          case "Anime":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getAnimeWalls();
+                            break;
+                          case "Technology":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getTechnologyWalls();
+                            break;
+                          case "Code":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getCodeWalls();
+                            break;
+                          case "Cars":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getCarsWalls();
+                            break;
+                          case "Skyscape":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getSkyscapeWalls();
+                            break;
+                          case "Architecture":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getArchitectureWalls();
+                            break;
+                          case "Marvel":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getMarvelWalls();
+                            break;
+                          default:
+                            break;
+                        }
                         setState(() {
                           seeMoreLoader = true;
                           Future.delayed(Duration(seconds: 4))
@@ -397,7 +547,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                             break;
                           case "Abstract":
                             Provider.of<PexelsProvider>(context, listen: false)
-                              ..getAbstractWalls();
+                                .getAbstractWalls();
                             break;
                           case "Nature":
                             Provider.of<PexelsProvider>(context, listen: false)
@@ -415,7 +565,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                             Provider.of<PexelsProvider>(context, listen: false)
                                 .getTexturesWalls();
                             break;
-                          case "MOnochrome":
+                          case "Monochrome":
                             Provider.of<PexelsProvider>(context, listen: false)
                                 .getMonochromeWalls();
                             break;
