@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:path/path.dart' as Path;
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
@@ -38,11 +39,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     isUploading = false;
     isProcessing = true;
     randomId();
-    processImage();
     wallpaperProvider = "Prism";
     wallpaperDesc = "Community";
     wallpaperCategory = "General";
     review = false;
+    processImage();
   }
 
   void randomId() {
@@ -66,18 +67,20 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future processImage() async {
-    var decodedImage = await decodeImageFromList(image.readAsBytesSync());
-    print(decodedImage.width);
-    print(decodedImage.height);
-    var res =
-        decodedImage.width.toString() + "x" + decodedImage.height.toString();
-    setState(() {
-      wallpaperResolution = res;
+    Future.delayed(Duration(milliseconds: 1000)).then((value) async {
+      var decodedImage = await decodeImageFromList(image.readAsBytesSync());
+      print(decodedImage.width);
+      print(decodedImage.height);
+      var res =
+          decodedImage.width.toString() + "x" + decodedImage.height.toString();
+      setState(() {
+        wallpaperResolution = res;
+      });
+      image.length().then((value) =>
+          {wallpaperSize = (value / 1024 / 1024).toStringAsFixed(2) + "MB"});
+      uploadFile();
+      print(image.toString());
     });
-    image.length().then((value) =>
-        {wallpaperSize = (value / 1024 / 1024).toStringAsFixed(2) + "MB"});
-    uploadFile();
-    print(image.toString());
   }
 
   Future uploadFile() async {
@@ -130,7 +133,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           title: Text(
-            "Upload",
+            "Submit",
             style: TextStyle(color: Theme.of(context).accentColor),
           ),
         ),
@@ -147,14 +150,59 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     backgroundDecoration: BoxDecoration(
                       color: Theme.of(context).hintColor,
                     ),
-                    tightMode: true,
                   ),
                 ),
               ),
-              // isProcessing ? CircularProgressIndicator() : Container(),
-              // isUploading ? CircularProgressIndicator() : Container(),
-              // isProcessing ? Text("Processing...") : Container(),
-              // isUploading ? Text("Uploading...") : Container(),
+              isProcessing || isUploading
+                  ? Container(
+                      width: MediaQuery.of(context).size.width / 2.4,
+                      height: MediaQuery.of(context).size.width / 2.4,
+                      child: FlareActor(
+                        "assets/animations/Upload.flr",
+                        animation: "upload",
+                        isPaused: false,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.center,
+                      ),
+                    )
+                  : Container(),
+              isUploading
+                  ? Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Text(
+                        "Uploading...",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).accentColor,
+                        ),
+                      ),
+                    )
+                  : Container(),
+              isProcessing
+                  ? Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Text(
+                        "Processing...",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).accentColor,
+                        ),
+                      ),
+                    )
+                  : Container(),
+              isProcessing || isUploading
+                  ? Container(
+                      width: MediaQuery.of(context).size.width / 2,
+                      child: ClipRRect(
+                          borderRadius: BorderRadius.circular(500),
+                          child: LinearProgressIndicator(
+                            backgroundColor: Theme.of(context).hintColor,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                Color(0xFFE57697)),
+                          )))
+                  : Container(),
               Spacer(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 0, 16),
@@ -163,7 +211,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   children: <Widget>[
                     Icon(
                       JamIcons.info,
-                      color: Theme.of(context).accentColor,
+                      color: Theme.of(context).accentColor.withOpacity(0.6),
                     ),
                     Container(
                       width: MediaQuery.of(context).size.width * 0.7,
@@ -174,7 +222,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 10,
-                            color: Theme.of(context).accentColor,
+                            color:
+                                Theme.of(context).accentColor.withOpacity(0.6),
                           ),
                         ),
                       ),
@@ -191,7 +240,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 : Theme.of(context).hintColor,
             disabledElevation: 0,
             child: Icon(
-              JamIcons.upload,
+              JamIcons.check,
               size: 40,
               color: Colors.white,
             ),
