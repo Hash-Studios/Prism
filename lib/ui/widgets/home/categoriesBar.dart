@@ -373,38 +373,71 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                     case "Curated":
                                       PM.pageController.jumpToPage(1);
                                       break;
-                                    case "Abstract":
+                                    case "For you":
                                       PM.pageController.jumpToPage(2);
                                       break;
-                                    case "Nature":
+                                    case "Abstract":
                                       PM.pageController.jumpToPage(3);
                                       break;
-                                    case "Art":
+                                    case "Landscape":
                                       PM.pageController.jumpToPage(4);
                                       break;
-                                    case "Minimal":
+                                    case "Nature":
                                       PM.pageController.jumpToPage(5);
                                       break;
-                                    case "Textures":
+                                    case "4K":
                                       PM.pageController.jumpToPage(6);
                                       break;
-                                    case "Monochrome":
+                                    case "Art":
                                       PM.pageController.jumpToPage(7);
                                       break;
-                                    case "Space":
+                                    case "Pattern":
                                       PM.pageController.jumpToPage(8);
                                       break;
-                                    case "Animals":
+                                    case "Minimal":
                                       PM.pageController.jumpToPage(9);
                                       break;
-                                    case "Neon":
+                                    case "Anime":
                                       PM.pageController.jumpToPage(10);
                                       break;
-                                    case "Sports":
+                                    case "Textures":
                                       PM.pageController.jumpToPage(11);
                                       break;
-                                    case "Music":
+                                    case "Technology":
                                       PM.pageController.jumpToPage(12);
+                                      break;
+                                    case "Monochrome":
+                                      PM.pageController.jumpToPage(13);
+                                      break;
+                                    case "Code":
+                                      PM.pageController.jumpToPage(14);
+                                      break;
+                                    case "Space":
+                                      PM.pageController.jumpToPage(15);
+                                      break;
+                                    case "Cars":
+                                      PM.pageController.jumpToPage(16);
+                                      break;
+                                    case "Animals":
+                                      PM.pageController.jumpToPage(17);
+                                      break;
+                                    case "Skyscape":
+                                      PM.pageController.jumpToPage(18);
+                                      break;
+                                    case "Neon":
+                                      PM.pageController.jumpToPage(19);
+                                      break;
+                                    case "Architecture":
+                                      PM.pageController.jumpToPage(20);
+                                      break;
+                                    case "Sports":
+                                      PM.pageController.jumpToPage(21);
+                                      break;
+                                    case "Marvel":
+                                      PM.pageController.jumpToPage(22);
+                                      break;
+                                    case "Music":
+                                      PM.pageController.jumpToPage(23);
                                       break;
                                     case "Colors":
                                       showColors(context);
