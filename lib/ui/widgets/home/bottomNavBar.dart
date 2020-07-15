@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -8,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
@@ -326,161 +329,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                     showGooglePopUp(() {
                       showBottomSheet(
                         context: context,
-                        builder: (context) => Container(
-                          height: MediaQuery.of(context).size.height / 1.6,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20),
-                            ),
-                          ),
-                          child: Column(
-                            children: <Widget>[
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Icon(
-                                      JamIcons.chevron_down,
-                                      color: Theme.of(context).accentColor,
-                                    ),
-                                  )
-                                ],
-                              ),
-                              // Padding(
-                              //   padding: const EdgeInsets.all(8.0),
-                              //   child: Text(
-                              //     "Add Wallpapers",
-                              //     style: TextStyle(
-                              //       fontSize: 20,
-                              //       color: Theme.of(context).accentColor,
-                              //     ),
-                              //   ),
-                              // ),
-                              Spacer(),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.max,
-                                children: <Widget>[
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: <Widget>[
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                      .size
-                                                      .width /
-                                                  2 -
-                                              20,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .width /
-                                              2 /
-                                              0.6625,
-                                          child: Stack(
-                                            alignment: Alignment.center,
-                                            children: <Widget>[
-                                              Container(
-                                                width: MediaQuery.of(context)
-                                                            .size
-                                                            .width /
-                                                        2 -
-                                                    14,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .width /
-                                                    2 /
-                                                    0.6625,
-                                                decoration: BoxDecoration(
-                                                  color: Color(0xFFE57697)
-                                                      .withOpacity(0.2),
-                                                  border: Border.all(
-                                                      color: Color(0xFFE57697),
-                                                      width: 3),
-                                                  borderRadius:
-                                                      BorderRadius.circular(20),
-                                                ),
-                                                child: ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                  child: Opacity(
-                                                      opacity: 1,
-                                                      child: Image.asset(
-                                                        'assets/images/wallpaper2.jpg',
-                                                        fit: BoxFit.cover,
-                                                      )),
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    top: 60.0),
-                                                child: Align(
-                                                  alignment:
-                                                      Alignment.topCenter,
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                        border: Border.all(
-                                                            color: Color(
-                                                                0xFFE57697),
-                                                            width: 1),
-                                                        color: Color(0xFFE57697)
-                                                            .withOpacity(0.2),
-                                                        shape: BoxShape.circle),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              16.0),
-                                                      child: Icon(
-                                                        JamIcons.plus,
-                                                        color:
-                                                            Color(0xFFE57697),
-                                                        size: 40,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        "Wallpapers",
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            color: Color(0xFFE57697),
-                                            fontWeight: FontWeight.bold),
-                                      )
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              Spacer(),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-                                child: Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.8,
-                                  child: Text(
-                                    "Now you can upload your wallpapers, and zip bada boom, in a matter of seconds, they will be live and everyone across the globe can view them.",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Theme.of(context).accentColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        builder: (context) => UploadBottomPanel(),
                       );
-                      // showGooglePopUp(() {
                       //   navStack.last == "Add"
                       //       ? print("Currently on Add")
                       //       : navStack.last == "Home"
@@ -605,21 +455,165 @@ class _BottomNavBarState extends State<BottomNavBar>
   }
 }
 
-extension NavigatorStateExtension on NavigatorState {
-  void pushNamedIfNotCurrent(String routeName, {Object arguments}) {
-    if (!isCurrent(routeName)) {
-      pushNamed(routeName, arguments: arguments);
+class UploadBottomPanel extends StatefulWidget {
+  const UploadBottomPanel({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  _UploadBottomPanelState createState() => _UploadBottomPanelState();
+}
+
+class _UploadBottomPanelState extends State<UploadBottomPanel> {
+  File _wallpaper;
+  final picker = ImagePicker();
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future getImage() async {
+    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _wallpaper = File(pickedFile.path);
+      });
+      Navigator.pushNamed(context, UploadWallRoute, arguments: [_wallpaper]);
     }
   }
 
-  bool isCurrent(String routeName) {
-    bool isCurrent = false;
-    popUntil((route) {
-      if (route.settings.name == routeName) {
-        isCurrent = true;
-      }
-      return true;
-    });
-    return isCurrent;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height / 1.6,
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Icon(
+                  JamIcons.chevron_down,
+                  color: Theme.of(context).accentColor,
+                ),
+              )
+            ],
+          ),
+          // Padding(
+          //   padding: const EdgeInsets.all(8.0),
+          //   child: Text(
+          //     "Add Wallpapers",
+          //     style: TextStyle(
+          //       fontSize: 20,
+          //       color: Theme.of(context).accentColor,
+          //     ),
+          //   ),
+          // ),
+          Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GestureDetector(
+                      onTap: () async {
+                        await getImage();
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width / 2 - 20,
+                        height: MediaQuery.of(context).size.width / 2 / 0.6625,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: <Widget>[
+                            Container(
+                              width: MediaQuery.of(context).size.width / 2 - 14,
+                              height: MediaQuery.of(context).size.width /
+                                  2 /
+                                  0.6625,
+                              decoration: BoxDecoration(
+                                color: Color(0xFFE57697).withOpacity(0.2),
+                                border: Border.all(
+                                    color: Color(0xFFE57697), width: 3),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Opacity(
+                                    opacity: 1,
+                                    child: Image.asset(
+                                      'assets/images/wallpaper2.jpg',
+                                      fit: BoxFit.cover,
+                                    )),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 60.0),
+                              child: Align(
+                                alignment: Alignment.topCenter,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: Color(0xFFE57697), width: 1),
+                                      color: Color(0xFFE57697).withOpacity(0.2),
+                                      shape: BoxShape.circle),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Icon(
+                                      JamIcons.plus,
+                                      color: Color(0xFFE57697),
+                                      size: 40,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    "Wallpapers",
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFFE57697),
+                        fontWeight: FontWeight.bold),
+                  )
+                ],
+              ),
+            ],
+          ),
+          Spacer(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              child: Text(
+                "Now you can upload your wallpapers, and zip bada boom, in a matter of seconds, they will be live and everyone across the globe can view them.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).accentColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
