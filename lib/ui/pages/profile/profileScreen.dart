@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/routes/router.dart';
@@ -9,6 +8,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
@@ -213,11 +213,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? Container(
                           color: Color(0xFFE57697),
                         )
-                      : Container(
-                          child: SvgPicture.asset(
-                            "assets/images/BG Banner Light.svg",
-                            fit: BoxFit.cover,
-                          ),
+                      : Stack(
+                          children: <Widget>[
+                            Container(
+                              color: Color(0xFFE57697),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                              child: Center(
+                                child: FlareActor(
+                                  "assets/animations/Text.flr",
+                                  isPaused: false,
+                                  alignment: Alignment.center,
+                                  animation: "Untitled",
+                                ),
+                              ),
+                            )
+                          ],
                         ),
                   main.prefs.getBool("isLoggedin")
                       ? Row(
