@@ -11,9 +11,9 @@ import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:optimized_cached_image/widgets.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -464,7 +464,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           if (offsetAnimation.value < 0.0)
                             print('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
-                            child: OptimizedCacheImage(
+                            child: CachedNetworkImage(
                               imageUrl: Provider.of<WallHavenProvider>(context)
                                   .walls[index]
                                   .path,
@@ -941,7 +941,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               if (offsetAnimation.value < 0.0)
                                 print('${offsetAnimation.value + 8.0}');
                               return GestureDetector(
-                                child: OptimizedCacheImage(
+                                child: CachedNetworkImage(
                                   imageUrl: Provider.of<PrismProvider>(context)
                                       .subPrismWalls[index]["wallpaper_url"],
                                   imageBuilder: (context, imageProvider) =>
@@ -1464,7 +1464,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   if (offsetAnimation.value < 0.0)
                                     print('${offsetAnimation.value + 8.0}');
                                   return GestureDetector(
-                                    child: OptimizedCacheImage(
+                                    child: CachedNetworkImage(
                                       imageUrl:
                                           Provider.of<PexelsProvider>(context)
                                               .wallsP[index]
@@ -2000,7 +2000,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             print(
                                                 '${offsetAnimation.value + 8.0}');
                                           return GestureDetector(
-                                            child: OptimizedCacheImage(
+                                            child: CachedNetworkImage(
                                               imageUrl:
                                                   Provider.of<PexelsProvider>(
                                                           context,
@@ -2547,7 +2547,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       if (offsetAnimation.value < 0.0)
                                         print('${offsetAnimation.value + 8.0}');
                                       return GestureDetector(
-                                        child: OptimizedCacheImage(
+                                        child: CachedNetworkImage(
                                           imageUrl:
                                               Provider.of<WallHavenProvider>(
                                                       context)
