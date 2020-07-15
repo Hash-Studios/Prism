@@ -1,4 +1,5 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 
 void showChangelog(BuildContext context, Function func) {
@@ -22,12 +23,11 @@ void showChangelog(BuildContext context, Function func) {
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Image.asset(
-                'assets/images/appIcon.png',
-                fit: BoxFit.scaleDown,
-              ),
+            child: FlareActor(
+              "assets/animations/Changelog.flr",
+              isPaused: false,
+              alignment: Alignment.center,
+              animation: "changelog",
             ),
           ),
           SizedBox(
