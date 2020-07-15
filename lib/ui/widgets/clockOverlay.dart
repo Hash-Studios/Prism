@@ -1,7 +1,7 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:optimized_cached_image/widgets.dart';
 
 class ClockOverlay extends StatefulWidget {
   final String link;
@@ -27,7 +27,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
       child: Stack(
         children: <Widget>[
           !widget.file
-              ? OptimizedCacheImage(
+              ? CachedNetworkImage(
                   imageUrl: widget.link,
                   imageBuilder: (context, imageProvider) => Container(
                     decoration: BoxDecoration(
