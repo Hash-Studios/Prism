@@ -44,6 +44,7 @@ dependencies:
   tutorial_coach_mark: ^0.3.0
   scroll_to_index: ^1.0.6
   cached_network_image: ^2.2.0+1
+  flare_flutter: ^2.0.5
 
 dev_dependencies:
   flutter_test:
