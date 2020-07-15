@@ -21,3 +21,4 @@ const String ProfileRoute = '/profile';
 const String DownloadRoute = '/downloads';
 const String ShareRoute = '/share';
 const String FavWallViewRoute = '/favwall';
+const String UploadWallRoute = '/uploadw';

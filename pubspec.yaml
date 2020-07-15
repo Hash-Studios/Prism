@@ -44,6 +44,7 @@ dependencies:
   screenshot: ^0.2.0
   tutorial_coach_mark: ^0.3.0
   scroll_to_index: ^1.0.6
+  image_picker: ^0.6.7+4
 
 dev_dependencies:
   flutter_test:
