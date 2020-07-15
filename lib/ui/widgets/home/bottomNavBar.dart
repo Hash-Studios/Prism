@@ -280,6 +280,59 @@ class _BottomNavBarState extends State<BottomNavBar>
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
+              child: Container(
+                decoration: BoxDecoration(
+                    color: Color(0xFFE57697),
+                    borderRadius: BorderRadius.circular(500)),
+                child: IconButton(
+                  // key: globals.keyFavButton,
+                  padding: EdgeInsets.all(0),
+                  icon: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Container(
+                        height: navStack.last == "Add" ? 9 : 0,
+                      ),
+                      Icon(JamIcons.plus,
+                          color:
+                              //  navStack.last == "Favourites"
+                              //     ? Color(0xFFE57697)
+                              //     :
+                              Theme.of(context).accentColor),
+                      Container(
+                        // duration: Duration(milliseconds: 3000),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color: navStack.last == "Add"
+                              ? Color(0xFFE57697)
+                              : Theme.of(context).accentColor,
+                        ),
+                        // curve: Curves.fastOutSlowIn,
+                        margin: navStack.last == "Add"
+                            ? EdgeInsets.all(3)
+                            : EdgeInsets.all(0),
+                        width: navStack.last == "Add"
+                            ? _paddingAnimation.value
+                            : 0,
+                        height: navStack.last == "Add" ? 3 : 0,
+                      )
+                    ],
+                  ),
+                  onPressed: () {
+                    // showGooglePopUp(() {
+                    //   navStack.last == "Add"
+                    //       ? print("Currently on Add")
+                    //       : navStack.last == "Home"
+                    //           ? Navigator.of(context).pushNamed(FavRoute)
+                    //           : Navigator.of(context).pushNamed(FavRoute);
+                    // });
+                  },
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
                 // key: globals.keyFavButton,
                 padding: EdgeInsets.all(0),

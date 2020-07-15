@@ -7,6 +7,8 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
+import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/cupertino.dart';
@@ -32,6 +34,18 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return BottomBar(child: ProfileChild());
+  }
+}
+
+class ProfileChild extends StatefulWidget {
+  @override
+  _ProfileChildState createState() => _ProfileChildState();
+}
+
+class _ProfileChildState extends State<ProfileChild> {
   InAppPurchaseConnection _iap = InAppPurchaseConnection.instance;
   bool _available = true;
 
@@ -186,11 +200,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ScrollController controller =
+        InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
-        body: CustomScrollView(slivers: <Widget>[
+        body: CustomScrollView(controller: controller, slivers: <Widget>[
           SliverAppBar(
             backgroundColor: Color(0xFFE57697),
             leading: IconButton(
