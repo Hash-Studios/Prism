@@ -244,8 +244,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
       shape: ShapeLightFocus.RRect,
     ));
     targets.add(TargetFocus(
-      targetPosition: TargetPosition(Size(widget.width * 0.6, 100),
-          Offset(widget.width * 0.2, widget.height - 100)),
+      targetPosition: TargetPosition(Size(widget.width * 0.7, 100),
+          Offset(widget.width * 0.15, widget.height - 100)),
       identify: "Target 4",
       contents: [
         ContentTarget(
@@ -283,6 +283,14 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                   fontWeight: FontWeight.bold),
                             ),
                             TextSpan(text: " for more wallpapers.\n\n"),
+                            TextSpan(text: "➡ You can also upload your own "),
+                            TextSpan(
+                              text: "wallpapers ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: "from here.\n\n"),
                             TextSpan(text: "➡ You can also access your "),
                             TextSpan(
                               text: "profile ",
@@ -457,6 +465,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
     } else {
       main.prefs.setBool("newApp", false);
     }
+    Future.delayed(Duration(milliseconds: 100), showTutorial);
   }
 
   Widget _wrapScrollTag({int index, Widget child}) => AutoScrollTag(
