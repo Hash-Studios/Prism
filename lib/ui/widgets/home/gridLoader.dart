@@ -50,13 +50,13 @@ class _GridLoaderState extends State<GridLoader>
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Colors.white12,
+                  end: Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.white12,
+                  begin: Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
