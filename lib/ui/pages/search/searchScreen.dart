@@ -57,57 +57,63 @@ class _SearchScreenState extends State<SearchScreen> {
             automaticallyImplyLeading: false,
             elevation: 0,
             titleSpacing: 0,
-            title: SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(500),
-                          color: Theme.of(context).hintColor),
-                      child: TextField(
-                        cursorColor: Color(0xFFE57697),
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline5
-                            .copyWith(color: Theme.of(context).accentColor),
-                        controller: searchController,
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.only(left: 30, top: 15),
-                          border: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          hintText: "Search",
-                          hintStyle: Theme.of(context)
+            title: Padding(
+              padding: const EdgeInsets.only(top: 6.0),
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: Theme.of(context).hintColor),
+                        child: TextField(
+                          cursorColor: Color(0xFFE57697),
+                          style: Theme.of(context)
                               .textTheme
                               .headline5
                               .copyWith(color: Theme.of(context).accentColor),
-                          suffixIcon: Icon(JamIcons.search),
+                          controller: searchController,
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Search",
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headline5
+                                .copyWith(color: Theme.of(context).accentColor),
+                            suffixIcon: Icon(
+                              JamIcons.search,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                          onSubmitted: (tex) {
+                            setState(() {
+                              isSubmitted = true;
+                              Provider.of<WallHavenProvider>(context,
+                                      listen: false)
+                                  .wallsS = [];
+                              _future = Provider.of<WallHavenProvider>(context,
+                                      listen: false)
+                                  .getWallsbyQuery(tex);
+                            });
+                          },
                         ),
-                        onSubmitted: (tex) {
-                          setState(() {
-                            isSubmitted = true;
-                            Provider.of<WallHavenProvider>(context,
-                                    listen: false)
-                                .wallsS = [];
-                            _future = Provider.of<WallHavenProvider>(context,
-                                    listen: false)
-                                .getWallsbyQuery(tex);
-                          });
-                        },
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
             bottom: PreferredSize(
                 child: SizedBox(
                   width: MediaQuery.of(context).size.width,
-                  height: 60,
+                  height: 53,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: tags.length,
@@ -146,7 +152,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     },
                   ),
                 ),
-                preferredSize: Size(double.infinity, 55)),
+                preferredSize: Size(double.infinity, 54)),
           ),
           body: BottomBar(
             child: isSubmitted
