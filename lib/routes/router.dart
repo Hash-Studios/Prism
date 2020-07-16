@@ -24,6 +24,7 @@ import 'package:Prism/ui/pages/profile/profileScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
+import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -169,6 +170,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               FavWallpaperViewScreen(arguments: settings.arguments));
+    case UploadWallRoute:
+      navStack.add("Add");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: UploadWallRoute);
+      return MaterialPageRoute(
+          builder: (context) => UploadWallScreen(arguments: settings.arguments),
+          fullscreenDialog: true);
     default:
       navStack.add("undefined");
       print(navStack);
