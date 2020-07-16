@@ -32,6 +32,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   String wallpaperDesc;
   String wallpaperCategory;
   String wallpaperThumb;
+  String wallpaperSha;
+  String thumbSha;
+  String wallpaperPath;
+  String thumbPath;
   bool review;
   @override
   void initState() {
@@ -84,6 +88,23 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     });
   }
 
+  Future deleteFile() async {
+    var github = GitHub(auth: Authentication.basic(username, password));
+    await github.repositories.deleteFile(
+        RepositorySlug('codenameakshay2', 'prism-walls-test'),
+        wallpaperPath,
+        wallpaperPath,
+        wallpaperSha,
+        "master");
+    await github.repositories.deleteFile(
+        RepositorySlug('codenameakshay2', 'prism-walls-test'),
+        thumbPath,
+        thumbPath,
+        thumbSha,
+        "master");
+    print("Files deleted");
+  }
+
   Future uploadFile() async {
     setState(() {
       isUploading = true;
@@ -105,7 +126,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 path: '${Path.basename(image.path)}'))
         .then((value) => setState(() {
               wallpaperUrl = value.content.downloadUrl;
-              isUploading = false;
+              wallpaperPath = value.content.path;
+              wallpaperSha = value.content.sha;
             }));
     await github.repositories
         .createFile(
@@ -116,13 +138,19 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 path: 'thumb_${Path.basename(image.path)}'))
         .then((value) => setState(() {
               wallpaperThumb = value.content.downloadUrl;
+              thumbPath = value.content.path;
+              thumbSha = value.content.sha;
             }));
     print('File Uploaded');
+    setState(() {
+      isUploading = false;
+    });
   }
 
   Future<bool> onWillPop() async {
     navStack.removeLast();
     print(navStack);
+    deleteFile();
     return true;
   }
 
@@ -247,6 +275,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             ),
             onPressed: !isProcessing && !isUploading
                 ? () async {
+                    navStack.removeLast();
+                    print(navStack);
+                    Navigator.pop(context);
                     await WallStore.createRecord(
                         id,
                         wallpaperProvider,
@@ -257,7 +288,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                         wallpaperCategory,
                         wallpaperDesc,
                         review);
-                    Navigator.pop(context);
                   }
                 : null),
       ),

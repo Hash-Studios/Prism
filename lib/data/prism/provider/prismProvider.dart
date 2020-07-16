@@ -14,6 +14,7 @@ class PrismProvider extends ChangeNotifier {
     this.subPrismWalls = [];
     await databaseReference
         .collection("walls")
+        .where('review', isEqualTo: true)
         .orderBy("id")
         .getDocuments()
         .then((value) {
@@ -25,10 +26,25 @@ class PrismProvider extends ChangeNotifier {
       print(this.prismWalls.length);
       this.subPrismWalls = this.prismWalls.sublist(0, 24);
     }).catchError((e) {
+      print(e.toString());
       print("data done with error");
     });
     return this.subPrismWalls;
   }
+
+  // Future<List> getPrismWalls() async {
+  //   this.prismWalls = [];
+  //   this.subPrismWalls = [];
+  //   await databaseReference.collection("walls").getDocuments().then((value) {
+  //     value.documents.forEach((f) {
+  //       f.reference.updateData(<String, dynamic>{"createdAt": DateTime.now()});
+  //     });
+  //   }).catchError((e) {
+  //     print(e.toString());
+  //     print("data done with error");
+  //   });
+  //   return this.subPrismWalls;
+  // }
 
   List seeMorePrism() {
     int len = this.prismWalls.length;

@@ -26,6 +26,7 @@ void createRecord(
     'category': wallpaperCategory,
     'desc': wallpaperDesc,
     'review': review,
+    'createdAt': DateTime.now(),
   });
   toasts.codeSend("Your post is submitted, and is under review.");
 }

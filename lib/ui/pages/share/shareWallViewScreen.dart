@@ -156,7 +156,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                     print('Screenshot Starting');
                     screenshotController
                         .capture(
-                      pixelRatio: 2,
+                      pixelRatio: 3,
                       delay: Duration(milliseconds: 10),
                     )
                         .then((File image) async {
@@ -667,7 +667,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         print('Screenshot Starting');
                         screenshotController
                             .capture(
-                          pixelRatio: 2,
+                          pixelRatio: 3,
                           delay: Duration(milliseconds: 10),
                         )
                             .then((File image) async {
