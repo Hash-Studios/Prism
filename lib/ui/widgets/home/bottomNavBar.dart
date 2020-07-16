@@ -323,7 +323,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ),
                   onPressed: () {
                     showGooglePopUp(() {
-                      showBottomSheet(
+                      showModalBottomSheet(
                         context: context,
                         builder: (context) => UploadBottomPanel(),
                       );
@@ -616,4 +616,3 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     );
   }
 }
-
