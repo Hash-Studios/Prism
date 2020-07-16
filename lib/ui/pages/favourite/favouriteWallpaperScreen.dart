@@ -134,7 +134,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     print('Screenshot Starting');
                     screenshotController
                         .capture(
-                      pixelRatio: 2,
+                      pixelRatio: 3,
                       delay: Duration(milliseconds: 10),
                     )
                         .then((File image) async {
@@ -910,7 +910,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     print('Screenshot Starting');
                     screenshotController
                         .capture(
-                      pixelRatio: 2,
+                      pixelRatio: 3,
                       delay: Duration(milliseconds: 10),
                     )
                         .then((File image) async {
