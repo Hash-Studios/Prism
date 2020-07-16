@@ -41,6 +41,43 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   void initTargets() {
     targets.add(TargetFocus(
+      identify: "Target 0",
+      targetPosition: TargetPosition(Size(0, 0), Offset(0, 0)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.bottom,
+            child: SizedBox(
+              height: widget.height,
+              child: Container(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      "Hey! Welcome to Prism.",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 20.0),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10.0),
+                      child: RichText(
+                        text: TextSpan(
+                          text:
+                              "➡ Let's start your beautiful journey with a quick intro.\n\n➡ Tap anywhere on the screen to continue.",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
       identify: "Target 1",
       targetPosition: TargetPosition(Size(widget.width, 60), Offset(0, 20)),
       contents: [
@@ -93,9 +130,63 @@ class _CategoriesBarState extends State<CategoriesBar> {
       shape: ShapeLightFocus.RRect,
     ));
     targets.add(TargetFocus(
+      identify: "Target 2",
+      targetPosition: TargetPosition(
+          Size(widget.width, widget.height - 400), Offset(0, 70)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.bottom,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the Wallpapers Feed.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: RichText(
+                      text: TextSpan(
+                          text: "➡ Swipe ",
+                          style: TextStyle(color: Colors.white),
+                          children: [
+                            TextSpan(
+                              text: "vertically ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                                text:
+                                    "to see all the wallpapers in a category.\n\n"),
+                            TextSpan(text: "➡ Swipe "),
+                            TextSpan(
+                              text: "horizontally ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                                text:
+                                    "to switch between different categories.\n\n"),
+                          ]),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.RRect,
+    ));
+    targets.add(TargetFocus(
       targetPosition: TargetPosition(
           Size(widget.width * 0.5, widget.width * 0.5 / 0.6625), Offset(0, 70)),
-      identify: "Target 2",
+      identify: "Target 3",
       contents: [
         ContentTarget(
             align: AlignContent.bottom,
@@ -113,9 +204,37 @@ class _CategoriesBarState extends State<CategoriesBar> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "You can also apply, favorite, and download it directly from the 3-dots menu.",
-                      style: TextStyle(color: Colors.white),
+                    child: RichText(
+                      text: TextSpan(
+                          text: "➡ You can also ",
+                          style: TextStyle(color: Colors.white),
+                          children: [
+                            TextSpan(
+                              text: "apply, favorite,",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: " and"),
+                            TextSpan(
+                              text: " download",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                                text: " it directly from the 3-dots menu.\n\n"),
+                            TextSpan(text: "➡ You can also "),
+                            TextSpan(
+                              text: "tap and hold ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                                text:
+                                    "any wallpaper to quickly copy its sharing link.\n\n"),
+                          ]),
                     ),
                   )
                 ],
@@ -125,41 +244,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
       shape: ShapeLightFocus.RRect,
     ));
     targets.add(TargetFocus(
-      identify: "Target 3",
-      targetPosition: TargetPosition(
-          Size(40, 40), Offset(widget.width / 2 - 45, widget.height - 65)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "This is the Search Page.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "Head over here to search Wallpapers, and apply them.",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
-    targets.add(TargetFocus(
+      targetPosition: TargetPosition(Size(widget.width * 0.6, 100),
+          Offset(widget.width * 0.2, widget.height - 100)),
       identify: "Target 4",
-      targetPosition: TargetPosition(
-          Size(40, 40), Offset(widget.width / 2 + 5, widget.height - 65)),
       contents: [
         ContentTarget(
             align: AlignContent.top,
@@ -169,7 +256,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    "This is the Favorites Page.",
+                    "This is the navigation bar.",
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -177,49 +264,138 @@ class _CategoriesBarState extends State<CategoriesBar> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "All your saved favorites are visible here, and you can apply them straight away from here.",
-                      style: TextStyle(color: Colors.white),
+                    child: RichText(
+                      text: TextSpan(
+                          text: "➡ Here you can access your ",
+                          style: TextStyle(color: Colors.white),
+                          children: [
+                            TextSpan(
+                              text: "favorites, downloads,",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: " and"),
+                            TextSpan(
+                              text: " search",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: " for more wallpapers.\n\n"),
+                            TextSpan(text: "➡ You can also access your "),
+                            TextSpan(
+                              text: "profile ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: "from here.\n\n"),
+                          ]),
                     ),
                   )
                 ],
               ),
             ))
       ],
-      shape: ShapeLightFocus.Circle,
+      shape: ShapeLightFocus.RRect,
     ));
-    targets.add(TargetFocus(
-      identify: "Target 5",
-      targetPosition: TargetPosition(
-          Size(40, 40), Offset(widget.width / 2 + 55, widget.height - 65)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "This is the Profile Page.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "It lets you view your downloads, set wallpapers from downloaded ones, sign in or log out, change themes, clear your downloads and cache, and more experimental features. Clearly this is the next best thing in this app after wallpapers, so make sure to check it out.",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
+    // targets.add(TargetFocus(
+    //   identify: "Target 5",
+    //   targetPosition: TargetPosition(
+    //       Size(40, 40), Offset(widget.width / 2 - 45, widget.height - 65)),
+    //   contents: [
+    //     ContentTarget(
+    //         align: AlignContent.top,
+    //         child: Container(
+    //           child: Column(
+    //             mainAxisSize: MainAxisSize.min,
+    //             crossAxisAlignment: CrossAxisAlignment.start,
+    //             children: <Widget>[
+    //               Text(
+    //                 "This is the Search Page.",
+    //                 style: TextStyle(
+    //                     fontWeight: FontWeight.bold,
+    //                     color: Colors.white,
+    //                     fontSize: 20.0),
+    //               ),
+    //               Padding(
+    //                 padding: const EdgeInsets.only(top: 10.0),
+    //                 child: Text(
+    //                   "Head over here to search Wallpapers, and apply them.",
+    //                   style: TextStyle(color: Colors.white),
+    //                 ),
+    //               )
+    //             ],
+    //           ),
+    //         ))
+    //   ],
+    //   shape: ShapeLightFocus.Circle,
+    // ));
+    // targets.add(TargetFocus(
+    //   identify: "Target 6",
+    //   targetPosition: TargetPosition(
+    //       Size(40, 40), Offset(widget.width / 2 + 5, widget.height - 65)),
+    //   contents: [
+    //     ContentTarget(
+    //         align: AlignContent.top,
+    //         child: Container(
+    //           child: Column(
+    //             mainAxisSize: MainAxisSize.min,
+    //             crossAxisAlignment: CrossAxisAlignment.start,
+    //             children: <Widget>[
+    //               Text(
+    //                 "This is the Favorites Page.",
+    //                 style: TextStyle(
+    //                     fontWeight: FontWeight.bold,
+    //                     color: Colors.white,
+    //                     fontSize: 20.0),
+    //               ),
+    //               Padding(
+    //                 padding: const EdgeInsets.only(top: 10.0),
+    //                 child: Text(
+    //                   "All your saved favorites are visible here, and you can apply them straight away from here.",
+    //                   style: TextStyle(color: Colors.white),
+    //                 ),
+    //               )
+    //             ],
+    //           ),
+    //         ))
+    //   ],
+    //   shape: ShapeLightFocus.Circle,
+    // ));
+    // targets.add(TargetFocus(
+    //   identify: "Target 7",
+    //   targetPosition: TargetPosition(
+    //       Size(40, 40), Offset(widget.width / 2 + 55, widget.height - 65)),
+    //   contents: [
+    //     ContentTarget(
+    //         align: AlignContent.top,
+    //         child: Container(
+    //           child: Column(
+    //             mainAxisSize: MainAxisSize.min,
+    //             crossAxisAlignment: CrossAxisAlignment.start,
+    //             children: <Widget>[
+    //               Text(
+    //                 "This is the Profile Page.",
+    //                 style: TextStyle(
+    //                     fontWeight: FontWeight.bold,
+    //                     color: Colors.white,
+    //                     fontSize: 20.0),
+    //               ),
+    //               Padding(
+    //                 padding: const EdgeInsets.only(top: 10.0),
+    //                 child: Text(
+    //                   "It lets you view your downloads, set wallpapers from downloaded ones, sign in or log out, change themes, clear your downloads and cache, and more experimental features. Clearly this is the next best thing in this app after wallpapers, so make sure to check it out.",
+    //                   style: TextStyle(color: Colors.white),
+    //                 ),
+    //               )
+    //             ],
+    //           ),
+    //         ))
+    //   ],
+    //   shape: ShapeLightFocus.Circle,
+    // ));
     // targets.add(TargetFocus(
     //   identify: "Target 7",
     //   targetPosition: TargetPosition(Size(0, 0), Offset(300 * 0.6625, 370)),
@@ -260,9 +436,13 @@ class _CategoriesBarState extends State<CategoriesBar> {
         textSkip: "SKIP",
         paddingFocus: 1,
         opacityShadow: 0.9, finish: () {
-      showTutorialComplete(context);
+      print("finish");
     }, clickTarget: (target) {
-      print(target);
+      print(target.identify);
+      if (target.identify == "Target 4") {
+        Future.delayed(Duration(milliseconds: 500))
+            .then((value) => showTutorialComplete(context));
+      }
     }, clickSkip: () {
       print("skip");
     })
@@ -277,7 +457,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
     } else {
       main.prefs.setBool("newApp", false);
     }
-    Future.delayed(Duration(milliseconds: 100), showTutorial);
   }
 
   Widget _wrapScrollTag({int index, Widget child}) => AutoScrollTag(
