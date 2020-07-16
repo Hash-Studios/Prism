@@ -465,7 +465,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
     } else {
       main.prefs.setBool("newApp", false);
     }
-    Future.delayed(Duration(milliseconds: 100), showTutorial);
   }
 
   Widget _wrapScrollTag({int index, Widget child}) => AutoScrollTag(
