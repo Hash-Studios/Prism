@@ -210,7 +210,7 @@ class _ProfileChildState extends State<ProfileChild> {
           SliverAppBar(
             backgroundColor: Color(0xFFE57697),
             automaticallyImplyLeading: false,
-            pinned: true,
+            pinned: false,
             expandedHeight: 280.0,
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
