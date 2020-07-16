@@ -42,3 +42,4 @@ android/key.properties
 key.jks
 pubspec.lock
 android/app/google-services.json
+lib/gitkey.dart
