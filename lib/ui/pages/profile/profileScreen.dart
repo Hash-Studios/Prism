@@ -209,16 +209,7 @@ class _ProfileChildState extends State<ProfileChild> {
         body: CustomScrollView(controller: controller, slivers: <Widget>[
           SliverAppBar(
             backgroundColor: Color(0xFFE57697),
-            leading: IconButton(
-                icon: Icon(
-                  JamIcons.chevron_left,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  navStack.removeLast();
-                  print(navStack);
-                  Navigator.pop(context);
-                }),
+            automaticallyImplyLeading: false,
             pinned: true,
             expandedHeight: 280.0,
             flexibleSpace: FlexibleSpaceBar(

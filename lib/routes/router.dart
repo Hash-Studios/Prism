@@ -58,7 +58,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Profile");
       print(navStack);
       analytics.setCurrentScreen(screenName: ProfileRoute);
-      return CupertinoPageRoute(builder: (context) => ProfileScreen());
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => ProfileScreen());
     case DownloadRoute:
       navStack.add("Downloads");
       print(navStack);
