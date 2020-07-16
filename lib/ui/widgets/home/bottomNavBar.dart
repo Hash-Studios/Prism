@@ -324,6 +324,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                   onPressed: () {
                     showGooglePopUp(() {
                       showModalBottomSheet(
+                        isScrollControlled: true,
                         context: context,
                         builder: (context) => UploadBottomPanel(),
                       );
@@ -484,7 +485,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height / 1.6,
+      height: MediaQuery.of(context).size.height / 1.4,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         borderRadius: BorderRadius.only(
@@ -517,6 +518,11 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
           //     ),
           //   ),
           // ),
+          Spacer(),
+          Text(
+            "Upload a Wallpaper",
+            style: Theme.of(context).textTheme.headline2,
+          ),
           Spacer(),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -605,7 +611,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                 "Now you can upload your wallpapers, and zip bada boom, in a matter of seconds, they will be live and everyone across the globe can view them.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 13,
                   color: Theme.of(context).accentColor,
                 ),
               ),
