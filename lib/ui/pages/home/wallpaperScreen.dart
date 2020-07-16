@@ -127,6 +127,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                 onPanelOpened: () {
                   if (panelClosed) {
                     print('Screenshot Starting');
+                    setState(() {
+                      panelClosed = false;
+                    });
                     screenshotController
                         .capture(
                       pixelRatio: 3,
@@ -136,7 +139,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       setState(() {
                         _imageFile = image;
                         screenshotTaken = true;
-                        panelClosed = false;
                       });
                       print('Screenshot Taken');
                     }).catchError((onError) {
@@ -609,6 +611,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                     onPanelOpened: () {
                       if (panelClosed) {
                         print('Screenshot Starting');
+                        setState(() {
+                          panelClosed = false;
+                        });
                         screenshotController
                             .capture(
                           pixelRatio: 3,
@@ -618,7 +623,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           setState(() {
                             _imageFile = image;
                             screenshotTaken = true;
-                            panelClosed = false;
                           });
                           print('Screenshot Taken');
                         }).catchError((onError) {
@@ -1088,6 +1092,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         onPanelOpened: () {
                           if (panelClosed) {
                             print('Screenshot Starting');
+                            setState(() {
+                              panelClosed = false;
+                            });
                             screenshotController
                                 .capture(
                               pixelRatio: 3,
@@ -1097,7 +1104,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               setState(() {
                                 _imageFile = image;
                                 screenshotTaken = true;
-                                panelClosed = false;
                               });
                               print('Screenshot Taken');
                             }).catchError((onError) {
@@ -1617,6 +1623,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             onPanelOpened: () {
                               if (panelClosed) {
                                 print('Screenshot Starting');
+                                setState(() {
+                                  panelClosed = false;
+                                });
                                 screenshotController
                                     .capture(
                                   pixelRatio: 3,
@@ -1626,7 +1635,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   setState(() {
                                     _imageFile = image;
                                     screenshotTaken = true;
-                                    panelClosed = false;
                                   });
                                   print('Screenshot Taken');
                                 }).catchError((onError) {
@@ -2172,6 +2180,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             onPanelOpened: () {
                               if (panelClosed) {
                                 print('Screenshot Starting');
+                                setState(() {
+                                  panelClosed = false;
+                                });
                                 screenshotController
                                     .capture(
                                   pixelRatio: 3,
@@ -2181,7 +2192,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   setState(() {
                                     _imageFile = image;
                                     screenshotTaken = true;
-                                    panelClosed = false;
                                   });
                                   print('Screenshot Taken');
                                 }).catchError((onError) {
