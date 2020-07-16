@@ -478,7 +478,10 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       setState(() {
         _wallpaper = File(pickedFile.path);
       });
-      Navigator.pushNamed(context, UploadWallRoute, arguments: [_wallpaper]);
+      Navigator.pop(context);
+      Future.delayed(Duration(seconds: 0)).then((value) => Navigator.pushNamed(
+          context, UploadWallRoute,
+          arguments: [_wallpaper]));
     }
   }
 

@@ -10,6 +10,7 @@ import 'package:github/github.dart';
 import 'package:image/image.dart' as Img;
 import 'package:Prism/gitkey.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 
 class UploadWallScreen extends StatefulWidget {
   final List arguments;
@@ -244,7 +245,21 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               size: 40,
               color: Colors.white,
             ),
-            onPressed: !isProcessing && !isUploading ? () {} : null),
+            onPressed: !isProcessing && !isUploading
+                ? () async {
+                    await WallStore.createRecord(
+                        id,
+                        wallpaperProvider,
+                        wallpaperThumb,
+                        wallpaperUrl,
+                        wallpaperResolution,
+                        wallpaperSize,
+                        wallpaperCategory,
+                        wallpaperDesc,
+                        review);
+                    Navigator.pop(context);
+                  }
+                : null),
       ),
     );
   }
