@@ -1,5 +1,6 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -26,12 +27,11 @@ void showUpdate(BuildContext context) {
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Image.asset(
-                'assets/images/appIcon.png',
-                fit: BoxFit.scaleDown,
-              ),
+            child: FlareActor(
+              "assets/animations/Update.flr",
+              isPaused: false,
+              alignment: Alignment.center,
+              animation: "update",
             ),
           ),
           Row(

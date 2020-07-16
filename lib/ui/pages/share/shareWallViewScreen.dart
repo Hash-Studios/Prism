@@ -11,9 +11,9 @@ import 'package:Prism/ui/widgets/clockOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:optimized_cached_image/widgets.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
@@ -49,13 +49,13 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   PanelController panelController = PanelController();
   var image;
   bool panelClosed = true;
-  
+
   Future<void> _updatePaletteGenerator() async {
     setState(() {
       isLoading = true;
     });
     try {
-      image = new OptimizedCacheImageProvider(thumb, errorListener: () {
+      image = new CachedNetworkImageProvider(thumb, errorListener: () {
         colors = [
           Color(0xFFFFFFFF),
           Color(0xFFc7c7c7),
@@ -151,7 +151,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
               backgroundColor:
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
-              onPanelOpened: () {
+                onPanelOpened: () {
                   if (panelClosed) {
                     print('Screenshot Starting');
                     screenshotController
@@ -525,7 +525,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           if (offsetAnimation.value < 0.0)
                             print('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
-                            child: OptimizedCacheImage(
+                            child: CachedNetworkImage(
                               imageUrl: url,
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
@@ -662,31 +662,31 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   backgroundColor:
                       isLoading ? Theme.of(context).primaryColor : accent,
                   body: SlidingUpPanel(
-                   onPanelOpened: () {
-                  if (panelClosed) {
-                    print('Screenshot Starting');
-                    screenshotController
-                        .capture(
-                      pixelRatio: 2,
-                      delay: Duration(milliseconds: 10),
-                    )
-                        .then((File image) async {
+                    onPanelOpened: () {
+                      if (panelClosed) {
+                        print('Screenshot Starting');
+                        screenshotController
+                            .capture(
+                          pixelRatio: 2,
+                          delay: Duration(milliseconds: 10),
+                        )
+                            .then((File image) async {
+                          setState(() {
+                            _imageFile = image;
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          print('Screenshot Taken');
+                        }).catchError((onError) {
+                          print(onError);
+                        });
+                      }
+                    },
+                    onPanelClosed: () {
                       setState(() {
-                        _imageFile = image;
-                        screenshotTaken = true;
-                        panelClosed = false;
+                        panelClosed = true;
                       });
-                      print('Screenshot Taken');
-                    }).catchError((onError) {
-                      print(onError);
-                    });
-                  }
-                },
-                onPanelClosed: () {
-                  setState(() {
-                    panelClosed = true;
-                  });
-                },
+                    },
                     backdropEnabled: true,
                     backdropTapClosesPanel: true,
                     borderRadius: BorderRadius.only(
@@ -1039,7 +1039,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               if (offsetAnimation.value < 0.0)
                                 print('${offsetAnimation.value + 8.0}');
                               return GestureDetector(
-                                child: OptimizedCacheImage(
+                                child: CachedNetworkImage(
                                   imageUrl: url,
                                   imageBuilder: (context, imageProvider) =>
                                       Screenshot(
@@ -1517,7 +1517,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   if (offsetAnimation.value < 0.0)
                                     print('${offsetAnimation.value + 8.0}');
                                   return GestureDetector(
-                                    child: OptimizedCacheImage(
+                                    child: CachedNetworkImage(
                                       imageUrl: url,
                                       imageBuilder: (context, imageProvider) =>
                                           Container(
