@@ -16,7 +16,10 @@ import 'package:Prism/main.dart' as main;
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 class CategoriesBar extends StatefulWidget {
-  CategoriesBar({Key key}) : super(key: key);
+  final width;
+  final height;
+  CategoriesBar({Key key, @required this.width, @required this.height})
+      : super(key: key);
 
   @override
   _CategoriesBarState createState() => _CategoriesBarState();
@@ -28,201 +31,195 @@ class _CategoriesBarState extends State<CategoriesBar> {
   @override
   void initState() {
     isNew = true;
+    super.initState();
     initTargets();
     if (isNew) {
       Future.delayed(Duration(seconds: 0)).then(
           (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
     }
-    super.initState();
   }
 
   void initTargets() {
-    // targets.add(TargetFocus(
-    //   identify: "Target 1",
-    //   keyTarget: globals.keyCategoriesBar,
-    //   contents: [
-    //     ContentTarget(
-    //         align: AlignContent.bottom,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: <Widget>[
-    //               Text(
-    //                 "This is the Categories Bar.",
-    //                 style: TextStyle(
-    //                     fontWeight: FontWeight.bold,
-    //                     color: Colors.white,
-    //                     fontSize: 20.0),
-    //               ),
-    //               Padding(
-    //                 padding: const EdgeInsets.only(top: 10.0),
-    //                 child: Text(
-    //                   "Find all wallpaper categories like Curated, Abstract and Nature, here. At last, it also has a Colors button, which lets you select the color of the wallpapers you want.",
-    //                   style: TextStyle(color: Colors.white),
-    //                 ),
-    //               )
-    //             ],
-    //           ),
-    //         ))
-    //   ],
-    //   shape: ShapeLightFocus.RRect,
-    // ));
-    // targets.add(TargetFocus(
-    //   targetPosition: TargetPosition(Size(300 * 0.6625, 300), Offset(0, 70)),
-    //   identify: "Target 2",
-    //   contents: [
-    //     ContentTarget(
-    //         align: AlignContent.bottom,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: <Widget>[
-    //               Text(
-    //                 "Tap on a wallpaper to view it.",
-    //                 style: TextStyle(
-    //                     fontWeight: FontWeight.bold,
-    //                     color: Colors.white,
-    //                     fontSize: 20.0),
-    //               ),
-    //               Padding(
-    //                 padding: const EdgeInsets.only(top: 10.0),
-    //                 child: Text(
-    //                   "You can also apply, favorite, and download it directly from the 3-dots menu.",
-    //                   style: TextStyle(color: Colors.white),
-    //                 ),
-    //               )
-    //             ],
-    //           ),
-    //         ))
-    //   ],
-    //   shape: ShapeLightFocus.RRect,
-    // ));
-    // // targets.add(TargetFocus(
-    // //   identify: "Target 3",
-    // //   keyTarget: globals.keyBottomBar,
-    // //   contents: [
-    // //     ContentTarget(
-    // //         align: AlignContent.top,
-    // //         child: Container(
-    // //           child: Column(
-    // //             mainAxisSize: MainAxisSize.min,
-    // //             crossAxisAlignment: CrossAxisAlignment.start,
-    // //             children: <Widget>[
-    // //               Text(
-    // //                 "This is the Navigation Bar.",
-    // //                 style: TextStyle(
-    // //                     fontWeight: FontWeight.bold,
-    // //                     color: Colors.white,
-    // //                     fontSize: 20.0),
-    // //               ),
-    // //               Padding(
-    // //                 padding: const EdgeInsets.only(top: 10.0),
-    // //                 child: Text(
-    // //                   "It lets you quickly switch between Home, Search, Favorites and Profile.",
-    // //                   style: TextStyle(color: Colors.white),
-    // //                 ),
-    // //               )
-    // //             ],
-    // //           ),
-    // //         ))
-    // //   ],
-    // //   shape: ShapeLightFocus.RRect,
-    // // ));
-    // targets.add(TargetFocus(
-    //   identify: "Target 4",
-    //   keyTarget: globals.keySearchButton,
-    //   contents: [
-    //     ContentTarget(
-    //         align: AlignContent.top,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: <Widget>[
-    //               Text(
-    //                 "This is the Search Page.",
-    //                 style: TextStyle(
-    //                     fontWeight: FontWeight.bold,
-    //                     color: Colors.white,
-    //                     fontSize: 20.0),
-    //               ),
-    //               Padding(
-    //                 padding: const EdgeInsets.only(top: 10.0),
-    //                 child: Text(
-    //                   "Head over here to search Wallpapers, and apply them.",
-    //                   style: TextStyle(color: Colors.white),
-    //                 ),
-    //               )
-    //             ],
-    //           ),
-    //         ))
-    //   ],
-    //   shape: ShapeLightFocus.Circle,
-    // ));
-    // targets.add(TargetFocus(
-    //   identify: "Target 5",
-    //   keyTarget: globals.keyFavButton,
-    //   contents: [
-    //     ContentTarget(
-    //         align: AlignContent.top,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: <Widget>[
-    //               Text(
-    //                 "This is the Favorites Page.",
-    //                 style: TextStyle(
-    //                     fontWeight: FontWeight.bold,
-    //                     color: Colors.white,
-    //                     fontSize: 20.0),
-    //               ),
-    //               Padding(
-    //                 padding: const EdgeInsets.only(top: 10.0),
-    //                 child: Text(
-    //                   "All your saved favorites are visible here, and you can apply them straight away from here.",
-    //                   style: TextStyle(color: Colors.white),
-    //                 ),
-    //               )
-    //             ],
-    //           ),
-    //         ))
-    //   ],
-    //   shape: ShapeLightFocus.Circle,
-    // ));
-    // targets.add(TargetFocus(
-    //   identify: "Target 6",
-    //   keyTarget: globals.keyProfileButton,
-    //   contents: [
-    //     ContentTarget(
-    //         align: AlignContent.top,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: <Widget>[
-    //               Text(
-    //                 "This is the Profile Page.",
-    //                 style: TextStyle(
-    //                     fontWeight: FontWeight.bold,
-    //                     color: Colors.white,
-    //                     fontSize: 20.0),
-    //               ),
-    //               Padding(
-    //                 padding: const EdgeInsets.only(top: 10.0),
-    //                 child: Text(
-    //                   "It lets you view your downloads, set wallpapers from downloaded ones, sign in or log out, change themes, clear your downloads and cache, and more experimental features. Clearly this is the next best thing in this app after wallpapers, so make sure to check it out.",
-    //                   style: TextStyle(color: Colors.white),
-    //                 ),
-    //               )
-    //             ],
-    //           ),
-    //         ))
-    //   ],
-    //   shape: ShapeLightFocus.Circle,
-    // ));
+    targets.add(TargetFocus(
+      identify: "Target 1",
+      targetPosition: TargetPosition(Size(widget.width, 60), Offset(0, 20)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.bottom,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the Categories Bar.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: RichText(
+                      text: TextSpan(
+                          text: "➡ Find all wallpaper categories like ",
+                          style: TextStyle(color: Colors.white),
+                          children: [
+                            TextSpan(
+                              text:
+                                  "Curated, 4k, Abstract, Nature, Art, Minimal ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: "etc, here.\n\n"),
+                            TextSpan(text: "➡ It also has a "),
+                            TextSpan(
+                              text: "Colors ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                                text:
+                                    "button, which lets you find wallpapers by a specific color.\n\n"),
+                          ]),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.RRect,
+    ));
+    targets.add(TargetFocus(
+      targetPosition: TargetPosition(
+          Size(widget.width * 0.5, widget.width * 0.5 / 0.6625), Offset(0, 70)),
+      identify: "Target 2",
+      contents: [
+        ContentTarget(
+            align: AlignContent.bottom,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "Tap on a wallpaper to view it.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "You can also apply, favorite, and download it directly from the 3-dots menu.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.RRect,
+    ));
+    targets.add(TargetFocus(
+      identify: "Target 3",
+      targetPosition: TargetPosition(
+          Size(40, 40), Offset(widget.width / 2 - 45, widget.height - 65)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the Search Page.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "Head over here to search Wallpapers, and apply them.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Target 4",
+      targetPosition: TargetPosition(
+          Size(40, 40), Offset(widget.width / 2 + 5, widget.height - 65)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the Favorites Page.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "All your saved favorites are visible here, and you can apply them straight away from here.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Target 5",
+      targetPosition: TargetPosition(
+          Size(40, 40), Offset(widget.width / 2 + 55, widget.height - 65)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the Profile Page.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "It lets you view your downloads, set wallpapers from downloaded ones, sign in or log out, change themes, clear your downloads and cache, and more experimental features. Clearly this is the next best thing in this app after wallpapers, so make sure to check it out.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
     // targets.add(TargetFocus(
     //   identify: "Target 7",
     //   targetPosition: TargetPosition(Size(0, 0), Offset(300 * 0.6625, 370)),
@@ -275,13 +272,12 @@ class _CategoriesBarState extends State<CategoriesBar> {
   void afterLayout(_) {
     var newApp = main.prefs.getBool("newApp");
     if (newApp == null) {
-      Future.delayed(Duration(milliseconds: 100), () {
-        showTutorial();
-      });
+      Future.delayed(Duration(milliseconds: 100), showTutorial);
       main.prefs.setBool("newApp", false);
     } else {
       main.prefs.setBool("newApp", false);
     }
+    Future.delayed(Duration(milliseconds: 100), showTutorial);
   }
 
   Widget _wrapScrollTag({int index, Widget child}) => AutoScrollTag(
