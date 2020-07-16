@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -9,10 +8,7 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class BottomBar extends StatefulWidget {
   final Widget child;
