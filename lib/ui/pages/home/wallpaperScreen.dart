@@ -604,7 +604,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   resizeToAvoidBottomPadding: false,
                   key: _scaffoldKey,
                   backgroundColor:
-                      isLoading ? Theme.of(context).primaryColor : colors[0],
+                      isLoading ? Theme.of(context).primaryColor : accent,
                   body: SlidingUpPanel(
                     onPanelOpened: () {
                       if (panelClosed) {
@@ -984,7 +984,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         JamIcons.close_circle_f,
                                         color: isLoading
                                             ? Theme.of(context).accentColor
-                                            : colors[0].computeLuminance() > 0.5
+                                            : accent.computeLuminance() > 0.5
                                                 ? Colors.black
                                                 : Colors.white,
                                       ),
@@ -1023,7 +1023,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               },
                               color: isLoading
                                   ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
+                                  : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
                               icon: Icon(
@@ -1065,7 +1065,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               },
                               color: isLoading
                                   ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
+                                  : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
                               icon: Icon(
