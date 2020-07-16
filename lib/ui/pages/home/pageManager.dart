@@ -50,7 +50,9 @@ class _PageManagerState extends State<PageManager> {
     return Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: PreferredSize(
-          child: CategoriesBar(),
+          child: CategoriesBar(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height),
           preferredSize: Size(double.infinity, 55),
         ),
         body: BottomBar(
