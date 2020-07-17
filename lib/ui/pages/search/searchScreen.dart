@@ -17,7 +17,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   Future<bool> onWillPop() async {
-    navStack.removeLast();
+    if(navStack.length>1)navStack.removeLast();
     print(navStack);
     return true;
   }

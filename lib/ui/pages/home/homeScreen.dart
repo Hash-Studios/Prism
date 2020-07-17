@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> onWillPop() async {
-    navStack.removeLast();
+    if(navStack.length>1)navStack.removeLast();
     print(navStack);
     return true;
   }

@@ -28,7 +28,7 @@ class FavWallpaperViewScreen extends StatefulWidget {
 class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    navStack.removeLast();
+    if(navStack.length>1)navStack.removeLast();
     print(navStack);
     return true;
   }
