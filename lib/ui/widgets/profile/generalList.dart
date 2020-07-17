@@ -82,6 +82,24 @@ class GeneralList extends StatelessWidget {
                 style: TextStyle(fontSize: 12),
               ),
             ),
+            ListTile(
+              onTap: () {
+                main.prefs.setBool("newApp", true);
+                main.RestartWidget.restartApp(context);
+              },
+              leading: Icon(JamIcons.help),
+              title: Text(
+                "Show Tutorial",
+                style: TextStyle(
+                    color: Theme.of(context).accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
+              ),
+              subtitle: Text(
+                "Quick Guide to Prism",
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
           ],
         ),
       ],

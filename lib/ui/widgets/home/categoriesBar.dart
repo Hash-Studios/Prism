@@ -459,7 +459,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   void afterLayout(_) {
     var newApp = main.prefs.getBool("newApp");
-    if (newApp == null) {
+    if (newApp == null || newApp == true) {
       Future.delayed(Duration(milliseconds: 100), showTutorial);
       main.prefs.setBool("newApp", false);
     } else {
