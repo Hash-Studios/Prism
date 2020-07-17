@@ -89,7 +89,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         backgroundColor: Color(0xFFE57697),
                         automaticallyImplyLeading: false,
                         pinned: false,
-                        expandedHeight: 240.0,
+                        expandedHeight: 260.0,
                         flexibleSpace: FlexibleSpaceBar(
                           background: Stack(
                             fit: StackFit.expand,
@@ -98,115 +98,99 @@ class _ProfileChildState extends State<ProfileChild> {
                                 color: Color(0xFFE57697),
                               ),
                               Padding(
-                                padding: const EdgeInsets.only(top: 35.0),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: <Widget>[
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        main.prefs.getString("googleimage") ==
-                                                null
-                                            ? Container()
-                                            : Container(
-                                                decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            5000),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                          blurRadius: 16,
-                                                          offset: Offset(0, 4),
-                                                          color:
-                                                              Color(0xFF000000)
-                                                                  .withOpacity(
-                                                                      0.24))
-                                                    ]),
-                                                child: CircleAvatar(
-                                                  radius: 50,
-                                                  backgroundImage: NetworkImage(
-                                                      main.prefs.getString(
-                                                          "googleimage")),
-                                                ),
+                                padding: const EdgeInsets.only(top: 25.0),
+                                child: Container(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Spacer(flex: 5),
+                                      main.prefs.getString("googleimage") ==
+                                              null
+                                          ? Container()
+                                          : Container(
+                                              decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          5000),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                        blurRadius: 16,
+                                                        offset: Offset(0, 4),
+                                                        color: Color(0xFF000000)
+                                                            .withOpacity(0.24))
+                                                  ]),
+                                              child: CircleAvatar(
+                                                radius: 50,
+                                                backgroundImage: NetworkImage(
+                                                    main.prefs.getString(
+                                                        "googleimage")),
                                               ),
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              8, 15, 8, 0),
-                                          child: main.prefs.getString("name") ==
-                                                  null
-                                              ? Container()
-                                              : Text(
-                                                  main.prefs.getString("name"),
-                                                  style: TextStyle(
-                                                      fontFamily:
-                                                          "Proxima Nova",
-                                                      color: Colors.white,
-                                                      fontSize: 32,
-                                                      fontWeight:
-                                                          FontWeight.w700),
-                                                ),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              4, 0, 4, 4),
-                                          child: RichText(
-                                            text: TextSpan(
-                                                text: favCount.toString(),
+                                            ),
+                                      Spacer(flex: 2),
+                                      main.prefs.getString("name") == null
+                                          ? Container()
+                                          : Text(
+                                              main.prefs.getString("name"),
+                                              style: TextStyle(
+                                                  fontFamily: "Proxima Nova",
+                                                  color: Colors.white,
+                                                  fontSize: 32,
+                                                  fontWeight: FontWeight.w700),
+                                            ),
+                                      Spacer(flex: 1),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: <Widget>[
+                                          Spacer(flex: 3),
+                                          Row(
+                                            children: <Widget>[
+                                              Text(
+                                                favCount.toString() + " ",
                                                 style: TextStyle(
                                                     fontFamily: "Proxima Nova",
                                                     fontSize: 24,
                                                     color: Colors.white70,
                                                     fontWeight:
-                                                        FontWeight.w700),
-                                                children: [
-                                                  TextSpan(
-                                                    text: " Favourites",
-                                                    style: TextStyle(
-                                                        fontFamily:
-                                                            "Proxima Nova",
-                                                        color: Colors.white70,
-                                                        fontSize: 22,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  )
-                                                ]),
+                                                        FontWeight.normal),
+                                              ),
+                                              Icon(
+                                                JamIcons.heart,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              4, 0, 4, 4),
-                                          child: RichText(
-                                            text: TextSpan(
-                                                text: Provider.of<
-                                                            ProfileWallProvider>(
-                                                        context)
-                                                    .len
-                                                    .toString(),
+                                          Spacer(flex: 1),
+                                          Row(
+                                            children: <Widget>[
+                                              Text(
+                                                Provider.of<ProfileWallProvider>(
+                                                            context)
+                                                        .len
+                                                        .toString() +
+                                                    " ",
                                                 style: TextStyle(
                                                     fontFamily: "Proxima Nova",
                                                     fontSize: 24,
                                                     color: Colors.white70,
                                                     fontWeight:
-                                                        FontWeight.w700),
-                                                children: [
-                                                  TextSpan(
-                                                    text: " Uploads",
-                                                    style: TextStyle(
-                                                        fontFamily:
-                                                            "Proxima Nova",
-                                                        color: Colors.white70,
-                                                        fontSize: 22,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  )
-                                                ]),
+                                                        FontWeight.normal),
+                                              ),
+                                              Icon(
+                                                JamIcons.picture,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                      ],
-                                    )
-                                  ],
+                                          Spacer(flex: 3),
+                                        ],
+                                      ),
+                                      Spacer(flex: 4),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
@@ -217,28 +201,41 @@ class _ProfileChildState extends State<ProfileChild> {
                         backgroundColor: Color(0xFFE57697),
                         automaticallyImplyLeading: false,
                         pinned: true,
+                        titleSpacing: 0,
                         expandedHeight:
                             main.prefs.getBool("isLoggedin") ? 50 : 0,
-                        title: TabBar(
-                            indicatorColor: Color(0xFFFFFFFF),
-                            indicatorSize: TabBarIndicatorSize.label,
-                            unselectedLabelColor:
-                                Color(0xFFFFFFFF).withOpacity(0.5),
-                            labelColor: Color(0xFFFFFFFF),
-                            tabs: [
-                              Tab(
-                                icon: Icon(JamIcons.picture),
-                              ),
-                              Tab(
-                                icon: Icon(JamIcons.settings_alt),
-                              )
-                            ]),
+                        title: SizedBox(
+                          width: MediaQuery.of(context).size.width,
+                          height: 57,
+                          child: Container(
+                            color: Theme.of(context).primaryColor,
+                            child: SizedBox.expand(
+                              child: TabBar(
+                                  indicatorColor: Color(0xFFFFFFFF),
+                                  indicatorSize: TabBarIndicatorSize.label,
+                                  unselectedLabelColor:
+                                      Color(0xFFFFFFFF).withOpacity(0.5),
+                                  labelColor: Color(0xFFFFFFFF),
+                                  tabs: [
+                                    Tab(
+                                      icon: Icon(JamIcons.picture),
+                                    ),
+                                    Tab(
+                                      icon: Icon(JamIcons.settings_alt),
+                                    )
+                                  ]),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                     body: TabBarView(children: [
-                      ProfileLoader(
-                        future: Provider.of<ProfileWallProvider>(context)
-                            .getProfileWalls(),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: ProfileLoader(
+                          future: Provider.of<ProfileWallProvider>(context)
+                              .getProfileWalls(),
+                        ),
                       ),
                       SettingsList()
                     ]),
