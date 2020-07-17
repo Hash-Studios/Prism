@@ -79,7 +79,7 @@ class _ThemeViewState extends State<ThemeView> {
               child: Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(17),
                   boxShadow: Provider.of<ThemeModel>(context, listen: false)
                               .returnTheme() ==
                           ThemeType.Dark
@@ -115,10 +115,10 @@ class _ThemeViewState extends State<ThemeView> {
                             ? "assets/images/dark_theme.jpg"
                             : "assets/images/light_theme.jpg",
                       ),
-                      fit: BoxFit.contain),
+                      fit: BoxFit.fitWidth),
                 ),
-                width: MediaQuery.of(context).size.height * 0.3,
-                height: MediaQuery.of(context).size.height * 0.6 - 5,
+                width: MediaQuery.of(context).size.height * 0.6 * 0.52068473609,
+                height: MediaQuery.of(context).size.height * 0.6 - 2,
               ),
             ),
             AnimatedToggle(
