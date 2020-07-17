@@ -107,27 +107,6 @@ class _ProfileChildState extends State<ProfileChild> {
         InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
       onWillPop: onWillPop,
-<<<<<<< HEAD
-      child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        body: CustomScrollView(controller: controller, slivers: <Widget>[
-          SliverAppBar(
-            backgroundColor: Color(0xFFE57697),
-            automaticallyImplyLeading: false,
-            pinned: false,
-            expandedHeight: 280.0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  main.prefs.getBool("isLoggedin")
-                      ? Container(
-                          color: Color(0xFFE57697),
-                        )
-                      : Stack(
-                          children: <Widget>[
-                            Container(
-=======
       child: DefaultTabController(
         length: main.prefs.getBool("isLoggedin") ? 3 : 1,
         child: Scaffold(
@@ -146,7 +125,6 @@ class _ProfileChildState extends State<ProfileChild> {
                     children: [
                       main.prefs.getBool("isLoggedin")
                           ? Container(
->>>>>>> c03b4a5... tabs added in profile screen
                               color: Color(0xFFE57697),
                             )
                           : Stack(
