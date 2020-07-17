@@ -519,9 +519,31 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
           //   ),
           // ),
           Spacer(),
-          Text(
-            "Upload a Wallpaper",
-            style: Theme.of(context).textTheme.headline2,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                "Upload a Wallpaper",
+                style: Theme.of(context).textTheme.headline2,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 3, horizontal: 5),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(50),
+                      color: Color(0xFFE57697)),
+                  child: Text(
+                    "BETA",
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyText2
+                        .copyWith(fontSize: 10),
+                  ),
+                ),
+              )
+            ],
           ),
           Spacer(),
           Row(
