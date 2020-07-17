@@ -222,10 +222,12 @@ class _ProfileChildState extends State<ProfileChild> {
                 pinned: true,
                 expandedHeight: main.prefs.getBool("isLoggedin") ? 50 : 0,
                 title: TabBar(
-                    indicator: BoxDecoration(
-                        color: main.prefs.getBool("isLoggedin")
-                            ? Theme.of(context).accentColor
-                            : Color(0xFFE57697)),
+                    indicatorColor: main.prefs.getBool("isLoggedin")
+                        ? Color(0xFFFFFFFF)
+                        : Color(0xFFE57697),
+                    indicatorSize: TabBarIndicatorSize.label,
+                    unselectedLabelColor: Color(0xFFFFFFFF).withOpacity(0.5),
+                    labelColor: Color(0xFFFFFFFF),
                     tabs: main.prefs.getBool("isLoggedin")
                         ? [
                             Tab(
