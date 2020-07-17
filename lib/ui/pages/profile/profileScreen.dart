@@ -44,7 +44,6 @@ class _ProfileChildState extends State<ProfileChild> {
   @override
   void initState() {
     checkFav();
-    checkProfileWalls();
     super.initState();
   }
 
@@ -64,23 +63,6 @@ class _ProfileChildState extends State<ProfileChild> {
           setState(
             () {
               favCount = value;
-            },
-          );
-        },
-      );
-    }
-  }
-
-  Future checkProfileWalls() async {
-    if (main.prefs.getBool("isLoggedin")) {
-      await Provider.of<ProfileWallProvider>(context, listen: false)
-          .countProfileWalls()
-          .then(
-        (value) {
-          print(value);
-          setState(
-            () {
-              profileCount = value;
             },
           );
         },
@@ -151,7 +133,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                               ),
                                         Padding(
                                           padding: const EdgeInsets.fromLTRB(
-                                              8, 15, 8, 6),
+                                              8, 15, 8, 0),
                                           child: main.prefs.getString("name") ==
                                                   null
                                               ? Container()
@@ -166,18 +148,9 @@ class _ProfileChildState extends State<ProfileChild> {
                                                           FontWeight.w700),
                                                 ),
                                         ),
-                                        main.prefs.getString("email") == null
-                                            ? Container()
-                                            : Text(
-                                                main.prefs.getString("email"),
-                                                style: TextStyle(
-                                                    fontFamily: "Proxima Nova",
-                                                    fontSize: 16,
-                                                    fontWeight:
-                                                        FontWeight.w500),
-                                              ),
                                         Padding(
-                                          padding: const EdgeInsets.all(8.0),
+                                          padding: const EdgeInsets.fromLTRB(
+                                              4, 0, 4, 4),
                                           child: RichText(
                                             text: TextSpan(
                                                 text: favCount.toString(),
@@ -202,10 +175,15 @@ class _ProfileChildState extends State<ProfileChild> {
                                           ),
                                         ),
                                         Padding(
-                                          padding: const EdgeInsets.all(8.0),
+                                          padding: const EdgeInsets.fromLTRB(
+                                              4, 0, 4, 4),
                                           child: RichText(
                                             text: TextSpan(
-                                                text: profileCount.toString(),
+                                                text: Provider.of<
+                                                            ProfileWallProvider>(
+                                                        context)
+                                                    .len
+                                                    .toString(),
                                                 style: TextStyle(
                                                     fontFamily: "Proxima Nova",
                                                     fontSize: 24,
@@ -729,7 +707,7 @@ class _SettingsListState extends State<SettingsList> {
                           fontFamily: "Proxima Nova"),
                     ),
                     subtitle: Text(
-                      "Sign out from your account",
+                      main.prefs.getString("email"),
                       style: TextStyle(fontSize: 12),
                     ),
                     onTap: () {

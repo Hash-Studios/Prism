@@ -5,6 +5,7 @@ import 'package:Prism/main.dart' as main;
 class ProfileWallProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
   List profileWalls;
+  int len = 0;
   Future<List> getProfileWalls() async {
     this.profileWalls = [];
     await databaseReference
@@ -18,20 +19,12 @@ class ProfileWallProvider extends ChangeNotifier {
       value.documents.forEach((f) {
         this.profileWalls.add(f.data);
       });
-      print(this.profileWalls.length);
-      countProfileWalls();
+      this.len = this.profileWalls.length;
+      print(this.len);
     }).catchError((e) {
       print(e.toString());
       print("data done with error");
     });
     return this.profileWalls;
-  }
-
-  Future<int> countProfileWalls() async {
-    int walls;
-    print("in countprofilewalls");
-    print(this.profileWalls.length);
-    walls = this.profileWalls.length;
-    return walls;
   }
 }
