@@ -164,69 +164,69 @@ class WallHavenProvider extends ChangeNotifier {
     );
   }
 
-  Future<List<WallPaper>> getWallsbyTag(String tagname) async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?q=$tagname&page=${this.pageGetTag}&categories=100&purity=100&sorting=random&order=des")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"],
-                    favourites: resp["data"][i]["favorites"],
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"],
-                    dimension_y: resp["data"][i]["dimension_y"],
-                    resolution: resp["data"][i]["id"],
-                    file_size: resp["data"][i]["file_size"],
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageGetTag = resp["meta"]["current_page"] + 1;
-      },
-    ).whenComplete(() => notifyListeners());
-    return this.walls;
-  }
+  // Future<List<WallPaper>> getWallsbyTag(String tagname) async {
+  //   http
+  //       .get(
+  //           "https://wallhaven.cc/api/v1/search?q=$tagname&page=${this.pageGetTag}&categories=100&purity=100&sorting=random&order=des")
+  //       .then(
+  //     (http.Response response) {
+  //       var resp = json.decode(response.body);
+  //       for (int i = 0; i < resp["data"].length; i++) {
+  //         this.walls.add(
+  //               WallPaper(
+  //                   id: resp["data"][i]["id"],
+  //                   url: resp["data"][i]["url"],
+  //                   short_url: resp["data"][i]["short_url"],
+  //                   views: resp["data"][i]["views"],
+  //                   favourites: resp["data"][i]["favorites"],
+  //                   category: resp["data"][i]["category"],
+  //                   dimension_x: resp["data"][i]["dimension_x"],
+  //                   dimension_y: resp["data"][i]["dimension_y"],
+  //                   resolution: resp["data"][i]["id"],
+  //                   file_size: resp["data"][i]["file_size"],
+  //                   colors: resp["data"][i]["colors"],
+  //                   path: resp["data"][i]["path"],
+  //                   thumbs: resp["data"][i]["thumbs"],
+  //                   current_page: resp["meta"]["current_page"]),
+  //             );
+  //       }
+  //       this.pageGetTag = resp["meta"]["current_page"] + 1;
+  //     },
+  //   ).whenComplete(() => notifyListeners());
+  //   return this.walls;
+  // }
 
-  Future<List<WallPaper>> getDataPeople() async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?page=${this.pageGetPeople}&categories=111&purity=100&ratios=9x16&sorting=random&order=des")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"],
-                    favourites: resp["data"][i]["favorites"],
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"],
-                    dimension_y: resp["data"][i]["dimension_y"],
-                    resolution: resp["data"][i]["id"],
-                    file_size: resp["data"][i]["file_size"],
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageGetPeople = resp["meta"]["current_page"] + 1;
-      },
-    ).whenComplete(() => notifyListeners());
-    return this.walls;
-  }
+  // Future<List<WallPaper>> getDataPeople() async {
+  //   http
+  //       .get(
+  //           "https://wallhaven.cc/api/v1/search?page=${this.pageGetPeople}&categories=111&purity=100&ratios=9x16&sorting=random&order=des")
+  //       .then(
+  //     (http.Response response) {
+  //       var resp = json.decode(response.body);
+  //       for (int i = 0; i < resp["data"].length; i++) {
+  //         this.walls.add(
+  //               WallPaper(
+  //                   id: resp["data"][i]["id"],
+  //                   url: resp["data"][i]["url"],
+  //                   short_url: resp["data"][i]["short_url"],
+  //                   views: resp["data"][i]["views"],
+  //                   favourites: resp["data"][i]["favorites"],
+  //                   category: resp["data"][i]["category"],
+  //                   dimension_x: resp["data"][i]["dimension_x"],
+  //                   dimension_y: resp["data"][i]["dimension_y"],
+  //                   resolution: resp["data"][i]["id"],
+  //                   file_size: resp["data"][i]["file_size"],
+  //                   colors: resp["data"][i]["colors"],
+  //                   path: resp["data"][i]["path"],
+  //                   thumbs: resp["data"][i]["thumbs"],
+  //                   current_page: resp["meta"]["current_page"]),
+  //             );
+  //       }
+  //       this.pageGetPeople = resp["meta"]["current_page"] + 1;
+  //     },
+  //   ).whenComplete(() => notifyListeners());
+  //   return this.walls;
+  // }
 
   Future<List<WallPaper>> getLandscapeWalls() async {
     http

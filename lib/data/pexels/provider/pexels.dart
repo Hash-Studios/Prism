@@ -72,33 +72,33 @@ class PexelsProvider extends ChangeNotifier {
     );
   }
 
-  Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
-    http.get(
-        "https://api.pexels.com/v1/search?query=$query&per_page=80&page=${this.pageGetQueryP}",
-        headers: {
-          "Authorization":
-              "563492ad6f9170000100000107272bb5cab346b68e27263fbf1b6a72"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          this.wallsP.add(
-                WallPaperP(
-                    id: resp["photos"][i]["id"].toString(),
-                    url: resp["photos"][i]["url"],
-                    width: resp["photos"][i]["width"].toString(),
-                    height: resp["photos"][i]["height"].toString(),
-                    photographer: resp["photos"][i]["photographer"],
-                    src: resp["photos"][i]["src"],
-                    current_page: resp["page"]),
-              );
-        }
-        this.pageGetQueryP = resp["page"] + 1;
-        print("data done");
-        return this.wallsP;
-      },
-    );
-  }
+  // Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
+  //   http.get(
+  //       "https://api.pexels.com/v1/search?query=$query&per_page=80&page=${this.pageGetQueryP}",
+  //       headers: {
+  //         "Authorization":
+  //             "563492ad6f9170000100000107272bb5cab346b68e27263fbf1b6a72"
+  //       }).then(
+  //     (http.Response response) {
+  //       var resp = json.decode(response.body);
+  //       for (int i = 0; i < resp["photos"].length; i++) {
+  //         this.wallsP.add(
+  //               WallPaperP(
+  //                   id: resp["photos"][i]["id"].toString(),
+  //                   url: resp["photos"][i]["url"],
+  //                   width: resp["photos"][i]["width"].toString(),
+  //                   height: resp["photos"][i]["height"].toString(),
+  //                   photographer: resp["photos"][i]["photographer"],
+  //                   src: resp["photos"][i]["src"],
+  //                   current_page: resp["page"]),
+  //             );
+  //       }
+  //       this.pageGetQueryP = resp["page"] + 1;
+  //       print("data done");
+  //       return this.wallsP;
+  //     },
+  //   );
+  // }
 
   Future<List<WallPaperP>> getWallsPbyColor(String query) async {
     print("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1");

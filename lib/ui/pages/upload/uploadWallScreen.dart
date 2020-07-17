@@ -12,6 +12,7 @@ import 'package:image/image.dart' as Img;
 import 'package:Prism/gitkey.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class UploadWallScreen extends StatefulWidget {
   final List arguments;
@@ -129,37 +130,45 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       isUploading = true;
       isProcessing = false;
     });
-    String base64Image = base64Encode(imageBytes);
-    String base64ImageThumb = base64Encode(imageBytesThumb);
-    var github = GitHub(auth: Authentication.basic(username, password));
-    await github.repositories
-        .createFile(
-            RepositorySlug('codenameakshay2', 'prism-walls-test'),
-            CreateFile(
-                message: "${Path.basename(image.path)}",
-                content: base64Image,
-                path: '${Path.basename(image.path)}'))
-        .then((value) => setState(() {
-              wallpaperUrl = value.content.downloadUrl;
-              wallpaperPath = value.content.path;
-              wallpaperSha = value.content.sha;
-            }));
-    await github.repositories
-        .createFile(
-            RepositorySlug('codenameakshay2', 'prism-walls-test'),
-            CreateFile(
-                message: "thumb_${Path.basename(image.path)}",
-                content: base64ImageThumb,
-                path: 'thumb_${Path.basename(image.path)}'))
-        .then((value) => setState(() {
-              wallpaperThumb = value.content.downloadUrl;
-              thumbPath = value.content.path;
-              thumbSha = value.content.sha;
-            }));
-    print('File Uploaded');
-    setState(() {
-      isUploading = false;
-    });
+    try {
+      String base64Image = base64Encode(imageBytes);
+      String base64ImageThumb = base64Encode(imageBytesThumb);
+      var github = GitHub(auth: Authentication.basic(username, password));
+      await github.repositories
+          .createFile(
+              RepositorySlug('codenameakshay2', 'prism-walls-test'),
+              CreateFile(
+                  message: "${Path.basename(image.path)}",
+                  content: base64Image,
+                  path: '${Path.basename(image.path)}'))
+          .then((value) => setState(() {
+                wallpaperUrl = value.content.downloadUrl;
+                wallpaperPath = value.content.path;
+                wallpaperSha = value.content.sha;
+              }));
+      await github.repositories
+          .createFile(
+              RepositorySlug('codenameakshay2', 'prism-walls-test'),
+              CreateFile(
+                  message: "thumb_${Path.basename(image.path)}",
+                  content: base64ImageThumb,
+                  path: 'thumb_${Path.basename(image.path)}'))
+          .then((value) => setState(() {
+                wallpaperThumb = value.content.downloadUrl;
+                thumbPath = value.content.path;
+                thumbSha = value.content.sha;
+              }));
+      print('File Uploaded');
+      setState(() {
+        isUploading = false;
+      });
+    } catch (e) {
+      print(e.toString());
+      Navigator.pop(context);
+      navStack.removeLast();
+      print(navStack);
+      toasts.error("Some uploading issue, please try again.");
+    }
   }
 
   Future<bool> onWillPop() async {
