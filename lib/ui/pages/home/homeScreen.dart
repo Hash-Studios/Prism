@@ -23,7 +23,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   //Check for update if available
-  String currentAppVersion = "2.4.2";
+  String currentAppVersion = "2.4.3";
   final databaseReference = Firestore.instance;
 
   Future<void> _checkUpdate() async {

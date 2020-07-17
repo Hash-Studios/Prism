@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flare_flutter/flare_actor.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as Path;
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +38,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   String wallpaperPath;
   String thumbPath;
   bool review;
+  List<int> imageBytes;
+  List<int> imageBytesThumb;
   @override
   void initState() {
     super.initState();
@@ -71,21 +74,37 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     print(id);
   }
 
+  static Future<List<int>> _resizeImage(File file) async {
+    final bytes = await file.readAsBytes();
+    final Img.Image image = Img.decodeImage(bytes);
+    final Img.Image resized = Img.copyResize(image, width: 250);
+    final List<int> resizedBytes = Img.encodeJpg(resized);
+
+    return resizedBytes;
+  }
+
   Future processImage() async {
-    Future.delayed(Duration(milliseconds: 1000)).then((value) async {
-      var decodedImage = await decodeImageFromList(image.readAsBytesSync());
-      print(decodedImage.width);
-      print(decodedImage.height);
-      var res =
-          decodedImage.width.toString() + "x" + decodedImage.height.toString();
-      setState(() {
-        wallpaperResolution = res;
-      });
-      image.length().then((value) =>
-          {wallpaperSize = (value / 1024 / 1024).toStringAsFixed(2) + "MB"});
-      uploadFile();
-      print(image.toString());
+    var imgList = image.readAsBytesSync();
+    var decodedImage = await decodeImageFromList(imgList);
+
+    print(decodedImage.width);
+    print(decodedImage.height);
+
+    var res =
+        decodedImage.width.toString() + "x" + decodedImage.height.toString();
+
+    setState(() {
+      wallpaperResolution = res;
     });
+
+    image.length().then((value) =>
+        {wallpaperSize = (value / 1024 / 1024).toStringAsFixed(2) + "MB"});
+
+    imageBytes = await image.readAsBytes();
+    imageBytesThumb = await compute<File, List<int>>(_resizeImage, image);
+
+    uploadFile();
+    print(image.toString());
   }
 
   Future deleteFile() async {
@@ -110,10 +129,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       isUploading = true;
       isProcessing = false;
     });
-    List<int> imageBytes = await image.readAsBytes();
-    Img.Image thumbnail =
-        Img.copyResize(Img.decodeImage(imageBytes), width: 250, height: 500);
-    List<int> imageBytesThumb = Img.encodePng(thumbnail);
     String base64Image = base64Encode(imageBytes);
     String base64ImageThumb = base64Encode(imageBytesThumb);
     var github = GitHub(auth: Authentication.basic(username, password));
@@ -187,8 +202,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       width: MediaQuery.of(context).size.width / 2.4,
                       height: MediaQuery.of(context).size.width / 2.4,
                       child: FlareActor(
-                        "assets/animations/Upload.flr",
-                        animation: "upload",
+                        isUploading
+                            ? "assets/animations/Upload.flr"
+                            : "assets/animations/Process.flr",
+                        animation: isUploading ? "upload" : "process",
                         isPaused: false,
                         fit: BoxFit.contain,
                         alignment: Alignment.center,
@@ -234,25 +251,33 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   : Container(),
               Spacer(),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 0, 16),
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: <Widget>[
-                    Icon(
-                      JamIcons.info,
-                      color: Theme.of(context).accentColor.withOpacity(0.6),
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.2,
+                      child: Center(
+                        child: Icon(
+                          JamIcons.info,
+                          color: Theme.of(context).accentColor.withOpacity(0.6),
+                        ),
+                      ),
                     ),
                     Container(
-                      width: MediaQuery.of(context).size.width * 0.7,
+                      width: MediaQuery.of(context).size.width * 0.6,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile section.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color:
-                                Theme.of(context).accentColor.withOpacity(0.6),
+                        child: Center(
+                          child: Text(
+                            "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile section.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(context)
+                                  .accentColor
+                                  .withOpacity(0.6),
+                            ),
                           ),
                         ),
                       ),
