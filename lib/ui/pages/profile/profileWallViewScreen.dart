@@ -28,7 +28,7 @@ class ProfileWallViewScreen extends StatefulWidget {
 class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    navStack.removeLast();
+    if(navStack.length>1)navStack.removeLast();
     print(navStack);
     return true;
   }

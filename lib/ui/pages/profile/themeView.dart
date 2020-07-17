@@ -28,7 +28,7 @@ class _ThemeViewState extends State<ThemeView> {
     } else {
       Provider.of<ThemeModel>(context, listen: false).toggleTheme();
     }
-    navStack.removeLast();
+    if(navStack.length>1)navStack.removeLast();
     print(navStack);
     return true;
   }

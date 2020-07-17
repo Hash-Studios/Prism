@@ -127,7 +127,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   }
 
   Future<bool> onWillPop() async {
-    navStack.removeLast();
+    if(navStack.length>1)navStack.removeLast();
     print(navStack);
     return true;
   }

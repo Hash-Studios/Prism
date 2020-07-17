@@ -17,7 +17,7 @@ class DownloadWallpaperScreen extends StatefulWidget {
 class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    navStack.removeLast();
+    if (navStack.length > 1) navStack.removeLast();
     print(navStack);
     return true;
   }

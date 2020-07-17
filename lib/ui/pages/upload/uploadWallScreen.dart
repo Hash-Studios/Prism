@@ -172,7 +172,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<bool> onWillPop() async {
-    navStack.removeLast();
+    if (navStack.length > 1) navStack.removeLast();
     print(navStack);
     deleteFile();
     return true;
