@@ -5,7 +5,6 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/analytics/analytics_service.dart';
 import 'package:provider/provider.dart';
 
 class GeneralList extends StatelessWidget {
@@ -30,33 +29,16 @@ class GeneralList extends StatelessWidget {
           children: [
             ListTile(
               onTap: () {
-                Navigator.pushNamed(context, ThemeViewRoute);
-                // main.prefs.getBool("darkMode") == null
-                //     ? analytics.logEvent(
-                //         name: 'theme_changed', parameters: {'type': 'dark'})
-                //     : main.prefs.getBool("darkMode")
-                //         ? analytics.logEvent(
-                //             name: 'theme_changed',
-                //             parameters: {'type': 'light'})
-                //         : analytics.logEvent(
-                //             name: 'theme_changed',
-                //             parameters: {'type': 'dark'});
-                // Provider.of<ThemeModel>(context, listen: false).toggleTheme();
-                // main.RestartWidget.restartApp(context);
+                Navigator.pushNamed(context, ThemeViewRoute, arguments: [
+                  Provider.of<ThemeModel>(context, listen: false).currentTheme
+                ]);
+
+                Provider.of<ThemeModel>(context, listen: false).toggleTheme();
+                main.RestartWidget.restartApp(context);
               },
               leading: Icon(JamIcons.wrench),
-              // leading: main.prefs.getBool("darkMode") == null
-              //     ? Icon(JamIcons.moon_f)
-              //     : main.prefs.getBool("darkMode")
-              //         ? Icon(JamIcons.sun_f)
-              //         : Icon(JamIcons.moon_f),
               title: Text(
                 "Themes",
-                // main.prefs.getBool("darkMode") == null
-                //     ? "Dark Mode"
-                //     : main.prefs.getBool("darkMode")
-                //         ? "Light Mode"
-                //         : "Dark Mode",
                 style: TextStyle(
                     color: Theme.of(context).accentColor,
                     fontWeight: FontWeight.w500,

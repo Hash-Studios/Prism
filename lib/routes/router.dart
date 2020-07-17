@@ -184,7 +184,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Themes");
       print(navStack);
       analytics.setCurrentScreen(screenName: ThemeViewRoute);
-      return CupertinoPageRoute(builder: (context) => ThemeView());
+      return CupertinoPageRoute(
+          builder: (context) => ThemeView(arguments: settings.arguments));
     case UploadWallRoute:
       navStack.add("Add");
       print(navStack);
