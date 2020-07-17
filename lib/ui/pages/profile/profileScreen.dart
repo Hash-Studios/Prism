@@ -11,7 +11,6 @@ import 'package:Prism/ui/pages/profile/prismList.dart';
 import 'package:Prism/ui/pages/profile/studioList.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
-import 'package:Prism/ui/widgets/profile/profileGrid.dart';
 import 'package:Prism/ui/widgets/profile/profileLoader.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
@@ -202,6 +201,31 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 ]),
                                           ),
                                         ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: RichText(
+                                            text: TextSpan(
+                                                text: profileCount.toString(),
+                                                style: TextStyle(
+                                                    fontFamily: "Proxima Nova",
+                                                    fontSize: 24,
+                                                    color: Colors.white70,
+                                                    fontWeight:
+                                                        FontWeight.w700),
+                                                children: [
+                                                  TextSpan(
+                                                    text: " Uploads",
+                                                    style: TextStyle(
+                                                        fontFamily:
+                                                            "Proxima Nova",
+                                                        color: Colors.white70,
+                                                        fontSize: 22,
+                                                        fontWeight:
+                                                            FontWeight.w500),
+                                                  )
+                                                ]),
+                                          ),
+                                        ),
                                       ],
                                     )
                                   ],
@@ -256,150 +280,28 @@ class _ProfileChildState extends State<ProfileChild> {
                       background: Stack(
                         fit: StackFit.expand,
                         children: [
-                          main.prefs.getBool("isLoggedin")
-                              ? Container(
-                                  color: Color(0xFFE57697),
-                                )
-                              : Stack(
-                                  children: <Widget>[
-                                    Container(
-                                      color: Color(0xFFE57697),
+                          Stack(
+                            children: <Widget>[
+                              Container(
+                                color: Color(0xFFE57697),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                                child: Center(
+                                  child: SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width / 2,
+                                    child: FlareActor(
+                                      "assets/animations/Text.flr",
+                                      isPaused: false,
+                                      alignment: Alignment.center,
+                                      animation: "Untitled",
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          0, 20, 0, 0),
-                                      child: Center(
-                                        child: SizedBox(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width /
-                                              2,
-                                          child: FlareActor(
-                                            "assets/animations/Text.flr",
-                                            isPaused: false,
-                                            alignment: Alignment.center,
-                                            animation: "Untitled",
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  ],
+                                  ),
                                 ),
-                          main.prefs.getBool("isLoggedin")
-                              ? Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: <Widget>[
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        main.prefs.getString("googleimage") ==
-                                                null
-                                            ? Container()
-                                            : Container(
-                                                decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            5000),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                          blurRadius: 16,
-                                                          offset: Offset(0, 4),
-                                                          color:
-                                                              Color(0xFF000000)
-                                                                  .withOpacity(
-                                                                      0.24))
-                                                    ]),
-                                                child: CircleAvatar(
-                                                  radius: 50,
-                                                  backgroundImage: NetworkImage(
-                                                      main.prefs.getString(
-                                                          "googleimage")),
-                                                ),
-                                              ),
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              8, 15, 8, 6),
-                                          child: main.prefs.getString("name") ==
-                                                  null
-                                              ? Container()
-                                              : Text(
-                                                  main.prefs.getString("name"),
-                                                  style: TextStyle(
-                                                      fontFamily:
-                                                          "Proxima Nova",
-                                                      color: Colors.white,
-                                                      fontSize: 32,
-                                                      fontWeight:
-                                                          FontWeight.w700),
-                                                ),
-                                        ),
-                                        main.prefs.getString("email") == null
-                                            ? Container()
-                                            : Text(
-                                                main.prefs.getString("email"),
-                                                style: TextStyle(
-                                                    fontFamily: "Proxima Nova",
-                                                    fontSize: 16,
-                                                    fontWeight:
-                                                        FontWeight.w500),
-                                              ),
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: RichText(
-                                            text: TextSpan(
-                                                text: favCount.toString(),
-                                                style: TextStyle(
-                                                    fontFamily: "Proxima Nova",
-                                                    fontSize: 24,
-                                                    color: Colors.white70,
-                                                    fontWeight:
-                                                        FontWeight.w700),
-                                                children: [
-                                                  TextSpan(
-                                                    text: " Favourites",
-                                                    style: TextStyle(
-                                                        fontFamily:
-                                                            "Proxima Nova",
-                                                        color: Colors.white70,
-                                                        fontSize: 22,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  )
-                                                ]),
-                                          ),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: RichText(
-                                            text: TextSpan(
-                                                text: profileCount.toString(),
-                                                style: TextStyle(
-                                                    fontFamily: "Proxima Nova",
-                                                    fontSize: 24,
-                                                    color: Colors.white70,
-                                                    fontWeight:
-                                                        FontWeight.w700),
-                                                children: [
-                                                  TextSpan(
-                                                    text: " Uploads",
-                                                    style: TextStyle(
-                                                        fontFamily:
-                                                            "Proxima Nova",
-                                                        color: Colors.white70,
-                                                        fontSize: 22,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  )
-                                                ]),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                )
-                              : Container(),
+                              )
+                            ],
+                          ),
                         ],
                       ),
                     ),
