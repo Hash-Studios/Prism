@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class PrismList extends StatelessWidget {
   @override
@@ -149,7 +150,7 @@ class PrismList extends StatelessWidget {
                   fontFamily: "Proxima Nova"),
             ),
             subtitle: Text(
-              "v2.4.3+11",
+              "v${globals.currentAppVersion}+${globals.currentAppVersionCode}",
               style: TextStyle(fontSize: 12),
             ),
             onTap: () {}),
