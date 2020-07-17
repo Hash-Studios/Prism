@@ -1,5 +1,6 @@
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/profile/animatedThemeSwitch.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,7 @@ class _ThemeViewState extends State<ThemeView> {
     } else {
       Provider.of<ThemeModel>(context, listen: false).toggleTheme();
     }
-    if(navStack.length>1)navStack.removeLast();
+    if (navStack.length > 1) navStack.removeLast();
     print(navStack);
     return true;
   }
@@ -121,7 +122,7 @@ class _ThemeViewState extends State<ThemeView> {
               ),
             ),
             AnimatedToggle(
-              values: main.prefs.getBool("darkMode")
+              values: currentTheme == kDarkTheme
                   ? ['Dark', 'Light']
                   : ['Light', 'Dark'],
               textColor: Theme.of(context).accentColor,
