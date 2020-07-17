@@ -67,6 +67,8 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 ### v2.4.4
 - Upto 24 new Categories added, full list [here](###categories)
 - Added upload section
+- Added new themes page
+- Added new animations
 - Redesigned Profile section UI
 - Major bug fixes
 
