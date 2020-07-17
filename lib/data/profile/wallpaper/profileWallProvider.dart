@@ -5,10 +5,10 @@ import 'package:Prism/main.dart' as main;
 class ProfileWallProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
   List profileWalls;
-  Future<List> getPrismWalls() async {
+  Future<List> getProfileWalls() async {
     this.profileWalls = [];
     await databaseReference
-        .collection("walls")
+        .collection("walls2")
         .where('review', isEqualTo: true)
         .where('email', isEqualTo: main.prefs.getString('email'))
         .orderBy("createdAt", descending: true)

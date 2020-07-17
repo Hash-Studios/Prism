@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
@@ -53,6 +54,9 @@ void main() {
                       ),
                       ChangeNotifierProvider<PrismProvider>(
                         create: (context) => PrismProvider(),
+                      ),
+                      ChangeNotifierProvider<ProfileWallProvider>(
+                        create: (context) => ProfileWallProvider(),
                       ),
                       ChangeNotifierProvider<ThemeModel>(
                         create: (context) => ThemeModel(

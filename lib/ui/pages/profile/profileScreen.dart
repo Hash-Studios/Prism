@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/profile/profileLoader.dart';
 import 'package:Prism/ui/widgets/profile/settingsList.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
@@ -230,7 +232,14 @@ class _ProfileChildState extends State<ProfileChild> {
             ],
             body: TabBarView(
                 children: main.prefs.getBool("isLoggedin")
-                    ? [Container(), SettingsList()]
+                    ? [
+                        ProfileLoader(
+                          future: Provider.of<ProfileWallProvider>(context,
+                                  listen: false)
+                              .getProfileWalls(),
+                        ),
+                        SettingsList()
+                      ]
                     : [SettingsList()]),
           ),
         ),
