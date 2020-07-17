@@ -110,10 +110,10 @@ class _ProfileGridState extends State<ProfileGrid>
                                     .returnTheme() ==
                                 ThemeType.Dark
                             ? SvgPicture.asset(
-                                "assets/images/favourites dark.svg",
+                                "assets/images/posts dark.svg",
                               )
                             : SvgPicture.asset(
-                                "assets/images/favourites light.svg",
+                                "assets/images/posts light.svg",
                               ),
                       ),
                       SizedBox(
