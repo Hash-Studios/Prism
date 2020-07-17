@@ -44,6 +44,25 @@ class PrismList extends StatelessWidget {
             }),
         ListTile(
             leading: Icon(
+              JamIcons.star,
+            ),
+            title: new Text(
+              "Rate Prism!",
+              style: TextStyle(
+                  color: Theme.of(context).accentColor,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: Text(
+              "If you like Prism, please consider rating it.",
+              style: TextStyle(fontSize: 12),
+            ),
+            onTap: () {
+              launch(
+                  "https://play.google.com/store/apps/details?id=com.hash.prism");
+            }),
+        ListTile(
+            leading: Icon(
               JamIcons.share_alt,
             ),
             title: new Text(
