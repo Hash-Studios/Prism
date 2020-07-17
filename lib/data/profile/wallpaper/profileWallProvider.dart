@@ -19,10 +19,19 @@ class ProfileWallProvider extends ChangeNotifier {
         this.profileWalls.add(f.data);
       });
       print(this.profileWalls.length);
+      countProfileWalls();
     }).catchError((e) {
       print(e.toString());
       print("data done with error");
     });
     return this.profileWalls;
+  }
+
+  Future<int> countProfileWalls() async {
+    int walls;
+    print("in countprofilewalls");
+    print(this.profileWalls.length);
+    walls = this.profileWalls.length;
+    return walls;
   }
 }
