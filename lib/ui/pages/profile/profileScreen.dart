@@ -3,7 +3,7 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/pages/home/generalList.dart';
+import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
 import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:Prism/ui/widgets/profile/studioList.dart';
@@ -207,17 +207,23 @@ class _ProfileChildState extends State<ProfileChild> {
                             color: Theme.of(context).primaryColor,
                             child: SizedBox.expand(
                               child: TabBar(
-                                  indicatorColor: Color(0xFFFFFFFF),
+                                  indicatorColor: Theme.of(context).accentColor,
                                   indicatorSize: TabBarIndicatorSize.label,
                                   unselectedLabelColor:
                                       Color(0xFFFFFFFF).withOpacity(0.5),
                                   labelColor: Color(0xFFFFFFFF),
                                   tabs: [
                                     Tab(
-                                      icon: Icon(JamIcons.picture),
+                                      icon: Icon(
+                                        JamIcons.picture,
+                                        color: Theme.of(context).accentColor,
+                                      ),
                                     ),
                                     Tab(
-                                      icon: Icon(JamIcons.settings_alt),
+                                      icon: Icon(
+                                        JamIcons.settings_alt,
+                                        color: Theme.of(context).accentColor,
+                                      ),
                                     )
                                   ]),
                             ),

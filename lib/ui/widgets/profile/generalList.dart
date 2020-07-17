@@ -1,3 +1,4 @@
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -29,30 +30,33 @@ class GeneralList extends StatelessWidget {
           children: [
             ListTile(
               onTap: () {
-                main.prefs.getBool("darkMode") == null
-                    ? analytics.logEvent(
-                        name: 'theme_changed', parameters: {'type': 'dark'})
-                    : main.prefs.getBool("darkMode")
-                        ? analytics.logEvent(
-                            name: 'theme_changed',
-                            parameters: {'type': 'light'})
-                        : analytics.logEvent(
-                            name: 'theme_changed',
-                            parameters: {'type': 'dark'});
-                Provider.of<ThemeModel>(context, listen: false).toggleTheme();
-                main.RestartWidget.restartApp(context);
+                Navigator.pushNamed(context, ThemeViewRoute);
+                // main.prefs.getBool("darkMode") == null
+                //     ? analytics.logEvent(
+                //         name: 'theme_changed', parameters: {'type': 'dark'})
+                //     : main.prefs.getBool("darkMode")
+                //         ? analytics.logEvent(
+                //             name: 'theme_changed',
+                //             parameters: {'type': 'light'})
+                //         : analytics.logEvent(
+                //             name: 'theme_changed',
+                //             parameters: {'type': 'dark'});
+                // Provider.of<ThemeModel>(context, listen: false).toggleTheme();
+                // main.RestartWidget.restartApp(context);
               },
-              leading: main.prefs.getBool("darkMode") == null
-                  ? Icon(JamIcons.moon_f)
-                  : main.prefs.getBool("darkMode")
-                      ? Icon(JamIcons.sun_f)
-                      : Icon(JamIcons.moon_f),
+              leading: Icon(JamIcons.wrench),
+              // leading: main.prefs.getBool("darkMode") == null
+              //     ? Icon(JamIcons.moon_f)
+              //     : main.prefs.getBool("darkMode")
+              //         ? Icon(JamIcons.sun_f)
+              //         : Icon(JamIcons.moon_f),
               title: Text(
-                main.prefs.getBool("darkMode") == null
-                    ? "Dark Mode"
-                    : main.prefs.getBool("darkMode")
-                        ? "Light Mode"
-                        : "Dark Mode",
+                "Themes",
+                // main.prefs.getBool("darkMode") == null
+                //     ? "Dark Mode"
+                //     : main.prefs.getBool("darkMode")
+                //         ? "Light Mode"
+                //         : "Dark Mode",
                 style: TextStyle(
                     color: Theme.of(context).accentColor,
                     fontWeight: FontWeight.w500,
