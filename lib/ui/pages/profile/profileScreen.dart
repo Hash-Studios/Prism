@@ -284,7 +284,7 @@ class _ProfileChildState extends State<ProfileChild> {
                   SliverList(
                       delegate: SliverChildListDelegate([
                     Padding(
-                      padding: const EdgeInsets.only(top: 16),
+                      padding: const EdgeInsets.only(top: 10),
                       child: DownloadList(),
                     ),
                     Padding(

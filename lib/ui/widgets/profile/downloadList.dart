@@ -12,43 +12,47 @@ class DownloadList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Downloads',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).accentColor,
-              ),
-            ),
-          ),
-        ),
-        ListTile(
-          onTap: () {
-            if (!main.prefs.getBool("isLoggedin")) {
-              googleSignInPopUp(context, () {
-                Navigator.pushNamed(context, DownloadRoute);
-              });
-            } else {
-              Navigator.pushNamed(context, DownloadRoute);
-            }
-          },
-          leading: Icon(JamIcons.download),
-          title: Text(
-            "My Downloads",
-            style: TextStyle(
-                color: Theme.of(context).accentColor,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
-          ),
-          subtitle: Text(
-            "See all your downloaded wallpapers",
-            style: TextStyle(fontSize: 12),
-          ),
-          trailing: Icon(JamIcons.chevron_right),
-        ),
+        main.prefs.getBool("isLoggedin")
+            ? Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Downloads',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).accentColor,
+                    ),
+                  ),
+                ),
+              )
+            : Container(),
+        main.prefs.getBool("isLoggedin")
+            ? ListTile(
+                onTap: () {
+                  if (!main.prefs.getBool("isLoggedin")) {
+                    googleSignInPopUp(context, () {
+                      Navigator.pushNamed(context, DownloadRoute);
+                    });
+                  } else {
+                    Navigator.pushNamed(context, DownloadRoute);
+                  }
+                },
+                leading: Icon(JamIcons.download),
+                title: Text(
+                  "My Downloads",
+                  style: TextStyle(
+                      color: Theme.of(context).accentColor,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
+                ),
+                subtitle: Text(
+                  "See all your downloaded wallpapers",
+                  style: TextStyle(fontSize: 12),
+                ),
+                trailing: Icon(JamIcons.chevron_right),
+              )
+            : Container(),
         main.prefs.getBool("isLoggedin")
             ? ListTile(
                 leading: Icon(
