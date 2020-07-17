@@ -1,25 +1,21 @@
 import 'dart:async';
-import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-
-import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/pages/home/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
 import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:Prism/ui/widgets/profile/studioList.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/profile/profileLoader.dart';
+import 'package:Prism/ui/widgets/profile/userList.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -237,7 +233,13 @@ class _ProfileChildState extends State<ProfileChild> {
                               .getProfileWalls(),
                         ),
                       ),
-                      SettingsList()
+                      ListView(children: <Widget>[
+                        DownloadList(),
+                        GeneralList(),
+                        UserList(),
+                        PrismList(),
+                        StudioList(),
+                      ])
                     ]),
                   ),
                 ),
@@ -287,436 +289,12 @@ class _ProfileChildState extends State<ProfileChild> {
                       padding: const EdgeInsets.only(top: 10),
                       child: DownloadList(),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        'Personalisation',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).accentColor,
-                        ),
-                      ),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        main.prefs.getBool("darkMode") == null
-                            ? analytics.logEvent(
-                                name: 'theme_changed',
-                                parameters: {'type': 'dark'})
-                            : main.prefs.getBool("darkMode")
-                                ? analytics.logEvent(
-                                    name: 'theme_changed',
-                                    parameters: {'type': 'light'})
-                                : analytics.logEvent(
-                                    name: 'theme_changed',
-                                    parameters: {'type': 'dark'});
-                        Provider.of<ThemeModel>(context, listen: false)
-                            .toggleTheme();
-                        main.RestartWidget.restartApp(context);
-                      },
-                      leading: main.prefs.getBool("darkMode") == null
-                          ? Icon(JamIcons.moon_f)
-                          : main.prefs.getBool("darkMode")
-                              ? Icon(JamIcons.sun_f)
-                              : Icon(JamIcons.moon_f),
-                      title: Text(
-                        main.prefs.getBool("darkMode") == null
-                            ? "Dark Mode"
-                            : main.prefs.getBool("darkMode")
-                                ? "Light Mode"
-                                : "Dark Mode",
-                        style: TextStyle(
-                            color: Theme.of(context).accentColor,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: "Proxima Nova"),
-                      ),
-                      subtitle: Text(
-                        "Toggle app theme",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        'General',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).accentColor,
-                        ),
-                      ),
-                    ),
-                    Column(
-                      children: [
-                        ListTile(
-                            leading: Icon(
-                              JamIcons.pie_chart_alt,
-                            ),
-                            title: Text(
-                              "Clear Cache",
-                              style: TextStyle(
-                                  color: Theme.of(context).accentColor,
-                                  fontWeight: FontWeight.w500,
-                                  fontFamily: "Proxima Nova"),
-                            ),
-                            subtitle: Text(
-                              "Clear locally cached images",
-                              style: TextStyle(fontSize: 12),
-                            ),
-                            onTap: () {
-                              DefaultCacheManager().emptyCache();
-                              toasts.clearCache();
-                            }),
-                        ListTile(
-                          onTap: () {
-                            main.RestartWidget.restartApp(context);
-                          },
-                          leading: Icon(JamIcons.refresh),
-                          title: Text(
-                            "Restart App",
-                            style: TextStyle(
-                                color: Theme.of(context).accentColor,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: "Proxima Nova"),
-                          ),
-                          subtitle: Text(
-                            "Force the application to restart",
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        'User',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).accentColor,
-                        ),
-                      ),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        Dialog loaderDialog = Dialog(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20)),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: Theme.of(context).primaryColor),
-                            width: MediaQuery.of(context).size.width * .7,
-                            height: MediaQuery.of(context).size.height * .3,
-                            child: Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
-                        );
-                        if (!main.prefs.getBool("isLoggedin")) {
-                          showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (BuildContext context) => loaderDialog);
-                          globals.gAuth.signInWithGoogle().then((value) {
-                            toasts.successLog();
-                            main.prefs.setBool("isLoggedin", true);
-                            Navigator.pop(context);
-                            main.RestartWidget.restartApp(context);
-                          }).catchError((e) {
-                            print(e);
-                            Navigator.pop(context);
-                            main.prefs.setBool("isLoggedin", false);
-                            toasts.error(
-                                "Something went wrong, please try again!");
-                          });
-                        } else {
-                          main.RestartWidget.restartApp(context);
-                        }
-                      },
-                      leading: Icon(JamIcons.log_in),
-                      title: Text(
-                        "Log in",
-                        style: TextStyle(
-                            color: Theme.of(context).accentColor,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: "Proxima Nova"),
-                      ),
-                      subtitle: Text(
-                        "Log in to sync data across devices",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
+                    GeneralList(),
+                    UserList(),
                     PrismList(),
                     StudioList(),
                   ]))
                 ]),
               ));
-  }
-}
-
-class SettingsList extends StatefulWidget {
-  @override
-  _SettingsListState createState() => _SettingsListState();
-}
-
-class _SettingsListState extends State<SettingsList> {
-  @override
-  Widget build(BuildContext context) {
-    return ListView(children: <Widget>[
-      DownloadList(),
-      Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(
-          'Personalisation',
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).accentColor,
-          ),
-        ),
-      ),
-      ListTile(
-        onTap: () {
-          main.prefs.getBool("darkMode") == null
-              ? analytics
-                  .logEvent(name: 'theme_changed', parameters: {'type': 'dark'})
-              : main.prefs.getBool("darkMode")
-                  ? analytics.logEvent(
-                      name: 'theme_changed', parameters: {'type': 'light'})
-                  : analytics.logEvent(
-                      name: 'theme_changed', parameters: {'type': 'dark'});
-          Provider.of<ThemeModel>(context, listen: false).toggleTheme();
-          main.RestartWidget.restartApp(context);
-        },
-        leading: main.prefs.getBool("darkMode") == null
-            ? Icon(JamIcons.moon_f)
-            : main.prefs.getBool("darkMode")
-                ? Icon(JamIcons.sun_f)
-                : Icon(JamIcons.moon_f),
-        title: Text(
-          main.prefs.getBool("darkMode") == null
-              ? "Dark Mode"
-              : main.prefs.getBool("darkMode") ? "Light Mode" : "Dark Mode",
-          style: TextStyle(
-              color: Theme.of(context).accentColor,
-              fontWeight: FontWeight.w500,
-              fontFamily: "Proxima Nova"),
-        ),
-        subtitle: Text(
-          "Toggle app theme",
-          style: TextStyle(fontSize: 12),
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(
-          'General',
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).accentColor,
-          ),
-        ),
-      ),
-      Column(
-        children: [
-          ListTile(
-              leading: Icon(
-                JamIcons.pie_chart_alt,
-              ),
-              title: Text(
-                "Clear Cache",
-                style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
-              ),
-              subtitle: Text(
-                "Clear locally cached images",
-                style: TextStyle(fontSize: 12),
-              ),
-              onTap: () {
-                DefaultCacheManager().emptyCache();
-                toasts.clearCache();
-              }),
-          ListTile(
-            onTap: () {
-              main.RestartWidget.restartApp(context);
-            },
-            leading: Icon(JamIcons.refresh),
-            title: Text(
-              "Restart App",
-              style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: Text(
-              "Force the application to restart",
-              style: TextStyle(fontSize: 12),
-            ),
-          ),
-        ],
-      ),
-      Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(
-          'User',
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).accentColor,
-          ),
-        ),
-      ),
-      main.prefs.getBool("isLoggedin") == false
-          ? ListTile(
-              onTap: () {
-                Dialog loaderDialog = Dialog(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: Theme.of(context).primaryColor),
-                    width: MediaQuery.of(context).size.width * .7,
-                    height: MediaQuery.of(context).size.height * .3,
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                );
-                if (!main.prefs.getBool("isLoggedin")) {
-                  showDialog(
-                      barrierDismissible: false,
-                      context: context,
-                      builder: (BuildContext context) => loaderDialog);
-                  globals.gAuth.signInWithGoogle().then((value) {
-                    toasts.successLog();
-                    main.prefs.setBool("isLoggedin", true);
-                    Navigator.pop(context);
-                    main.RestartWidget.restartApp(context);
-                  }).catchError((e) {
-                    print(e);
-                    Navigator.pop(context);
-                    main.prefs.setBool("isLoggedin", false);
-                    toasts.error("Something went wrong, please try again!");
-                  });
-                } else {
-                  main.RestartWidget.restartApp(context);
-                }
-              },
-              leading: Icon(JamIcons.log_in),
-              title: Text(
-                "Log in",
-                style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: "Proxima Nova"),
-              ),
-              subtitle: Text(
-                "Log in to sync data across devices",
-                style: TextStyle(fontSize: 12),
-              ),
-            )
-          : Container(),
-      main.prefs.getBool("isLoggedin")
-          ? Column(
-              children: [
-                ListTile(
-                    leading: Icon(
-                      JamIcons.heart,
-                    ),
-                    title: new Text(
-                      "Clear favourites",
-                      style: TextStyle(
-                          color: Theme.of(context).accentColor,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: "Proxima Nova"),
-                    ),
-                    subtitle: Text(
-                      "Remove all favourites",
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    onTap: () async {
-                      showDialog(
-                        context: context,
-                        child: AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(20),
-                            ),
-                          ),
-                          content: Container(
-                            height: 50,
-                            width: 250,
-                            child: Center(
-                              child: Text(
-                                "Do you want remove all your favourites?",
-                                style: Theme.of(context).textTheme.headline4,
-                              ),
-                            ),
-                          ),
-                          actions: <Widget>[
-                            FlatButton(
-                              shape: StadiumBorder(),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                toasts.clearFav();
-                                Provider.of<FavouriteProvider>(context,
-                                        listen: false)
-                                    .deleteData();
-                              },
-                              child: Text(
-                                'YES',
-                                style: TextStyle(
-                                  fontSize: 16.0,
-                                  color: Color(0xFFE57697),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: FlatButton(
-                                shape: StadiumBorder(),
-                                color: Color(0xFFE57697),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text(
-                                  'NO',
-                                  style: TextStyle(
-                                    fontSize: 16.0,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                ListTile(
-                    leading: Icon(
-                      JamIcons.log_out,
-                    ),
-                    title: new Text(
-                      "Logout",
-                      style: TextStyle(
-                          color: Theme.of(context).accentColor,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: "Proxima Nova"),
-                    ),
-                    subtitle: Text(
-                      main.prefs.getString("email"),
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    onTap: () {
-                      globals.gAuth.signOutGoogle();
-                      toasts.successLogOut();
-                      main.RestartWidget.restartApp(context);
-                    }),
-              ],
-            )
-          : Container(),
-      PrismList(),
-      StudioList(),
-    ]);
   }
 }
