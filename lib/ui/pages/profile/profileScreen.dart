@@ -82,7 +82,7 @@ class _ProfileChildState extends State<ProfileChild> {
     return WillPopScope(
       onWillPop: onWillPop,
       child: DefaultTabController(
-        length: main.prefs.getBool("isLoggedin") ? 3 : 1,
+        length: main.prefs.getBool("isLoggedin") ? 2 : 1,
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           body: NestedScrollView(
@@ -234,9 +234,6 @@ class _ProfileChildState extends State<ProfileChild> {
                               icon: Icon(JamIcons.picture),
                             ),
                             Tab(
-                              icon: Icon(JamIcons.instant_picture_f),
-                            ),
-                            Tab(
                               icon: Icon(JamIcons.settings_alt),
                             )
                           ]
@@ -249,7 +246,7 @@ class _ProfileChildState extends State<ProfileChild> {
             ],
             body: TabBarView(
                 children: main.prefs.getBool("isLoggedin")
-                    ? [Container(), Container(), SettingsList()]
+                    ? [Container(), SettingsList()]
                     : [SettingsList()]),
           ),
         ),
