@@ -12,6 +12,22 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
+Future<dynamic> myBackgroundMessageHandler(Map<String, dynamic> message) {
+  if (message.containsKey('data')) {
+    // Handle data message
+    final dynamic data = message['data'];
+    print(data);
+  }
+
+  if (message.containsKey('notification')) {
+    // Handle notification message
+    final dynamic notification = message['notification'];
+    print(notification);
+  }
+
+  // Or do other work.
+}
+
 class HomeScreen extends StatefulWidget {
   HomeScreen({
     Key key,
@@ -83,6 +99,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _updateToken() {
     FirebaseMessaging f = new FirebaseMessaging();
+    f.requestNotificationPermissions();
+    f.configure(
+      onMessage: (Map<String, dynamic> message) async {
+        print("onMessage: $message");
+        // _showItemDialog(message);
+      },
+      onBackgroundMessage: myBackgroundMessageHandler,
+      onLaunch: (Map<String, dynamic> message) async {
+        print("onLaunch: $message");
+        // _navigateToItemDetail(message);
+      },
+      onResume: (Map<String, dynamic> message) async {
+        print("onResume: $message");
+        // _navigateToItemDetail(message);
+      },
+    );
+
     f.getToken().then((value) {
       print(value);
       Firestore.instance.collection('tokens').document(value).setData({
