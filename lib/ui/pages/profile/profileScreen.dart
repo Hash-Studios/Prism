@@ -32,9 +32,11 @@ class ProfileChild extends StatefulWidget {
 
 class _ProfileChildState extends State<ProfileChild> {
   int favCount;
+  int profileCount;
   @override
   void initState() {
     checkFav();
+    checkProfileWalls();
     super.initState();
   }
 
@@ -54,6 +56,23 @@ class _ProfileChildState extends State<ProfileChild> {
           setState(
             () {
               favCount = value;
+            },
+          );
+        },
+      );
+    }
+  }
+
+  Future checkProfileWalls() async {
+    if (main.prefs.getBool("isLoggedin")) {
+      await Provider.of<ProfileWallProvider>(context, listen: false)
+          .countProfileWalls()
+          .then(
+        (value) {
+          print(value);
+          setState(
+            () {
+              profileCount = value;
             },
           );
         },
@@ -185,11 +204,30 @@ class _ProfileChildState extends State<ProfileChild> {
                                                           FontWeight.w500),
                                                 )
                                               ]),
-
-                                          // style: TextStyle(
-                                          //     fontFamily: "Proxima Nova",
-                                          //     fontSize: 24,
-                                          //     fontWeight: FontWeight.w500),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: RichText(
+                                          text: TextSpan(
+                                              text: profileCount.toString(),
+                                              style: TextStyle(
+                                                  fontFamily: "Proxima Nova",
+                                                  fontSize: 24,
+                                                  color: Colors.white70,
+                                                  fontWeight: FontWeight.w700),
+                                              children: [
+                                                TextSpan(
+                                                  text: " Uploads",
+                                                  style: TextStyle(
+                                                      fontFamily:
+                                                          "Proxima Nova",
+                                                      color: Colors.white70,
+                                                      fontSize: 22,
+                                                      fontWeight:
+                                                          FontWeight.w500),
+                                                )
+                                              ]),
                                         ),
                                       ),
                                     ],
