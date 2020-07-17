@@ -15,7 +15,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -37,31 +36,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: BottomBar(child: ProfileChild()));
-  }
-}
-
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverAppBarDelegate(this._tabBar);
-
-  final TabBar _tabBar;
-
-  @override
-  double get minExtent => _tabBar.preferredSize.height;
-  @override
-  double get maxExtent => _tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return new Container(
-      color: Colors.white, // ADD THE COLOR YOU WANT AS BACKGROUND.
-      child: _tabBar,
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
   }
 }
 
@@ -650,9 +624,35 @@ class _SettingsListState extends State<SettingsList> {
         main.prefs.getBool("isLoggedin") == false
             ? ListTile(
                 onTap: () {
+                  Dialog loaderDialog = Dialog(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(context).primaryColor),
+                      width: MediaQuery.of(context).size.width * .7,
+                      height: MediaQuery.of(context).size.height * .3,
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  );
                   if (!main.prefs.getBool("isLoggedin")) {
-                    googleSignInPopUp(context, () {
+                    showDialog(
+                        barrierDismissible: false,
+                        context: context,
+                        builder: (BuildContext context) => loaderDialog);
+                    globals.gAuth.signInWithGoogle().then((value) {
+                      toasts.successLog();
+                      main.prefs.setBool("isLoggedin", true);
+                      Navigator.pop(context);
                       main.RestartWidget.restartApp(context);
+                    }).catchError((e) {
+                      print(e);
+                      Navigator.pop(context);
+                      main.prefs.setBool("isLoggedin", false);
+                      toasts.error("Something went wrong, please try again!");
                     });
                   } else {
                     main.RestartWidget.restartApp(context);
