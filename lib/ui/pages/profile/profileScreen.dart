@@ -6,9 +6,9 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/pages/profile/downloadList.dart';
-import 'package:Prism/ui/pages/profile/prismList.dart';
-import 'package:Prism/ui/pages/profile/studioList.dart';
+import 'package:Prism/ui/widgets/profile/downloadList.dart';
+import 'package:Prism/ui/widgets/profile/prismList.dart';
+import 'package:Prism/ui/widgets/profile/studioList.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/profile/profileLoader.dart';
