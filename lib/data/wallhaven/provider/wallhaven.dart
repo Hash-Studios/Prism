@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/data/wallhaven/model/tag.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
+import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -24,39 +25,43 @@ class WallHavenProvider extends ChangeNotifier {
   int pageArchitecture = 1;
   int pageMarvel = 1;
   Future<List<WallPaper>> getData() async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?page=${this.pageGetData}&categories=100&purity=100&ratios=9x16&sorting=random&order=des")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageGetData = resp["meta"]["current_page"] + 1;
-        print("data done");
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?page=${this.pageGetData}&categories=100&purity=100&ratios=9x16&sorting=random&order=des")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pageGetData = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      ).catchError((e) {
+        print("data done with error");
         return this.walls;
-      },
-    ).catchError((e) {
-      print("data done with error");
-      return this.walls;
-    });
+      });
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<WallPaper> getWallbyID(String id) async {
@@ -229,339 +234,381 @@ class WallHavenProvider extends ChangeNotifier {
   // }
 
   Future<List<WallPaper>> getLandscapeWalls() async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?q=Landscape&page=${this.pageLandscape}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageLandscape = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?q=Landscape&page=${this.pageLandscape}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pageLandscape = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<List<WallPaper>> get4KWalls() async {
-    http
-        .get("https://wallhaven.cc/api/v1/search?q=4K&page=${this.page4K}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.page4K = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get("https://wallhaven.cc/api/v1/search?q=4K&page=${this.page4K}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.page4K = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<List<WallPaper>> getPatternWalls() async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?q=Pattern&page=${this.pagePattern}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pagePattern = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?q=Pattern&page=${this.pagePattern}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pagePattern = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<List<WallPaper>> getAnimeWalls() async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?q=Anime&page=${this.pageAnime}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageAnime = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?q=Anime&page=${this.pageAnime}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pageAnime = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<List<WallPaper>> getTechnologyWalls() async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?q=Technology&page=${this.pageTechnology}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageTechnology = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?q=Technology&page=${this.pageTechnology}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pageTechnology = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<List<WallPaper>> getCodeWalls() async {
-    http
-        .get("https://wallhaven.cc/api/v1/search?q=Code&page=${this.pageCode}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageCode = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?q=Code&page=${this.pageCode}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pageCode = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<List<WallPaper>> getCarsWalls() async {
-    http
-        .get("https://wallhaven.cc/api/v1/search?q=Cars&page=${this.pageCars}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageCars = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?q=Cars&page=${this.pageCars}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pageCars = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<List<WallPaper>> getSkyscapeWalls() async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?q=Skyscape&page=${this.pageSkyscape}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageSkyscape = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?q=Skyscape&page=${this.pageSkyscape}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pageSkyscape = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<List<WallPaper>> getArchitectureWalls() async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?q=Architecture&page=${this.pageArchitecture}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageArchitecture = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?q=Architecture&page=${this.pageArchitecture}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pageArchitecture = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 
   Future<List<WallPaper>> getMarvelWalls() async {
-    http
-        .get(
-            "https://wallhaven.cc/api/v1/search?q=Marvel&page=${this.pageMarvel}")
-        .then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["data"].length; i++) {
-          this.walls.add(
-                WallPaper(
-                    id: resp["data"][i]["id"],
-                    url: resp["data"][i]["url"],
-                    short_url: resp["data"][i]["short_url"],
-                    views: resp["data"][i]["views"].toString(),
-                    favourites: resp["data"][i]["favorites"].toString(),
-                    category: resp["data"][i]["category"],
-                    dimension_x: resp["data"][i]["dimension_x"].toString(),
-                    dimension_y: resp["data"][i]["dimension_y"].toString(),
-                    resolution: resp["data"][i]["resolution"],
-                    file_size: resp["data"][i]["file_size"].toString(),
-                    colors: resp["data"][i]["colors"],
-                    path: resp["data"][i]["path"],
-                    thumbs: resp["data"][i]["thumbs"],
-                    current_page: resp["meta"]["current_page"]),
-              );
-        }
-        this.pageMarvel = resp["meta"]["current_page"] + 1;
-        print("data done");
-        return this.walls;
-      },
-    );
+    if (navStack.last == "Home") {
+      http
+          .get(
+              "https://wallhaven.cc/api/v1/search?q=Marvel&page=${this.pageMarvel}")
+          .then(
+        (http.Response response) {
+          var resp = json.decode(response.body);
+          print(resp);
+          for (int i = 0; i < resp["data"].length; i++) {
+            this.walls.add(
+                  WallPaper(
+                      id: resp["data"][i]["id"],
+                      url: resp["data"][i]["url"],
+                      short_url: resp["data"][i]["short_url"],
+                      views: resp["data"][i]["views"].toString(),
+                      favourites: resp["data"][i]["favorites"].toString(),
+                      category: resp["data"][i]["category"],
+                      dimension_x: resp["data"][i]["dimension_x"].toString(),
+                      dimension_y: resp["data"][i]["dimension_y"].toString(),
+                      resolution: resp["data"][i]["resolution"],
+                      file_size: resp["data"][i]["file_size"].toString(),
+                      colors: resp["data"][i]["colors"],
+                      path: resp["data"][i]["path"],
+                      thumbs: resp["data"][i]["thumbs"],
+                      current_page: resp["meta"]["current_page"]),
+                );
+          }
+          this.pageMarvel = resp["meta"]["current_page"] + 1;
+          print("data done");
+          return this.walls;
+        },
+      );
+    } else {
+      print("Refresh Blocked");
+    }
   }
 }

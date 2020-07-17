@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -10,25 +11,29 @@ class PrismProvider extends ChangeNotifier {
   Map wall;
   int page = 1;
   Future<List> getPrismWalls() async {
-    this.prismWalls = [];
-    this.subPrismWalls = [];
-    await databaseReference
-        .collection("walls")
-        .where('review', isEqualTo: true)
-        .orderBy("id")
-        .getDocuments()
-        .then((value) {
+    if (navStack.last == "Home") {
       this.prismWalls = [];
-      value.documents.forEach((f) {
-        this.prismWalls.add(f.data);
+      this.subPrismWalls = [];
+      await databaseReference
+          .collection("walls")
+          .where('review', isEqualTo: true)
+          .orderBy("id")
+          .getDocuments()
+          .then((value) {
+        this.prismWalls = [];
+        value.documents.forEach((f) {
+          this.prismWalls.add(f.data);
+        });
+        this.prismWalls.shuffle(Random.secure());
+        print(this.prismWalls.length);
+        this.subPrismWalls = this.prismWalls.sublist(0, 24);
+      }).catchError((e) {
+        print(e.toString());
+        print("data done with error");
       });
-      this.prismWalls.shuffle(Random.secure());
-      print(this.prismWalls.length);
-      this.subPrismWalls = this.prismWalls.sublist(0, 24);
-    }).catchError((e) {
-      print(e.toString());
-      print("data done with error");
-    });
+    } else {
+      print("Refresh blocked");
+    }
     return this.subPrismWalls;
   }
 

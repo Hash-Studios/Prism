@@ -32,9 +32,6 @@ class GeneralList extends StatelessWidget {
                 Navigator.pushNamed(context, ThemeViewRoute, arguments: [
                   Provider.of<ThemeModel>(context, listen: false).currentTheme
                 ]);
-
-                Provider.of<ThemeModel>(context, listen: false).toggleTheme();
-                main.RestartWidget.restartApp(context);
               },
               leading: Icon(JamIcons.wrench),
               title: Text(
