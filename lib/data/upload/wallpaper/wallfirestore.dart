@@ -13,7 +13,7 @@ void createRecord(
     String wallpaperCategory,
     String wallpaperDesc,
     bool review) async {
-  await firestore.collection("walls2").add({
+  await firestore.collection("walls").add({
     'by': main.prefs.getString('name'),
     'email': main.prefs.getString('email'),
     'userPhoto': main.prefs.getString('googleimage'),
