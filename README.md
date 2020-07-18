@@ -44,6 +44,7 @@ Main features like finding and setting up wallpapers don't require Google Sign I
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
 - Over 300+ exclusive wallpapers, making it the best selection ever
 - Community wallpapers uploaded by users all-around the world
+- Each wallpaper comes with 5 color variants
 - Dark Mode supported
 - Optional Sign-in
 - Each wallpaper has a unique link, makes sharing them easier
@@ -67,6 +68,8 @@ Main features like finding and setting up wallpapers don't require Google Sign I
 
 ## Changelog
 
+Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
+
 ### v2.4.4
 - Upto 24 new Categories added, full list [here](#categories)
 - Added upload section
@@ -81,116 +84,39 @@ Main features like finding and setting up wallpapers don't require Google Sign I
 - Added new notification center
 - Improved user experience overall 
 
-### v2.4.2
-- Improved overall notifications and permissions
-- Added new color picker popup
-- Added new notification center
-- Minor bug fixes
-
-### v2.4.1
-- Minor bug fixes
-
-### v2.4.0
-- Major bug fixes and improvements
-- Redesigned the wallpaper info sheet
-- Added swipe to change categories
-- Added Firebase analytics
-- Added notifications support
-
-### v2.3.5
-- Major bug fixes and improvements
-
-### v2.3.0
-- Changed app icon and splash screen animations
-- Added backwards compatibility for v1
-- Redesigned profile page UI
-- Fixed favourites and downloads
-
-### v2.2.0
-- Added clock overlay to test wallpapers
-- Added ability to share wallpapers
-- Added ability to clear app cache
-- Major bug fixes and tweaks
-
-### v2.0.0
-- Completely new redesigned UI
-- Added Pexels API support
-- Added new color based search
-- Added new themes
-- Added 1M+ wallpapers
-- Added non intrusive sign in support
-- Added new quick wallpaper actions
-- Added new palette generator
-
-### v1.0.0
-- Added the app on Play Store
-- Wallpapers from WallHaven
-- Multiple Themes supported (including dark and light themes)
-- Sign in with Google support
-- Save Liked Images for later (works even after uninstalling the app)
-- Download any wallpaper to Gallery
-- Search for Wallpapers by keyword
-- Search for Wallpapers by colour
-- Set any wallpaper on the home screen, lock screen or both
-- Subtle Animations with Flare
-- Toast/Snackbar supported buttons
-- Clear Cache, Downloads and Favourites with one-tap
-- Optimised storage using minimal packages
-- Adaptive UI (changes colour based on wallpaper)
-
-### Categories
-- Home
-- Curated
-- For you
-- Abstract
-- Landscape
-- Nature
-- 4K
-- Art
-- Pattern
-- Minimal
-- Anime
-- Textures
-- Technology
-- Monochrome
-- Code
-- Space
-- Cars
-- Animals
-- Skyscape
-- Neon
-- Architecture
-- Sports
-- Marvel
-- Music
 
 ## Demo
 
 **Screens**
 
-| ![](demo/3.jpg) | ![](demo/4.jpg) | ![](demo/5.jpg) | ![](demo/6.jpg) | ![](demo/8.jpg) |
+| ![](demo/1.jpg) | ![](demo/2.jpg) | ![](demo/6.jpg) | ![](demo/8.jpg) | ![](demo/4.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Explore     |    Curated    |    Abstract     |     Nature       |     Color Based     |
 
 
-| ![](demo/7.jpg) | ![](demo/19.jpg) | ![](demo/48.jpg) | ![](demo/52.jpg) | ![](demo/26.jpg) |
+| ![](demo/5.jpg) | ![](demo/24.jpg) | ![](demo/11.jpg) | ![](demo/16.jpg) | ![](demo/19.jpg) |
+| :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
+|     For you     |    Sports    |    Pattern     |     Monochrome       |     Cars     |
+
+
+| ![](demo/3.jpg) | ![](demo/31.jpg) | ![](demo/34.jpg) | ![](demo/27.jpg) | ![](demo/32.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Color Picker    |    Favourites    |    Downloads     |     Search       |     Profile     |
 
 
-| ![](demo/31.jpg) | ![](demo/34.jpg)| ![](demo/38.jpg)       | ![](demo/35.jpg)  | ![](demo/21.jpg)|
+| ![](demo/28.jpg) | ![](demo/30.jpg)| ![](demo/37.jpg)       | ![](demo/38.jpg)  | ![](demo/39.jpg)|
 | :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------: |
-|  Sign-in Popup    |    Quick Action Menu       |  Wallpaper Display    | Wallpaper Info   | Clock for testing  |
+|  Upload Popup    |    Uploading Screen       |  Wallpaper Display    | Clock for testing   | Wallpaper Info  |
 
-| ![](demo/1.jpg) | ![](demo/2.jpg) | ![](demo/10.jpg) | ![](demo/28.jpg) | ![](demo/47.jpg) |
+| ![](demo/41.jpg) | ![](demo/40.jpg) | ![](demo/33.jpg) | ![](demo/35.jpg) | ![](demo/36.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Splash Screen    |    Loading Animation    |    Wallpaper Popup     |     Changelog       |     Theme Switcher     |
+|     Splash Screen    |    Quick Action Menu    |    Settings     |     Theme Switcher Dark       |     Theme Switcher Light    |
 
 This theme switcher toggle button was inspired by [Shubham](https://github.com/shubhamhackz) and you can check out his code [here](https://github.com/shubhamhackz/light_dark_toggle).
 
 **Light Theme**
 
-| ![](demo/51.jpg) | ![](demo/53.jpg)| ![](demo/44.jpg)| ![](demo/49.jpg) | ![](demo/45.jpg)|
+| ![](demo/42.jpg) | ![](demo/43.jpg)| ![](demo/44.jpg)| ![](demo/50.jpg) | ![](demo/47.jpg)|
 | :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
 |  Explore  |Search|  Favourites    |      Downloads   |      Profile  |
 
@@ -369,8 +295,34 @@ If you have any questions or suggestions about our Privacy Policy, do not hesita
   <img src="https://contributors-img.web.app/image?repo=Hash-Studios/Prism" />
 </a>
 
-## If you made it here, thanks for your support. You can show more support by forking or starring this repo. Thanks forever.
+### Categories
+- Home
+- Curated
+- For you
+- Abstract
+- Landscape
+- Nature
+- 4K
+- Art
+- Pattern
+- Minimal
+- Anime
+- Textures
+- Technology
+- Monochrome
+- Code
+- Space
+- Cars
+- Animals
+- Skyscape
+- Neon
+- Architecture
+- Sports
+- Marvel
+- Music
+
 ![Prism UI Mockup](demo/Prism_Mockup2.png)
+## If you made it here, thanks for your support. You can show more support by forking or starring this repo. Thanks forever.
 
 ## To Do
 
