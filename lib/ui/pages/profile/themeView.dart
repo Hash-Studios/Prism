@@ -76,14 +76,20 @@ class _ThemeViewState extends State<ThemeView> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(17),
-                  boxShadow: Provider.of<ThemeModel>(context, listen: false)
-                              .returnTheme() ==
-                          ThemeType.Dark
-                      ? [
+              child: Stack(
+                children: <Widget>[
+                  AnimatedOpacity(
+                    duration: Duration(milliseconds: 600),
+                    opacity: Provider.of<ThemeModel>(context, listen: false)
+                                .returnTheme() ==
+                            ThemeType.Dark
+                        ? 1
+                        : 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(17),
+                        boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(.9),
                             blurRadius: 38,
@@ -94,8 +100,31 @@ class _ThemeViewState extends State<ThemeView> {
                             blurRadius: 12,
                             offset: Offset(0, 15),
                           )
-                        ]
-                      : [
+                        ],
+                        image: DecorationImage(
+                            image: AssetImage(
+                              "assets/images/dark_theme.jpg",
+                            ),
+                            fit: BoxFit.fitWidth),
+                      ),
+                      width: MediaQuery.of(context).size.height *
+                          0.6 *
+                          0.52068473609,
+                      height: MediaQuery.of(context).size.height * 0.6,
+                    ),
+                  ),
+                  AnimatedOpacity(
+                    duration: Duration(milliseconds: 600),
+                    opacity: Provider.of<ThemeModel>(context, listen: false)
+                                .returnTheme() ==
+                            ThemeType.Dark
+                        ? 0
+                        : 1,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(17),
+                        boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(.15),
                             blurRadius: 38,
@@ -107,18 +136,19 @@ class _ThemeViewState extends State<ThemeView> {
                             offset: Offset(0, 15),
                           )
                         ],
-                  image: DecorationImage(
-                      image: AssetImage(
-                        Provider.of<ThemeModel>(context, listen: false)
-                                    .returnTheme() ==
-                                ThemeType.Dark
-                            ? "assets/images/dark_theme.jpg"
-                            : "assets/images/light_theme.jpg",
+                        image: DecorationImage(
+                            image: AssetImage(
+                              "assets/images/light_theme.jpg",
+                            ),
+                            fit: BoxFit.fitWidth),
                       ),
-                      fit: BoxFit.fitWidth),
-                ),
-                width: MediaQuery.of(context).size.height * 0.6 * 0.52068473609,
-                height: MediaQuery.of(context).size.height * 0.6 - 2,
+                      width: MediaQuery.of(context).size.height *
+                          0.6 *
+                          0.52068473609,
+                      height: MediaQuery.of(context).size.height * 0.6,
+                    ),
+                  ),
+                ],
               ),
             ),
             AnimatedToggle(
