@@ -954,6 +954,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () async {
                         launch("https://github.com/1-2-ka-4-4-2-ka-1");
                       }),
+                  ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: AssetImage("assets/images/AY.jpg"),
+                      ),
+                      title: new Text(
+                        "MrHYDRA-6469",
+                        style: TextStyle(
+                            color: Theme.of(context).accentColor,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: "Proxima Nova"),
+                      ),
+                      subtitle: Text(
+                        "Arpit Yadav",
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      onTap: () async {
+                        launch("https://https://github.com/MrHYDRA-6469");
+                      }),
                 ],
               ),
             ])
