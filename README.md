@@ -130,6 +130,9 @@ If you like what we do, and would want to help us continue doing it, consider sp
 Prism Wallpapers app is now available on Google Play, so you can support us by reviewing the app.
 
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width=200 /></a>
+
+![Prism UI Mockup](demo/Prism_Mockup2.png)
+
 ## Dependencies
 
 The following packages are needed for the development of this application.
@@ -321,7 +324,6 @@ If you have any questions or suggestions about our Privacy Policy, do not hesita
 - Marvel
 - Music
 
-![Prism UI Mockup](demo/Prism_Mockup2.png)
 ## If you made it here, thanks for your support. You can show more support by forking or starring this repo. Thanks forever.
 
 ## To Do
