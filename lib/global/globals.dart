@@ -9,6 +9,7 @@ var updateChecked = false;
 var updateAvailable = false;
 var versionInfo = {};
 var noNewNotification = false;
+var height = 1440.0;
 
 // GlobalKey keyCategoriesBar = GlobalKey();
 // GlobalKey keyBottomBar = GlobalKey();
