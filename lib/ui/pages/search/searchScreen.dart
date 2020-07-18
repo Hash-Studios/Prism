@@ -17,18 +17,25 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   Future<bool> onWillPop() async {
-    navStack.removeLast();
+    if (navStack.length > 1) navStack.removeLast();
     print(navStack);
     return true;
   }
 
   final List<String> tags = [
-    'Home',
+    'Art',
     'Abstract',
-    'Community',
-    'Nature',
+    'Patterns',
+    'Geometry',
+    'Cyber',
     'Cars',
     'Comics',
+    'Anime',
+    'Illustrations',
+    'Games',
+    'Street',
+    'Flowers',
+    'Epic',
   ];
   bool isSubmitted;
   TextEditingController searchController = TextEditingController();
@@ -50,83 +57,114 @@ class _SearchScreenState extends State<SearchScreen> {
             automaticallyImplyLeading: false,
             elevation: 0,
             titleSpacing: 0,
-            title: SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(500),
-                          color: Theme.of(context).hintColor),
-                      child: TextField(
-                        cursorColor: Color(0xFFE57697),
-                        style: Theme.of(context)
-                            .textTheme
-                            .headline5
-                            .copyWith(color: Theme.of(context).accentColor),
-                        controller: searchController,
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.only(left: 30, top: 15),
-                          border: InputBorder.none,
-                          disabledBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          hintText: "Search",
-                          hintStyle: Theme.of(context)
+            title: Padding(
+              padding: const EdgeInsets.only(top: 6.0),
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: Theme.of(context).hintColor),
+                        child: TextField(
+                          cursorColor: Color(0xFFE57697),
+                          style: Theme.of(context)
                               .textTheme
                               .headline5
                               .copyWith(color: Theme.of(context).accentColor),
-                          suffixIcon: Icon(JamIcons.search),
+                          controller: searchController,
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Search",
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headline5
+                                .copyWith(color: Theme.of(context).accentColor),
+                            suffixIcon: Icon(
+                              JamIcons.search,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                          onSubmitted: (tex) {
+                            setState(() {
+                              isSubmitted = true;
+                              Provider.of<WallHavenProvider>(context,
+                                      listen: false)
+                                  .wallsS = [];
+                              _future = Provider.of<WallHavenProvider>(context,
+                                      listen: false)
+                                  .getWallsbyQuery(tex);
+                            });
+                          },
                         ),
-                        onSubmitted: (tex) {
-                          setState(() {
-                            isSubmitted = true;
-                            Provider.of<WallHavenProvider>(context,
-                                    listen: false)
-                                .wallsS = [];
-                            _future = Provider.of<WallHavenProvider>(context,
-                                    listen: false)
-                                .getWallsbyQuery(tex);
-                          });
-                        },
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-            // bottom: PreferredSize(
-            //     child: SizedBox(
-            //       width: MediaQuery.of(context).size.width,
-            //       height: 60,
-            //       child: ListView.builder(
-            //         scrollDirection: Axis.horizontal,
-            //         itemCount: tags.length,
-            //         itemBuilder: (context, index) {
-            //           return Align(
-            //             alignment: Alignment.center,
-            //             child: Stack(
-            //               children: <Widget>[
-            //                 Padding(
-            //                   padding: const EdgeInsets.all(5),
-            //                   child: ActionChip(
-            //                       pressElevation: 5,
-            //                       padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-            //                       backgroundColor: Theme.of(context).hintColor,
-            //                       label: Text(tags[index],
-            //                           style:
-            //                               Theme.of(context).textTheme.headline4),
-            //                       onPressed: () {}),
-            //                 ),
-            //               ],
-            //             ),
-            //           );
-            //         },
-            //       ),
-            //     ),
-            //     preferredSize: Size(double.infinity, 55)),
+            bottom: PreferredSize(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: 53,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: tags.length,
+                    itemBuilder: (context, index) {
+                      return Align(
+                        alignment: Alignment.center,
+                        child: Stack(
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
+                              child: ActionChip(
+                                  pressElevation: 5,
+                                  padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                  backgroundColor:
+                                      searchController.text.toLowerCase() ==
+                                              tags[index].toLowerCase()
+                                          ? Theme.of(context).accentColor
+                                          : Theme.of(context).hintColor,
+                                  label: Text(tags[index],
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline4
+                                          .copyWith(
+                                              color: searchController.text
+                                                          .toLowerCase() ==
+                                                      tags[index].toLowerCase()
+                                                  ? Theme.of(context)
+                                                      .primaryColor
+                                                  : Theme.of(context)
+                                                      .accentColor)),
+                                  onPressed: () {
+                                    setState(() {
+                                      searchController.text = tags[index];
+                                      isSubmitted = true;
+                                      Provider.of<WallHavenProvider>(context,
+                                              listen: false)
+                                          .wallsS = [];
+                                      _future = Provider.of<WallHavenProvider>(
+                                              context,
+                                              listen: false)
+                                          .getWallsbyQuery(tags[index]);
+                                    });
+                                  }),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                preferredSize: Size(double.infinity, 54)),
           ),
           body: BottomBar(
             child: isSubmitted
@@ -192,13 +230,13 @@ class _SearchLoaderState extends State<SearchLoader>
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Colors.white12,
+                  end: Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.white12,
+                  begin: Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),

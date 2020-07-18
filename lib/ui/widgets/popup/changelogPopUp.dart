@@ -1,4 +1,5 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 
 void showChangelog(BuildContext context, Function func) {
@@ -22,12 +23,11 @@ void showChangelog(BuildContext context, Function func) {
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Image.asset(
-                'assets/images/appIcon.png',
-                fit: BoxFit.scaleDown,
-              ),
+            child: FlareActor(
+              "assets/animations/Changelog.flr",
+              isPaused: false,
+              alignment: Alignment.center,
+              animation: "changelog",
             ),
           ),
           SizedBox(
@@ -38,53 +38,340 @@ void showChangelog(BuildContext context, Function func) {
               child: SingleChildScrollView(
                 controller: controller,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  // Row(
-                  //   children: [
-                  //     Padding(
-                  //       padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                  //       child: Text(
-                  //         'v2.5.0',
-                  //         style: TextStyle(
-                  //             fontWeight: FontWeight.w700,
-                  //             fontSize: 16,
-                  //             color: Theme.of(context).accentColor),
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  // SizedBox(
-                  //   height: 20,
-                  // ),
-                  // Row(
-                  //   crossAxisAlignment: CrossAxisAlignment.center,
-                  //   mainAxisAlignment: MainAxisAlignment.start,
-                  //   children: [
-                  //     SizedBox(
-                  //       width: 20,
-                  //     ),
-                  //     Icon(
-                  //       JamIcons.picture,
-                  //       size: 22,
-                  //       color: Color(0xFFE57697),
-                  //     ),
-                  //     SizedBox(
-                  //       width: 20,
-                  //     ),
-                  //     Container(
-                  //       width: MediaQuery.of(context).size.width * 0.6,
-                  //       child: Text(
-                  //         "Added crop wallpaper support.",
-                  //         style: Theme.of(context)
-                  //             .textTheme
-                  //             .headline6
-                  //             .copyWith(color: Theme.of(context).accentColor),
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  // SizedBox(
-                  //   height: 25,
-                  // ),
+                  Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                        child: Text(
+                          'v2.4.4',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 20,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.database,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added upto 24 new Categories.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.upload,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added upload section.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.wrench,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added new themes page.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.clock,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added new animations.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.user,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Redesigned Profile section UI.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.bug,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Major bug fixes.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 25,
+                  ),
+                  Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                        child: Text(
+                          'v2.4.3',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 20,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.picture,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added over 300+ exclusive wallpapers.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.pictures,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added Variants, lets switch between color variants of a wallpaper.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.bell,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Added new notification center.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Icon(
+                        JamIcons.user,
+                        size: 22,
+                        color: Color(0xFFE57697),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          "Improved user experience overall.",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 25,
+                  ),
                   Row(
                     children: [
                       Padding(

@@ -1,4 +1,5 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
@@ -38,12 +39,11 @@ void googleSignInPopUp(BuildContext context, Function func) {
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20)),
                   color: Theme.of(context).hintColor),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Image.asset(
-                  'assets/images/appIcon.png',
-                  fit: BoxFit.scaleDown,
-                ),
+              child: FlareActor(
+                "assets/animations/Signin.flr",
+                isPaused: false,
+                alignment: Alignment.center,
+                animation: "signin",
               ),
             ),
             Row(
@@ -112,6 +112,36 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to download wallpapers.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 20,
+                ),
+                Icon(
+                  JamIcons.upload,
+                  size: 22,
+                  color: Color(0xFFE57697),
+                ),
+                SizedBox(
+                  width: 20,
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "The ability to submit your wallpapers.",
                     style: Theme.of(context)
                         .textTheme
                         .headline6

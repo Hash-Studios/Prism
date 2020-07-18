@@ -1,4 +1,5 @@
 import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/homeGrid.dart';
@@ -27,6 +28,10 @@ class _GridLoaderState extends State<GridLoader>
     } else if (widget.provider == "Pexels") {
       Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
       // Provider.of<PexelsProvider>(context, listen: false).pageGetDataP = 1;
+    } else if (widget.provider == "Prism") {
+      Provider.of<PrismProvider>(context, listen: false).prismWalls = [];
+      Provider.of<PrismProvider>(context, listen: false).subPrismWalls = [];
+      // Provider.of<PexelsProvider>(context, listen: false).pageGetDataP = 1;
     } else if (widget.provider.length > 6 &&
         widget.provider.substring(0, 6) == "Colors") {
       Provider.of<PexelsProvider>(context, listen: false).wallsC = [];
@@ -45,13 +50,13 @@ class _GridLoaderState extends State<GridLoader>
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Colors.white12,
+                  end: Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.white12,
+                  begin: Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),

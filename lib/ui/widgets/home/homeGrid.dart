@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -45,13 +46,13 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Colors.white12,
+                  end: Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Colors.white12,
+                  begin: Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -93,19 +94,101 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
     await Future.delayed(Duration(milliseconds: 500));
     if (widget.provider == "WallHaven") {
       Provider.of<WallHavenProvider>(context, listen: false).walls = [];
-      Provider.of<WallHavenProvider>(context, listen: false).getData();
+      switch (Provider.of<CategoryProvider>(context, listen: false)
+          .selectedCategory) {
+        case "For you":
+          Provider.of<WallHavenProvider>(context, listen: false).getData();
+          break;
+        case "Landscape":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getLandscapeWalls();
+          break;
+        case "4K":
+          Provider.of<WallHavenProvider>(context, listen: false).get4KWalls();
+          break;
+        case "Pattern":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getPatternWalls();
+          break;
+        case "Anime":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getAnimeWalls();
+          break;
+        case "Technology":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getTechnologyWalls();
+          break;
+        case "Code":
+          Provider.of<WallHavenProvider>(context, listen: false).getCodeWalls();
+          break;
+        case "Cars":
+          Provider.of<WallHavenProvider>(context, listen: false).getCarsWalls();
+          break;
+        case "Skyscape":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getSkyscapeWalls();
+          break;
+        case "Architecture":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getArchitectureWalls();
+          break;
+        case "Marvel":
+          Provider.of<WallHavenProvider>(context, listen: false)
+              .getMarvelWalls();
+          break;
+        default:
+          break;
+      }
     } else if (widget.provider == "Pexels") {
       Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
-      Provider.of<CategoryProvider>(context, listen: false).selectedCategory ==
-              "Curated"
-          ? Provider.of<PexelsProvider>(context, listen: false).getDataP()
-          : Provider.of<CategoryProvider>(context, listen: false)
-                      .selectedCategory ==
-                  "Abstract"
-              ? Provider.of<PexelsProvider>(context, listen: false)
-                  .getAbstractWalls()
-              : Provider.of<PexelsProvider>(context, listen: false)
-                  .getNatureWalls();
+      switch (Provider.of<CategoryProvider>(context, listen: false)
+          .selectedCategory) {
+        case "Curated":
+          Provider.of<PexelsProvider>(context, listen: false).getDataP();
+          break;
+        case "Abstract":
+          Provider.of<PexelsProvider>(context, listen: false)
+              .getAbstractWalls();
+          break;
+        case "Nature":
+          Provider.of<PexelsProvider>(context, listen: false).getNatureWalls();
+          break;
+        case "Art":
+          Provider.of<PexelsProvider>(context, listen: false).getArtWalls();
+          break;
+        case "Minimal":
+          Provider.of<PexelsProvider>(context, listen: false).getMinimalWalls();
+          break;
+        case "Textures":
+          Provider.of<PexelsProvider>(context, listen: false)
+              .getTexturesWalls();
+          break;
+        case "Monochrome":
+          Provider.of<PexelsProvider>(context, listen: false)
+              .getMonochromeWalls();
+          break;
+        case "Space":
+          Provider.of<PexelsProvider>(context, listen: false).getSpaceWalls();
+          break;
+        case "Animals":
+          Provider.of<PexelsProvider>(context, listen: false).getAnimalsWalls();
+          break;
+        case "Neon":
+          Provider.of<PexelsProvider>(context, listen: false).getNeonWalls();
+          break;
+        case "Sports":
+          Provider.of<PexelsProvider>(context, listen: false).getSportsWalls();
+          break;
+        case "Music":
+          Provider.of<PexelsProvider>(context, listen: false).getMusicWalls();
+          break;
+        default:
+          break;
+      }
+    } else if (widget.provider == "Prism") {
+      Provider.of<PrismProvider>(context, listen: false).prismWalls = [];
+      Provider.of<PrismProvider>(context, listen: false).subPrismWalls = [];
+      Provider.of<PrismProvider>(context, listen: false).getPrismWalls();
     } else if (widget.provider.length > 6 &&
         widget.provider.substring(0, 6) == "Colors") {
       Provider.of<PexelsProvider>(context, listen: false).wallsC = [];
@@ -140,8 +223,65 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
             if (widget.provider == "WallHaven") {
               if (!seeMoreLoader) {
-                Provider.of<WallHavenProvider>(context, listen: false)
-                    .getData();
+                switch (Provider.of<CategoryProvider>(context, listen: false)
+                    .selectedCategory) {
+                  case "For you":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getData();
+                    break;
+                  case "Landscape":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getLandscapeWalls();
+                    break;
+                  case "4K":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .get4KWalls();
+                    break;
+                  case "Pattern":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getPatternWalls();
+                    break;
+                  case "Anime":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getAnimeWalls();
+                    break;
+                  case "Technology":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getTechnologyWalls();
+                    break;
+                  case "Code":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getCodeWalls();
+                    break;
+                  case "Cars":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getCarsWalls();
+                    break;
+                  case "Skyscape":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getSkyscapeWalls();
+                    break;
+                  case "Architecture":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getArchitectureWalls();
+                    break;
+                  case "Marvel":
+                    Provider.of<WallHavenProvider>(context, listen: false)
+                        .getMarvelWalls();
+                    break;
+                  default:
+                    break;
+                }
+                setState(() {
+                  seeMoreLoader = true;
+                  Future.delayed(Duration(seconds: 4))
+                      .then((value) => seeMoreLoader = false);
+                });
+              }
+            } else if (widget.provider == "Prism") {
+              if (!seeMoreLoader) {
+                Provider.of<PrismProvider>(context, listen: false)
+                    .seeMorePrism();
                 setState(() {
                   seeMoreLoader = true;
                   Future.delayed(Duration(seconds: 4))
@@ -150,19 +290,59 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
               }
             } else if (widget.provider == "Pexels") {
               if (!seeMoreLoader) {
-                Provider.of<CategoryProvider>(context, listen: false)
-                            .selectedCategory ==
-                        "Curated"
-                    ? Provider.of<PexelsProvider>(context, listen: false)
-                        .getDataP()
-                    : Provider.of<CategoryProvider>(context, listen: false)
-                                .selectedCategory ==
-                            "Abstract"
-                        ? Provider.of<PexelsProvider>(context, listen: false)
-                            .getAbstractWalls()
-                        : Provider.of<PexelsProvider>(context, listen: false)
-                            .getNatureWalls();
-
+                switch (Provider.of<CategoryProvider>(context, listen: false)
+                    .selectedCategory) {
+                  case "Curated":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getDataP();
+                    break;
+                  case "Abstract":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getAbstractWalls();
+                    break;
+                  case "Nature":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getNatureWalls();
+                    break;
+                  case "Art":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getArtWalls();
+                    break;
+                  case "Minimal":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getMinimalWalls();
+                    break;
+                  case "Textures":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getTexturesWalls();
+                    break;
+                  case "Monochrome":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getMonochromeWalls();
+                    break;
+                  case "Space":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getSpaceWalls();
+                    break;
+                  case "Animals":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getAnimalsWalls();
+                    break;
+                  case "Neon":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getNeonWalls();
+                    break;
+                  case "Sports":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getSportsWalls();
+                    break;
+                  case "Music":
+                    Provider.of<PexelsProvider>(context, listen: false)
+                        .getMusicWalls();
+                    break;
+                  default:
+                    break;
+                }
                 setState(() {
                   seeMoreLoader = true;
                   Future.delayed(Duration(seconds: 4))
@@ -200,21 +380,33 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
               ? Provider.of<WallHavenProvider>(context).walls.length == 0
                   ? 24
                   : Provider.of<WallHavenProvider>(context).walls.length
-              : widget.provider == "Pexels"
-                  ? Provider.of<PexelsProvider>(context).wallsP.length == 0
+              : widget.provider == "Prism"
+                  ? Provider.of<PrismProvider>(context).subPrismWalls.length ==
+                          0
                       ? 24
-                      : Provider.of<PexelsProvider>(context).wallsP.length
-                  : widget.provider.length > 6 &&
-                          widget.provider.substring(0, 6) == "Colors"
-                      ? Provider.of<PexelsProvider>(context).wallsC.length == 0
+                      : Provider.of<PrismProvider>(context).subPrismWalls.length
+                  : widget.provider == "Pexels"
+                      ? Provider.of<PexelsProvider>(context).wallsP.length == 0
                           ? 24
-                          : Provider.of<PexelsProvider>(context).wallsC.length
-                      : Provider.of<WallHavenProvider>(context).wallsS.length ==
-                              0
-                          ? 24
+                          : Provider.of<PexelsProvider>(context).wallsP.length
+                      : widget.provider.length > 6 &&
+                              widget.provider.substring(0, 6) == "Colors"
+                          ? Provider.of<PexelsProvider>(context)
+                                      .wallsC
+                                      .length ==
+                                  0
+                              ? 24
+                              : Provider.of<PexelsProvider>(context)
+                                  .wallsC
+                                  .length
                           : Provider.of<WallHavenProvider>(context)
-                              .wallsS
-                              .length,
+                                      .wallsS
+                                      .length ==
+                                  0
+                              ? 24
+                              : Provider.of<WallHavenProvider>(context)
+                                  .wallsS
+                                  .length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent:
@@ -238,8 +430,92 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        Provider.of<WallHavenProvider>(context, listen: false)
-                            .getData();
+                        switch (Provider.of<CategoryProvider>(context,
+                                listen: false)
+                            .selectedCategory) {
+                          case "For you":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getData();
+                            break;
+                          case "Landscape":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getLandscapeWalls();
+                            break;
+                          case "4K":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .get4KWalls();
+                            break;
+                          case "Pattern":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getPatternWalls();
+                            break;
+                          case "Anime":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getAnimeWalls();
+                            break;
+                          case "Technology":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getTechnologyWalls();
+                            break;
+                          case "Code":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getCodeWalls();
+                            break;
+                          case "Cars":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getCarsWalls();
+                            break;
+                          case "Skyscape":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getSkyscapeWalls();
+                            break;
+                          case "Architecture":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getArchitectureWalls();
+                            break;
+                          case "Marvel":
+                            Provider.of<WallHavenProvider>(context,
+                                    listen: false)
+                                .getMarvelWalls();
+                            break;
+                          default:
+                            break;
+                        }
+                        setState(() {
+                          seeMoreLoader = true;
+                          Future.delayed(Duration(seconds: 4))
+                              .then((value) => seeMoreLoader = false);
+                        });
+                      }
+                    },
+                    child: !seeMoreLoader ? Text("See more") : Loader());
+              }
+            } else if (widget.provider == "Prism") {
+              if (index ==
+                  Provider.of<PrismProvider>(context).subPrismWalls.length -
+                      1) {
+                return FlatButton(
+                    color: Provider.of<ThemeModel>(context, listen: false)
+                                .returnTheme() ==
+                            ThemeType.Dark
+                        ? Colors.white10
+                        : Colors.black.withOpacity(.1),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    onPressed: () {
+                      if (!seeMoreLoader) {
+                        Provider.of<PrismProvider>(context, listen: false)
+                            .seeMorePrism();
                         setState(() {
                           seeMoreLoader = true;
                           Future.delayed(Duration(seconds: 4))
@@ -262,23 +538,60 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        Provider.of<CategoryProvider>(context, listen: false)
-                                    .selectedCategory ==
-                                "Curated"
-                            ? Provider.of<PexelsProvider>(context,
-                                    listen: false)
-                                .getDataP()
-                            : Provider.of<CategoryProvider>(context,
-                                            listen: false)
-                                        .selectedCategory ==
-                                    "Abstract"
-                                ? Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .getAbstractWalls()
-                                : Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .getNatureWalls();
-
+                        switch (Provider.of<CategoryProvider>(context,
+                                listen: false)
+                            .selectedCategory) {
+                          case "Curated":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getDataP();
+                            break;
+                          case "Abstract":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getAbstractWalls();
+                            break;
+                          case "Nature":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getNatureWalls();
+                            break;
+                          case "Art":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getArtWalls();
+                            break;
+                          case "Minimal":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getMinimalWalls();
+                            break;
+                          case "Textures":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getTexturesWalls();
+                            break;
+                          case "Monochrome":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getMonochromeWalls();
+                            break;
+                          case "Space":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getSpaceWalls();
+                            break;
+                          case "Animals":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getAnimalsWalls();
+                            break;
+                          case "Neon":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getNeonWalls();
+                            break;
+                          case "Sports":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getSportsWalls();
+                            break;
+                          case "Music":
+                            Provider.of<PexelsProvider>(context, listen: false)
+                                .getMusicWalls();
+                            break;
+                          default:
+                            break;
+                        }
                         setState(() {
                           seeMoreLoader = true;
                           Future.delayed(Duration(seconds: 4))
@@ -357,9 +670,7 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                               : EdgeInsets.all(0),
                           child: Container(
                             decoration: widget.provider == "WallHaven"
-                                ? Provider.of<WallHavenProvider>(context)
-                                            .walls
-                                            .length ==
+                                ? Provider.of<WallHavenProvider>(context).walls.length ==
                                         0
                                     ? BoxDecoration(
                                         color: animation.value,
@@ -374,10 +685,8 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                                                     .walls[index]
                                                     .thumbs["original"]),
                                             fit: BoxFit.cover))
-                                : widget.provider == "Pexels"
-                                    ? Provider.of<PexelsProvider>(context)
-                                                .wallsP
-                                                .length ==
+                                : widget.provider == "Prism"
+                                    ? Provider.of<PrismProvider>(context).subPrismWalls.length ==
                                             0
                                         ? BoxDecoration(
                                             color: animation.value,
@@ -389,28 +698,39 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                                             borderRadius:
                                                 BorderRadius.circular(20),
                                             image: DecorationImage(
-                                                image: NetworkImage(
-                                                    Provider.of<PexelsProvider>(context)
-                                                        .wallsP[index]
-                                                        .src["medium"]),
+                                                image: NetworkImage(Provider.of<PrismProvider>(context)
+                                                        .subPrismWalls[index]
+                                                    ["wallpaper_thumb"]),
                                                 fit: BoxFit.cover))
-                                    : widget.provider.length > 6 &&
-                                            widget.provider.substring(0, 6) ==
-                                                "Colors"
-                                        ? Provider.of<PexelsProvider>(context).wallsC.length == 0
+                                    : widget.provider == "Pexels"
+                                        ? Provider.of<PexelsProvider>(context).wallsP.length ==
+                                                0
                                             ? BoxDecoration(
                                                 color: animation.value,
                                                 borderRadius:
                                                     BorderRadius.circular(20),
                                               )
-                                            : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<PexelsProvider>(context).wallsC[index].src["medium"]), fit: BoxFit.cover))
-                                        : Provider.of<WallHavenProvider>(context).wallsS.length == 0
-                                            ? BoxDecoration(
+                                            : BoxDecoration(
                                                 color: animation.value,
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              )
-                                            : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<WallHavenProvider>(context).wallsS[index].thumbs["original"]), fit: BoxFit.cover)),
+                                                borderRadius: BorderRadius.circular(20),
+                                                image: DecorationImage(image: NetworkImage(Provider.of<PexelsProvider>(context).wallsP[index].src["medium"]), fit: BoxFit.cover))
+                                        : widget.provider.length > 6 && widget.provider.substring(0, 6) == "Colors"
+                                            ? Provider.of<PexelsProvider>(context).wallsC.length == 0
+                                                ? BoxDecoration(
+                                                    color: animation.value,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
+                                                  )
+                                                : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<PexelsProvider>(context).wallsC[index].src["medium"]), fit: BoxFit.cover))
+                                            : Provider.of<WallHavenProvider>(context).wallsS.length == 0
+                                                ? BoxDecoration(
+                                                    color: animation.value,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
+                                                  )
+                                                : BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20), image: DecorationImage(image: NetworkImage(Provider.of<WallHavenProvider>(context).wallsS[index].thumbs["original"]), fit: BoxFit.cover)),
                           ),
                         ),
                         onTap: () {
@@ -428,6 +748,22 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                                             listen: false)
                                         .walls[index]
                                         .thumbs["small"],
+                                  ]);
+                            }
+                          } else if (widget.provider == "Prism") {
+                            if (Provider.of<PrismProvider>(context,
+                                        listen: false)
+                                    .subPrismWalls ==
+                                []) {
+                            } else {
+                              Navigator.pushNamed(context, WallpaperRoute,
+                                  arguments: [
+                                    widget.provider,
+                                    index,
+                                    Provider.of<PrismProvider>(context,
+                                                listen: false)
+                                            .subPrismWalls[index]
+                                        ["wallpaper_thumb"],
                                   ]);
                             }
                           } else if (widget.provider == "Pexels") {
@@ -507,6 +843,25 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                                           listen: false)
                                       .walls[index]
                                       .thumbs["original"]);
+                            }
+                          } else if (widget.provider == "Prism") {
+                            if (Provider.of<PrismProvider>(context,
+                                        listen: false)
+                                    .subPrismWalls ==
+                                []) {
+                            } else {
+                              HapticFeedback.vibrate();
+                              createDynamicLink(
+                                  Provider.of<PrismProvider>(context,
+                                          listen: false)
+                                      .subPrismWalls[index]["id"],
+                                  widget.provider,
+                                  Provider.of<PrismProvider>(context,
+                                          listen: false)
+                                      .subPrismWalls[index]["wallpaper_url"],
+                                  Provider.of<PrismProvider>(context,
+                                          listen: false)
+                                      .subPrismWalls[index]["wallpaper_thumb"]);
                             }
                           } else if (widget.provider == "Pexels") {
                             if (Provider.of<PexelsProvider>(context,

@@ -1,7 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'dart:async';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
@@ -23,6 +27,7 @@ var darkMode;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
+  FlutterError.onError = Crashlytics.instance.recordFlutterError;
   SharedPreferences.getInstance().then((prefs) {
     darkMode = prefs.getBool('darkMode') ?? true;
     if (darkMode)
@@ -30,32 +35,40 @@ void main() {
     else
       prefs.setBool('darkMode', false);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-        .then((value) => runApp(
-              RestartWidget(
-                child: MultiProvider(
-                  providers: [
-                    ChangeNotifierProvider<WallHavenProvider>(
-                      create: (context) => WallHavenProvider(),
-                    ),
-                    ChangeNotifierProvider<PexelsProvider>(
-                      create: (context) => PexelsProvider(),
-                    ),
-                    ChangeNotifierProvider<CategoryProvider>(
-                      create: (context) => CategoryProvider(),
-                    ),
-                    ChangeNotifierProvider<FavouriteProvider>(
-                      create: (context) => FavouriteProvider(),
-                    ),
-                    ChangeNotifierProvider<ThemeModel>(
-                      create: (context) => ThemeModel(
-                          darkMode ? kDarkTheme : kLightTheme,
-                          darkMode ? ThemeType.Dark : ThemeType.Light),
-                    )
-                  ],
-                  child: MyApp(),
+        .then((value) => runZoned<Future<void>>(() {
+              runApp(
+                RestartWidget(
+                  child: MultiProvider(
+                    providers: [
+                      ChangeNotifierProvider<WallHavenProvider>(
+                        create: (context) => WallHavenProvider(),
+                      ),
+                      ChangeNotifierProvider<PexelsProvider>(
+                        create: (context) => PexelsProvider(),
+                      ),
+                      ChangeNotifierProvider<CategoryProvider>(
+                        create: (context) => CategoryProvider(),
+                      ),
+                      ChangeNotifierProvider<FavouriteProvider>(
+                        create: (context) => FavouriteProvider(),
+                      ),
+                      ChangeNotifierProvider<PrismProvider>(
+                        create: (context) => PrismProvider(),
+                      ),
+                      ChangeNotifierProvider<ProfileWallProvider>(
+                        create: (context) => ProfileWallProvider(),
+                      ),
+                      ChangeNotifierProvider<ThemeModel>(
+                        create: (context) => ThemeModel(
+                            darkMode ? kDarkTheme : kLightTheme,
+                            darkMode ? ThemeType.Dark : ThemeType.Light),
+                      )
+                    ],
+                    child: MyApp(),
+                  ),
                 ),
-              ),
-            ));
+              );
+            }, onError: Crashlytics.instance.recordError));
   });
 }
 
