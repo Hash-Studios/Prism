@@ -85,6 +85,7 @@ class GeneralList extends StatelessWidget {
             ListTile(
               onTap: () {
                 main.prefs.setBool("newApp", true);
+                main.prefs.setBool("newApp2", true);
                 main.RestartWidget.restartApp(context);
               },
               leading: Icon(JamIcons.help),
