@@ -1,6 +1,7 @@
-# <img src="android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" alt="icon" width=30> Prism
+# <div align="center"><img src="android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" alt="icon" width=30> Prism</div>
 
-Prism is a beautiful open-source wallpapers app for Android. It is built with Dart on top of Google's Flutter Framework.
+<div align="center">Prism is a beautiful open-source wallpapers app for Android. It is built with Dart on top of Google's Flutter Framework.
+
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
@@ -11,6 +12,7 @@ Prism is a beautiful open-source wallpapers app for Android. It is built with Da
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
 ![Stars](https://img.shields.io/github/stars/Hash-Studios/Prism)
 
+</div>
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
 
 Prism offers an exclusive collection of wallpapers that are beautifully hand-crafted for your very specific device. This exclusive collection is hand-picked from all-around the world to give you the best illustration, graphics and photographs that look amazing in any setup that you want.
@@ -65,7 +67,7 @@ Main features like finding and setting up wallpapers don't rquire Google Sign In
 ## Changelog
 
 ### v2.4.4
-- Upto 24 new Categories added, full list [here](###categories)
+- Upto 24 new Categories added, full list [here](#categories)
 - Added upload section
 - Added new themes page
 - Added new animations
