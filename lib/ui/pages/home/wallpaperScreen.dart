@@ -18,6 +18,10 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:tutorial_coach_mark/animated_focus_light.dart';
+import 'package:tutorial_coach_mark/target_position.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:Prism/main.dart' as main;
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -29,11 +33,13 @@ class WallpaperScreen extends StatefulWidget {
 class _WallpaperScreenState extends State<WallpaperScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    if(navStack.length>1)navStack.removeLast();
+    if (navStack.length > 1) navStack.removeLast();
     print(navStack);
     return true;
   }
 
+  bool isNew;
+  List<TargetFocus> targets = List();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String provider;
   int index;
@@ -82,12 +88,83 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     }
   }
 
+  void initTargets() {
+    targets.add(TargetFocus(
+      identify: "Target 0",
+      targetPosition: TargetPosition(Size(0, 0), Offset(0, 0)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.bottom,
+            child: SizedBox(
+              child: Container(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      "Variants are here.",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 20.0),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10.0),
+                      child: RichText(
+                        text: TextSpan(
+                          text:
+                              "➡ Tap to quickly cycle between color variants of the wallpaper.\n\n➡ Press and hold to reset the variant.",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+  }
+
+  void showTutorial() {
+    TutorialCoachMark(context,
+        targets: targets,
+        colorShadow: Color(0xFFE57697),
+        textSkip: "SKIP",
+        paddingFocus: 1,
+        opacityShadow: 0.9, finish: () {
+      print("finish");
+    }, clickTarget: (target) {
+      print(target.identify);
+    }, clickSkip: () {
+      print("skip");
+    })
+      ..show();
+  }
+
+  void afterLayout(_) {
+    var newApp2 = main.prefs.getBool("newApp2");
+    if (newApp2 == null || newApp2 == true) {
+      Future.delayed(Duration(milliseconds: 100), showTutorial);
+      main.prefs.setBool("newApp2", false);
+    } else {
+      main.prefs.setBool("newApp2", false);
+    }
+  }
+
   @override
   void initState() {
     // print("Wallpaper Screen");
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
+    isNew = true;
     super.initState();
+    initTargets();
+    if (isNew) {
+      Future.delayed(Duration(seconds: 0)).then(
+          (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
+    }
     SystemChrome.setEnabledSystemUIOverlays([]);
     provider = widget.arguments[0];
     index = widget.arguments[1];
