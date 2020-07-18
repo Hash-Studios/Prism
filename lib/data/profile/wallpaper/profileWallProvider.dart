@@ -9,7 +9,7 @@ class ProfileWallProvider extends ChangeNotifier {
   Future<List> getProfileWalls() async {
     this.profileWalls = [];
     await databaseReference
-        .collection("walls2")
+        .collection("walls")
         .where('review', isEqualTo: true)
         .where('email', isEqualTo: main.prefs.getString('email'))
         .orderBy("createdAt", descending: true)

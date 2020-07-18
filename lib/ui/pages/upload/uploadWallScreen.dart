@@ -111,13 +111,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   Future deleteFile() async {
     var github = GitHub(auth: Authentication.basic(username, password));
     await github.repositories.deleteFile(
-        RepositorySlug('codenameakshay2', 'prism-walls-test'),
+        RepositorySlug('codenameakshay2', 'prism-walls'),
         wallpaperPath,
         wallpaperPath,
         wallpaperSha,
         "master");
     await github.repositories.deleteFile(
-        RepositorySlug('codenameakshay2', 'prism-walls-test'),
+        RepositorySlug('codenameakshay2', 'prism-walls'),
         thumbPath,
         thumbPath,
         thumbSha,
@@ -136,7 +136,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       var github = GitHub(auth: Authentication.basic(username, password));
       await github.repositories
           .createFile(
-              RepositorySlug('codenameakshay2', 'prism-walls-test'),
+              RepositorySlug('codenameakshay2', 'prism-walls'),
               CreateFile(
                   message: "${Path.basename(image.path)}",
                   content: base64Image,
@@ -148,7 +148,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               }));
       await github.repositories
           .createFile(
-              RepositorySlug('codenameakshay2', 'prism-walls-test'),
+              RepositorySlug('codenameakshay2', 'prism-walls'),
               CreateFile(
                   message: "thumb_${Path.basename(image.path)}",
                   content: base64ImageThumb,
