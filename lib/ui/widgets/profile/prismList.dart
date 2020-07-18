@@ -82,6 +82,25 @@ class PrismList extends StatelessWidget {
             }),
         ListTile(
             leading: Icon(
+              JamIcons.users,
+            ),
+            title: new Text(
+              "Privacy Policy",
+              style: TextStyle(
+                  color: Theme.of(context).accentColor,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: Text(
+              "Read Prism's Privacy Policy.",
+              style: TextStyle(fontSize: 12),
+            ),
+            onTap: () {
+              launch(
+                  "https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md");
+            }),
+        ListTile(
+            leading: Icon(
               JamIcons.github,
             ),
             title: new Text(
