@@ -1,10 +1,8 @@
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 final databaseReference = Firestore.instance;
 List<Color> colors = [
@@ -54,12 +52,11 @@ Color showColors(BuildContext context) {
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Image.asset(
-                'assets/images/appIcon.png',
-                fit: BoxFit.scaleDown,
-              ),
+            child: FlareActor(
+              "assets/animations/Color.flr",
+              isPaused: false,
+              alignment: Alignment.center,
+              animation: "color",
             ),
           ),
           Row(

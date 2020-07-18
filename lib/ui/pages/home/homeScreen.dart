@@ -1,4 +1,4 @@
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/widgets/home/gridLoader.dart';
@@ -12,6 +12,22 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
+Future<dynamic> myBackgroundMessageHandler(Map<String, dynamic> message) {
+  if (message.containsKey('data')) {
+    // Handle data message
+    final dynamic data = message['data'];
+    print(data);
+  }
+
+  if (message.containsKey('notification')) {
+    // Handle notification message
+    final dynamic notification = message['notification'];
+    print(notification);
+  }
+
+  // Or do other work.
+}
+
 class HomeScreen extends StatefulWidget {
   HomeScreen({
     Key key,
@@ -23,41 +39,49 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   //Check for update if available
-  String currentAppVersion = "2.4.2";
+  String currentAppVersion = globals.currentAppVersion;
   final databaseReference = Firestore.instance;
 
   Future<void> _checkUpdate() async {
     print("checking for update");
-    databaseReference.collection("appConfig").getDocuments().then((value) {
-      print("Current App Version :" + currentAppVersion);
-      print(
-          "Latest Version :" + value.documents[0]["currentVersion"].toString());
-      setState(() {
-        if (currentAppVersion !=
-            value.documents[0]["currentVersion"].toString()) {
-          setState(() {
-            globals.updateAvailable = true;
-            globals.versionInfo = {
-              "version_number": value.documents[0]["currentVersion"].toString(),
-              "version_desc": value.documents[0]["versionDesc"],
-            };
-          });
-        } else {
-          setState(() {
-            globals.updateAvailable = false;
-          });
-        }
+    try {
+      databaseReference.collection("appConfig").getDocuments().then((value) {
+        print("Current App Version :" + currentAppVersion);
+        print("Latest Version :" +
+            value.documents[0]["currentVersion"].toString());
+        setState(() {
+          if (currentAppVersion !=
+              value.documents[0]["currentVersion"].toString()) {
+            setState(() {
+              globals.updateAvailable = true;
+              globals.versionInfo = {
+                "version_number":
+                    value.documents[0]["currentVersion"].toString(),
+                "version_desc": value.documents[0]["versionDesc"],
+              };
+            });
+          } else {
+            setState(() {
+              globals.updateAvailable = false;
+            });
+          }
+        });
+        globals.updateAvailable
+            ? !globals.noNewNotification
+                ? showUpdate(context)
+                : print("No new notification")
+            : print("No update");
       });
-      globals.updateAvailable
-          ? !globals.noNewNotification
-              ? showUpdate(context)
-              : print("No new notification")
-          : print("No update");
+    } catch (e) {
+      print("Error while checking for updates!");
+    }
+    setState(() {
+      globals.updateChecked = true;
     });
   }
 
   Future<bool> onWillPop() async {
-    navStack.removeLast();
+    if(navStack.length>1)navStack.removeLast();
     print(navStack);
     return true;
   }
@@ -65,7 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isNew;
   @override
   void initState() {
-    _checkUpdate();
+    if (!globals.updateChecked) {
+      _checkUpdate();
+    }
     isNew = true;
     _updateToken();
     super.initState();
@@ -73,6 +99,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _updateToken() {
     FirebaseMessaging f = new FirebaseMessaging();
+    f.requestNotificationPermissions();
+    f.configure(
+      onMessage: (Map<String, dynamic> message) async {
+        print("onMessage: $message");
+        // _showItemDialog(message);
+      },
+      onBackgroundMessage: myBackgroundMessageHandler,
+      onLaunch: (Map<String, dynamic> message) async {
+        print("onLaunch: $message");
+        // _navigateToItemDetail(message);
+      },
+      onResume: (Map<String, dynamic> message) async {
+        print("onResume: $message");
+        // _navigateToItemDetail(message);
+      },
+    );
+
     f.getToken().then((value) {
       print(value);
       Firestore.instance.collection('tokens').document(value).setData({
@@ -139,17 +182,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (isNew) {
-      Future.delayed(Duration(seconds: 0))
-          .then((value) => showChangelogCheck(context));
-    }
+    // if (isNew) {
+    //   Future.delayed(Duration(seconds: 0))
+    //       .then((value) => showChangelogCheck(context));
+    // }
     initDynamicLinks(context);
     return WillPopScope(
       onWillPop: onWillPop,
       child: GridLoader(
         future:
-            Provider.of<WallHavenProvider>(context, listen: false).getData(),
-        provider: "WallHaven",
+            Provider.of<PrismProvider>(context, listen: false).getPrismWalls(),
+        provider: "Prism",
       ),
     );
   }
