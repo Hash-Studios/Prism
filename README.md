@@ -369,7 +369,7 @@ If you have any questions or suggestions about our Privacy Policy, do not hesita
   <img src="https://contributors-img.web.app/image?repo=Hash-Studios/Prism" />
 </a>
 
-## 
+## If you made it here, thanks for your support. You can show more support by forking or starring this repo. Thanks forever.
 ![Prism UI Mockup](demo/Prism_Mockup2.png)
 
 ## To Do
