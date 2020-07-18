@@ -17,7 +17,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   Future<bool> onWillPop() async {
-    if(navStack.length>1)navStack.removeLast();
+    if (navStack.length > 1) navStack.removeLast();
     print(navStack);
     return true;
   }
@@ -127,11 +127,23 @@ class _SearchScreenState extends State<SearchScreen> {
                               child: ActionChip(
                                   pressElevation: 5,
                                   padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                  backgroundColor: Theme.of(context).hintColor,
+                                  backgroundColor:
+                                      searchController.text.toLowerCase() ==
+                                              tags[index].toLowerCase()
+                                          ? Theme.of(context).accentColor
+                                          : Theme.of(context).hintColor,
                                   label: Text(tags[index],
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headline4),
+                                          .headline4
+                                          .copyWith(
+                                              color: searchController.text
+                                                          .toLowerCase() ==
+                                                      tags[index].toLowerCase()
+                                                  ? Theme.of(context)
+                                                      .primaryColor
+                                                  : Theme.of(context)
+                                                      .accentColor)),
                                   onPressed: () {
                                     setState(() {
                                       searchController.text = tags[index];

@@ -59,7 +59,7 @@ class _AnimatedToggleState extends State<AnimatedToggle> {
                     child: Text(
                       widget.values[index],
                       style: TextStyle(
-                        fontFamily: 'Rubik',
+                        fontFamily: 'Proxima Nova',
                         fontSize: width * 0.05,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF918f95),
@@ -88,7 +88,7 @@ class _AnimatedToggleState extends State<AnimatedToggle> {
               child: Text(
                 initialPosition ? widget.values[0] : widget.values[1],
                 style: TextStyle(
-                  fontFamily: 'Rubik',
+                  fontFamily: 'Proxima Nova',
                   fontSize: width * 0.045,
                   color: widget.textColor,
                   fontWeight: FontWeight.bold,
