@@ -32,6 +32,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
   void initState() {
     isNew = true;
     super.initState();
+    globals.height = widget.height;
     initTargets();
     if (isNew) {
       Future.delayed(Duration(seconds: 0)).then(

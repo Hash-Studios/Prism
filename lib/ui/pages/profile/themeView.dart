@@ -79,7 +79,7 @@ class _ThemeViewState extends State<ThemeView> {
               child: Stack(
                 children: <Widget>[
                   AnimatedOpacity(
-                    duration: Duration(milliseconds: 600),
+                    duration: Duration(milliseconds: 300),
                     opacity: Provider.of<ThemeModel>(context, listen: false)
                                 .returnTheme() ==
                             ThemeType.Dark
@@ -114,7 +114,7 @@ class _ThemeViewState extends State<ThemeView> {
                     ),
                   ),
                   AnimatedOpacity(
-                    duration: Duration(milliseconds: 600),
+                    duration: Duration(milliseconds: 300),
                     opacity: Provider.of<ThemeModel>(context, listen: false)
                                 .returnTheme() ==
                             ThemeType.Dark

@@ -22,6 +22,7 @@ import 'package:tutorial_coach_mark/animated_focus_light.dart';
 import 'package:tutorial_coach_mark/target_position.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -96,6 +97,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
         ContentTarget(
             align: AlignContent.bottom,
             child: SizedBox(
+              height: globals.height,
               child: Container(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,10 +114,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       padding: const EdgeInsets.only(top: 10.0),
                       child: RichText(
                         text: TextSpan(
-                          text:
-                              "➡ Tap to quickly cycle between color variants of the wallpaper.\n\n➡ Press and hold to reset the variant.",
-                          style: TextStyle(color: Colors.white),
-                        ),
+                            text: "➡ Tap to quickly cycle between ",
+                            style: TextStyle(color: Colors.white),
+                            children: [
+                              TextSpan(
+                                text: "color variants ",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(text: "of the wallpaper.\n\n"),
+                              TextSpan(text: "➡ Press and hold to "),
+                              TextSpan(
+                                text: "reset ",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(text: "the variant."),
+                            ]),
                       ),
                     )
                   ],
