@@ -26,6 +26,7 @@ import 'package:Prism/ui/pages/categories/texturesScreen.dart';
 import 'package:Prism/ui/pages/home/homeScreen.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/categoriesBar.dart';
+import 'package:Prism/ui/widgets/offlineBanner.dart';
 import 'package:connectivity_widget/connectivity_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -66,6 +67,7 @@ class _PageManagerState extends State<PageManager> {
             preferredSize: Size(double.infinity, 55),
           ),
           body: ConnectivityWidget(
+            offlineBanner: OfflineBanner(),
             builder: (context, isOnline) => BottomBar(
               child: PageView.builder(
                   onPageChanged: (index) {
