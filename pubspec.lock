@@ -78,6 +78,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.14.12"
+  connectivity_widget:
+    dependency: "direct main"
+    description:
+      name: connectivity_widget
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.7"
   convert:
     dependency: transitive
     description:
@@ -236,21 +243,7 @@ packages:
       name: flutter_cache_manager
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.2.1"
-  flutter_local_notifications:
-    dependency: "direct main"
-    description:
-      name: flutter_local_notifications
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.4.4+2"
-  flutter_local_notifications_platform_interface:
-    dependency: transitive
-    description:
-      name: flutter_local_notifications_platform_interface
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.1"
+    version: "1.4.1"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -519,7 +512,7 @@ packages:
       name: rxdart
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.23.1"
+    version: "0.24.1"
   screenshot:
     dependency: "direct main"
     description:
@@ -569,6 +562,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.2+4"
+  simple_connectivity:
+    dependency: transitive
+    description:
+      name: simple_connectivity
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.1"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -616,6 +616,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.0"
+  stream_disposable:
+    dependency: transitive
+    description:
+      name: stream_disposable
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.0"
   string_scanner:
     dependency: transitive
     description:

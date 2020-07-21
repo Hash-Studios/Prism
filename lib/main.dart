@@ -14,7 +14,6 @@ import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,7 +77,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
   void getLoginStatus() async {
     prefs = await SharedPreferences.getInstance();
     globals.gAuth.googleSignIn.isSignedIn().then((value) {
@@ -89,91 +87,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     getLoginStatus();
-    flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-// initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
-    var initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_notification');
-    var initializationSettingsIOS = IOSInitializationSettings();
-    var initializationSettings = InitializationSettings(
-        initializationSettingsAndroid, initializationSettingsIOS);
-    flutterLocalNotificationsPlugin.initialize(initializationSettings,
-        onSelectNotification: selectNotification);
-    weeklyLocalNotification1();
-    weeklyLocalNotification2();
-    weeklyLocalNotification3();
     super.initState();
-  }
-
-  Future selectNotification(String payload) async {
-    if (payload != null) {
-      debugPrint('notification payload: ' + payload);
-    }
-  }
-
-  Future weeklyLocalNotification1() async {
-    var time = Time(17, 00, 0);
-    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-        'show weekly channel id',
-        'show weekly channel name',
-        'show weekly description',
-        importance: Importance.Max,
-        priority: Priority.High);
-    var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-    var platformChannelSpecifics = NotificationDetails(
-        androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.showWeeklyAtDayAndTime(
-      0,
-      'Now there\'s more to love!',
-      'New Wallpapers added daily just for you. Check them out now.',
-      Day.Monday,
-      time,
-      platformChannelSpecifics,
-      payload: 'Default_Sound',
-    );
-  }
-
-  Future weeklyLocalNotification2() async {
-    var time = Time(12, 00, 0);
-    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-        'show weekly channel id',
-        'show weekly channel name',
-        'show weekly description',
-        importance: Importance.Max,
-        priority: Priority.High);
-    var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-    var platformChannelSpecifics = NotificationDetails(
-        androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.showWeeklyAtDayAndTime(
-      1,
-      'What are you waiting for?',
-      'Indulge yourself into the new wallpaper collections now.',
-      Day.Wednesday,
-      time,
-      platformChannelSpecifics,
-      payload: 'Default_Sound',
-    );
-  }
-
-  Future weeklyLocalNotification3() async {
-    var time = Time(15, 00, 0);
-    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-        'show weekly channel id',
-        'show weekly channel name',
-        'show weekly description',
-        importance: Importance.Max,
-        priority: Priority.High);
-    var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-    var platformChannelSpecifics = NotificationDetails(
-        androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.showWeeklyAtDayAndTime(
-      2,
-      'Want to look cool?',
-      'First change your wallpaper, from our exclusive collections now.',
-      Day.Friday,
-      time,
-      platformChannelSpecifics,
-      payload: 'Default_Sound',
-    );
   }
 
   @override
