@@ -3,6 +3,8 @@ import 'package:Prism/ui/pages/home/pageManager.dart';
 import 'package:flutter/material.dart';
 import 'package:flare_splash_screen/flare_splash_screen.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class SplashWidget extends StatelessWidget {
@@ -24,7 +26,12 @@ class SplashWidget extends StatelessWidget {
           Provider.of<ThemeModel>(context).currentTheme == kLightTheme
               ? Color(0xFFFFFFFF)
               : Color(0xFF181818),
-      until: () => Future.delayed(Duration(seconds: 0)),
+      until: () async {
+        final dir = await getApplicationDocumentsDirectory();
+        Hive.init(dir.path);
+        var box = await Hive.openBox('wallpapers');
+        print("Box Opened");
+      },
     );
   }
 }
