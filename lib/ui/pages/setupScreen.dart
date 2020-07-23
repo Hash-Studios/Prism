@@ -5,9 +5,9 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/popup/proPopUp.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:optimized_cached_image/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 
@@ -137,7 +137,7 @@ class _SetupPageState extends State<SetupPage> {
                                           0.0299),
                                   child: Align(
                                     alignment: Alignment.topCenter,
-                                    child: OptimizedCacheImage(
+                                    child: CachedNetworkImage(
                                       imageUrl: Provider.of<SetupProvider>(
                                               context,
                                               listen: false)
@@ -229,7 +229,7 @@ class _SetupPageState extends State<SetupPage> {
                                               0.0299),
                                       child: Align(
                                         alignment: Alignment.topCenter,
-                                        child: OptimizedCacheImage(
+                                        child: CachedNetworkImage(
                                           imageUrl: Provider.of<SetupProvider>(
                                                   context,
                                                   listen: false)
