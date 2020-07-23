@@ -46,12 +46,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: SearchRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => SearchScreen());
-    case FavRoute:
-      navStack.add("Favourites");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: FavRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => FavouriteScreen());
+    // case FavRoute:
+    //   navStack.add("Favourites");
+    //   print(navStack);
+    //   analytics.setCurrentScreen(screenName: FavRoute);
+    //   return PageRouteBuilder(
+    //       pageBuilder: (context, animation1, animation2) => FavouriteScreen());
     case HomeRoute:
       navStack.add("Home");
       print(navStack);

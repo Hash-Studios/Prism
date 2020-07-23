@@ -1,6 +1,6 @@
 const String SplashRoute = '/';
 const String SearchRoute = '/search';
-const String FavRoute = '/favourite';
+// const String FavRoute = '/favourite';
 const String WallpaperRoute = '/wallpaper';
 const String DownloadWallpaperRoute = '/downloadWallpaper';
 const String HomeRoute = '/home';

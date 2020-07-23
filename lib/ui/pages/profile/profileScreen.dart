@@ -3,6 +3,7 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/favourite/favLoader.dart';
 import 'package:Prism/ui/widgets/offlineBanner.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
@@ -83,7 +84,7 @@ class _ProfileChildState extends State<ProfileChild> {
         onWillPop: onWillPop,
         child: main.prefs.getBool("isLoggedin")
             ? DefaultTabController(
-                length: 2,
+                length: 3,
                 child: Scaffold(
                   backgroundColor: Theme.of(context).primaryColor,
                   body: NestedScrollView(
@@ -224,6 +225,12 @@ class _ProfileChildState extends State<ProfileChild> {
                                   tabs: [
                                     Tab(
                                       icon: Icon(
+                                        JamIcons.heart_f,
+                                        color: Theme.of(context).accentColor,
+                                      ),
+                                    ),
+                                    Tab(
+                                      icon: Icon(
                                         JamIcons.picture,
                                         color: Theme.of(context).accentColor,
                                       ),
@@ -243,8 +250,17 @@ class _ProfileChildState extends State<ProfileChild> {
                     body: TabBarView(children: [
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
+                        child: FavLoader(
+                          future: Provider.of<FavouriteProvider>(context,
+                                  listen: false)
+                              .getDataBase(),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
                         child: ProfileLoader(
-                          future: Provider.of<ProfileWallProvider>(context)
+                          future: Provider.of<ProfileWallProvider>(context,
+                                  listen: false)
                               .getProfileWalls(),
                         ),
                       ),
