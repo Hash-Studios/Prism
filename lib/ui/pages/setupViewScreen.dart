@@ -2,14 +2,11 @@ import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/ui/widgets/clockOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
-import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
-import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:optimized_cached_image/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -282,11 +279,13 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                               link: Provider.of<SetupProvider>(context,
                                       listen: false)
                                   .setups[index]["wallpaper_url"],
+                              colorChanged: false,
                             ),
                             SetWallpaperButton(
                               url: Provider.of<SetupProvider>(context,
                                       listen: false)
                                   .setups[index]["wallpaper_url"],
+                              colorChanged: false,
                             ),
                             GestureDetector(
                               onTap: () async {
@@ -325,11 +324,13 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                               link: Provider.of<SetupProvider>(context,
                                       listen: false)
                                   .setups[index]["wallpaper_url"],
+                              colorChanged: false,
                             ),
                             SetWallpaperButton(
                               url: Provider.of<SetupProvider>(context,
                                       listen: false)
                                   .setups[index]["wallpaper_url"],
+                              colorChanged: false,
                             ),
                             GestureDetector(
                               onTap: () async {
@@ -395,7 +396,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                     if (offsetAnimation.value < 0.0)
                       print('${offsetAnimation.value + 8.0}');
                     return GestureDetector(
-                      child: OptimizedCacheImage(
+                      child: CachedNetworkImage(
                         imageUrl:
                             Provider.of<SetupProvider>(context, listen: false)
                                 .setups[index]["image"],
