@@ -30,6 +30,7 @@ class SplashWidget extends StatelessWidget {
         final dir = await getApplicationDocumentsDirectory();
         Hive.init(dir.path);
         var box = await Hive.openBox('wallpapers');
+        var box2 = await Hive.openBox('favourites');
         print("Box Opened");
       },
     );
