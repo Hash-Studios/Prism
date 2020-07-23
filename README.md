@@ -5,7 +5,7 @@
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
-![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-100+-green.svg)
+![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-500+-green.svg)
 ![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.8-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
@@ -69,6 +69,10 @@ Main features like finding and setting up wallpapers don't require Google Sign I
 ## Changelog
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
+
+### v2.4.5
+- Removed excessive notifications
+- Added Internet connectivity checks
 
 ### v2.4.4
 - Upto 24 new Categories added, full list [here](#categories)
@@ -157,7 +161,7 @@ The following packages are needed for the development of this application.
 - `firebase_analytics: ^5.0.16` for analytics
 - `firebase_messaging: ^6.0.16` for notifications
 - `in_app_purchase: ^0.3.4+1` for in-app purchases
-- `flutter_local_notifications: ^1.4.4+2` for in-app local notifications
+- `connectivity_widget: ^0.1.7` for checking Internet connectivity
 - `firebase_crashlytics: ^0.1.3+3` for handling crashes, and better reporting
 - `screenshot: ^0.2.0` for setting wallpapers
 - `tutorial_coach_mark: ^0.3.0` for showing new user tutorial
