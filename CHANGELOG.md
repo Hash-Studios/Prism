@@ -1,5 +1,9 @@
 ## Changelog
 
+### v2.4.5
+- Removed excessive notifications
+- Added Internet connectivity checks
+
 ### v2.4.4
 - Upto 24 new Categories added, full list [here](#categories)
 - Added upload section
