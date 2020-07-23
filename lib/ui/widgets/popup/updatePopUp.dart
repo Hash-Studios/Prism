@@ -1,5 +1,6 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
@@ -26,12 +27,11 @@ void showUpdate(BuildContext context) {
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Image.asset(
-                'assets/images/appIcon.png',
-                fit: BoxFit.scaleDown,
-              ),
+            child: FlareActor(
+              "assets/animations/Update.flr",
+              isPaused: false,
+              alignment: Alignment.center,
+              animation: "update",
             ),
           ),
           Row(
@@ -54,12 +54,15 @@ void showUpdate(BuildContext context) {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                child: Text(
-                  'Version ' +
-                      globals.versionInfo["version_number"] +
-                      ' includes -',
-                  style: TextStyle(
-                      fontSize: 14, color: Theme.of(context).accentColor),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    'Version ' +
+                        globals.versionInfo["version_number"] +
+                        ' includes -',
+                    style: TextStyle(
+                        fontSize: 14, color: Theme.of(context).accentColor),
+                  ),
                 ),
               ),
             ],
@@ -102,10 +105,13 @@ void showUpdate(BuildContext context) {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                child: Text(
-                  'Update now available on the Google Play Store.',
-                  style: TextStyle(
-                      fontSize: 14, color: Theme.of(context).accentColor),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    'Update now available on the Google Play Store.',
+                    style: TextStyle(
+                        fontSize: 14, color: Theme.of(context).accentColor),
+                  ),
                 ),
               ),
             ],
