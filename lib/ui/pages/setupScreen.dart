@@ -6,6 +6,7 @@ import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/offlineBanner.dart';
 import 'package:Prism/ui/widgets/popup/proPopUp.dart';
+import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:connectivity_widget/connectivity_widget.dart';
 import 'package:flutter/material.dart';
@@ -406,6 +407,40 @@ class _SetupPageState extends State<SetupPage> {
             },
           ),
         ),
+        pageNumber == 0
+            ? Container()
+            : Align(
+                alignment: Alignment.centerLeft,
+                child: ArrowBounceAnimation(
+                  child: Icon(JamIcons.chevron_left),
+                  onTap: () {
+                    widget.controller.animateToPage(
+                        widget.controller.page.toInt() - 1,
+                        duration: Duration(milliseconds: 300),
+                        curve: Curves.fastOutSlowIn);
+                    HapticFeedback.vibrate();
+                  },
+                ),
+              ),
+        pageNumber ==
+                Provider.of<SetupProvider>(context, listen: false)
+                        .setups
+                        .length -
+                    1
+            ? Container()
+            : Align(
+                alignment: Alignment.centerRight,
+                child: ArrowBounceAnimation(
+                  child: Icon(JamIcons.chevron_right),
+                  onTap: () {
+                    widget.controller.animateToPage(
+                        widget.controller.page.toInt() + 1,
+                        duration: Duration(milliseconds: 300),
+                        curve: Curves.fastOutSlowIn);
+                    HapticFeedback.vibrate();
+                  },
+                ),
+              ),
       ],
     );
   }
