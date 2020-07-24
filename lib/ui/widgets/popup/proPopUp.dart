@@ -191,7 +191,7 @@ void premiumPopUp(BuildContext context, Function func) {
                 Container(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
-                    "The ability to apply filters on wallpapers.",
+                    "Download or set variants of wallpapers.",
                     style: Theme.of(context)
                         .textTheme
                         .headline6
