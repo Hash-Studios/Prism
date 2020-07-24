@@ -138,14 +138,65 @@ class _ProfileChildState extends State<ProfileChild> {
                                       Spacer(flex: 2),
                                       main.prefs.getString("name") == null
                                           ? Container()
-                                          : Text(
-                                              main.prefs.getString("name"),
-                                              style: TextStyle(
-                                                  fontFamily: "Proxima Nova",
-                                                  color: Colors.white,
-                                                  fontSize: 32,
-                                                  fontWeight: FontWeight.w700),
-                                            ),
+                                          : !main.prefs.getBool('premium')
+                                              ? Text(
+                                                  main.prefs.getString("name"),
+                                                  style: TextStyle(
+                                                      fontFamily:
+                                                          "Proxima Nova",
+                                                      color: Colors.white,
+                                                      fontSize: 32,
+                                                      fontWeight:
+                                                          FontWeight.w700),
+                                                )
+                                              : Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: <Widget>[
+                                                    Text(
+                                                      main.prefs
+                                                          .getString("name"),
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          color: Colors.white,
+                                                          fontSize: 32,
+                                                          fontWeight:
+                                                              FontWeight.w700),
+                                                    ),
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 8.0),
+                                                      child: Container(
+                                                        padding: EdgeInsets
+                                                            .symmetric(
+                                                                vertical: 3,
+                                                                horizontal: 5),
+                                                        decoration: BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        50),
+                                                            color: Color(
+                                                                0xFFFFFFFF)),
+                                                        child: Text(
+                                                          "PRO",
+                                                          style: Theme.of(
+                                                                  context)
+                                                              .textTheme
+                                                              .bodyText2
+                                                              .copyWith(
+                                                                  fontSize: 10,
+                                                                  color: Color(
+                                                                      0xFFE57697)),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
                                       Spacer(flex: 1),
                                       Row(
                                         mainAxisSize: MainAxisSize.min,
