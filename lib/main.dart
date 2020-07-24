@@ -34,8 +34,8 @@ void main() {
   FlutterError.onError = Crashlytics.instance.recordFlutterError;
   getApplicationDocumentsDirectory().then((dir) async {
     Hive.init(dir.path);
-    var box = await Hive.openBox('wallpapers');
-    var box2 = await Hive.openBox('favourites');
+    await Hive.openBox('wallpapers');
+    await Hive.openBox('favourites');
     prefs = await Hive.openBox('prefs');
     print("Box Opened");
     darkMode = prefs.get('darkMode') ?? true;

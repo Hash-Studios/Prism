@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';

@@ -1,7 +1,6 @@
 package com.hash.prism;
 
 import io.flutter.app.FlutterApplication;
-import android.view.WindowManager.LayoutParams;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.PluginRegistrantCallback;
 import io.flutter.plugins.GeneratedPluginRegistrant;
@@ -13,7 +12,6 @@ public class Application extends FlutterApplication implements PluginRegistrantC
   public void onCreate() {
     super.onCreate();
     FlutterFirebaseMessagingService.setPluginRegistrant(this);
-    getWindow().addFlags(LayoutParams.FLAG_SECURE);
   }
 
   @Override
