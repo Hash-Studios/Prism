@@ -4,7 +4,6 @@ import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/favourite/favLoader.dart';
-import 'package:Prism/ui/widgets/offlineBanner.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
 import 'package:Prism/ui/widgets/profile/premiumList.dart';
@@ -14,7 +13,6 @@ import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/profile/profileLoader.dart';
 import 'package:Prism/ui/widgets/profile/userList.dart';
-import 'package:connectivity_widget/connectivity_widget.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -30,11 +28,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ConnectivityWidget(
-        offlineBanner: OfflineBanner(),
-        builder: (context, isOnline) => BottomBar(
-          child: ProfileChild(),
-        ),
+      body: BottomBar(
+        child: ProfileChild(),
       ),
     );
   }

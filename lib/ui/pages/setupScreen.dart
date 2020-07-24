@@ -4,11 +4,9 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/offlineBanner.dart';
 import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:connectivity_widget/connectivity_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -48,12 +46,9 @@ class _SetupScreenState extends State<SetupScreen> {
       onWillPop: onWillPop,
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
-        body: ConnectivityWidget(
-          offlineBanner: OfflineBanner(),
-          builder: (context, isOnline) => BottomBar(
-            child: SafeArea(
-              child: SetupPage(future: future, controller: controller),
-            ),
+        body: BottomBar(
+          child: SafeArea(
+            child: SetupPage(future: future, controller: controller),
           ),
         ),
       ),

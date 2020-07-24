@@ -6,8 +6,6 @@ import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/gridLoader.dart';
 import 'package:Prism/ui/widgets/home/homeGrid.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
-import 'package:Prism/ui/widgets/offlineBanner.dart';
-import 'package:connectivity_widget/connectivity_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -168,36 +166,33 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 preferredSize: Size(double.infinity, 54)),
           ),
-          body: ConnectivityWidget(
-            offlineBanner: OfflineBanner(),
-            builder: (context, isOnline) => BottomBar(
-              child: isSubmitted
-                  ? SearchLoader(
-                      future: _future,
-                      provider: searchController.text,
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          child: Provider.of<ThemeModel>(context, listen: false)
-                                      .returnTheme() ==
-                                  ThemeType.Dark
-                              ? SvgPicture.asset(
-                                  "assets/images/loader dark.svg",
-                                )
-                              : SvgPicture.asset(
-                                  "assets/images/loader light.svg",
-                                ),
-                        ),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          height: MediaQuery.of(context).size.height * 0.1,
-                        )
-                      ],
-                    ),
-            ),
+          body: BottomBar(
+            child: isSubmitted
+                ? SearchLoader(
+                    future: _future,
+                    provider: searchController.text,
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        child: Provider.of<ThemeModel>(context, listen: false)
+                                    .returnTheme() ==
+                                ThemeType.Dark
+                            ? SvgPicture.asset(
+                                "assets/images/loader dark.svg",
+                              )
+                            : SvgPicture.asset(
+                                "assets/images/loader light.svg",
+                              ),
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height * 0.1,
+                      )
+                    ],
+                  ),
           )),
     );
   }
