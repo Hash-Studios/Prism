@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -10,6 +11,8 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 final List<String> supportPurchase = ['support', 'support_more', 'support_max'];
 
 class StudioList extends StatefulWidget {
+  final ScrollController scrollController;
+  StudioList({this.scrollController});
   @override
   _StudioListState createState() => _StudioListState();
 }
@@ -195,6 +198,14 @@ class _StudioListState extends State<StudioList> {
               onSupport(context);
             }),
         ExpansionTile(
+          onExpansionChanged: (value) {
+            if (value)
+              Future.delayed(Duration(milliseconds: 200)).then((value) =>
+                  widget.scrollController.animateTo(
+                      widget.scrollController.position.maxScrollExtent + 1000,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.fastOutSlowIn));
+          },
           leading: Icon(
             JamIcons.users,
           ),

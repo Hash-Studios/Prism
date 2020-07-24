@@ -43,6 +43,7 @@ class ProfileChild extends StatefulWidget {
 class _ProfileChildState extends State<ProfileChild> {
   int favCount;
   int profileCount;
+  final ScrollController scrollController = ScrollController();
   @override
   void initState() {
     checkFav();
@@ -308,13 +309,13 @@ class _ProfileChildState extends State<ProfileChild> {
                               .getProfileWalls(),
                         ),
                       ),
-                      ListView(children: <Widget>[
+                      ListView(controller: scrollController, children: <Widget>[
                         PremiumList(),
                         DownloadList(),
                         GeneralList(),
                         UserList(),
                         PrismList(),
-                        StudioList(),
+                        StudioList(scrollController: scrollController),
                       ])
                     ]),
                   ),
