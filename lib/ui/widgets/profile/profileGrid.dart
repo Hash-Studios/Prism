@@ -125,7 +125,7 @@ class _ProfileGridState extends State<ProfileGrid>
                 : GridView.builder(
                     shrinkWrap: true,
                     cacheExtent: 50000,
-                    padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+                    padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
                     itemCount: Provider.of<ProfileWallProvider>(context)
                         .profileWalls
                         .length,

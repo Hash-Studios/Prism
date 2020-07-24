@@ -96,7 +96,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                 ? Container(
                     child: GridView.builder(
                       shrinkWrap: true,
-                      padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+                      padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
                       itemCount: files.length,
                       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent:
