@@ -124,7 +124,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
                 : GridView.builder(
                     shrinkWrap: true,
                     cacheExtent: 50000,
-                    padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+                    padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
                     itemCount:
                         Provider.of<FavouriteProvider>(context).liked.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
