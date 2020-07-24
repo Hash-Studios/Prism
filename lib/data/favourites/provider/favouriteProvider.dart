@@ -22,6 +22,7 @@ class FavouriteProvider extends ChangeNotifier {
           .getDocuments()
           .then((value) {
         value.documents.forEach((f) => this.liked.add(f.data));
+        box.delete('favourites');
         box.put('favourites', this.liked);
         print("Favourites saved");
         globals.dirty = false;

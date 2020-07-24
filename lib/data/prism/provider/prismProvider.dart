@@ -29,9 +29,12 @@ class PrismProvider extends ChangeNotifier {
             .then((value) {
           this.prismWalls = [];
           value.documents.forEach((f) {
-            this.prismWalls.add(f.data);
+            var map = f.data;
+            map['createdAt'] = map['createdAt'].toString();
+            this.prismWalls.add(map);
           });
           this.prismWalls.shuffle(Random.secure());
+          box.delete('wallpapers');
           box.put('wallpapers', prismWalls);
           print("Wallpapers saved");
           box.put(
@@ -40,7 +43,6 @@ class PrismProvider extends ChangeNotifier {
               DateTime.now(),
             ),
           );
-          print(box.get('date'));
           print(this.prismWalls.length);
           this.subPrismWalls = box.get('wallpapers').sublist(0, 24);
         }).catchError((e) {
@@ -51,7 +53,8 @@ class PrismProvider extends ChangeNotifier {
         print("Fetching data from cache");
         this.prismWalls = [];
         this.subPrismWalls = [];
-        this.prismWalls = box.get('wallpapers').shuffle(Random.secure());
+        this.prismWalls = box.get('wallpapers');
+        this.prismWalls.shuffle(Random.secure());
         this.subPrismWalls = this.prismWalls.sublist(0, 24);
       }
     } else {
