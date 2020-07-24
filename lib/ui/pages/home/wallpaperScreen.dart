@@ -131,7 +131,16 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold),
                               ),
-                              TextSpan(text: "the variant."),
+                              TextSpan(text: "the variant.\n\n"),
+
+                              TextSpan(text: "➡ To download and set variants of a wallpaper, you need to be a "),
+                              TextSpan(
+                                text: "premium ",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(text: "user."),
                             ]),
                       ),
                     )
