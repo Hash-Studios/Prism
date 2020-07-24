@@ -2,8 +2,7 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/home/gridLoader.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/profile/profileLoader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -90,8 +89,6 @@ class _FavouriteGridState extends State<FavouriteGrid>
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
     // print(Provider.of<FavouriteProvider>(context, listen: false).liked);
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
@@ -125,7 +122,6 @@ class _FavouriteGridState extends State<FavouriteGrid>
                     ],
                   )
                 : GridView.builder(
-                    controller: controller,
                     shrinkWrap: true,
                     cacheExtent: 50000,
                     padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
@@ -177,6 +173,6 @@ class _FavouriteGridState extends State<FavouriteGrid>
                         ),
                       );
                     })
-            : LoadingCards(controller: controller, animation: animation));
+            : LoadingCards(animation: animation));
   }
 }
