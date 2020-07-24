@@ -177,10 +177,10 @@ class _ThemeViewState extends State<ThemeView> {
                     ],
               onToggleCallback: (index) {
                 Provider.of<ThemeModel>(context, listen: false).toggleTheme();
-                main.prefs.getBool("darkMode") == null
+                main.prefs.get("darkMode") == null
                     ? analytics.logEvent(
                         name: 'theme_changed', parameters: {'type': 'dark'})
-                    : main.prefs.getBool("darkMode")
+                    : main.prefs.get("darkMode")
                         ? analytics.logEvent(
                             name: 'theme_changed',
                             parameters: {'type': 'light'})

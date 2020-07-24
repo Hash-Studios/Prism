@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> onWillPop() async {
-    if(navStack.length>1)navStack.removeLast();
+    if (navStack.length > 1) navStack.removeLast();
     print(navStack);
     return true;
   }
@@ -129,16 +129,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void showChangelogCheck(BuildContext context) {
-    var newApp = main.prefs.getBool("newApp");
+    var newApp = main.prefs.get("newApp");
     if (newApp == null) {
       showChangelog(context, () {
         setState(() {
           isNew = false;
         });
       });
-      main.prefs.setBool("newApp", false);
+      main.prefs.put("newApp", false);
     } else {
-      main.prefs.setBool("newApp", false);
+      main.prefs.put("newApp", false);
     }
   }
 

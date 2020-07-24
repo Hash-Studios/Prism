@@ -11,7 +11,7 @@ class FavouriteProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
   List liked;
   Future<List> getDataBase() async {
-    var uid = main.prefs.getString("id");
+    var uid = main.prefs.get("id");
     var box = Hive.box('favourites');
     if (globals.dirty || box.get('favourites') == null) {
       this.liked = [];
@@ -21,9 +21,11 @@ class FavouriteProvider extends ChangeNotifier {
           .collection("images")
           .getDocuments()
           .then((value) {
+        this.liked = [];
         value.documents.forEach((f) => this.liked.add(f.data));
         box.delete('favourites');
         box.put('favourites', this.liked);
+        print("Favourites = " + box.get('favourites').length.toString());
         print("Favourites saved");
         globals.dirty = false;
       }).catchError((e) {
@@ -37,7 +39,7 @@ class FavouriteProvider extends ChangeNotifier {
   }
 
   void deleteDataByID(String id) async {
-    var uid = main.prefs.getString("id");
+    var uid = main.prefs.get("id");
     try {
       await databaseReference
           .collection("users")
@@ -53,7 +55,7 @@ class FavouriteProvider extends ChangeNotifier {
 
   void createDataByWall(String provider, WallPaper wallhaven, WallPaperP pexels,
       Map prism) async {
-    var uid = main.prefs.getString("id");
+    var uid = main.prefs.get("id");
     if (provider == "WallHaven") {
       await databaseReference
           .collection("users")
@@ -149,7 +151,7 @@ class FavouriteProvider extends ChangeNotifier {
   }
 
   void deleteData() async {
-    var uid = main.prefs.getString("id");
+    var uid = main.prefs.get("id");
     try {
       await databaseReference
           .collection("users")

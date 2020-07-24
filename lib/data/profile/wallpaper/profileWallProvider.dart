@@ -11,7 +11,7 @@ class ProfileWallProvider extends ChangeNotifier {
     await databaseReference
         .collection("walls")
         .where('review', isEqualTo: true)
-        .where('email', isEqualTo: main.prefs.getString('email'))
+        .where('email', isEqualTo: main.prefs.get('email'))
         .orderBy("createdAt", descending: true)
         .getDocuments()
         .then((value) {

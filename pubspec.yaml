@@ -19,7 +19,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  shared_preferences: ^0.5.7
   share: ^0.6.4
   url_launcher: ^5.4.5
   cloud_firestore: ^0.13.5

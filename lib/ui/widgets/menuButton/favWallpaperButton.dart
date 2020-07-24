@@ -43,7 +43,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        if (!main.prefs.getBool("isLoggedin")) {
+        if (!main.prefs.get("isLoggedin")) {
           googleSignInPopUp(context, () {
             onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels,
                 widget.prism);

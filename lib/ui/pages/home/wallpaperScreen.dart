@@ -161,12 +161,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   }
 
   void afterLayout(_) {
-    var newApp2 = main.prefs.getBool("newApp2");
+    var newApp2 = main.prefs.get("newApp2");
     if (newApp2 == null || newApp2 == true) {
       Future.delayed(Duration(milliseconds: 100), showTutorial);
-      main.prefs.setBool("newApp2", false);
+      main.prefs.put("newApp2", false);
     } else {
-      main.prefs.setBool("newApp2", false);
+      main.prefs.put("newApp2", false);
     }
   }
 

@@ -147,7 +147,7 @@ class _BottomNavBarState extends State<BottomNavBar>
 
   void checkSignIn() async {
     setState(() {
-      isLoggedin = main.prefs.getBool("isLoggedin");
+      isLoggedin = main.prefs.get("isLoggedin");
     });
   }
 

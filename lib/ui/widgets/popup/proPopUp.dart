@@ -11,7 +11,7 @@ void premiumPopUp(BuildContext context, Function func) {
   final List<String> premiumPurchase = ['prism_pro'];
   void createPremiumFirestore(bool premium) async {
     Firestore firestore = Firestore.instance;
-    var uid = main.prefs.getString("id");
+    var uid = main.prefs.get("id");
     await firestore.collection("users").document(uid).updateData({
       "premium": premium,
     });
@@ -51,7 +51,7 @@ void premiumPopUp(BuildContext context, Function func) {
     if (purchase != null) {
       if (purchase.status == PurchaseStatus.purchased) {
         toasts.premiumSuccess();
-        main.prefs.setBool("premium", true);
+        main.prefs.put("premium", true);
         createPremiumFirestore(true);
         cancelSubscription();
         Navigator.pop(context);
@@ -59,7 +59,7 @@ void premiumPopUp(BuildContext context, Function func) {
       }
     } else {
       toasts.error("Invalid Purchase!");
-      main.prefs.setBool("premium", false);
+      main.prefs.put("premium", false);
       createPremiumFirestore(false);
       cancelSubscription();
       Navigator.pop(context);

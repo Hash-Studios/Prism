@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'dart:async';
@@ -15,25 +17,32 @@ import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
+import 'package:hive/hive.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/services.dart';
 
-SharedPreferences prefs;
+Box prefs;
+Directory dir;
 var darkMode;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
   FlutterError.onError = Crashlytics.instance.recordFlutterError;
-  SharedPreferences.getInstance().then((prefs) {
-    darkMode = prefs.getBool('darkMode') ?? true;
+  getApplicationDocumentsDirectory().then((dir) async {
+    Hive.init(dir.path);
+    var box = await Hive.openBox('wallpapers');
+    var box2 = await Hive.openBox('favourites');
+    prefs = await Hive.openBox('prefs');
+    print("Box Opened");
+    darkMode = prefs.get('darkMode') ?? true;
     if (darkMode)
-      prefs.setBool('darkMode', true);
+      prefs.put('darkMode', true);
     else
-      prefs.setBool('darkMode', false);
+      prefs.put('darkMode', false);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
         .then((value) => runZoned<Future<void>>(() {
               runApp(
@@ -82,9 +91,9 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   void getLoginStatus() async {
-    prefs = await SharedPreferences.getInstance();
+    prefs = await Hive.openBox('prefs');
     globals.gAuth.googleSignIn.isSignedIn().then((value) {
-      prefs.setBool("isLoggedin", value);
+      prefs.put("isLoggedin", value);
     });
   }
 
@@ -132,12 +141,12 @@ class _RestartWidgetState extends State<RestartWidget> {
     setState(() {
       key = UniqueKey();
     });
-    SharedPreferences.getInstance().then((prefs) {
-      darkMode = prefs.getBool('darkMode') ?? true;
+    Hive.openBox('prefs').then((prefs) {
+      darkMode = prefs.get('darkMode') ?? true;
       if (darkMode)
-        prefs.setBool('darkMode', true);
+        prefs.put('darkMode', true);
       else
-        prefs.setBool('darkMode', false);
+        prefs.put('darkMode', false);
     });
   }
 

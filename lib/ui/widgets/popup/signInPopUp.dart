@@ -224,13 +224,13 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     builder: (BuildContext context) => loaderDialog);
                 globals.gAuth.signInWithGoogle().then((value) {
                   toasts.successLog();
-                  main.prefs.setBool("isLoggedin", true);
+                  main.prefs.put("isLoggedin", true);
                   Navigator.pop(context);
                   func();
                 }).catchError((e) {
                   print(e);
                   Navigator.pop(context);
-                  main.prefs.setBool("isLoggedin", false);
+                  main.prefs.put("isLoggedin", false);
                   toasts.error("Something went wrong, please try again!");
                 });
               },
