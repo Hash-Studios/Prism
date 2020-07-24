@@ -7,6 +7,7 @@ import 'package:Prism/ui/widgets/favourite/favLoader.dart';
 import 'package:Prism/ui/widgets/offlineBanner.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
+import 'package:Prism/ui/widgets/profile/premiumList.dart';
 import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:Prism/ui/widgets/profile/studioList.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
@@ -265,6 +266,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         ),
                       ),
                       ListView(children: <Widget>[
+                        PremiumList(),
                         DownloadList(),
                         GeneralList(),
                         UserList(),
@@ -318,8 +320,9 @@ class _ProfileChildState extends State<ProfileChild> {
                       delegate: SliverChildListDelegate([
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
-                      child: DownloadList(),
+                      child: PremiumList(),
                     ),
+                    DownloadList(),
                     GeneralList(),
                     UserList(),
                     PrismList(),
