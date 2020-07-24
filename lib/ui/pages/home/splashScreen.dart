@@ -3,8 +3,6 @@ import 'package:Prism/ui/pages/home/pageManager.dart';
 import 'package:flutter/material.dart';
 import 'package:flare_splash_screen/flare_splash_screen.dart';
 import 'package:Prism/theme/theme.dart';
-import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class SplashWidget extends StatelessWidget {
