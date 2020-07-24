@@ -9,7 +9,7 @@ class PremiumList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        main.prefs.getBool("premium")
+        main.prefs.get("premium") == true
             ? Container()
             : Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -24,13 +24,13 @@ class PremiumList extends StatelessWidget {
                   ),
                 ),
               ),
-        main.prefs.getBool("premium")
+        main.prefs.get("premium") == true
             ? Container()
             : ListTile(
                 onTap: () {
-                  if (!main.prefs.getBool("isLoggedin")) {
+                  if (!main.prefs.get("isLoggedin")) {
                     googleSignInPopUp(context, () {
-                      if (main.prefs.getBool("premium")) {
+                      if (main.prefs.get("premium")) {
                         main.RestartWidget.restartApp(context);
                       } else {
                         premiumPopUp(context, () {

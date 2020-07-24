@@ -27,11 +27,7 @@ class SplashWidget extends StatelessWidget {
               ? Color(0xFFFFFFFF)
               : Color(0xFF181818),
       until: () async {
-        final dir = await getApplicationDocumentsDirectory();
-        Hive.init(dir.path);
-        var box = await Hive.openBox('wallpapers');
-        var box2 = await Hive.openBox('favourites');
-        print("Box Opened");
+        Future.delayed(Duration(seconds: 0));
       },
     );
   }

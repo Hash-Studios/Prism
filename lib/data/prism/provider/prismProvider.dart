@@ -14,11 +14,12 @@ class PrismProvider extends ChangeNotifier {
   Future<List> getPrismWalls() async {
     if (navStack.last == "Home") {
       var box = Hive.box('wallpapers');
-      if (box.get('date') !=
+      if ((box.get('date') !=
               DateFormat("yy-MM-dd").format(
                 DateTime.now(),
-              ) ||
-          box.get('wallpapers') == null) {
+              )) ||
+          (box.get('wallpapers') == null) ||
+          (box.get('wallpapers') == [])) {
         this.prismWalls = [];
         this.subPrismWalls = [];
         await databaseReference

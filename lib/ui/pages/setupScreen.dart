@@ -73,7 +73,7 @@ class SetupPage extends StatefulWidget {
 class _SetupPageState extends State<SetupPage> {
   int pageNumber = 0;
   void showPremiumPopUp(Function func) {
-    if (!main.prefs.getBool("premium")) {
+    if (!main.prefs.get("premium")) {
       premiumPopUp(context, func);
     } else {
       func();
@@ -114,7 +114,7 @@ class _SetupPageState extends State<SetupPage> {
                         });
                       },
                       controller: widget.controller,
-                      itemCount: main.prefs.getBool("premium")
+                      itemCount: main.prefs.get("premium")
                           ? Provider.of<SetupProvider>(context, listen: false)
                                       .setups
                                       .length ==
@@ -125,8 +125,7 @@ class _SetupPageState extends State<SetupPage> {
                                   .setups
                                   .length
                           : 6,
-                      itemBuilder: (context, index) => main.prefs
-                              .getBool("premium")
+                      itemBuilder: (context, index) => main.prefs.get("premium")
                           ? Provider.of<SetupProvider>(context, listen: false)
                                       .setups
                                       .length ==
@@ -305,7 +304,7 @@ class _SetupPageState extends State<SetupPage> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Text(
-                  main.prefs.getBool("premium")
+                  main.prefs.get("premium")
                       ? Provider.of<SetupProvider>(context, listen: false)
                                   .setups
                                   .length ==
@@ -331,7 +330,7 @@ class _SetupPageState extends State<SetupPage> {
                 Container(
                   width: MediaQuery.of(context).size.width * 0.75,
                   child: Text(
-                    main.prefs.getBool("premium")
+                    main.prefs.get("premium")
                         ? Provider.of<SetupProvider>(context, listen: false)
                                     .setups
                                     .length ==

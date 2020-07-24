@@ -24,7 +24,7 @@ class UserList extends StatelessWidget {
             ),
           ),
         ),
-        main.prefs.getBool("isLoggedin") == false
+        main.prefs.get("isLoggedin") == false
             ? ListTile(
                 onTap: () {
                   Dialog loaderDialog = Dialog(
@@ -41,20 +41,20 @@ class UserList extends StatelessWidget {
                       ),
                     ),
                   );
-                  if (!main.prefs.getBool("isLoggedin")) {
+                  if (!main.prefs.get("isLoggedin")) {
                     showDialog(
                         barrierDismissible: false,
                         context: context,
                         builder: (BuildContext context) => loaderDialog);
                     globals.gAuth.signInWithGoogle().then((value) {
                       toasts.successLog();
-                      main.prefs.setBool("isLoggedin", true);
+                      main.prefs.put("isLoggedin", true);
                       Navigator.pop(context);
                       main.RestartWidget.restartApp(context);
                     }).catchError((e) {
                       print(e);
                       Navigator.pop(context);
-                      main.prefs.setBool("isLoggedin", false);
+                      main.prefs.put("isLoggedin", false);
                       toasts.error("Something went wrong, please try again!");
                     });
                   } else {
@@ -75,7 +75,7 @@ class UserList extends StatelessWidget {
                 ),
               )
             : Container(),
-        main.prefs.getBool("isLoggedin")
+        main.prefs.get("isLoggedin")
             ? Column(
                 children: [
                   ListTile(
@@ -163,7 +163,7 @@ class UserList extends StatelessWidget {
                             fontFamily: "Proxima Nova"),
                       ),
                       subtitle: Text(
-                        main.prefs.getString("email"),
+                        main.prefs.get("email"),
                         style: TextStyle(fontSize: 12),
                       ),
                       onTap: () {

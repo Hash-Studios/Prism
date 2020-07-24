@@ -2,7 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive/hive.dart';
 
 class GoogleAuth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -12,14 +12,14 @@ class GoogleAuth {
   String email;
   String imageUrl;
   String errorMsg = "";
-  SharedPreferences prefs;
+  Box prefs;
   bool isLoggedIn = false;
   bool isLoading = false;
 
   Future<String> signInWithGoogle() async {
     // try {
     isLoading = true;
-    prefs = await SharedPreferences.getInstance();
+    prefs = await Hive.openBox('prefs');
     final GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();
     final GoogleSignInAuthentication googleSignInAuthentication =
         await googleSignInAccount.authentication;
@@ -50,24 +50,24 @@ class GoogleAuth {
           'createdAt': DateTime.now().toIso8601String(),
           'premium': false,
         });
-        await prefs.setString('id', user.uid);
-        await prefs.setString('name', user.displayName);
-        await prefs.setString('email', user.email);
-        await prefs.setString('logged', "true");
-        await prefs.setBool('premium', false);
+        await prefs.put('id', user.uid);
+        await prefs.put('name', user.displayName);
+        await prefs.put('email', user.email);
+        await prefs.put('logged', "true");
+        await prefs.put('premium', false);
       } else {
-        await prefs.setString('id', documents[0]['id']);
-        await prefs.setString('name', documents[0]['name']);
-        await prefs.setString('email', documents[0]['email']);
-        await prefs.setString('logged', "true");
-        await prefs.setBool('premium', documents[0]['premium'] ?? false);
+        await prefs.put('id', documents[0]['id']);
+        await prefs.put('name', documents[0]['name']);
+        await prefs.put('email', documents[0]['email']);
+        await prefs.put('logged', "true");
+        await prefs.put('premium', documents[0]['premium'] ?? false);
       }
       isLoading = false;
     }
-    SharedPreferences.getInstance().then((value) {
-      value.setString('googlename', user.displayName);
-      value.setString('googleemail', user.email);
-      value.setString('googleimage', user.photoUrl);
+    Hive.openBox('prefs').then((value) {
+      value.put('googlename', user.displayName);
+      value.put('googleemail', user.email);
+      value.put('googleimage', user.photoUrl);
     });
     assert(!user.isAnonymous);
     assert(await user.getIdToken() != null);
@@ -79,15 +79,15 @@ class GoogleAuth {
 
   void signOutGoogle() async {
     await googleSignIn.signOut();
-    SharedPreferences.getInstance().then((value) {
-      value.setString('googlename', "");
-      value.setString('googleemail', "");
-      value.setString('googleimage', "");
-      value.setString('id', "");
-      value.setString('name', "");
-      value.setString('email', "");
-      value.setString('logged', "false");
-      value.setBool('premium', false);
+    Hive.openBox('prefs').then((value) {
+      value.put('googlename', "");
+      value.put('googleemail', "");
+      value.put('googleimage', "");
+      value.put('id', "");
+      value.put('name', "");
+      value.put('email', "");
+      value.put('logged', "false");
+      value.put('premium', false);
     });
     print("User Sign Out");
   }

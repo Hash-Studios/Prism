@@ -56,7 +56,7 @@ class _ProfileChildState extends State<ProfileChild> {
   }
 
   Future checkFav() async {
-    if (main.prefs.getBool("isLoggedin")) {
+    if (main.prefs.get("isLoggedin")) {
       await Provider.of<FavouriteProvider>(context, listen: false)
           .countFav()
           .then(
@@ -78,7 +78,7 @@ class _ProfileChildState extends State<ProfileChild> {
         InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
         onWillPop: onWillPop,
-        child: main.prefs.getBool("isLoggedin")
+        child: main.prefs.get("isLoggedin")
             ? DefaultTabController(
                 length: 3,
                 child: Scaffold(
@@ -108,8 +108,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Spacer(flex: 5),
-                                      main.prefs.getString("googleimage") ==
-                                              null
+                                      main.prefs.get("googleimage") == null
                                           ? Container()
                                           : Container(
                                               decoration: BoxDecoration(
@@ -126,16 +125,16 @@ class _ProfileChildState extends State<ProfileChild> {
                                               child: CircleAvatar(
                                                 radius: 50,
                                                 backgroundImage: NetworkImage(
-                                                    main.prefs.getString(
-                                                        "googleimage")),
+                                                    main.prefs
+                                                        .get("googleimage")),
                                               ),
                                             ),
                                       Spacer(flex: 2),
-                                      main.prefs.getString("name") == null
+                                      main.prefs.get("name") == null
                                           ? Container()
-                                          : !main.prefs.getBool('premium')
+                                          : !main.prefs.get('premium')
                                               ? Text(
-                                                  main.prefs.getString("name"),
+                                                  main.prefs.get("name"),
                                                   style: TextStyle(
                                                       fontFamily:
                                                           "Proxima Nova",
@@ -151,8 +150,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       CrossAxisAlignment.start,
                                                   children: <Widget>[
                                                     Text(
-                                                      main.prefs
-                                                          .getString("name"),
+                                                      main.prefs.get("name"),
                                                       style: TextStyle(
                                                           fontFamily:
                                                               "Proxima Nova",
@@ -255,8 +253,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         automaticallyImplyLeading: false,
                         pinned: true,
                         titleSpacing: 0,
-                        expandedHeight:
-                            main.prefs.getBool("isLoggedin") ? 50 : 0,
+                        expandedHeight: main.prefs.get("isLoggedin") ? 50 : 0,
                         title: SizedBox(
                           width: MediaQuery.of(context).size.width,
                           height: 57,

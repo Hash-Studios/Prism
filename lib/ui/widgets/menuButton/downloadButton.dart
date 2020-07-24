@@ -33,7 +33,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     return GestureDetector(
       onTap: () async {
         print("Download");
-        if (!main.prefs.getBool("isLoggedin")) {
+        if (!main.prefs.get("isLoggedin")) {
           googleSignInPopUp(context, () {
             onDownload();
           });
