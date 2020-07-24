@@ -10,13 +10,6 @@ var updateAvailable = false;
 var versionInfo = {};
 var noNewNotification = false;
 var height = 1440.0;
-var dirty = true;
-
-// GlobalKey keyCategoriesBar = GlobalKey();
-// GlobalKey keyBottomBar = GlobalKey();
-// GlobalKey keySearchButton = GlobalKey();
-// GlobalKey keyFavButton = GlobalKey();
-// GlobalKey keyProfileButton = GlobalKey();
 
 AutoScrollController categoryController =
     AutoScrollController(axis: Axis.horizontal);

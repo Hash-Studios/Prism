@@ -4,37 +4,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:hive/hive.dart';
-import 'package:Prism/global/globals.dart' as globals;
 
 class FavouriteProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
   List liked;
   Future<List> getDataBase() async {
     var uid = main.prefs.get("id");
-    var box = Hive.box('favourites');
-    if (globals.dirty || box.get('favourites') == null) {
+    this.liked = [];
+    await databaseReference
+        .collection("users")
+        .document(uid)
+        .collection("images")
+        .getDocuments()
+        .then((value) {
       this.liked = [];
-      await databaseReference
-          .collection("users")
-          .document(uid)
-          .collection("images")
-          .getDocuments()
-          .then((value) {
-        this.liked = [];
-        value.documents.forEach((f) => this.liked.add(f.data));
-        box.delete('favourites');
-        box.put('favourites', this.liked);
-        print("Favourites = " + box.get('favourites').length.toString());
-        print("Favourites saved");
-        globals.dirty = false;
-      }).catchError((e) {
-        print("data done with error");
-      });
-    } else {
-      print("Fetching favs from cache");
-      return box.get('favourites');
-    }
+      value.documents.forEach((f) => this.liked.add(f.data));
+    }).catchError((e) {
+      print("data done with error");
+    });
+
     return this.liked;
   }
 
@@ -135,7 +123,6 @@ class FavouriteProvider extends ChangeNotifier {
           deleteDataByID(id);
           return false;
         }
-        globals.dirty = true;
       },
     );
   }
