@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-// import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -193,6 +192,96 @@ void premiumPopUp(BuildContext context, Function func) {
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
                     "The ability to apply filters on wallpapers.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 20,
+                ),
+                Icon(
+                  JamIcons.user,
+                  size: 22,
+                  color: Color(0xFFE57697),
+                ),
+                SizedBox(
+                  width: 20,
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "Get PRO badge in front of your profile.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 20,
+                ),
+                Icon(
+                  JamIcons.clock,
+                  size: 22,
+                  color: Color(0xFFE57697),
+                ),
+                SizedBox(
+                  width: 20,
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "Get uploads reviewed instantly.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 20,
+                ),
+                Icon(
+                  JamIcons.coffee,
+                  size: 22,
+                  color: Color(0xFFE57697),
+                ),
+                SizedBox(
+                  width: 20,
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "Support development of the app.",
                     style: Theme.of(context)
                         .textTheme
                         .headline6
