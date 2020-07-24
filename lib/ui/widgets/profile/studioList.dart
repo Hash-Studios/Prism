@@ -198,14 +198,14 @@ class _StudioListState extends State<StudioList> {
               onSupport(context);
             }),
         ExpansionTile(
-          onExpansionChanged: (value) {
-            if (value)
-              Future.delayed(Duration(milliseconds: 200)).then((value) =>
-                  widget.scrollController.animateTo(
-                      widget.scrollController.position.maxScrollExtent + 1000,
-                      duration: Duration(milliseconds: 300),
-                      curve: Curves.fastOutSlowIn));
-          },
+          // onExpansionChanged: (value) {
+          //   if (value)
+          //     Future.delayed(Duration(milliseconds: 200)).then((value) =>
+          //         widget.scrollController.animateTo(
+          //             widget.scrollController.position.maxScrollExtent + 10000,
+          //             duration: Duration(milliseconds: 300),
+          //             curve: Curves.fastOutSlowIn));
+          // },
           leading: Icon(
             JamIcons.users,
           ),
