@@ -15,7 +15,6 @@ import 'package:Prism/ui/pages/categories/sportsScreen.dart';
 import 'package:Prism/ui/pages/categories/texturesScreen.dart';
 import 'package:Prism/ui/pages/download/downloadScreen.dart';
 import 'package:Prism/ui/pages/download/downloadWallpaperViewScreen.dart';
-import 'package:Prism/ui/pages/favourite/favouriteScreen.dart';
 import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
 import 'package:Prism/ui/pages/home/pageManager.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
