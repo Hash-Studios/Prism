@@ -339,7 +339,7 @@ class _SetupPageState extends State<SetupPage> {
                             : Provider.of<SetupProvider>(context, listen: false)
                                 .setups[pageNumber]['desc']
                         : (pageNumber == 5)
-                            ? "to view more setups, or apply any setup to your homescreen."
+                            ? "to view more setups."
                             : Provider.of<SetupProvider>(context, listen: false)
                                         .setups
                                         .length ==
@@ -416,25 +416,41 @@ class _SetupPageState extends State<SetupPage> {
                   },
                 ),
               ),
-        pageNumber ==
-                Provider.of<SetupProvider>(context, listen: false)
-                        .setups
-                        .length -
-                    1
-            ? Container()
-            : Align(
-                alignment: Alignment.centerRight,
-                child: ArrowBounceAnimation(
-                  child: Icon(JamIcons.chevron_right),
-                  onTap: () {
-                    widget.controller.animateToPage(
-                        widget.controller.page.toInt() + 1,
-                        duration: Duration(milliseconds: 300),
-                        curve: Curves.fastOutSlowIn);
-                    HapticFeedback.vibrate();
-                  },
-                ),
-              ),
+        main.prefs.get("premium")
+            ? pageNumber ==
+                    Provider.of<SetupProvider>(context, listen: false)
+                            .setups
+                            .length -
+                        1
+                ? Container()
+                : Align(
+                    alignment: Alignment.centerRight,
+                    child: ArrowBounceAnimation(
+                      child: Icon(JamIcons.chevron_right),
+                      onTap: () {
+                        widget.controller.animateToPage(
+                            widget.controller.page.toInt() + 1,
+                            duration: Duration(milliseconds: 300),
+                            curve: Curves.fastOutSlowIn);
+                        HapticFeedback.vibrate();
+                      },
+                    ),
+                  )
+            : pageNumber == 5
+                ? Container()
+                : Align(
+                    alignment: Alignment.centerRight,
+                    child: ArrowBounceAnimation(
+                      child: Icon(JamIcons.chevron_right),
+                      onTap: () {
+                        widget.controller.animateToPage(
+                            widget.controller.page.toInt() + 1,
+                            duration: Duration(milliseconds: 300),
+                            curve: Curves.fastOutSlowIn);
+                        HapticFeedback.vibrate();
+                      },
+                    ),
+                  ),
       ],
     );
   }
