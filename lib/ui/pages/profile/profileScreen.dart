@@ -309,13 +309,13 @@ class _ProfileChildState extends State<ProfileChild> {
                               .getProfileWalls(),
                         ),
                       ),
-                      ListView(controller: scrollController, children: <Widget>[
+                      ListView(children: <Widget>[
                         PremiumList(),
                         DownloadList(),
                         GeneralList(),
                         UserList(),
                         PrismList(),
-                        StudioList(scrollController: scrollController),
+                        StudioList(scrollController: controller),
                       ])
                     ]),
                   ),
