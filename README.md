@@ -5,8 +5,8 @@
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
-![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-500+-green.svg)
-![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.8-blue.svg)
+![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-1K+-green.svg)
+![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.7-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
@@ -15,7 +15,7 @@
 </div>
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
 
-Prism offers an exclusive collection of wallpapers that are beautifully hand-crafted for your very specific device. This exclusive collection is hand-picked from all around the world to give you the best illustration, graphics, and photographs that look amazing in any setup that you want.
+Prism offers an exclusive collection of wallpapers that are beautifully hand-crafted for your very specific device. This exclusive collection is hand-picked from all around the world to give you the best illustration, graphics, and photographs that look amazing in any setup that you want. Now Prism also offers an exclusive range of home screen setups, that you can simply apply. Each setup includes a wallpaper, an icon pack and a widget.
 
 Prism relies on its Community and [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/) APIs as its source of beautiful and large collection of Wallpapers. By utilizing their API, it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to make the smartphone customization experience, smooth and easy, yet giving the users amazing wallpapers, and features like downloading infinite (as much your storage allows) wallpapers or sharing the ones they like with others.
 
@@ -24,6 +24,20 @@ Now users can upload wallpapers, which will be shown in the Community section. T
 Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated every day. It also features categories like Abstract, Nature, 4K, Art, Landscape, Minimal, Space, Neon, etc. if you are into these. Then it allows one to find wallpapers based on colors, i.e. you can find wallpapers with a color that matches your icons or home screen setup. Not even that, it also shows you a palette of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
 
 Main features like finding and setting up wallpapers don't require Google Sign In, while features like Favourites or Downloads require you to sign up using Google. This signup is facilitated by Google Firebase, so it is secure and we only get your name, email, and profile photo for identification purposes. The app also has Dark Mode, if you want to save your phone's battery while getting in love with those wallpapers. The app also allows users to share wallpapers with others by giving them a unique link for every wallpaper, using Dynamic Links so that anyone can directly view the wallpaper.
+
+### Introducing Prism Premium
+
+Now get access to more premium and exclusive stuff by buying Prism Premium.
+
+You get access to Variants (Download or set up to 5 color variants of each wallpaper!) and Setups (Get more exclusive Home Screen setups! Free version includes only 5 free setups).
+Your uploads are also reviewed instantly, rather than the 24 hours time constraint in the free version.
+You also get a PRO badge in front of your profile, plus you directly support the development of this forever ad-free app.
+
+- The ability to view setups (only 5 are present in the free version)
+- The ability to download or set variants of wallpapers
+- Get PRO badge in front of your profile
+- Get uploads reviewed instantly
+- Support development of the app
 
 ## List of Contents
 
@@ -44,6 +58,7 @@ Main features like finding and setting up wallpapers don't require Google Sign I
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
 - Over 300+ exclusive wallpapers, making it the best selection ever
 - Community wallpapers uploaded by users all-around the world
+- Homescreen setups - Unique and exclusive setups designed with the perfect combination of wallpapers, icon pack and widgets
 - Each wallpaper comes with 5 color variants
 - Dark Mode supported
 - Optional Sign-in
@@ -70,23 +85,18 @@ Main features like finding and setting up wallpapers don't require Google Sign I
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
+### v2.4.7
+- Added Prism Premium, for the personalisation lords
+- Setups added, change the way of personalisation
+- Favourites moved to profile
+
+### v2.4.6
+- Added Hive for improved data caching
+- Fixed excessive requests and rebuilding
+
 ### v2.4.5
 - Removed excessive notifications
 - Added Internet connectivity checks
-
-### v2.4.4
-- Upto 24 new Categories added, full list [here](#categories)
-- Added upload section
-- Added new themes page
-- Added new animations
-- Redesigned Profile section UI
-- Major bug fixes
-
-### v2.4.3
-- Over 300+ exclusive wallpapers added
-- Variants added, lets switch between color variants of a wallpaper
-- Added new notification center
-- Improved user experience overall 
 
 
 ## Demo
@@ -171,6 +181,9 @@ The following packages are needed for the development of this application.
 - `photo_view: ^0.9.2` for showing images before uploading
 - `flare_flutter: ^2.0.5` for animations
 - `image: 2.1.12` for editing wallpapers
+- `hive: ^1.4.1+1` for caaching data
+- `hive_flutter: ^0.3.0+1` for caching data
+- `path_provider: ^1.6.11` for getting Application storage directory path
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
 
@@ -302,36 +315,10 @@ If you have any questions or suggestions about our Privacy Policy, do not hesita
   <img src="https://contributors-img.web.app/image?repo=Hash-Studios/Prism" />
 </a>
 
-### Categories
-- Home
-- Curated
-- For you
-- Abstract
-- Landscape
-- Nature
-- 4K
-- Art
-- Pattern
-- Minimal
-- Anime
-- Textures
-- Technology
-- Monochrome
-- Code
-- Space
-- Cars
-- Animals
-- Skyscape
-- Neon
-- Architecture
-- Sports
-- Marvel
-- Music
-
 ## If you made it here, thanks for your support. You can show more support by forking or starring this repo. Thanks forever.
 
 ## To Do
 
-- [ ] code refactoring
+- [x] code refactoring
 - [ ] user collections
 - [ ] centrecrop java for search
