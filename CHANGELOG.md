@@ -1,5 +1,14 @@
 ## Changelog
 
+### v2.4.7
+- Added Prism Premium, for the personalisation lords
+- Setups added, change the way of personalisation
+- Favourites moved to profile
+
+### v2.4.6
+- Added Hive for improved data caching
+- Fixed excessive requests and rebuilding
+
 ### v2.4.5
 - Removed excessive notifications
 - Added Internet connectivity checks
