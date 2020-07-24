@@ -1,8 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/main.dart' as main;
 
 class SetWallpaperButton extends StatefulWidget {
   final String url;
@@ -107,6 +109,15 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
+  void showPremiumPopUp(Function func) {
+    if (!main.prefs.get("premium")) {
+      toasts.codeSend("Variants are a premium feature.");
+      premiumPopUp(context, func);
+    } else {
+      func();
+    }
+  }
+
   void onPaint() async {
     showDialog(
       context: context,
@@ -141,15 +152,20 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                         ? () async {
                             HapticFeedback.vibrate();
                             Navigator.of(context).pop();
-                            setState(() {
-                              isLoading = true;
-                            });
                             if (widget.colorChanged) {
-                              Future.delayed(Duration(seconds: 2)).then(
-                                  (value) =>
-                                      Future.delayed(Duration(seconds: 1)).then(
-                                          (value) => _setHomeWallPaper()));
+                              showPremiumPopUp(() async {
+                                setState(() {
+                                  isLoading = true;
+                                });
+                                Future.delayed(Duration(seconds: 2)).then(
+                                    (value) => Future.delayed(
+                                            Duration(seconds: 1))
+                                        .then((value) => _setHomeWallPaper()));
+                              });
                             } else {
+                              setState(() {
+                                isLoading = true;
+                              });
                               Future.delayed(Duration(seconds: 1))
                                   .then((value) => _setHomeWallPaper());
                             }
@@ -158,16 +174,21 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                             ? () async {
                                 HapticFeedback.vibrate();
                                 Navigator.of(context).pop();
-                                setState(() {
-                                  isLoading = true;
-                                });
                                 if (widget.colorChanged) {
-                                  Future.delayed(Duration(seconds: 2)).then(
-                                      (value) =>
-                                          Future.delayed(Duration(seconds: 1))
-                                              .then((value) =>
-                                                  _setLockWallPaper()));
+                                  showPremiumPopUp(() async {
+                                    setState(() {
+                                      isLoading = true;
+                                    });
+                                    Future.delayed(Duration(seconds: 2)).then(
+                                        (value) =>
+                                            Future.delayed(Duration(seconds: 1))
+                                                .then((value) =>
+                                                    _setLockWallPaper()));
+                                  });
                                 } else {
+                                  setState(() {
+                                    isLoading = true;
+                                  });
                                   Future.delayed(Duration(seconds: 1))
                                       .then((value) => _setLockWallPaper());
                                 }
@@ -175,15 +196,20 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                             : () async {
                                 HapticFeedback.vibrate();
                                 Navigator.of(context).pop();
-                                setState(() {
-                                  isLoading = true;
-                                });
                                 if (widget.colorChanged) {
-                                  Future.delayed(Duration(seconds: 2)).then(
-                                      (value) => Future.delayed(
-                                              Duration(seconds: 1))
-                                          .then((value) => _setWallPaper()));
+                                  showPremiumPopUp(() async {
+                                    setState(() {
+                                      isLoading = true;
+                                    });
+                                    Future.delayed(Duration(seconds: 2)).then(
+                                        (value) => Future.delayed(
+                                                Duration(seconds: 1))
+                                            .then((value) => _setWallPaper()));
+                                  });
                                 } else {
+                                  setState(() {
+                                    isLoading = true;
+                                  });
                                   Future.delayed(Duration(seconds: 1))
                                       .then((value) => _setWallPaper());
                                 }
