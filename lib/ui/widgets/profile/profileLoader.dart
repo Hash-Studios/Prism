@@ -110,7 +110,7 @@ class LoadingCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+      padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
       itemCount: 24,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(

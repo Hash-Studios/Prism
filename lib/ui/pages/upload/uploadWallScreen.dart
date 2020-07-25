@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/foundation.dart';
@@ -312,6 +313,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     navStack.removeLast();
                     print(navStack);
                     Navigator.pop(context);
+                    analytics.logEvent(
+                        name: 'upload_wallpaper',
+                        parameters: {'id': id, 'link': wallpaperUrl});
                     await WallStore.createRecord(
                         id,
                         wallpaperProvider,

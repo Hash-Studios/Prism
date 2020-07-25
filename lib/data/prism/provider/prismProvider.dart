@@ -1,8 +1,9 @@
 import 'dart:math';
-
 import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 class PrismProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
@@ -12,25 +13,51 @@ class PrismProvider extends ChangeNotifier {
   int page = 1;
   Future<List> getPrismWalls() async {
     if (navStack.last == "Home") {
-      this.prismWalls = [];
-      this.subPrismWalls = [];
-      await databaseReference
-          .collection("walls")
-          .where('review', isEqualTo: true)
-          .orderBy("id")
-          .getDocuments()
-          .then((value) {
+      var box = Hive.box('wallpapers');
+      if ((box.get('date') !=
+              DateFormat("yy-MM-dd").format(
+                DateTime.now(),
+              )) ||
+          (box.get('wallpapers') == null) ||
+          (box.get('wallpapers') == [])) {
         this.prismWalls = [];
-        value.documents.forEach((f) {
-          this.prismWalls.add(f.data);
+        this.subPrismWalls = [];
+        await databaseReference
+            .collection("walls")
+            .where('review', isEqualTo: true)
+            .orderBy("id")
+            .getDocuments()
+            .then((value) {
+          this.prismWalls = [];
+          value.documents.forEach((f) {
+            var map = f.data;
+            map['createdAt'] = map['createdAt'].toString();
+            this.prismWalls.add(map);
+          });
+          this.prismWalls.shuffle(Random.secure());
+          box.delete('wallpapers');
+          box.put('wallpapers', prismWalls);
+          print("Wallpapers saved");
+          box.put(
+            'date',
+            DateFormat("yy-MM-dd").format(
+              DateTime.now(),
+            ),
+          );
+          print(this.prismWalls.length);
+          this.subPrismWalls = box.get('wallpapers').sublist(0, 24);
+        }).catchError((e) {
+          print(e.toString());
+          print("data done with error");
         });
+      } else {
+        print("Fetching data from cache");
+        this.prismWalls = [];
+        this.subPrismWalls = [];
+        this.prismWalls = box.get('wallpapers');
         this.prismWalls.shuffle(Random.secure());
-        print(this.prismWalls.length);
         this.subPrismWalls = this.prismWalls.sublist(0, 24);
-      }).catchError((e) {
-        print(e.toString());
-        print("data done with error");
-      });
+      }
     } else {
       print("Refresh blocked");
     }

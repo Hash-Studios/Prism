@@ -14,9 +14,9 @@ void createRecord(
     String wallpaperDesc,
     bool review) async {
   await firestore.collection("walls").add({
-    'by': main.prefs.getString('name'),
-    'email': main.prefs.getString('email'),
-    'userPhoto': main.prefs.getString('googleimage'),
+    'by': main.prefs.get('name'),
+    'email': main.prefs.get('email'),
+    'userPhoto': main.prefs.get('googleimage'),
     'id': id,
     'wallpaper_provider': wallpaperProvider,
     'wallpaper_thumb': wallpaperThumb,

@@ -9,7 +9,7 @@ class FavouriteProvider extends ChangeNotifier {
   final databaseReference = Firestore.instance;
   List liked;
   Future<List> getDataBase() async {
-    var uid = main.prefs.getString("id");
+    var uid = main.prefs.get("id");
     this.liked = [];
     await databaseReference
         .collection("users")
@@ -17,16 +17,17 @@ class FavouriteProvider extends ChangeNotifier {
         .collection("images")
         .getDocuments()
         .then((value) {
+      this.liked = [];
       value.documents.forEach((f) => this.liked.add(f.data));
-      print(this.liked);
     }).catchError((e) {
       print("data done with error");
     });
+
     return this.liked;
   }
 
   void deleteDataByID(String id) async {
-    var uid = main.prefs.getString("id");
+    var uid = main.prefs.get("id");
     try {
       await databaseReference
           .collection("users")
@@ -42,7 +43,7 @@ class FavouriteProvider extends ChangeNotifier {
 
   void createDataByWall(String provider, WallPaper wallhaven, WallPaperP pexels,
       Map prism) async {
-    var uid = main.prefs.getString("id");
+    var uid = main.prefs.get("id");
     if (provider == "WallHaven") {
       await databaseReference
           .collection("users")
@@ -137,7 +138,7 @@ class FavouriteProvider extends ChangeNotifier {
   }
 
   void deleteData() async {
-    var uid = main.prefs.getString("id");
+    var uid = main.prefs.get("id");
     try {
       await databaseReference
           .collection("users")

@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -33,7 +34,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     return GestureDetector(
       onTap: () async {
         print("Download");
-        if (!main.prefs.getBool("isLoggedin")) {
+        if (!main.prefs.get("isLoggedin")) {
           googleSignInPopUp(context, () {
             onDownload();
           });
@@ -72,32 +73,58 @@ class _DownloadButtonState extends State<DownloadButton> {
     );
   }
 
-  void onDownload() async {
-    var status = await Permission.storage.status;
-    if (!status.isGranted) {
-      await Permission.storage.request();
+  void showPremiumPopUp(Function func) {
+    if (!main.prefs.get("premium")) {
+      toasts.codeSend("Variants are a premium feature.");
+      premiumPopUp(context, func);
+    } else {
+      func();
     }
-    setState(() {
-      isLoading = true;
-    });
-    print(widget.link);
-    toasts.startDownload();
+  }
+
+  void onDownload() async {
     if (widget.colorChanged) {
-      Future.delayed(Duration(seconds: 2)).then((value) =>
-          GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
+      showPremiumPopUp(() async {
+        var status = await Permission.storage.status;
+        if (!status.isGranted) {
+          await Permission.storage.request();
+        }
+        setState(() {
+          isLoading = true;
+        });
+        print(widget.link);
+        toasts.startDownload();
+        Future.delayed(Duration(seconds: 2)).then(
+          (value) => GallerySaver.saveImage(widget.link, albumName: "Prism")
+              .then((value) {
             analytics.logEvent(
                 name: 'download_wallpaper', parameters: {'link': widget.link});
             toasts.completedDownload();
             setState(() {
               isLoading = false;
             });
-          }).catchError((e) {
-            // toasts.error(e.toString());
-            setState(() {
-              isLoading = false;
-            });
-          }));
+          }).catchError(
+            (e) {
+              // toasts.error(e.toString());
+              setState(
+                () {
+                  isLoading = false;
+                },
+              );
+            },
+          ),
+        );
+      });
     } else {
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        await Permission.storage.request();
+      }
+      setState(() {
+        isLoading = true;
+      });
+      print(widget.link);
+      toasts.startDownload();
       GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
         analytics.logEvent(
             name: 'download_wallpaper', parameters: {'link': widget.link});

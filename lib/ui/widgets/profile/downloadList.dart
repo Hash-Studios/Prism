@@ -12,7 +12,7 @@ class DownloadList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        main.prefs.getBool("isLoggedin")
+        main.prefs.get("isLoggedin")
             ? Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Align(
@@ -27,10 +27,10 @@ class DownloadList extends StatelessWidget {
                 ),
               )
             : Container(),
-        main.prefs.getBool("isLoggedin")
+        main.prefs.get("isLoggedin")
             ? ListTile(
                 onTap: () {
-                  if (!main.prefs.getBool("isLoggedin")) {
+                  if (!main.prefs.get("isLoggedin")) {
                     googleSignInPopUp(context, () {
                       Navigator.pushNamed(context, DownloadRoute);
                     });
@@ -53,7 +53,7 @@ class DownloadList extends StatelessWidget {
                 trailing: Icon(JamIcons.chevron_right),
               )
             : Container(),
-        main.prefs.getBool("isLoggedin")
+        main.prefs.get("isLoggedin")
             ? ListTile(
                 leading: Icon(
                   JamIcons.database,

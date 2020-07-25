@@ -56,5 +56,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+            <uses-library android:name="org.apache.http.legacy" android:required="false"/>
     </application>
 </manifest>

@@ -246,3 +246,14 @@ void supportSuccess() {
       textColor: Colors.white,
       fontSize: 16.0);
 }
+
+void premiumSuccess() {
+  Fluttertoast.showToast(
+      msg: "You are now a premium member.",
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green[400],
+      toastLength: Toast.LENGTH_LONG,
+      timeInSecForIosWeb: 1,
+      textColor: Colors.white,
+      fontSize: 16.0);
+}

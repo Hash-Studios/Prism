@@ -147,7 +147,7 @@ class _BottomNavBarState extends State<BottomNavBar>
 
   void checkSignIn() async {
     setState(() {
-      isLoggedin = main.prefs.getBool("isLoggedin");
+      isLoggedin = main.prefs.get("isLoggedin");
     });
   }
 
@@ -338,19 +338,66 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
               ),
             ),
+            // Padding(
+            //   padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
+            //   child: IconButton(
+            //     // key: globals.keyFavButton,
+            //     padding: EdgeInsets.all(0),
+            //     icon: Column(
+            //       mainAxisAlignment: MainAxisAlignment.center,
+            //       mainAxisSize: MainAxisSize.min,
+            //       children: <Widget>[
+            //         Container(
+            //           height: navStack.last == "Favourites" ? 9 : 0,
+            //         ),
+            //         Icon(JamIcons.heart_f,
+            //             color:
+            //                 //  navStack.last == "Favourites"
+            //                 //     ? Color(0xFFE57697)
+            //                 //     :
+            //                 Theme.of(context).accentColor),
+            //         Container(
+            //           // duration: Duration(milliseconds: 3000),
+            //           decoration: BoxDecoration(
+            //             borderRadius: BorderRadius.circular(500),
+            //             color: navStack.last == "Favourites"
+            //                 ? Color(0xFFE57697)
+            //                 : Theme.of(context).accentColor,
+            //           ),
+            //           // curve: Curves.fastOutSlowIn,
+            //           margin: navStack.last == "Favourites"
+            //               ? EdgeInsets.all(3)
+            //               : EdgeInsets.all(0),
+            //           width: navStack.last == "Favourites"
+            //               ? _paddingAnimation.value
+            //               : 0,
+            //           height: navStack.last == "Favourites" ? 3 : 0,
+            //         )
+            //       ],
+            //     ),
+            //     onPressed: () {
+            //       showGooglePopUp(() {
+            //         navStack.last == "Favourites"
+            //             ? print("Currently on Favourites")
+            //             : navStack.last == "Home"
+            //                 ? Navigator.of(context).pushNamed(FavRoute)
+            //                 : Navigator.of(context).pushNamed(FavRoute);
+            //       });
+            //     },
+            //   ),
+            // ),
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                // key: globals.keyFavButton,
                 padding: EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
-                      height: navStack.last == "Favourites" ? 9 : 0,
+                      height: navStack.last == "Setups" ? 9 : 0,
                     ),
-                    Icon(JamIcons.heart_f,
+                    Icon(JamIcons.instant_picture_f,
                         color:
                             //  navStack.last == "Favourites"
                             //     ? Color(0xFFE57697)
@@ -360,28 +407,28 @@ class _BottomNavBarState extends State<BottomNavBar>
                       // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
-                        color: navStack.last == "Favourites"
+                        color: navStack.last == "Setups"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
                       // curve: Curves.fastOutSlowIn,
-                      margin: navStack.last == "Favourites"
+                      margin: navStack.last == "Setups"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
-                      width: navStack.last == "Favourites"
+                      width: navStack.last == "Setups"
                           ? _paddingAnimation.value
                           : 0,
-                      height: navStack.last == "Favourites" ? 3 : 0,
+                      height: navStack.last == "Setups" ? 3 : 0,
                     )
                   ],
                 ),
                 onPressed: () {
                   showGooglePopUp(() {
-                    navStack.last == "Favourites"
-                        ? print("Currently on Favourites")
+                    navStack.last == "Setups"
+                        ? print("Currently on Setups")
                         : navStack.last == "Home"
-                            ? Navigator.of(context).pushNamed(FavRoute)
-                            : Navigator.of(context).pushNamed(FavRoute);
+                            ? Navigator.of(context).pushNamed(SetupRoute)
+                            : Navigator.of(context).pushNamed(SetupRoute);
                   });
                 },
               ),

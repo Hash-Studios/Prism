@@ -35,7 +35,7 @@ class _ShareButtonState extends State<ShareButton> {
     return GestureDetector(
       onTap: () {
         print("Share");
-        // if (!main.prefs.getBool("isLoggedin")) {
+        // if (!main.prefs.get("isLoggedin")) {
         //   googleSignInPopUp(context, () {
         onShare();
         // });
