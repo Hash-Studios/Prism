@@ -14,6 +14,7 @@ import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -132,8 +133,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     fontWeight: FontWeight.bold),
                               ),
                               TextSpan(text: "the variant.\n\n"),
-
-                              TextSpan(text: "➡ To download and set variants of a wallpaper, you need to be a "),
+                              TextSpan(
+                                  text:
+                                      "➡ To download and set variants of a wallpaper, you need to be a "),
                               TextSpan(
                                 text: "premium ",
                                 style: TextStyle(
@@ -199,10 +201,16 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     _updatePaletteGenerator();
   }
 
+  void UnsecureWindow() async {
+    await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+    print("Disabled Secure flags");
+  }
+
   @override
   void dispose() {
     super.dispose();
     shakeController.dispose();
+    UnsecureWindow();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }

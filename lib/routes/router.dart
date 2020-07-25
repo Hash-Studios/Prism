@@ -30,8 +30,14 @@ import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 
 List<String> navStack = ["Home"];
+void SecureWindow() async {
+  await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+  print("Added secure flags");
+}
+
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
     case SplashRoute:
@@ -150,12 +156,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case WallpaperRoute:
       navStack.add("Wallpaper");
       print(navStack);
+      SecureWindow();
       analytics.setCurrentScreen(screenName: WallpaperRoute);
       return CupertinoPageRoute(
           builder: (context) => WallpaperScreen(arguments: settings.arguments));
     case DownloadWallpaperRoute:
       navStack.add("DownloadedWallpaper");
       print(navStack);
+      SecureWindow();
       analytics.setCurrentScreen(screenName: DownloadWallpaperRoute);
       return CupertinoPageRoute(
           builder: (context) =>
@@ -163,6 +171,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case ShareRoute:
       navStack.add("SharedWallpaper");
       print(navStack);
+      SecureWindow();
       analytics.setCurrentScreen(screenName: ShareRoute);
       return CupertinoPageRoute(
           builder: (context) =>
@@ -170,6 +179,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case FavWallViewRoute:
       navStack.add("FavouriteWallpaper");
       print(navStack);
+      SecureWindow();
       analytics.setCurrentScreen(screenName: FavWallViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
