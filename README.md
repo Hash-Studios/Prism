@@ -113,9 +113,14 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 |     For you     |    Sports    |    Pattern     |     Monochrome       |     Cars     |
 
 
-| ![](demo/3.jpg) | ![](demo/31.jpg) | ![](demo/34.jpg) | ![](demo/27.jpg) | ![](demo/32.jpg) |
+| ![](demo/3.jpg) | ![](demo/31.jpg) | ![](demo/34.jpg) | ![](demo/27.jpg) | ![](demo/62.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Color Picker    |    Favourites    |    Downloads     |     Search       |     Profile     |
+
+
+| ![](demo/60.jpg) | ![](demo/61.jpg) | ![](demo/63.jpg) | ![](demo/64.jpg) |
+| :-------------: | :-------------:  | :-------------:  | :-------------:  |
+|     Setups     |    Setups Info    |     Premium Info       |     Premium Pop Up    |
 
 
 | ![](demo/28.jpg) | ![](demo/30.jpg)| ![](demo/37.jpg)       | ![](demo/38.jpg)  | ![](demo/39.jpg)|
