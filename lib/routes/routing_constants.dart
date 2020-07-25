@@ -1,6 +1,6 @@
 const String SplashRoute = '/';
 const String SearchRoute = '/search';
-const String FavRoute = '/favourite';
+// const String FavRoute = '/favourite';
 const String WallpaperRoute = '/wallpaper';
 const String DownloadWallpaperRoute = '/downloadWallpaper';
 const String HomeRoute = '/home';
@@ -21,6 +21,8 @@ const String ProfileRoute = '/profile';
 const String DownloadRoute = '/downloads';
 const String ShareRoute = '/share';
 const String FavWallViewRoute = '/favwall';
+const String SetupRoute = '/setups';
+const String SetupViewRoute = '/setupsview';
 const String UploadWallRoute = '/uploadw';
 const String ProfileWallViewRoute = '/profilew';
 const String ThemeViewRoute = '/themes';

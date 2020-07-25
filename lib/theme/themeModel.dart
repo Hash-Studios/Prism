@@ -12,18 +12,18 @@ class ThemeModel extends ChangeNotifier {
 
   toggleTheme() {
     if (this.themeType == ThemeType.Dark) {
-      main.prefs.setBool("darkMode", false);
+      main.prefs.put("darkMode", false);
       this.currentTheme = kLightTheme;
       this.themeType = ThemeType.Light;
-      print(main.prefs.getBool("darkMode"));
+      print(main.prefs.get("darkMode"));
       return notifyListeners();
     }
 
     if (this.themeType == ThemeType.Light) {
-      main.prefs.setBool("darkMode", true);
+      main.prefs.put("darkMode", true);
       this.currentTheme = kDarkTheme;
       this.themeType = ThemeType.Dark;
-      print(main.prefs.getBool("darkMode"));
+      print(main.prefs.get("darkMode"));
       return notifyListeners();
     }
   }

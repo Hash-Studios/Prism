@@ -11,6 +11,7 @@ import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
@@ -93,10 +94,17 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
+
+  void UnsecureWindow() async {
+    await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+    print("Disabled Secure flags");
+  }
+
   @override
   void dispose() {
     shakeController.dispose();
     super.dispose();
+    UnsecureWindow();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }

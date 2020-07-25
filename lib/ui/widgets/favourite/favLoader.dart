@@ -1,8 +1,7 @@
 // import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/favourite/favGrid.dart';
-import 'package:Prism/ui/widgets/home/gridLoader.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/profile/profileLoader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
@@ -81,9 +80,6 @@ class _FavLoaderState extends State<FavLoader>
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
-
     return FutureBuilder(
       future: _future,
       builder: (ctx, snapshot) {
@@ -97,13 +93,13 @@ class _FavLoaderState extends State<FavLoader>
         if (snapshot == null) {
           print("snapshot null");
           // return CircularProgressIndicator();
-          return LoadingCards(controller: controller, animation: animation);
+          return LoadingCards(animation: animation);
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
           print("snapshot none, waiting");
           //   return CircularProgressIndicator();
-          return LoadingCards(controller: controller, animation: animation);
+          return LoadingCards(animation: animation);
         } else {
           return FavouriteGrid();
         }

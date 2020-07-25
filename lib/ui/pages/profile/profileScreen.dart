@@ -3,16 +3,16 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/offlineBanner.dart';
+import 'package:Prism/ui/widgets/favourite/favLoader.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
+import 'package:Prism/ui/widgets/profile/premiumList.dart';
 import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:Prism/ui/widgets/profile/studioList.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/profile/profileLoader.dart';
 import 'package:Prism/ui/widgets/profile/userList.dart';
-import 'package:connectivity_widget/connectivity_widget.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -28,11 +28,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ConnectivityWidget(
-        offlineBanner: OfflineBanner(),
-        builder: (context, isOnline) => BottomBar(
-          child: ProfileChild(),
-        ),
+      body: BottomBar(
+        child: ProfileChild(),
       ),
     );
   }
@@ -46,6 +43,7 @@ class ProfileChild extends StatefulWidget {
 class _ProfileChildState extends State<ProfileChild> {
   int favCount;
   int profileCount;
+  final ScrollController scrollController = ScrollController();
   @override
   void initState() {
     checkFav();
@@ -59,7 +57,7 @@ class _ProfileChildState extends State<ProfileChild> {
   }
 
   Future checkFav() async {
-    if (main.prefs.getBool("isLoggedin")) {
+    if (main.prefs.get("isLoggedin")) {
       await Provider.of<FavouriteProvider>(context, listen: false)
           .countFav()
           .then(
@@ -81,9 +79,9 @@ class _ProfileChildState extends State<ProfileChild> {
         InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
         onWillPop: onWillPop,
-        child: main.prefs.getBool("isLoggedin")
+        child: main.prefs.get("isLoggedin")
             ? DefaultTabController(
-                length: 2,
+                length: 3,
                 child: Scaffold(
                   backgroundColor: Theme.of(context).primaryColor,
                   body: NestedScrollView(
@@ -111,8 +109,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
                                       Spacer(flex: 5),
-                                      main.prefs.getString("googleimage") ==
-                                              null
+                                      main.prefs.get("googleimage") == null
                                           ? Container()
                                           : Container(
                                               decoration: BoxDecoration(
@@ -129,21 +126,71 @@ class _ProfileChildState extends State<ProfileChild> {
                                               child: CircleAvatar(
                                                 radius: 50,
                                                 backgroundImage: NetworkImage(
-                                                    main.prefs.getString(
-                                                        "googleimage")),
+                                                    main.prefs
+                                                        .get("googleimage")),
                                               ),
                                             ),
                                       Spacer(flex: 2),
-                                      main.prefs.getString("name") == null
+                                      main.prefs.get("name") == null
                                           ? Container()
-                                          : Text(
-                                              main.prefs.getString("name"),
-                                              style: TextStyle(
-                                                  fontFamily: "Proxima Nova",
-                                                  color: Colors.white,
-                                                  fontSize: 32,
-                                                  fontWeight: FontWeight.w700),
-                                            ),
+                                          : !main.prefs.get('premium')
+                                              ? Text(
+                                                  main.prefs.get("name"),
+                                                  style: TextStyle(
+                                                      fontFamily:
+                                                          "Proxima Nova",
+                                                      color: Colors.white,
+                                                      fontSize: 32,
+                                                      fontWeight:
+                                                          FontWeight.w700),
+                                                )
+                                              : Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: <Widget>[
+                                                    Text(
+                                                      main.prefs.get("name"),
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          color: Colors.white,
+                                                          fontSize: 32,
+                                                          fontWeight:
+                                                              FontWeight.w700),
+                                                    ),
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 8.0),
+                                                      child: Container(
+                                                        padding: EdgeInsets
+                                                            .symmetric(
+                                                                vertical: 3,
+                                                                horizontal: 5),
+                                                        decoration: BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        50),
+                                                            color: Color(
+                                                                0xFFFFFFFF)),
+                                                        child: Text(
+                                                          "PRO",
+                                                          style: Theme.of(
+                                                                  context)
+                                                              .textTheme
+                                                              .bodyText2
+                                                              .copyWith(
+                                                                  fontSize: 10,
+                                                                  color: Color(
+                                                                      0xFFE57697)),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
                                       Spacer(flex: 1),
                                       Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -207,8 +254,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         automaticallyImplyLeading: false,
                         pinned: true,
                         titleSpacing: 0,
-                        expandedHeight:
-                            main.prefs.getBool("isLoggedin") ? 50 : 0,
+                        expandedHeight: main.prefs.get("isLoggedin") ? 50 : 0,
                         title: SizedBox(
                           width: MediaQuery.of(context).size.width,
                           height: 57,
@@ -222,6 +268,12 @@ class _ProfileChildState extends State<ProfileChild> {
                                       Color(0xFFFFFFFF).withOpacity(0.5),
                                   labelColor: Color(0xFFFFFFFF),
                                   tabs: [
+                                    Tab(
+                                      icon: Icon(
+                                        JamIcons.heart_f,
+                                        color: Theme.of(context).accentColor,
+                                      ),
+                                    ),
                                     Tab(
                                       icon: Icon(
                                         JamIcons.picture,
@@ -243,17 +295,27 @@ class _ProfileChildState extends State<ProfileChild> {
                     body: TabBarView(children: [
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
+                        child: FavLoader(
+                          future: Provider.of<FavouriteProvider>(context,
+                                  listen: false)
+                              .getDataBase(),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
                         child: ProfileLoader(
-                          future: Provider.of<ProfileWallProvider>(context)
+                          future: Provider.of<ProfileWallProvider>(context,
+                                  listen: false)
                               .getProfileWalls(),
                         ),
                       ),
                       ListView(children: <Widget>[
+                        PremiumList(),
                         DownloadList(),
                         GeneralList(),
                         UserList(),
                         PrismList(),
-                        StudioList(),
+                        StudioList(scrollController: controller),
                       ])
                     ]),
                   ),
@@ -302,8 +364,9 @@ class _ProfileChildState extends State<ProfileChild> {
                       delegate: SliverChildListDelegate([
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
-                      child: DownloadList(),
+                      child: PremiumList(),
                     ),
+                    DownloadList(),
                     GeneralList(),
                     UserList(),
                     PrismList(),

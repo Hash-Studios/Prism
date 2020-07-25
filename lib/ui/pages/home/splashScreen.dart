@@ -24,7 +24,9 @@ class SplashWidget extends StatelessWidget {
           Provider.of<ThemeModel>(context).currentTheme == kLightTheme
               ? Color(0xFFFFFFFF)
               : Color(0xFF181818),
-      until: () => Future.delayed(Duration(seconds: 0)),
+      until: () async {
+        Future.delayed(Duration(seconds: 0));
+      },
     );
   }
 }

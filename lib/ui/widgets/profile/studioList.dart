@@ -10,6 +10,8 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 final List<String> supportPurchase = ['support', 'support_more', 'support_max'];
 
 class StudioList extends StatefulWidget {
+  final ScrollController scrollController;
+  StudioList({this.scrollController});
   @override
   _StudioListState createState() => _StudioListState();
 }
@@ -137,7 +139,7 @@ class _StudioListState extends State<StudioList> {
 
   @override
   void dispose() {
-    _subscription.cancel();
+    if (_subscription != null) _subscription.cancel();
     super.dispose();
   }
 
@@ -195,6 +197,14 @@ class _StudioListState extends State<StudioList> {
               onSupport(context);
             }),
         ExpansionTile(
+          // onExpansionChanged: (value) {
+          //   if (value)
+          //     Future.delayed(Duration(milliseconds: 200)).then((value) =>
+          //         widget.scrollController.animateTo(
+          //             widget.scrollController.position.maxScrollExtent + 10000,
+          //             duration: Duration(milliseconds: 300),
+          //             curve: Curves.fastOutSlowIn));
+          // },
           leading: Icon(
             JamIcons.users,
           ),

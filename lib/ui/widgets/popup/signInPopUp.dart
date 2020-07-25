@@ -101,6 +101,36 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: 20,
                 ),
                 Icon(
+                  JamIcons.instant_picture,
+                  size: 22,
+                  color: Color(0xFFE57697),
+                ),
+                SizedBox(
+                  width: 20,
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "The ability to view setups.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 20,
+                ),
+                Icon(
                   JamIcons.download,
                   size: 22,
                   color: Color(0xFFE57697),
@@ -194,13 +224,13 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     builder: (BuildContext context) => loaderDialog);
                 globals.gAuth.signInWithGoogle().then((value) {
                   toasts.successLog();
-                  main.prefs.setBool("isLoggedin", true);
+                  main.prefs.put("isLoggedin", true);
                   Navigator.pop(context);
                   func();
                 }).catchError((e) {
                   print(e);
                   Navigator.pop(context);
-                  main.prefs.setBool("isLoggedin", false);
+                  main.prefs.put("isLoggedin", false);
                   toasts.error("Something went wrong, please try again!");
                 });
               },

@@ -14,6 +14,7 @@ import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -131,7 +132,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold),
                               ),
-                              TextSpan(text: "the variant."),
+                              TextSpan(text: "the variant.\n\n"),
+                              TextSpan(
+                                  text:
+                                      "➡ To download and set variants of a wallpaper, you need to be a "),
+                              TextSpan(
+                                text: "premium ",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(text: "user."),
                             ]),
                       ),
                     )
@@ -161,12 +172,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   }
 
   void afterLayout(_) {
-    var newApp2 = main.prefs.getBool("newApp2");
+    var newApp2 = main.prefs.get("newApp2");
     if (newApp2 == null || newApp2 == true) {
       Future.delayed(Duration(milliseconds: 100), showTutorial);
-      main.prefs.setBool("newApp2", false);
+      main.prefs.put("newApp2", false);
     } else {
-      main.prefs.setBool("newApp2", false);
+      main.prefs.put("newApp2", false);
     }
   }
 
@@ -190,10 +201,16 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     _updatePaletteGenerator();
   }
 
+  void UnsecureWindow() async {
+    await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+    print("Disabled Secure flags");
+  }
+
   @override
   void dispose() {
     super.dispose();
     shakeController.dispose();
+    UnsecureWindow();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
