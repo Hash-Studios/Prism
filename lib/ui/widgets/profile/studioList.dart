@@ -139,7 +139,7 @@ class _StudioListState extends State<StudioList> {
 
   @override
   void dispose() {
-    _subscription.cancel();
+    if (_subscription != null) _subscription.cancel();
     super.dispose();
   }
 

@@ -1,9 +1,6 @@
 package com.hash.prism;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.view.WindowManager;
-import android.view.WindowManager.LayoutParams;
-import android.os.Bundle;
 import android.annotation.SuppressLint;
 import android.content.Context;
 
@@ -27,11 +24,6 @@ import java.io.IOException;
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "flutter.prism.set_wallpaper";
     public static  MethodChannel.Result res;
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
-     }
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);

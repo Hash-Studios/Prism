@@ -49,6 +49,7 @@ dependencies:
   hive: ^1.4.1+1
   hive_flutter: ^0.3.0+1
   path_provider: ^1.6.11
+  flutter_windowmanager: ^0.0.2
 
 dependency_overrides:
   image: 2.1.12
