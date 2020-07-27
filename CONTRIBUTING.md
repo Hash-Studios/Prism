@@ -14,11 +14,57 @@ We use github to host code, to track issues and feature requests, as well as acc
 Pull requests are the best way to propose changes to the codebase (we use [Github Flow](https://guides.github.com/introduction/flow/index.html)). We actively welcome your pull requests:
 
 1. Fork the repo and create your branch from `master`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. Issue that pull request!
+2. You need to create a file called gitkey.dart with the following syntax that stores the username and password for the GitHub Repository where you want to save your uploaded wallpapers.
+```
+const String username = 'username'
+const String password = 'password'
+```
+3. You also need to create a Firebase project, download the google-services.json to `android/app/` directory. Then enable Cloud Firestore, and create a schema like this -
+```
+.
+├── appConfig
+|   └── version
+|       ├── currentVersion - '2.4.7'
+|       └── versionDesc - 'Version Description separated by ^*^ '
+├── setups
+|   └── documentID (AutoID)
+|       ├── by - 'Designer Name'
+|       ├── name - 'Setup Name'
+|       ├── email - 'Designer email'
+|       ├── desc - 'Setup Description'
+|       ├── userPhoto - 'Link of user profile photo'
+|       ├── id - 'Wallpaper ID'
+|       ├── icon - 'Icon Pack Name'
+|       ├── icon_url - 'Play Store Link for Icon Pack'
+|       ├── wallpaper_provider - 'Prism'
+|       ├── wallpaper_thumb - 'Wallpaper Thumbnail URL (preferrable low quality for easy download)'
+|       ├── wallpaper_url - 'Link of Wallpaper'
+|       ├── widget - 'Widget Name'
+|       ├── widget_url - 'Play Store Link for Widget'
+|       ├── image - 'Display Image for the setup'
+|       └── review - true
+|
+└── walls
+    └── documentID (AutoID)
+        ├── by - 'Designer Name'
+        ├── email - 'Designer email'
+        ├── desc - 'Wallpaper Description or Copyright info'
+        ├── userPhoto - 'Link of user profile photo'
+        ├── id - 'Wallpaper ID'
+        ├── category - 'Community'
+        ├── size - 'Wallpaper Size in MB'
+        ├── wallpaper_provider - 'Prism'
+        ├── wallpaper_thumb - 'Wallpaper Thumbnail URL (preferrable low quality for easy download)'
+        ├── wallpaper_url - 'Link of Wallpaper'
+        ├── resolution - 'Wallpaper width x Wallpaper height'
+        ├── createdAt - DateTime.now() or timestamp
+        └── review - true
+```
+4. If you've added code that should be tested, add tests.
+5. If you've changed APIs, update the documentation.
+6. Ensure the test suite passes.
+7. Make sure your code lints.
+8. Issue that pull request!
 
 ## Any contributions you make will be under the BSD-3 Software License
 In short, when you submit code changes, your submissions are understood to be under the same [BSD-3 License](https://choosealicense.com/licenses/bsd-3-clause/) that covers the project. Feel free to contact the maintainers if that's a concern.
