@@ -16,8 +16,8 @@ Pull requests are the best way to propose changes to the codebase (we use [Githu
 1. Fork the repo and create your branch from `master`.
 2. You need to create a file called gitkey.dart with the following syntax that stores the username and password for the GitHub Repository where you want to save your uploaded wallpapers.
 ```
-const String username = 'username'
-const String password = 'password'
+const String username = 'username';
+const String password = 'password';
 ```
 3. You also need to create a Firebase project, download the google-services.json to `android/app/` directory. Then enable Cloud Firestore, and create a schema like this -
 ```
