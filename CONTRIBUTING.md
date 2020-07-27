@@ -60,6 +60,11 @@ const String password = 'password'
         ├── createdAt - DateTime.now() or timestamp
         └── review - true
 ```
+
+<img src="/demo/1.png">
+<img src="/demo/2.png">
+<img src="/demo/3.png">
+
 4. If you've added code that should be tested, add tests.
 5. If you've changed APIs, update the documentation.
 6. Ensure the test suite passes.
