@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/analytics/purchase_service.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -93,6 +94,7 @@ class _MyAppState extends State<MyApp> {
   void getLoginStatus() async {
     prefs = await Hive.openBox('prefs');
     globals.gAuth.googleSignIn.isSignedIn().then((value) {
+      if (value) getPremiumPurchaseData();
       prefs.put("isLoggedin", value);
     });
   }
