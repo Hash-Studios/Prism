@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/analytics/purchase_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flare_flutter/flare_actor.dart';
@@ -9,48 +10,50 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 void premiumPopUp(BuildContext context, Function func) {
-  final List<String> premiumPurchase = ['prism_pro'];
-  void createPremiumFirestore(bool premium) async {
-    Firestore firestore = Firestore.instance;
-    var uid = main.prefs.get("id");
-    await firestore.collection("users").document(uid).updateData({
-      "premium": premium,
-    });
-  }
+  // final List<String> premiumPurchase = ['prism_pro'];
+  // void createPremiumFirestore(bool premium) async {
+  //   Firestore firestore = Firestore.instance;
+  //   var uid = main.prefs.get("id");
+  //   await firestore.collection("users").document(uid).updateData({
+  //     "premium": premium,
+  //   });
+  // }
 
-  InAppPurchaseConnection _iap = InAppPurchaseConnection.instance;
-  bool _available = true;
+  // InAppPurchaseConnection iap = InAppPurchaseConnection.instance;
+  // bool _available = true;
 
-  List<ProductDetails> _products = [];
-  List<PurchaseDetails> _purchases = [];
-  StreamSubscription _subscription;
+  // List<ProductDetails> products = [];
+  // List<PurchaseDetails> purchases = [];
+  // StreamSubscription subscription;
 
-  Future<void> _getProducts() async {
-    Set<String> ids = Set.from(premiumPurchase);
-    ProductDetailsResponse response = await _iap.queryProductDetails(ids);
-    _products = response.productDetails;
-    print("products:${_products[0].title}");
-  }
+  // Future<void> getProducts() async {
+  //   Set<String> ids = Set.from(premiumPurchase);
+  //   ProductDetailsResponse response = await iap.queryProductDetails(ids);
+  //   products = response.productDetails;
+  //   print("products:${products[0].title}");
+  // }
 
-  Future<void> _getPastPurchases() async {
-    QueryPurchaseDetailsResponse response = await _iap.queryPastPurchases();
-    _purchases = response.pastPurchases;
-    print("purchases:$_purchases");
-  }
+  // Future<void> getPastPurchases() async {
+  //   QueryPurchaseDetailsResponse response = await iap.queryPastPurchases();
+  //   purchases = response.pastPurchases;
+  //   print("purchases:$purchases");
+  // }
 
-  void cancelSubscription() {
-    _subscription.cancel();
-  }
+  // void cancelSubscription() {
+  //   subscription.cancel();
+  // }
 
-  PurchaseDetails _hasPurchased(String productID) {
-    return _purchases.firstWhere((purchase) => purchase.productID == productID,
-        orElse: () => null);
-  }
+  // PurchaseDetails hasPurchased(String productID) {
+  //   return purchases.firstWhere((purchase) => purchase.productID == productID,
+  //       orElse: () => null);
+  // }
 
-  void _verifyPurchase(String productID) {
-    PurchaseDetails purchase = _hasPurchased(productID);
+  void _verifyPurchase(String productID) async {
+    PurchaseDetails purchase = hasPurchased(productID);
     if (purchase != null) {
       if (purchase.status == PurchaseStatus.purchased) {
+        if (!purchase.billingClientPurchase.isAcknowledged)
+          await iap.completePurchase(purchase);
         toasts.premiumSuccess();
         main.prefs.put("premium", true);
         createPremiumFirestore(true);
@@ -67,19 +70,19 @@ void premiumPopUp(BuildContext context, Function func) {
     }
   }
 
-  Future<void> _buyProduct(ProductDetails prod) {
-    final PurchaseParam purchaseParam = PurchaseParam(productDetails: prod);
-    _iap.buyNonConsumable(purchaseParam: purchaseParam);
-  }
+  // Future<void> buyProduct(ProductDetails prod) {
+  //   final PurchaseParam purchaseParam = PurchaseParam(productDetails: prod);
+  //   iap.buyNonConsumable(purchaseParam: purchaseParam);
+  // }
 
-  void _initialize() async {
-    _available = await _iap.isAvailable();
-    if (_available) {
-      List<Future> futures = [_getProducts(), _getPastPurchases()];
+  void initialize() async {
+    available = await iap.isAvailable();
+    if (available) {
+      List<Future> futures = [getProducts(), getPastPurchases()];
       await Future.wait(futures);
-      _subscription = _iap.purchaseUpdatedStream.listen(
+      subscription = iap.purchaseUpdatedStream.listen(
         (data) {
-          _purchases.addAll(data);
+          purchases.addAll(data);
           _verifyPurchase(data[data.length - 1].productID);
         },
       );
@@ -332,7 +335,7 @@ void premiumPopUp(BuildContext context, Function func) {
                     barrierDismissible: false,
                     context: context,
                     builder: (BuildContext context) => loaderDialog);
-                await _buyProduct(_products
+                await buyProduct(products
                     .firstWhere((element) => element.id == premiumPurchase[0]));
               },
               child: Text(
@@ -351,6 +354,6 @@ void premiumPopUp(BuildContext context, Function func) {
       ),
     ),
   );
-  _initialize();
+  initialize();
   showDialog(context: context, builder: (BuildContext context) => premiumPopUp);
 }
