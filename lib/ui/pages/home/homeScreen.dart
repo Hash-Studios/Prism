@@ -7,7 +7,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
