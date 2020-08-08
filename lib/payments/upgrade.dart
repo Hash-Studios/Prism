@@ -7,6 +7,7 @@ import 'package:flare_flutter/flare_actor.dart';
 import 'components.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
+import 'package:Prism/gitkey.dart';
 
 PurchaserInfo _purchaserInfo;
 
@@ -14,7 +15,7 @@ Future<void> initPlatformState() async {
   appData.isPro = false;
 
   await Purchases.setDebugLogsEnabled(true);
-  await Purchases.setup("KSftmgrapyqsjYZplYVQdeBFWLAlvXjZ");
+  await Purchases.setup(apiKey);
 
   PurchaserInfo purchaserInfo;
   try {

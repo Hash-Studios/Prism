@@ -4,7 +4,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/popup/proPopUp.dart';
+// import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -74,7 +74,8 @@ class _SetupPageState extends State<SetupPage> {
   int pageNumber = 0;
   void showPremiumPopUp(Function func) {
     if (!main.prefs.get("premium")) {
-      premiumPopUp(context, func);
+      Navigator.pushNamed(context, PremiumRoute);
+      // premiumPopUp(context, func);
     } else {
       func();
     }
