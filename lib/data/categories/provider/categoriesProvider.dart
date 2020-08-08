@@ -3,30 +3,7 @@ import 'package:flutter/cupertino.dart';
 class CategoryProvider extends ChangeNotifier {
   List<String> categories = [
     'Home',
-    'Curated',
-    'Colors',
-    'For you',
-    'Abstract',
-    'Landscape',
-    'Nature',
-    '4K',
-    'Art',
-    'Pattern',
-    'Minimal',
-    'Anime',
-    'Textures',
-    'Technology',
-    'Monochrome',
-    'Code',
-    'Space',
-    'Cars',
-    'Animals',
-    'Skyscape',
-    'Neon',
-    'Architecture',
-    'Sports',
-    'Marvel',
-    'Music',
+    'Collection',
   ];
   String selectedCategory = 'Home';
   void updateSelectedCategory(String newCategory) {
