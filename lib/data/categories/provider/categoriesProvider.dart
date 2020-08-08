@@ -2,10 +2,10 @@ import 'package:flutter/cupertino.dart';
 
 class CategoryProvider extends ChangeNotifier {
   List<String> categories = [
-    'Home',
-    'Collection',
+    'Wallpapers',
+    'Collections',
   ];
-  String selectedCategory = 'Home';
+  String selectedCategory = 'Wallpapers';
   void updateSelectedCategory(String newCategory) {
     this.selectedCategory = newCategory;
     Future.delayed(Duration(seconds: 0)).then((value) {

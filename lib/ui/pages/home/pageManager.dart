@@ -20,7 +20,7 @@ class _PageManagerState extends State<PageManager> {
   @override
   void initState() {
     Provider.of<CategoryProvider>(context, listen: false)
-        .updateSelectedCategory("Home");
+        .updateSelectedCategory("Wallpapers");
     super.initState();
   }
 
@@ -62,10 +62,10 @@ class _PageManagerState extends State<PageManager> {
 
                   if (index == 0) {
                     Provider.of<CategoryProvider>(context, listen: false)
-                        .updateSelectedCategory("Home");
+                        .updateSelectedCategory("Wallpapers");
                   } else if (index == 1) {
                     Provider.of<CategoryProvider>(context, listen: false)
-                        .updateSelectedCategory("Collection");
+                        .updateSelectedCategory("Collections");
                   }
                 },
                 controller: pageController,

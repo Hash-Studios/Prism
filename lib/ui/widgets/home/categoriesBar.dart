@@ -517,8 +517,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
           SizedBox(
             // key: globals.keyCategoriesBar,
             width: globals.updateAvailable
-                ? MediaQuery.of(context).size.width * 0.9
-                : MediaQuery.of(context).size.width,
+                ? MediaQuery.of(context).size.width * 0.7
+                : MediaQuery.of(context).size.width * 0.8,
             height: 100,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -551,80 +551,11 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                   switch (Provider.of<CategoryProvider>(context,
                                           listen: false)
                                       .categories[index]) {
-                                    case "Home":
+                                    case "Wallpapers":
                                       PM.pageController.jumpToPage(0);
                                       break;
-                                    case "Curated":
+                                    case "Collections":
                                       PM.pageController.jumpToPage(1);
-                                      break;
-                                    case "For you":
-                                      PM.pageController.jumpToPage(2);
-                                      break;
-                                    case "Abstract":
-                                      PM.pageController.jumpToPage(3);
-                                      break;
-                                    case "Landscape":
-                                      PM.pageController.jumpToPage(4);
-                                      break;
-                                    case "Nature":
-                                      PM.pageController.jumpToPage(5);
-                                      break;
-                                    case "4K":
-                                      PM.pageController.jumpToPage(6);
-                                      break;
-                                    case "Art":
-                                      PM.pageController.jumpToPage(7);
-                                      break;
-                                    case "Pattern":
-                                      PM.pageController.jumpToPage(8);
-                                      break;
-                                    case "Minimal":
-                                      PM.pageController.jumpToPage(9);
-                                      break;
-                                    case "Anime":
-                                      PM.pageController.jumpToPage(10);
-                                      break;
-                                    case "Textures":
-                                      PM.pageController.jumpToPage(11);
-                                      break;
-                                    case "Technology":
-                                      PM.pageController.jumpToPage(12);
-                                      break;
-                                    case "Monochrome":
-                                      PM.pageController.jumpToPage(13);
-                                      break;
-                                    case "Code":
-                                      PM.pageController.jumpToPage(14);
-                                      break;
-                                    case "Space":
-                                      PM.pageController.jumpToPage(15);
-                                      break;
-                                    case "Cars":
-                                      PM.pageController.jumpToPage(16);
-                                      break;
-                                    case "Animals":
-                                      PM.pageController.jumpToPage(17);
-                                      break;
-                                    case "Skyscape":
-                                      PM.pageController.jumpToPage(18);
-                                      break;
-                                    case "Neon":
-                                      PM.pageController.jumpToPage(19);
-                                      break;
-                                    case "Architecture":
-                                      PM.pageController.jumpToPage(20);
-                                      break;
-                                    case "Sports":
-                                      PM.pageController.jumpToPage(21);
-                                      break;
-                                    case "Marvel":
-                                      PM.pageController.jumpToPage(22);
-                                      break;
-                                    case "Music":
-                                      PM.pageController.jumpToPage(23);
-                                      break;
-                                    case "Colors":
-                                      showColors(context);
                                       break;
                                     default:
                                       break;
@@ -660,6 +591,24 @@ class _CategoriesBarState extends State<CategoriesBar> {
               },
             ),
           ),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.1,
+            height: 100,
+            child: IconButton(
+              icon: Icon(JamIcons.brush),
+              onPressed: () {
+                showColors(context);
+              },
+            ),
+          ),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.1,
+            height: 100,
+            child: IconButton(
+              icon: Icon(JamIcons.more_vertical),
+              onPressed: () {},
+            ),
+          )
         ],
       ),
     );
