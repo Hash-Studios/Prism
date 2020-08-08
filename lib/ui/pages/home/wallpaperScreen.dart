@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:Prism/data/pexels/provider/pexels.dart';
-import 'package:Prism/data/prism/provider/prismProvider.dart';
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -865,8 +865,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),
                                         child: Text(
-                                          Provider.of<PrismProvider>(context,
-                                                  listen: false)
+                                          Data
                                               .subPrismWalls[index]["id"]
                                               .toString()
                                               .toUpperCase(),
@@ -884,7 +883,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ),
                                           SizedBox(width: 10),
                                           Text(
-                                            "${Provider.of<PrismProvider>(context, listen: false).subPrismWalls[index]["by"].toString()}",
+                                            "${Data.subPrismWalls[index]["by"].toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -901,7 +900,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ),
                                           SizedBox(width: 10),
                                           Text(
-                                            "${Provider.of<PrismProvider>(context, listen: false).subPrismWalls[index]["desc"].toString()}",
+                                            "${Data.subPrismWalls[index]["desc"].toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -918,7 +917,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ),
                                           SizedBox(width: 10),
                                           Text(
-                                            "${Provider.of<PrismProvider>(context, listen: false).subPrismWalls[index]["size"].toString()}",
+                                            "${Data.subPrismWalls[index]["size"].toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -938,9 +937,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         child: Row(
                                           children: [
                                             Text(
-                                              Provider.of<PrismProvider>(
-                                                      context,
-                                                      listen: false)
+                                              Data
                                                   .subPrismWalls[index]
                                                       ["category"]
                                                   .toString(),
@@ -961,7 +958,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       Row(
                                         children: [
                                           Text(
-                                            "${Provider.of<PrismProvider>(context, listen: false).subPrismWalls[index]["resolution"].toString()}",
+                                            "${Data.subPrismWalls[index]["resolution"].toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -1006,8 +1003,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     colorChanged: colorChanged,
                                     link: screenshotTaken
                                         ? _imageFile.path
-                                        : Provider.of<PrismProvider>(context,
-                                                listen: false)
+                                        : Data
                                             .subPrismWalls[index]
                                                 ["wallpaper_url"]
                                             .toString()),
@@ -1015,31 +1011,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     colorChanged: colorChanged,
                                     url: screenshotTaken
                                         ? _imageFile.path
-                                        : Provider.of<PrismProvider>(context)
+                                        : Data
                                                 .subPrismWalls[index]
                                             ["wallpaper_url"]),
                                 FavouriteWallpaperButton(
-                                  id: Provider.of<PrismProvider>(context,
-                                          listen: false)
+                                  id: Data
                                       .subPrismWalls[index]["id"]
                                       .toString(),
                                   provider: "Prism",
-                                  prism: Provider.of<PrismProvider>(context,
-                                          listen: false)
+                                  prism: Data
                                       .subPrismWalls[index],
                                   trash: false,
                                 ),
                                 ShareButton(
-                                    id: Provider.of<PrismProvider>(context,
-                                            listen: false)
+                                    id: Data
                                         .subPrismWalls[index]["id"],
                                     provider: provider,
-                                    url: Provider.of<PrismProvider>(context,
-                                            listen: false)
+                                    url: Data
                                         .subPrismWalls[index]["wallpaper_url"],
-                                    thumbUrl: Provider.of<PrismProvider>(
-                                                context,
-                                                listen: false)
+                                    thumbUrl: Data
                                             .subPrismWalls[index]
                                         ["wallpaper_thumb"])
                               ],
@@ -1057,7 +1047,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 print('${offsetAnimation.value + 8.0}');
                               return GestureDetector(
                                 child: CachedNetworkImage(
-                                  imageUrl: Provider.of<PrismProvider>(context)
+                                  imageUrl: Data
                                       .subPrismWalls[index]["wallpaper_url"],
                                   imageBuilder: (context, imageProvider) =>
                                       Screenshot(
@@ -1153,8 +1143,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             padding: const EdgeInsets.all(8.0),
                             child: IconButton(
                               onPressed: () {
-                                var link = Provider.of<PrismProvider>(context,
-                                        listen: false)
+                                var link = Data
                                     .subPrismWalls[index]["wallpaper_url"];
                                 Navigator.push(
                                     context,

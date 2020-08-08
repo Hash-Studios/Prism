@@ -1,6 +1,6 @@
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
-import 'package:Prism/data/prism/provider/prismProvider.dart';
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/routes/router.dart';
@@ -112,7 +112,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
           Provider.of<PexelsProvider>(context, listen: false).getWallbyIDP(id);
     } else if (provider == "Prism") {
       future =
-          Provider.of<PrismProvider>(context, listen: false).getDataByID(id);
+          Data.getDataByID(id);
     }
     _updatePaletteGenerator();
     super.initState();
@@ -847,7 +847,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${Provider.of<PrismProvider>(context).wall == null ? 0 : Provider.of<PrismProvider>(context).wall["by"].toString()}",
+                                                    "${Data.wall == null ? 0 : Data.wall["by"].toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -864,7 +864,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${Provider.of<PrismProvider>(context).wall == null ? 0 : Provider.of<PrismProvider>(context).wall["desc"].toString()}",
+                                                    "${Data.wall == null ? 0 : Data.wall["desc"].toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -881,7 +881,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${Provider.of<PrismProvider>(context).wall == null ? 0 : Provider.of<PrismProvider>(context).wall["size"].toString()}",
+                                                    "${Data.wall == null ? 0 : Data.wall["size"].toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -904,19 +904,16 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                 child: Row(
                                                   children: [
                                                     Text(
-                                                      Provider.of<PrismProvider>(
-                                                                      context)
+                                                      Data
                                                                   .wall ==
                                                               null
                                                           ? "General"
-                                                          : (Provider.of<PrismProvider>(
-                                                                      context)
+                                                          : (Data
                                                                   .wall[
                                                                       "category"]
                                                                   .toString()[0]
                                                                   .toUpperCase() +
-                                                              Provider.of<PrismProvider>(
-                                                                      context)
+                                                              Data
                                                                   .wall[
                                                                       "category"]
                                                                   .toString()
@@ -939,7 +936,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               Row(
                                                 children: [
                                                   Text(
-                                                    "${Provider.of<PrismProvider>(context).wall == null ? 0x0 : Provider.of<PrismProvider>(context).wall["resolution"].toString()}",
+                                                    "${Data.wall == null ? 0x0 : Data.wall["resolution"].toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -985,48 +982,39 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             colorChanged: colorChanged,
                                             link: screenshotTaken
                                                 ? _imageFile.path
-                                                : Provider.of<PrismProvider>(
-                                                                context)
+                                                : Data
                                                             .wall ==
                                                         null
                                                     ? ""
-                                                    : Provider.of<
-                                                                PrismProvider>(
-                                                            context)
+                                                    : Data
                                                         .wall["wallpaper_url"]
                                                         .toString()),
                                         SetWallpaperButton(
                                           colorChanged: colorChanged,
                                           url: screenshotTaken
                                               ? _imageFile.path
-                                              : Provider.of<PrismProvider>(
-                                                              context)
+                                              : Data
                                                           .wall ==
                                                       null
                                                   ? ""
-                                                  : Provider.of<PrismProvider>(
-                                                          context)
+                                                  : Data
                                                       .wall["wallpaper_url"]
                                                       .toString(),
                                         ),
                                         FavouriteWallpaperButton(
-                                          id: Provider.of<PrismProvider>(
-                                                          context)
+                                          id: Data
                                                       .wall ==
                                                   null
                                               ? ""
-                                              : Provider.of<PrismProvider>(
-                                                      context)
+                                              : Data
                                                   .wall["id"]
                                                   .toString(),
                                           provider: "Prism",
-                                          prism: Provider.of<PrismProvider>(
-                                                          context)
+                                          prism: Data
                                                       .wall ==
                                                   null
                                               ? {}
-                                              : Provider.of<PrismProvider>(
-                                                      context)
+                                              : Data
                                                   .wall,
                                           trash: false,
                                         )

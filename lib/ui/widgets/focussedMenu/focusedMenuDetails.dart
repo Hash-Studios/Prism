@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
-import 'package:Prism/data/prism/provider/prismProvider.dart';
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -360,17 +360,10 @@ class FocusedMenuDetails extends StatelessWidget {
                                             ),
                                             backgroundColor: Colors.black,
                                             label: Text(
-                                              Provider.of<PrismProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .subPrismWalls[index]
-                                                          ["by"]
+                                              Data.subPrismWalls[index]["by"]
                                                       .toString()[0]
                                                       .toUpperCase() +
-                                                  Provider.of<PrismProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .subPrismWalls[index]
+                                                  Data.subPrismWalls[index]
                                                           ["by"]
                                                       .toString()
                                                       .substring(1),
@@ -386,9 +379,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                           padding: const EdgeInsets.fromLTRB(
                                               0, 5, 0, 10),
                                           child: Text(
-                                            Provider.of<PrismProvider>(context,
-                                                    listen: false)
-                                                .subPrismWalls[index]["id"]
+                                            Data.subPrismWalls[index]["id"]
                                                 .toString()
                                                 .toUpperCase(),
                                             style: Theme.of(context)
@@ -405,7 +396,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                             ),
                                             SizedBox(width: 10),
                                             Text(
-                                              "${Provider.of<PrismProvider>(context, listen: false).subPrismWalls[index]["size"].toString()}",
+                                              "${Data.subPrismWalls[index]["size"].toString()}",
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2,
@@ -421,7 +412,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                             ),
                                             SizedBox(width: 10),
                                             Text(
-                                              "${Provider.of<PrismProvider>(context, listen: false).subPrismWalls[index]["resolution"].toString()}",
+                                              "${Data.subPrismWalls[index]["resolution"].toString()}",
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2,
@@ -1941,9 +1932,7 @@ class FocusedMenuDetails extends StatelessWidget {
                         .path
                         .toString()
                     : provider == "Prism"
-                        ? Provider.of<PrismProvider>(context, listen: false)
-                            .subPrismWalls[index]["wallpaper_url"]
-                            .toString()
+                        ? Data.subPrismWalls[index]["wallpaper_url"].toString()
                         : provider == "ProfileWall"
                             ? Provider.of<ProfileWallProvider>(context,
                                     listen: false)
@@ -1991,13 +1980,9 @@ class FocusedMenuDetails extends StatelessWidget {
                     )
                   : provider == "Prism"
                       ? FavouriteWallpaperButton(
-                          id: Provider.of<PrismProvider>(context, listen: false)
-                              .subPrismWalls[index]["id"]
-                              .toString(),
+                          id: Data.subPrismWalls[index]["id"].toString(),
                           provider: "Prism",
-                          prism:
-                              Provider.of<PrismProvider>(context, listen: false)
-                                  .subPrismWalls[index],
+                          prism: Data.subPrismWalls[index],
                           trash: false,
                         )
                       : provider == "ProfileWall"
@@ -2082,9 +2067,7 @@ class FocusedMenuDetails extends StatelessWidget {
                         .path
                         .toString()
                     : provider == "Prism"
-                        ? Provider.of<PrismProvider>(context, listen: false)
-                            .subPrismWalls[index]["wallpaper_url"]
-                            .toString()
+                        ? Data.subPrismWalls[index]["wallpaper_url"].toString()
                         : provider == "ProfileWall"
                             ? Provider.of<ProfileWallProvider>(context,
                                     listen: false)
