@@ -83,15 +83,15 @@ Future<void> buyProduct(ProductDetails prod) {
 //   }
 // }
 
-Future<void> getPremiumPurchaseData() async {
-  bool premium = false;
-  QueryPurchaseDetailsResponse response = await iap.queryPastPurchases();
-  purchases = response.pastPurchases;
-  purchases.forEach((element) {
-    if (element.productID == 'prism_pro') {
-      print('Prism Premium');
-      premium = true;
-    }
-  });
-  createPremiumFirestore(premium);
-}
+// Future<void> getPremiumPurchaseData() async {
+//   bool premium = false;
+//   QueryPurchaseDetailsResponse response = await iap.queryPastPurchases();
+//   purchases = response.pastPurchases;
+//   purchases.forEach((element) {
+//     if (element.productID == 'prism_pro') {
+//       print('Prism Premium');
+//       premium = true;
+//     }
+//   });
+//   createPremiumFirestore(premium);
+// }

@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/popup/proPopUp.dart';
+import 'package:Prism/routes/routing_constants.dart';
+// import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -112,7 +113,8 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   void showPremiumPopUp(Function func) {
     if (!main.prefs.get("premium")) {
       toasts.codeSend("Variants are a premium feature.");
-      premiumPopUp(context, func);
+      Navigator.pushNamed(context, PremiumRoute);
+      // premiumPopUp(context, func);
     } else {
       func();
     }

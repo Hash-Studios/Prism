@@ -12,7 +12,6 @@ import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:firebase_analytics/observer.dart';
@@ -95,7 +94,7 @@ class _MyAppState extends State<MyApp> {
   void getLoginStatus() async {
     prefs = await Hive.openBox('prefs');
     globals.gAuth.googleSignIn.isSignedIn().then((value) {
-      if (value) getPremiumPurchaseData();
+      // if (value) getPremiumPurchaseData();
       prefs.put("isLoggedin", value);
     });
   }
@@ -117,7 +116,7 @@ class _MyAppState extends State<MyApp> {
               )),
       theme: Provider.of<ThemeModel>(context).currentTheme,
       debugShowCheckedModeBanner: false,
-      home: UpgradeScreen(),
+      home: SplashWidget(),
     );
   }
 }

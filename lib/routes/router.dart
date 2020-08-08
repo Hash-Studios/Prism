@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/ui/pages/categories/abstractScreen.dart';
 import 'package:Prism/ui/pages/categories/animalsScreen.dart';
 import 'package:Prism/ui/pages/categories/artScreen.dart';
@@ -74,6 +75,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       print(navStack);
       analytics.setCurrentScreen(screenName: DownloadRoute);
       return CupertinoPageRoute(builder: (context) => DownloadScreen());
+    case PremiumRoute:
+      navStack.add("Buy Premium");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: PremiumRoute);
+      return CupertinoPageRoute(builder: (context) => UpgradeScreen());
     case CuratedRoute:
       navStack.add("Curated");
       print(navStack);
