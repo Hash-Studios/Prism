@@ -50,6 +50,8 @@ dependencies:
   hive_flutter: ^0.3.0+1
   path_provider: ^1.6.11
   flutter_windowmanager: ^0.0.2
+  purchases_flutter: ^1.2.1
+  rflutter_alert: ^1.0.3
 
 dependency_overrides:
   image: 2.1.12
@@ -63,7 +65,6 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
-
 # The following section is specific to Flutter.
 flutter:
   # The following line ensures that the Material Icons font is
@@ -109,6 +110,6 @@ flutter:
     - family: JamIcons
       fonts:
         - asset: assets/fonts/JamIcons.ttf
-  #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
