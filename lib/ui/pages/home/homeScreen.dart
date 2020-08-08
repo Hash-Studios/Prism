@@ -1,7 +1,7 @@
-import 'package:Prism/data/prism/provider/prismProvider.dart';
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/widgets/home/gridLoader.dart';
+import 'package:Prism/ui/widgets/home/wallpaperLoader.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
@@ -189,9 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
     initDynamicLinks(context);
     return WillPopScope(
       onWillPop: onWillPop,
-      child: GridLoader(
-        future:
-            Provider.of<PrismProvider>(context, listen: false).getPrismWalls(),
+      child: WallpaperLoader(
+        future: Data.getPrismWalls(),
         provider: "Prism",
       ),
     );
