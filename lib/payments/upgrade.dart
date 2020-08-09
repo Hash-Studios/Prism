@@ -1,3 +1,4 @@
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -5,8 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'components.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -132,14 +131,6 @@ class UpsellScreen extends StatefulWidget {
 }
 
 class _UpsellScreenState extends State<UpsellScreen> {
-  _launchURLWebsite(String zz) async {
-    if (await canLaunch(zz)) {
-      await launch(zz);
-    } else {
-      throw 'Could not launch $zz';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     if (widget.offerings != null) {
@@ -159,6 +150,190 @@ class _UpsellScreenState extends State<UpsellScreen> {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
+                      Container(
+                        height: 150,
+                        width: MediaQuery.of(context).size.width * .78,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20)),
+                            color: Theme.of(context).hintColor),
+                        child: FlareActor(
+                          "assets/animations/Premium.flr",
+                          isPaused: false,
+                          alignment: Alignment.center,
+                          animation: "premium",
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                            child: Text(
+                              'PREMIUM UNLOCKS:',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  color: Theme.of(context).accentColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Icon(
+                            JamIcons.instant_picture,
+                            size: 22,
+                            color: Color(0xFFE57697),
+                          ),
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.6,
+                            child: Text(
+                              "The ability to view setups.",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline6
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Icon(
+                            JamIcons.filter,
+                            size: 22,
+                            color: Color(0xFFE57697),
+                          ),
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.6,
+                            child: Text(
+                              "Download or set variants of wallpapers.",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline6
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Icon(
+                            JamIcons.user,
+                            size: 22,
+                            color: Color(0xFFE57697),
+                          ),
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.6,
+                            child: Text(
+                              "Get PRO badge in front of your profile.",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline6
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Icon(
+                            JamIcons.clock,
+                            size: 22,
+                            color: Color(0xFFE57697),
+                          ),
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.6,
+                            child: Text(
+                              "Get uploads reviewed instantly.",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline6
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Icon(
+                            JamIcons.coffee,
+                            size: 22,
+                            color: Color(0xFFE57697),
+                          ),
+                          SizedBox(
+                            width: 20,
+                          ),
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.6,
+                            child: Text(
+                              "Support development of the app.",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline6
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                            ),
+                          ),
+                        ],
+                      ),
                       // PurchaseButton(package: monthly),
                       PurchaseButton(package: lifetime),
                       FlatButton(
@@ -194,91 +369,93 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             if (appData.isPro) {
                               main.prefs.put('premium', appData.isPro);
                               toasts.premiumSuccess();
-                              Alert(
-                                context: context,
-                                style: kWelcomeAlertStyle,
-                                image: Image.asset(
-                                  "assets/images/avatar_demo.png",
-                                  height: 150,
-                                ),
-                                title: "Congratulations",
-                                content: Column(
-                                  children: <Widget>[
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          top: 20.0,
-                                          right: 8.0,
-                                          left: 8.0,
-                                          bottom: 20.0),
-                                      child: Text(
-                                        'Your purchase has been restored!',
-                                        textAlign: TextAlign.center,
-                                        style: kSendButtonTextStyle,
-                                      ),
-                                    )
-                                  ],
-                                ),
-                                buttons: [
-                                  DialogButton(
-                                    radius: BorderRadius.circular(10),
-                                    child: Text(
-                                      "COOL",
-                                      style: kSendButtonTextStyle,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.of(context, rootNavigator: true)
-                                          .pop();
-                                      Navigator.of(context, rootNavigator: true)
-                                          .pop();
-                                      Navigator.of(context, rootNavigator: true)
-                                          .pop();
-                                    },
-                                    width: 127,
-                                    height: 52,
-                                  ),
-                                ],
-                              ).show();
+                              // Alert(
+                              //   context: context,
+                              //   style: kWelcomeAlertStyle,
+                              //   image: Image.asset(
+                              //     "assets/images/avatar_demo.png",
+                              //     height: 150,
+                              //   ),
+                              //   title: "Congratulations",
+                              //   content: Column(
+                              //     children: <Widget>[
+                              //       Padding(
+                              //         padding: const EdgeInsets.only(
+                              //             top: 20.0,
+                              //             right: 8.0,
+                              //             left: 8.0,
+                              //             bottom: 20.0),
+                              //         child: Text(
+                              //           'Your purchase has been restored!',
+                              //           textAlign: TextAlign.center,
+                              //           style: kSendButtonTextStyle,
+                              //         ),
+                              //       )
+                              //     ],
+                              //   ),
+                              //   buttons: [
+                              //     DialogButton(
+                              //       radius: BorderRadius.circular(10),
+                              //       child: Text(
+                              //         "COOL",
+                              //         style: kSendButtonTextStyle,
+                              //       ),
+                              //       onPressed: () {
+                              //         Navigator.of(context, rootNavigator: true)
+                              //             .pop();
+                              //         Navigator.of(context, rootNavigator: true)
+                              //             .pop();
+                              //         Navigator.of(context, rootNavigator: true)
+                              //             .pop();
+                              //       },
+                              //       width: 127,
+                              //       height: 52,
+                              //     ),
+                              //   ],
+                              // ).show();
                             } else {
-                              Alert(
-                                context: context,
-                                style: kWelcomeAlertStyle,
-                                image: Image.asset(
-                                  "assets/images/avatar_demo.png",
-                                  height: 150,
-                                ),
-                                title: "Error",
-                                content: Column(
-                                  children: <Widget>[
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          top: 20.0,
-                                          right: 8.0,
-                                          left: 8.0,
-                                          bottom: 20.0),
-                                      child: Text(
-                                        'There was an error. Please try again later',
-                                        textAlign: TextAlign.center,
-                                        style: kSendButtonTextStyle,
-                                      ),
-                                    )
-                                  ],
-                                ),
-                                buttons: [
-                                  DialogButton(
-                                    radius: BorderRadius.circular(10),
-                                    child: Text(
-                                      "COOL",
-                                      style: kSendButtonTextStyle,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.of(context, rootNavigator: true)
-                                          .pop();
-                                    },
-                                    width: 127,
-                                    height: 52,
-                                  ),
-                                ],
-                              ).show();
+                              toasts.error(
+                                  "There was an error. Please try again later.");
+                              // Alert(
+                              //   context: context,
+                              //   style: kWelcomeAlertStyle,
+                              //   image: Image.asset(
+                              //     "assets/images/avatar_demo.png",
+                              //     height: 150,
+                              //   ),
+                              //   title: "Error",
+                              //   content: Column(
+                              //     children: <Widget>[
+                              //       Padding(
+                              //         padding: const EdgeInsets.only(
+                              //             top: 20.0,
+                              //             right: 8.0,
+                              //             left: 8.0,
+                              //             bottom: 20.0),
+                              //         child: Text(
+                              //           'There was an error. Please try again later',
+                              //           textAlign: TextAlign.center,
+                              //           style: kSendButtonTextStyle,
+                              //         ),
+                              //       )
+                              //     ],
+                              //   ),
+                              //   buttons: [
+                              //     DialogButton(
+                              //       radius: BorderRadius.circular(10),
+                              //       child: Text(
+                              //         "COOL",
+                              //         style: kSendButtonTextStyle,
+                              //       ),
+                              //       onPressed: () {
+                              //         Navigator.of(context, rootNavigator: true)
+                              //             .pop();
+                              //       },
+                              //       width: 127,
+                              //       height: 52,
+                              //     ),
+                              //   ],
+                              // ).show();
                             }
                           } on PlatformException catch (e) {
                             print('----xx-----');
@@ -286,51 +463,51 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                 PurchasesErrorHelper.getErrorCode(e);
                             if (errorCode ==
                                 PurchasesErrorCode.purchaseCancelledError) {
-                              print("User cancelled");
+                              toasts.error("User cancelled purchase.");
                             } else if (errorCode ==
                                 PurchasesErrorCode.purchaseNotAllowedError) {
-                              print("User not allowed to purchase");
+                              toasts.error("User not allowed to purchase.");
                             }
-                            Alert(
-                              context: context,
-                              style: kWelcomeAlertStyle,
-                              image: Image.asset(
-                                "assets/images/avatar_demo.png",
-                                height: 150,
-                              ),
-                              title: "Error",
-                              content: Column(
-                                children: <Widget>[
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        top: 20.0,
-                                        right: 8.0,
-                                        left: 8.0,
-                                        bottom: 20.0),
-                                    child: Text(
-                                      'There was an error. Please try again later',
-                                      textAlign: TextAlign.center,
-                                      style: kSendButtonTextStyle,
-                                    ),
-                                  )
-                                ],
-                              ),
-                              buttons: [
-                                DialogButton(
-                                  radius: BorderRadius.circular(10),
-                                  child: Text(
-                                    "COOL",
-                                    style: kSendButtonTextStyle,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.of(context, rootNavigator: true)
-                                        .pop();
-                                  },
-                                  width: 127,
-                                  height: 52,
-                                ),
-                              ],
-                            ).show();
+                            // Alert(
+                            //   context: context,
+                            //   style: kWelcomeAlertStyle,
+                            //   image: Image.asset(
+                            //     "assets/images/avatar_demo.png",
+                            //     height: 150,
+                            //   ),
+                            //   title: "Error",
+                            //   content: Column(
+                            //     children: <Widget>[
+                            //       Padding(
+                            //         padding: const EdgeInsets.only(
+                            //             top: 20.0,
+                            //             right: 8.0,
+                            //             left: 8.0,
+                            //             bottom: 20.0),
+                            //         child: Text(
+                            //           'There was an error. Please try again later',
+                            //           textAlign: TextAlign.center,
+                            //           style: kSendButtonTextStyle,
+                            //         ),
+                            //       )
+                            //     ],
+                            //   ),
+                            //   buttons: [
+                            //     DialogButton(
+                            //       radius: BorderRadius.circular(10),
+                            //       child: Text(
+                            //         "COOL",
+                            //         style: kSendButtonTextStyle,
+                            //       ),
+                            //       onPressed: () {
+                            //         Navigator.of(context, rootNavigator: true)
+                            //             .pop();
+                            //       },
+                            //       width: 127,
+                            //       height: 52,
+                            //     ),
+                            //   ],
+                            // ).show();
                           }
                           return UpgradeScreen();
                         },
