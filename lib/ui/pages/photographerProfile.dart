@@ -1,19 +1,8 @@
 import 'dart:async';
-import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/favourite/favLoader.dart';
-import 'package:Prism/ui/widgets/profile/generalList.dart';
-import 'package:Prism/ui/widgets/profile/downloadList.dart';
-import 'package:Prism/ui/widgets/profile/premiumList.dart';
-import 'package:Prism/ui/widgets/profile/prismList.dart';
-import 'package:Prism/ui/widgets/profile/studioList.dart';
-import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/profile/profileLoader.dart';
-import 'package:Prism/ui/widgets/profile/userList.dart';
-import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
@@ -39,12 +28,10 @@ class ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<ProfileChild> {
-  // int favCount = 0;
   int profileCount = 0;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {
-    // checkFav();
     super.initState();
   }
 
@@ -54,33 +41,13 @@ class _ProfileChildState extends State<ProfileChild> {
     return true;
   }
 
-  // Future checkFav() async {
-  //   if (main.prefs.get("isLoggedin")) {
-  //     await Provider.of<FavouriteProvider>(context, listen: false)
-  //         .countFav()
-  //         .then(
-  //       (value) {
-  //         print(value);
-  //         setState(
-  //           () {
-  //             favCount = value;
-  //           },
-  //         );
-  //       },
-  //     );
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
-    // final ScrollController controller =
-    //     InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
         onWillPop: onWillPop,
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           body: NestedScrollView(
-            // controller: controller,
             headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
               SliverAppBar(
                 backgroundColor: Color(0xFFE57697),
