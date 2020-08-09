@@ -3,7 +3,8 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
+    as WData;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
@@ -163,15 +164,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                             EdgeInsets.fromLTRB(14, 11, 14, 11),
                                         avatar: Icon(
                                           JamIcons.ordered_list,
-                                          color: HexColor(Provider.of<
-                                                                  WallHavenProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .walls[index]
-                                                          .colors[Provider.of<
-                                                                      WallHavenProvider>(
-                                                                  context,
-                                                                  listen: false)
+                                          color: HexColor(WData.walls[index]
+                                                          .colors[WData
                                                               .walls[index]
                                                               .colors
                                                               .length -
@@ -182,49 +176,24 @@ class FocusedMenuDetails extends StatelessWidget {
                                               : Colors.white,
                                           size: 20,
                                         ),
-                                        backgroundColor: HexColor(
-                                            Provider.of<WallHavenProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .walls[index]
-                                                    .colors[
-                                                Provider.of<WallHavenProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .walls[index]
-                                                        .colors
-                                                        .length -
-                                                    1]),
+                                        backgroundColor: HexColor(WData
+                                                .walls[index].colors[
+                                            WData.walls[index].colors.length -
+                                                1]),
                                         label: Text(
-                                          Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .walls[index]
-                                                  .category
+                                          WData.walls[index].category
                                                   .toString()[0]
                                                   .toUpperCase() +
-                                              Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .walls[index]
-                                                  .category
+                                              WData.walls[index].category
                                                   .toString()
                                                   .substring(1),
                                           style: Theme.of(context)
                                               .textTheme
                                               .headline4
                                               .copyWith(
-                                                color: HexColor(Provider.of<
-                                                                        WallHavenProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
+                                                color: HexColor(WData
                                                                 .walls[index]
-                                                                .colors[Provider.of<
-                                                                            WallHavenProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
+                                                                .colors[WData
                                                                     .walls[
                                                                         index]
                                                                     .colors
@@ -241,10 +210,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                       padding: const EdgeInsets.fromLTRB(
                                           0, 5, 0, 10),
                                       child: Text(
-                                        Provider.of<WallHavenProvider>(context,
-                                                listen: false)
-                                            .walls[index]
-                                            .id
+                                        WData.walls[index].id
                                             .toString()
                                             .toUpperCase(),
                                         style: Theme.of(context)
@@ -261,7 +227,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                         ),
                                         SizedBox(width: 10),
                                         Text(
-                                          "Views: ${Provider.of<WallHavenProvider>(context, listen: false).walls[index].views.toString()}",
+                                          "Views: ${WData.walls[index].views.toString()}",
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2,
@@ -277,7 +243,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                         ),
                                         SizedBox(width: 10),
                                         Text(
-                                          "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].resolution.toString()}",
+                                          "${WData.walls[index].resolution.toString()}",
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2,
@@ -1777,36 +1743,29 @@ class FocusedMenuDetails extends StatelessWidget {
                                                             padding: EdgeInsets.fromLTRB(
                                                                 14, 11, 14, 11),
                                                             avatar: Icon(JamIcons.ordered_list,
-                                                                color: HexColor(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors[Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors.length - 1]).computeLuminance() > 0.5
+                                                                color: HexColor(WData.wallsS[index].colors[WData.wallsS[index].colors.length - 1]).computeLuminance() >
+                                                                        0.5
                                                                     ? Colors
                                                                         .black
                                                                     : Colors
                                                                         .white,
                                                                 size: 20),
-                                                            backgroundColor: HexColor(Provider.of<WallHavenProvider>(context, listen: false)
+                                                            backgroundColor: HexColor(WData
                                                                 .wallsS[index]
-                                                                .colors[Provider.of<WallHavenProvider>(
-                                                                        context,
-                                                                        listen: false)
+                                                                .colors[WData
                                                                     .wallsS[index]
                                                                     .colors
                                                                     .length -
                                                                 1]),
                                                             label: Text(
-                                                              Provider.of<WallHavenProvider>(
-                                                                          context,
-                                                                          listen:
-                                                                              false)
+                                                              WData
                                                                       .wallsS[
                                                                           index]
                                                                       .category
                                                                       .toString()[
                                                                           0]
                                                                       .toUpperCase() +
-                                                                  Provider.of<WallHavenProvider>(
-                                                                          context,
-                                                                          listen:
-                                                                              false)
+                                                                  WData
                                                                       .wallsS[
                                                                           index]
                                                                       .category
@@ -1818,7 +1777,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                   .textTheme
                                                                   .headline4
                                                                   .copyWith(
-                                                                    color: HexColor(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors[Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].colors.length - 1])
+                                                                    color: HexColor(WData.wallsS[index].colors[WData.wallsS[index].colors.length - 1])
                                                                                 .computeLuminance() >
                                                                             0.5
                                                                         ? Colors
@@ -1834,11 +1793,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                       .fromLTRB(
                                                                   0, 5, 0, 10),
                                                           child: Text(
-                                                            Provider.of<WallHavenProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .wallsS[index]
+                                                            WData.wallsS[index]
                                                                 .id
                                                                 .toString()
                                                                 .toUpperCase(),
@@ -1858,7 +1813,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                             ),
                                                             SizedBox(width: 10),
                                                             Text(
-                                                              "Views: ${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()}",
+                                                              "Views: ${WData.wallsS[index].views.toString()}",
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
@@ -1877,7 +1832,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                             ),
                                                             SizedBox(width: 10),
                                                             Text(
-                                                              "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].resolution.toString()}",
+                                                              "${WData.wallsS[index].resolution.toString()}",
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
@@ -1932,10 +1887,7 @@ class FocusedMenuDetails extends StatelessWidget {
               child: SetWallpaperButton(
                 colorChanged: false,
                 url: provider == "WallHaven"
-                    ? Provider.of<WallHavenProvider>(context, listen: false)
-                        .walls[index]
-                        .path
-                        .toString()
+                    ? WData.walls[index].path.toString()
                     : provider == "Prism"
                         ? Data.subPrismWalls[index]["wallpaper_url"].toString()
                         : provider == "ProfileWall"
@@ -1944,7 +1896,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                 .profileWalls[index]["wallpaper_url"]
                                 .toString()
                             : provider == "Pexels"
-                                ? Provider.of<PexelsProvider>(context, listen: false)
+                                ? Provider.of<PexelsProvider>(context,
+                                        listen: false)
                                     .wallsP[index]
                                     .src["original"]
                                     .toString()
@@ -1960,12 +1913,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                             .wallsC[index]
                                             .src["original"]
                                             .toString()
-                                        : Provider.of<WallHavenProvider>(
-                                                context,
-                                                listen: false)
-                                            .wallsS[index]
-                                            .path
-                                            .toString(),
+                                        : WData.wallsS[index].path.toString(),
               ),
             ),
             Positioned(
@@ -1973,14 +1921,9 @@ class FocusedMenuDetails extends StatelessWidget {
               left: leftOffset - fabHeartLeftOffset,
               child: provider == "WallHaven"
                   ? FavouriteWallpaperButton(
-                      id: Provider.of<WallHavenProvider>(context, listen: false)
-                          .walls[index]
-                          .id
-                          .toString(),
+                      id: WData.walls[index].id.toString(),
                       provider: "WallHaven",
-                      wallhaven:
-                          Provider.of<WallHavenProvider>(context, listen: false)
-                              .walls[index],
+                      wallhaven: WData.walls[index],
                       trash: false,
                     )
                   : provider == "Prism"
@@ -2046,18 +1989,9 @@ class FocusedMenuDetails extends StatelessWidget {
                                           trash: false,
                                         )
                                       : FavouriteWallpaperButton(
-                                          id: Provider.of<WallHavenProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .wallsS[index]
-                                              .id
-                                              .toString(),
+                                          id: WData.wallsS[index].id.toString(),
                                           provider: "WallHaven",
-                                          wallhaven:
-                                              Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .wallsS[index],
+                                          wallhaven: WData.wallsS[index],
                                           trash: false,
                                         ),
             ),
@@ -2067,10 +2001,7 @@ class FocusedMenuDetails extends StatelessWidget {
               child: DownloadButton(
                 colorChanged: false,
                 link: provider == "WallHaven"
-                    ? Provider.of<WallHavenProvider>(context, listen: false)
-                        .walls[index]
-                        .path
-                        .toString()
+                    ? WData.walls[index].path.toString()
                     : provider == "Prism"
                         ? Data.subPrismWalls[index]["wallpaper_url"].toString()
                         : provider == "ProfileWall"
@@ -2079,7 +2010,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                 .profileWalls[index]["wallpaper_url"]
                                 .toString()
                             : provider == "Pexels"
-                                ? Provider.of<PexelsProvider>(context, listen: false)
+                                ? Provider.of<PexelsProvider>(context,
+                                        listen: false)
                                     .wallsP[index]
                                     .src["original"]
                                     .toString()
@@ -2095,12 +2027,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                             .wallsC[index]
                                             .src["original"]
                                             .toString()
-                                        : Provider.of<WallHavenProvider>(
-                                                context,
-                                                listen: false)
-                                            .wallsS[index]
-                                            .path
-                                            .toString(),
+                                        : WData.wallsS[index].path.toString(),
               ),
             ),
           ],
