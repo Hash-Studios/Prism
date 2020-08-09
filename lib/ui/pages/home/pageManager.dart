@@ -46,20 +46,11 @@ class _PageManagerState extends State<PageManager> {
             child: PageView.builder(
                 onPageChanged: (index) {
                   print("Index cat: " + index.toString());
-                  if (index < 2) {
-                    setState(() {
-                      page = index;
-                    });
-                    categoryController.scrollToIndex(index,
-                        preferPosition: AutoScrollPosition.begin);
-                  } else {
-                    setState(() {
-                      page = index + 1;
-                    });
-                    categoryController.scrollToIndex(index + 1,
-                        preferPosition: AutoScrollPosition.begin);
-                  }
-
+                  setState(() {
+                    page = index;
+                  });
+                  categoryController.scrollToIndex(index,
+                      preferPosition: AutoScrollPosition.begin);
                   if (index == 0) {
                     Provider.of<CategoryProvider>(context, listen: false)
                         .updateSelectedCategory("Wallpapers");
@@ -69,7 +60,7 @@ class _PageManagerState extends State<PageManager> {
                   }
                 },
                 controller: pageController,
-                itemCount: 24,
+                itemCount: 2,
                 itemBuilder: (context, index) {
                   print("Index : " + index.toString());
                   if (index == 0) {

@@ -1,6 +1,7 @@
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpaperLoader.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -82,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     print(navStack);
+    print("Bye! Have a good day!");
     return true;
   }
 
@@ -116,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     f.getToken().then((value) {
-      print(value);
+      // print(value);
       Firestore.instance.collection('tokens').document(value).setData({
         "devtoken": value.toString(),
         "createdAt": DateTime.now().toIso8601String()
@@ -188,9 +190,20 @@ class _HomeScreenState extends State<HomeScreen> {
     initDynamicLinks(context);
     return WillPopScope(
       onWillPop: onWillPop,
-      child: WallpaperLoader(
-        future: Data.getPrismWalls(),
-        provider: "Prism",
+      child: new FutureBuilder<List>(
+        future: globals.selectedChoices.func, // async work
+        builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
+          switch (snapshot.connectionState) {
+            case ConnectionState.waiting:
+              return new Text('Loading....');
+            default:
+              if (snapshot.hasError)
+                return new Text('Error: ${snapshot.error}');
+              else
+                return new WallpaperGrid(
+                    provider: globals.selectedChoices.provider);
+          }
+        },
       ),
     );
   }

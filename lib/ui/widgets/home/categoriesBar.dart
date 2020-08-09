@@ -602,13 +602,30 @@ class _CategoriesBarState extends State<CategoriesBar> {
             ),
           ),
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.1,
-            height: 100,
-            child: IconButton(
-              icon: Icon(JamIcons.more_vertical),
-              onPressed: () {},
-            ),
-          )
+              width: MediaQuery.of(context).size.width * 0.1,
+              height: 100,
+              child: PopupMenuButton(
+                icon: Icon(JamIcons.more_vertical),
+                elevation: 4,
+                initialValue: globals.selectedChoices,
+                onCanceled: () {
+                  print('You have not chossed anything');
+                },
+                tooltip: 'Categories',
+                onSelected: (choice) {
+                  setState(() {
+                    globals.selectedChoices = choice;
+                  });
+                },
+                itemBuilder: (BuildContext context) {
+                  return globals.choices.map((choice) {
+                    return PopupMenuItem(
+                      value: choice,
+                      child: Text(choice.title),
+                    );
+                  }).toList();
+                },
+              ))
         ],
       ),
     );
