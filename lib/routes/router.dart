@@ -20,6 +20,7 @@ import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
 import 'package:Prism/ui/pages/home/pageManager.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/home/wallpaperScreen.dart';
+import 'package:Prism/ui/pages/photographerProfile.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
 import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
 import 'package:Prism/ui/pages/profile/themeView.dart';
@@ -70,6 +71,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: ProfileRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => ProfileScreen());
+    case PhotographerProfileRoute:
+      navStack.add("User Profile");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: PhotographerProfileRoute);
+      return CupertinoPageRoute(builder: (context) => UserProfile());
     case DownloadRoute:
       navStack.add("Downloads");
       print(navStack);
