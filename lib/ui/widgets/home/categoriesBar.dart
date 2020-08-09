@@ -1,4 +1,5 @@
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:Prism/ui/widgets/popup/tutorialCompletePopUp.dart';
@@ -607,18 +608,18 @@ class _CategoriesBarState extends State<CategoriesBar> {
               child: PopupMenuButton(
                 icon: Icon(JamIcons.more_vertical),
                 elevation: 4,
-                initialValue: globals.selectedChoices,
+                initialValue:
+                    Provider.of<CategorySupplier>(context).selectedChoices,
                 onCanceled: () {
                   print('You have not chossed anything');
                 },
                 tooltip: 'Categories',
                 onSelected: (choice) {
-                  setState(() {
-                    globals.selectedChoices = choice;
-                  });
+                  Provider.of<CategorySupplier>(context, listen: false)
+                      .changeSelectedChoice(choice);
                 },
                 itemBuilder: (BuildContext context) {
-                  return globals.choices.map((choice) {
+                  return choices.map((choice) {
                     return PopupMenuItem(
                       textStyle: Theme.of(context)
                           .textTheme

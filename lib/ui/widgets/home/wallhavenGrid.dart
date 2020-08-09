@@ -2,6 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
+import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
@@ -94,7 +95,7 @@ class _WallHavenGridState extends State<WallHavenGrid>
     refreshHomeKey.currentState?.show(atTop: true);
     await Future.delayed(Duration(milliseconds: 500));
     WData.walls = [];
-    globals.returnFuture("r");
+    Provider.of<CategorySupplier>(context).returnFuture("r");
     return null;
   }
 
@@ -118,7 +119,7 @@ class _WallHavenGridState extends State<WallHavenGrid>
         onNotification: (ScrollNotification scrollInfo) {
           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
             if (!seeMoreLoader) {
-              globals.returnFuture("s");
+              Provider.of<CategorySupplier>(context).returnFuture("s");
 
               setState(() {
                 seeMoreLoader = true;
@@ -153,7 +154,7 @@ class _WallHavenGridState extends State<WallHavenGrid>
                       borderRadius: BorderRadius.circular(20)),
                   onPressed: () {
                     if (!seeMoreLoader) {
-                      globals.returnFuture("s");
+                      Provider.of<CategorySupplier>(context).returnFuture("s");
 
                       setState(() {
                         seeMoreLoader = true;
