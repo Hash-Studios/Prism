@@ -620,8 +620,18 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 itemBuilder: (BuildContext context) {
                   return globals.choices.map((choice) {
                     return PopupMenuItem(
+                      textStyle: Theme.of(context)
+                          .textTheme
+                          .headline4
+                          .copyWith(color: Theme.of(context).accentColor),
                       value: choice,
-                      child: Text(choice.title),
+                      child: Row(
+                        children: <Widget>[
+                          Icon(choice.icon),
+                          SizedBox(width: 10),
+                          Text(choice.title),
+                        ],
+                      ),
                     );
                   }).toList();
                 },
