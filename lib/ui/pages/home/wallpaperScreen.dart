@@ -865,8 +865,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),
                                         child: Text(
-                                          Data
-                                              .subPrismWalls[index]["id"]
+                                          Data.subPrismWalls[index]["id"]
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context)
@@ -874,21 +873,27 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .bodyText1,
                                         ),
                                       ),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            JamIcons.camera,
-                                            size: 20,
-                                            color: Colors.white70,
-                                          ),
-                                          SizedBox(width: 10),
-                                          Text(
-                                            "${Data.subPrismWalls[index]["by"].toString()}",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
-                                          ),
-                                        ],
+                                      GestureDetector(
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.camera,
+                                              size: 20,
+                                              color: Colors.white70,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              "${Data.subPrismWalls[index]["by"].toString()}",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2,
+                                            ),
+                                          ],
+                                        ),
+                                        onTap: () {
+                                          Navigator.pushNamed(context,
+                                              PhotographerProfileRoute);
+                                        },
                                       ),
                                       SizedBox(height: 5),
                                       Row(
@@ -937,8 +942,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         child: Row(
                                           children: [
                                             Text(
-                                              Data
-                                                  .subPrismWalls[index]
+                                              Data.subPrismWalls[index]
                                                       ["category"]
                                                   .toString(),
                                               style: Theme.of(context)
@@ -1003,34 +1007,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     colorChanged: colorChanged,
                                     link: screenshotTaken
                                         ? _imageFile.path
-                                        : Data
-                                            .subPrismWalls[index]
+                                        : Data.subPrismWalls[index]
                                                 ["wallpaper_url"]
                                             .toString()),
                                 SetWallpaperButton(
                                     colorChanged: colorChanged,
                                     url: screenshotTaken
                                         ? _imageFile.path
-                                        : Data
-                                                .subPrismWalls[index]
+                                        : Data.subPrismWalls[index]
                                             ["wallpaper_url"]),
                                 FavouriteWallpaperButton(
-                                  id: Data
-                                      .subPrismWalls[index]["id"]
+                                  id: Data.subPrismWalls[index]["id"]
                                       .toString(),
                                   provider: "Prism",
-                                  prism: Data
-                                      .subPrismWalls[index],
+                                  prism: Data.subPrismWalls[index],
                                   trash: false,
                                 ),
                                 ShareButton(
-                                    id: Data
-                                        .subPrismWalls[index]["id"],
+                                    id: Data.subPrismWalls[index]["id"],
                                     provider: provider,
-                                    url: Data
-                                        .subPrismWalls[index]["wallpaper_url"],
-                                    thumbUrl: Data
-                                            .subPrismWalls[index]
+                                    url: Data.subPrismWalls[index]
+                                        ["wallpaper_url"],
+                                    thumbUrl: Data.subPrismWalls[index]
                                         ["wallpaper_thumb"])
                               ],
                             ),
@@ -1047,8 +1045,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 print('${offsetAnimation.value + 8.0}');
                               return GestureDetector(
                                 child: CachedNetworkImage(
-                                  imageUrl: Data
-                                      .subPrismWalls[index]["wallpaper_url"],
+                                  imageUrl: Data.subPrismWalls[index]
+                                      ["wallpaper_url"],
                                   imageBuilder: (context, imageProvider) =>
                                       Screenshot(
                                     controller: screenshotController,
@@ -1143,8 +1141,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             padding: const EdgeInsets.all(8.0),
                             child: IconButton(
                               onPressed: () {
-                                var link = Data
-                                    .subPrismWalls[index]["wallpaper_url"];
+                                var link =
+                                    Data.subPrismWalls[index]["wallpaper_url"];
                                 Navigator.push(
                                     context,
                                     PageRouteBuilder(

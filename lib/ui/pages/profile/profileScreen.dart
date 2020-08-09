@@ -41,8 +41,8 @@ class ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<ProfileChild> {
-  int favCount;
-  int profileCount;
+  int favCount = 0;
+  int profileCount = 0;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {

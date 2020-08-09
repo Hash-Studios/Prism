@@ -128,7 +128,7 @@ class FavouriteProvider extends ChangeNotifier {
   }
 
   Future<int> countFav() async {
-    int favs;
+    int favs = 0;
     print("in countfav");
     await getDataBase().then((value) {
       print(value.length);
