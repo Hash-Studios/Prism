@@ -110,12 +110,17 @@ class FocusedMenuDetails extends StatelessWidget {
             Positioned(
                 top: childOffset.dy,
                 left: childOffset.dx,
-                child: AbsorbPointer(
-                    absorbing: true,
-                    child: Container(
-                        width: childSize.width,
-                        height: childSize.height,
-                        child: child))),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: AbsorbPointer(
+                      absorbing: true,
+                      child: Container(
+                          width: childSize.width,
+                          height: childSize.height,
+                          child: child)),
+                )),
             provider == "WallHaven"
                 ? Positioned(
                     top: childOffset.dy + childSize.height * 4 / 10,
