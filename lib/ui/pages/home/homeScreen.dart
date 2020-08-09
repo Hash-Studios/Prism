@@ -1,6 +1,7 @@
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
+import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/widgets/home/homeGrid.dart';
@@ -15,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:provider/provider.dart';
 
 Future<dynamic> myBackgroundMessageHandler(Map<String, dynamic> message) {
   if (message.containsKey('data')) {
@@ -45,7 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
   //Check for update if available
   String currentAppVersion = globals.currentAppVersion;
   final databaseReference = Firestore.instance;
-  Future wallpaperFuture;
 
   Future<void> _checkUpdate() async {
     print("checking for update");
@@ -100,7 +101,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     isNew = true;
     _updateToken();
-    wallpaperFuture = globals.returnFuture("r");
     super.initState();
   }
 
@@ -193,7 +193,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return WillPopScope(
       onWillPop: onWillPop,
       child: new FutureBuilder<List>(
-        future: wallpaperFuture, // async work
+        future: Future.delayed(Duration(seconds: 0)).then((value) =>
+            Provider.of<CategorySupplier>(context, listen: false)
+                .returnFuture("r")), // async work
         builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
@@ -201,12 +203,19 @@ class _HomeScreenState extends State<HomeScreen> {
             default:
               if (snapshot.hasError)
                 return new Text('Error: ${snapshot.error}');
-              else if (globals.selectedChoices.provider == "WallHaven") {
+              else if (Provider.of<CategorySupplier>(context)
+                      .selectedChoices
+                      .provider ==
+                  "WallHaven") {
                 return new WallHavenGrid(
-                    provider: globals.selectedChoices.provider);
+                    provider: Provider.of<CategorySupplier>(context)
+                        .selectedChoices
+                        .provider);
               } else {
                 return new WallpaperGrid(
-                    provider: globals.selectedChoices.provider);
+                    provider: Provider.of<CategorySupplier>(context)
+                        .selectedChoices
+                        .provider);
               }
           }
         },

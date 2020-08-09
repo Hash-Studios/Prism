@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -63,6 +64,9 @@ void main() {
                       ),
                       ChangeNotifierProvider<FavouriteProvider>(
                         create: (context) => FavouriteProvider(),
+                      ),
+                      ChangeNotifierProvider<CategorySupplier>(
+                        create: (context) => CategorySupplier(),
                       ),
                       ChangeNotifierProvider<SetupProvider>(
                         create: (context) => SetupProvider(),
