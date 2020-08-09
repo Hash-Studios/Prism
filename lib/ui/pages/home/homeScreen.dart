@@ -1,6 +1,10 @@
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
+    as WData;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/home/homeGrid.dart';
+import 'package:Prism/ui/widgets/home/wallhavenGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpaperLoader.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
@@ -41,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //Check for update if available
   String currentAppVersion = globals.currentAppVersion;
   final databaseReference = Firestore.instance;
+  Future wallpaperFuture;
 
   Future<void> _checkUpdate() async {
     print("checking for update");
@@ -95,6 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     isNew = true;
     _updateToken();
+    wallpaperFuture = globals.returnFuture("r");
     super.initState();
   }
 
@@ -183,15 +189,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // if (isNew) {
-    //   Future.delayed(Duration(seconds: 0))
-    //       .then((value) => showChangelogCheck(context));
-    // }
     initDynamicLinks(context);
     return WillPopScope(
       onWillPop: onWillPop,
       child: new FutureBuilder<List>(
-        future: globals.selectedChoices.func, // async work
+        future: wallpaperFuture, // async work
         builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
@@ -199,9 +201,13 @@ class _HomeScreenState extends State<HomeScreen> {
             default:
               if (snapshot.hasError)
                 return new Text('Error: ${snapshot.error}');
-              else
+              else if (globals.selectedChoices.provider == "WallHaven") {
+                return new WallHavenGrid(
+                    provider: globals.selectedChoices.provider);
+              } else {
                 return new WallpaperGrid(
                     provider: globals.selectedChoices.provider);
+              }
           }
         },
       ),

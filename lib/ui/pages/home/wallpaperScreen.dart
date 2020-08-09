@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
+    as WData;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -375,10 +376,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding:
                                         const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                     child: Text(
-                                      Provider.of<WallHavenProvider>(context,
-                                              listen: false)
-                                          .walls[index]
-                                          .id
+                                      WData.walls[index].id
                                           .toString()
                                           .toUpperCase(),
                                       style:
@@ -394,7 +392,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       ),
                                       SizedBox(width: 10),
                                       Text(
-                                        "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].views.toString()}",
+                                        "${WData.walls[index].views.toString()}",
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
@@ -411,7 +409,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       ),
                                       SizedBox(width: 10),
                                       Text(
-                                        "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].favourites.toString()}",
+                                        "${WData.walls[index].favourites.toString()}",
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
@@ -428,7 +426,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       ),
                                       SizedBox(width: 10),
                                       Text(
-                                        "${double.parse(((double.parse(Provider.of<WallHavenProvider>(context, listen: false).walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                        "${double.parse(((double.parse(WData.walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
@@ -448,18 +446,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: Row(
                                       children: [
                                         Text(
-                                          Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .walls[index]
-                                                  .category
+                                          WData.walls[index].category
                                                   .toString()[0]
                                                   .toUpperCase() +
-                                              Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .walls[index]
-                                                  .category
+                                              WData.walls[index].category
                                                   .toString()
                                                   .substring(1),
                                           style: Theme.of(context)
@@ -479,7 +469,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   Row(
                                     children: [
                                       Text(
-                                        "${Provider.of<WallHavenProvider>(context, listen: false).walls[index].resolution.toString()}",
+                                        "${WData.walls[index].resolution.toString()}",
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
@@ -524,45 +514,23 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 colorChanged: colorChanged,
                                 link: screenshotTaken
                                     ? _imageFile.path
-                                    : Provider.of<WallHavenProvider>(context,
-                                            listen: false)
-                                        .walls[index]
-                                        .path
-                                        .toString()),
+                                    : WData.walls[index].path.toString()),
                             SetWallpaperButton(
                                 colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
-                                    : Provider.of<WallHavenProvider>(context)
-                                        .walls[index]
-                                        .path),
+                                    : WData.walls[index].path),
                             FavouriteWallpaperButton(
-                              id: Provider.of<WallHavenProvider>(context,
-                                      listen: false)
-                                  .walls[index]
-                                  .id
-                                  .toString(),
+                              id: WData.walls[index].id.toString(),
                               provider: "WallHaven",
-                              wallhaven: Provider.of<WallHavenProvider>(context,
-                                      listen: false)
-                                  .walls[index],
+                              wallhaven: WData.walls[index],
                               trash: false,
                             ),
                             ShareButton(
-                                id: Provider.of<WallHavenProvider>(context,
-                                        listen: false)
-                                    .walls[index]
-                                    .id,
+                                id: WData.walls[index].id,
                                 provider: provider,
-                                url: Provider.of<WallHavenProvider>(context,
-                                        listen: false)
-                                    .walls[index]
-                                    .path,
-                                thumbUrl: Provider.of<WallHavenProvider>(
-                                        context,
-                                        listen: false)
-                                    .walls[index]
-                                    .thumbs["original"])
+                                url: WData.walls[index].path,
+                                thumbUrl: WData.walls[index].thumbs["original"])
                           ],
                         ),
                       ),
@@ -578,9 +546,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             print('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
-                              imageUrl: Provider.of<WallHavenProvider>(context)
-                                  .walls[index]
-                                  .path,
+                              imageUrl: WData.walls[index].path,
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
                                 controller: screenshotController,
@@ -672,10 +638,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
-                            var link = Provider.of<WallHavenProvider>(context,
-                                    listen: false)
-                                .walls[index]
-                                .path;
+                            var link = WData.walls[index].path;
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
@@ -2432,11 +2395,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     const EdgeInsets.fromLTRB(
                                                         0, 5, 0, 10),
                                                 child: Text(
-                                                  Provider.of<WallHavenProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .wallsS[index]
-                                                      .id
+                                                  WData.wallsS[index].id
                                                       .toString()
                                                       .toUpperCase(),
                                                   style: Theme.of(context)
@@ -2453,7 +2412,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].views.toString()}",
+                                                    "${WData.wallsS[index].views.toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -2470,7 +2429,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].favourites.toString()}",
+                                                    "${WData.wallsS[index].favourites.toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -2487,7 +2446,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${double.parse(((double.parse(Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                                    "${double.parse(((double.parse(WData.wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -2510,17 +2469,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 child: Row(
                                                   children: [
                                                     Text(
-                                                      Provider.of<WallHavenProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .wallsS[index]
+                                                      WData.wallsS[index]
                                                               .category
                                                               .toString()[0]
                                                               .toUpperCase() +
-                                                          Provider.of<WallHavenProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .wallsS[index]
+                                                          WData.wallsS[index]
                                                               .category
                                                               .toString()
                                                               .substring(1),
@@ -2541,7 +2494,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               Row(
                                                 children: [
                                                   Text(
-                                                    "${Provider.of<WallHavenProvider>(context, listen: false).wallsS[index].resolution.toString()}",
+                                                    "${WData.wallsS[index].resolution.toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -2592,55 +2545,26 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           colorChanged: colorChanged,
                                           link: screenshotTaken
                                               ? _imageFile.path
-                                              : Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .wallsS[index]
-                                                  .path
+                                              : WData.wallsS[index].path
                                                   .toString(),
                                         ),
                                         SetWallpaperButton(
                                             colorChanged: colorChanged,
                                             url: screenshotTaken
                                                 ? _imageFile.path
-                                                : Provider.of<
-                                                            WallHavenProvider>(
-                                                        context)
-                                                    .wallsS[index]
-                                                    .path),
+                                                : WData.wallsS[index].path),
                                         FavouriteWallpaperButton(
-                                          id: Provider.of<WallHavenProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .wallsS[index]
-                                              .id
-                                              .toString(),
+                                          id: WData.wallsS[index].id.toString(),
                                           provider: "WallHaven",
-                                          wallhaven:
-                                              Provider.of<WallHavenProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .wallsS[index],
+                                          wallhaven: WData.wallsS[index],
                                           trash: false,
                                         ),
                                         ShareButton(
-                                            id: Provider.of<WallHavenProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .wallsS[index]
-                                                .id,
+                                            id: WData.wallsS[index].id,
                                             provider: "WallHaven",
-                                            url: Provider.of<WallHavenProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .wallsS[index]
-                                                .path,
-                                            thumbUrl:
-                                                Provider.of<WallHavenProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .wallsS[index]
-                                                    .thumbs["original"])
+                                            url: WData.wallsS[index].path,
+                                            thumbUrl: WData.wallsS[index]
+                                                .thumbs["original"])
                                       ],
                                     ),
                                   ),
@@ -2656,11 +2580,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         print('${offsetAnimation.value + 8.0}');
                                       return GestureDetector(
                                         child: CachedNetworkImage(
-                                          imageUrl:
-                                              Provider.of<WallHavenProvider>(
-                                                      context)
-                                                  .wallsS[index]
-                                                  .path,
+                                          imageUrl: WData.wallsS[index].path,
                                           imageBuilder:
                                               (context, imageProvider) =>
                                                   Screenshot(
@@ -2763,12 +2683,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding: const EdgeInsets.all(8.0),
                                     child: IconButton(
                                       onPressed: () {
-                                        var link =
-                                            Provider.of<WallHavenProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .wallsS[index]
-                                                .path;
+                                        var link = WData.wallsS[index].path;
                                         Navigator.push(
                                             context,
                                             PageRouteBuilder(
