@@ -21,8 +21,8 @@ class _WallpaperLoaderState extends State<WallpaperLoader>
 
   @override
   void initState() {
-    Data.prismWalls = [];
-    Data.subPrismWalls = [];
+    // Data.prismWalls = [];
+    // Data.subPrismWalls = [];
     // Data.pageGetDataP = 1;
     _future = widget.future;
     super.initState();
