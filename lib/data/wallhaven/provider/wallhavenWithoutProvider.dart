@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/wallhaven/model/tag.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/routes/router.dart';
@@ -12,6 +13,68 @@ int pageGetData = 1;
 int pageGetQuery = 1;
 int pageGetTag = 1;
 int pageGetPeople = 1;
+List<Map<String, int>> pageNumbers = categories
+    .where((category) =>
+        category['provider'] == "WallHaven" && category['type'] == 'search')
+    .map((category) => {category['name']: 1});
+
+List<Map<String, Future<List<WallPaper>> Function(String)>> functions =
+    categories
+        .where((category) =>
+            category['provider'] == "WallHaven" && category['type'] == 'search')
+        .map((category) => {
+              category['name']: (String mode) async {
+                int index = pageNumbers.indexOf(pageNumbers.firstWhere(
+                    (element) => element.keys.toList()[0] == category['name']));
+                if (mode == "r") {
+                  walls = [];
+                  pageNumbers[index] = {category['name']: 1};
+                } else {
+                  pageNumbers[index] = {category['name']: 2};
+                }
+                if (navStack.last == "Home") {
+                  http
+                      .get(
+                          "https://wallhaven.cc/api/v1/search?q=${category['name']}&page=${pageNumbers[index]}")
+                      .then(
+                    (http.Response response) {
+                      var resp = json.decode(response.body);
+                      print(resp);
+                      for (int i = 0; i < resp["data"].length; i++) {
+                        walls.add(
+                          WallPaper(
+                              id: resp["data"][i]["id"],
+                              url: resp["data"][i]["url"],
+                              short_url: resp["data"][i]["short_url"],
+                              views: resp["data"][i]["views"].toString(),
+                              favourites:
+                                  resp["data"][i]["favorites"].toString(),
+                              category: resp["data"][i]["category"],
+                              dimension_x:
+                                  resp["data"][i]["dimension_x"].toString(),
+                              dimension_y:
+                                  resp["data"][i]["dimension_y"].toString(),
+                              resolution: resp["data"][i]["resolution"],
+                              file_size:
+                                  resp["data"][i]["file_size"].toString(),
+                              colors: resp["data"][i]["colors"],
+                              path: resp["data"][i]["path"],
+                              thumbs: resp["data"][i]["thumbs"],
+                              current_page: resp["meta"]["current_page"]),
+                        );
+                      }
+                      pageNumbers[index] = resp["meta"]["current_page"] + 1;
+                      print("data done");
+                      return walls;
+                    },
+                  );
+                } else {
+                  print("Refresh Blocked");
+                }
+                return walls;
+              }
+            });
+
 int pageLandscape = 1;
 int page4K = 1;
 int pagePattern = 1;
