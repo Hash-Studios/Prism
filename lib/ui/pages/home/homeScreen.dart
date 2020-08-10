@@ -44,6 +44,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  Future<List> _future;
   //Check for update if available
   String currentAppVersion = globals.currentAppVersion;
   final databaseReference = Firestore.instance;
@@ -101,6 +102,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     isNew = true;
     _updateToken();
+    _future = Future.delayed(Duration(seconds: 0)).then((value) =>
+        Provider.of<CategorySupplier>(context, listen: false)
+            .wallpaperFutureRefresh);
     super.initState();
   }
 
@@ -193,9 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return WillPopScope(
       onWillPop: onWillPop,
       child: new FutureBuilder<List>(
-        future: Future.delayed(Duration(seconds: 0)).then((value) =>
-            Provider.of<CategorySupplier>(context, listen: false)
-                .returnFuture("r")), // async work
+        future: _future, // async work
         builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
@@ -204,17 +206,17 @@ class _HomeScreenState extends State<HomeScreen> {
               if (snapshot.hasError)
                 return new Text('Error: ${snapshot.error}');
               else if (Provider.of<CategorySupplier>(context)
-                      .selectedChoices
+                      .selectedChoice
                       .provider ==
                   "WallHaven") {
                 return new WallHavenGrid(
                     provider: Provider.of<CategorySupplier>(context)
-                        .selectedChoices
+                        .selectedChoice
                         .provider);
               } else {
                 return new WallpaperGrid(
                     provider: Provider.of<CategorySupplier>(context)
-                        .selectedChoices
+                        .selectedChoice
                         .provider);
               }
           }

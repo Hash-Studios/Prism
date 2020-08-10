@@ -609,7 +609,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 icon: Icon(JamIcons.more_vertical),
                 elevation: 4,
                 initialValue:
-                    Provider.of<CategorySupplier>(context).selectedChoices,
+                    Provider.of<CategorySupplier>(context).selectedChoice,
                 onCanceled: () {
                   print('You have not chossed anything');
                 },
@@ -617,6 +617,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 onSelected: (choice) {
                   Provider.of<CategorySupplier>(context, listen: false)
                       .changeSelectedChoice(choice);
+                  Provider.of<CategorySupplier>(context, listen: false)
+                      .changeWallpaperFuture(choice, "r");
                 },
                 itemBuilder: (BuildContext context) {
                   return choices.map((choice) {
