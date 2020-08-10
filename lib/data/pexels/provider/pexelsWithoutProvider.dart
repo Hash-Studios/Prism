@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:http/http.dart' as http;
@@ -10,17 +11,63 @@ List<WallPaperP> wallsC = [];
 WallPaperP wall;
 int pageGetDataP = 1;
 int pageGetQueryP = 1;
-int pageAbstractP = 1;
-int pageNatureP = 1;
-int pageArtP = 1;
-int pageMinimalP = 1;
-int pageTexturesP = 1;
-int pageMonochromeP = 1;
-int pageSpaceP = 1;
-int pageAnimalsP = 1;
-int pageNeonP = 1;
-int pageSportsP = 1;
-int pageMusicP = 1;
+List<Map<String, int>> pageNumbersP = categories
+    .where((category) =>
+        category['provider'] == "Pexels" && category['type'] == 'search')
+    .map((category) => {category['name']: 1});
+
+List<Map<String, Future<List<WallPaperP>> Function(String)>> functionsP =
+    categories
+        .where((category) =>
+            category['provider'] == "Pexels" && category['type'] == 'search')
+        .map((category) => {
+              category['name']: (String mode) async {
+                int index = pageNumbersP.indexOf(pageNumbersP.firstWhere(
+                    (element) => element.keys.toList()[0] == category['name']));
+                if (navStack.last == "Home") {
+                  http.get(
+                      "https://api.pexels.com/v1/search?query=${category['name']}&per_page=80&page=${pageNumbersP[index]}",
+                      headers: {
+                        "Authorization":
+                            "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+                      }).then(
+                    (http.Response response) {
+                      var resp = json.decode(response.body);
+                      for (int i = 0; i < resp["photos"].length; i++) {
+                        wallsP.add(
+                          WallPaperP(
+                              id: resp["photos"][i]["id"].toString(),
+                              url: resp["photos"][i]["url"],
+                              width: resp["photos"][i]["width"].toString(),
+                              height: resp["photos"][i]["height"].toString(),
+                              photographer: resp["photos"][i]["photographer"],
+                              src: resp["photos"][i]["src"],
+                              current_page: resp["page"]),
+                        );
+                      }
+                      pageNumbersP[index] = resp["page"] + 1;
+                      print("data done");
+                      return wallsP;
+                    },
+                  );
+                } else {
+                  print("Refresh Blocked");
+                }
+                return wallsP;
+              }
+            });
+
+// int pageAbstractP = 1;
+// int pageNatureP = 1;
+// int pageArtP = 1;
+// int pageMinimalP = 1;
+// int pageTexturesP = 1;
+// int pageMonochromeP = 1;
+// int pageSpaceP = 1;
+// int pageAnimalsP = 1;
+// int pageNeonP = 1;
+// int pageSportsP = 1;
+// int pageMusicP = 1;
 int pageColorsP = 1;
 Future<List<WallPaperP>> getDataP() async {
   if (navStack.last == "Home") {
@@ -157,394 +204,394 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
   );
 }
 
-Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
-  print(
-      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}");
-  http.get(
-      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}",
-      headers: {
-        "Authorization":
-            "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-      }).then(
-    (http.Response response) {
-      var resp = json.decode(response.body);
-      for (int i = 0; i < resp["photos"].length; i++) {
-        wallsC.add(
-          WallPaperP(
-              id: resp["photos"][i]["id"].toString(),
-              url: resp["photos"][i]["url"],
-              width: resp["photos"][i]["width"].toString(),
-              height: resp["photos"][i]["height"].toString(),
-              photographer: resp["photos"][i]["photographer"],
-              src: resp["photos"][i]["src"],
-              current_page: resp["page"]),
-        );
-      }
-      pageColorsP = resp["page"] + 1;
-      print("data done");
-      return wallsC;
-    },
-  );
-}
+// Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
+//   print(
+//       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}");
+//   http.get(
+//       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}",
+//       headers: {
+//         "Authorization":
+//             "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//       }).then(
+//     (http.Response response) {
+//       var resp = json.decode(response.body);
+//       for (int i = 0; i < resp["photos"].length; i++) {
+//         wallsC.add(
+//           WallPaperP(
+//               id: resp["photos"][i]["id"].toString(),
+//               url: resp["photos"][i]["url"],
+//               width: resp["photos"][i]["width"].toString(),
+//               height: resp["photos"][i]["height"].toString(),
+//               photographer: resp["photos"][i]["photographer"],
+//               src: resp["photos"][i]["src"],
+//               current_page: resp["page"]),
+//         );
+//       }
+//       pageColorsP = resp["page"] + 1;
+//       print("data done");
+//       return wallsC;
+//     },
+//   );
+// }
 
-Future<List<WallPaperP>> getAbstractWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=abstract&per_page=80&page=${pageAbstractP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageAbstractP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getAbstractWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=abstract&per_page=80&page=${pageAbstractP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageAbstractP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getNatureWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=nature&per_page=80&page=${pageNatureP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageNatureP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getNatureWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=nature&per_page=80&page=${pageNatureP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageNatureP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getArtWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=art&per_page=80&page=${pageArtP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageArtP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getArtWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=art&per_page=80&page=${pageArtP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageArtP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getMinimalWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=Minimal&per_page=80&page=${pageMinimalP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageMinimalP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getMinimalWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=Minimal&per_page=80&page=${pageMinimalP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageMinimalP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getTexturesWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=Textures&per_page=80&page=${pageTexturesP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageTexturesP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getTexturesWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=Textures&per_page=80&page=${pageTexturesP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageTexturesP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getMonochromeWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=Monochrome&per_page=80&page=${pageMonochromeP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageMonochromeP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getMonochromeWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=Monochrome&per_page=80&page=${pageMonochromeP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageMonochromeP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getSpaceWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=Space&per_page=80&page=${pageSpaceP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageSpaceP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getSpaceWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=Space&per_page=80&page=${pageSpaceP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageSpaceP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getAnimalsWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=Animals&per_page=80&page=${pageAnimalsP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageAnimalsP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getAnimalsWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=Animals&per_page=80&page=${pageAnimalsP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageAnimalsP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getNeonWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=Neon&per_page=80&page=${pageNeonP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageNeonP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getNeonWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=Neon&per_page=80&page=${pageNeonP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageNeonP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getSportsWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=Sports&per_page=80&page=${pageSportsP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageSportsP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getSportsWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=Sports&per_page=80&page=${pageSportsP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageSportsP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
 
-Future<List<WallPaperP>> getMusicWalls() async {
-  if (navStack.last == "Home") {
-    http.get(
-        "https://api.pexels.com/v1/search?query=Music&per_page=80&page=${pageMusicP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
-      (http.Response response) {
-        var resp = json.decode(response.body);
-        print(resp);
-        for (int i = 0; i < resp["photos"].length; i++) {
-          wallsP.add(
-            WallPaperP(
-                id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
-                width: resp["photos"][i]["width"].toString(),
-                height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
-          );
-        }
-        pageMusicP = resp["page"] + 1;
-        print("data done");
-        return wallsP;
-      },
-    );
-  } else {
-    print("Refresh Blocked");
-  }
-}
+// Future<List<WallPaperP>> getMusicWalls() async {
+//   if (navStack.last == "Home") {
+//     http.get(
+//         "https://api.pexels.com/v1/search?query=Music&per_page=80&page=${pageMusicP}",
+//         headers: {
+//           "Authorization":
+//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//         }).then(
+//       (http.Response response) {
+//         var resp = json.decode(response.body);
+//         print(resp);
+//         for (int i = 0; i < resp["photos"].length; i++) {
+//           wallsP.add(
+//             WallPaperP(
+//                 id: resp["photos"][i]["id"].toString(),
+//                 url: resp["photos"][i]["url"],
+//                 width: resp["photos"][i]["width"].toString(),
+//                 height: resp["photos"][i]["height"].toString(),
+//                 photographer: resp["photos"][i]["photographer"],
+//                 src: resp["photos"][i]["src"],
+//                 current_page: resp["page"]),
+//           );
+//         }
+//         pageMusicP = resp["page"] + 1;
+//         print("data done");
+//         return wallsP;
+//       },
+//     );
+//   } else {
+//     print("Refresh Blocked");
+//   }
+// }
