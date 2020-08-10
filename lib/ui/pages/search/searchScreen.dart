@@ -1,6 +1,7 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:Prism/global/customPopupMenu.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -24,8 +25,12 @@ class _SearchScreenState extends State<SearchScreen> {
     return true;
   }
 
-  String selectedProvider = "Pexels";
-
+  String selectedProvider;
+  var selectedProviders;
+  final List providers = [
+    CustomPopupMenu(title: 'WallHaven', icon: JamIcons.pizza_slice),
+    CustomPopupMenu(title: 'Pexels', icon: JamIcons.pizza_slice)
+  ];
   final List<String> tags = [
     'Art',
     'Abstract',
@@ -47,6 +52,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     isSubmitted = false;
+    selectedProvider = "WallHaven";
+    selectedProviders = providers[0];
     super.initState();
   }
 
@@ -61,59 +68,116 @@ class _SearchScreenState extends State<SearchScreen> {
             automaticallyImplyLeading: false,
             elevation: 0,
             titleSpacing: 0,
-            title: Padding(
-              padding: const EdgeInsets.only(top: 6.0),
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(500),
-                            color: Theme.of(context).hintColor),
-                        child: TextField(
-                          cursorColor: Color(0xFFE57697),
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline5
-                              .copyWith(color: Theme.of(context).accentColor),
-                          controller: searchController,
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.only(left: 30, top: 15),
-                            border: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            hintText: "Search",
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headline5
-                                .copyWith(color: Theme.of(context).accentColor),
-                            suffixIcon: Icon(
-                              JamIcons.search,
-                              color: Theme.of(context).accentColor,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 6.0),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(500),
+                                color: Theme.of(context).hintColor),
+                            child: TextField(
+                              cursorColor: Color(0xFFE57697),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline5
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                              controller: searchController,
+                              decoration: InputDecoration(
+                                contentPadding:
+                                    EdgeInsets.only(left: 30, top: 15),
+                                border: InputBorder.none,
+                                disabledBorder: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                hintText: "Search",
+                                hintStyle: Theme.of(context)
+                                    .textTheme
+                                    .headline5
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                                suffixIcon: Icon(
+                                  JamIcons.search,
+                                  color: Theme.of(context).accentColor,
+                                ),
+                              ),
+                              onSubmitted: (tex) {
+                                setState(() {
+                                  isSubmitted = true;
+                                  if (selectedProvider == "WallHaven") {
+                                    WData.wallsS = [];
+                                    _future = WData.getWallsbyQuery(tex);
+                                  } else if (selectedProvider == "Pexels") {
+                                    PData.wallsPS = [];
+                                    _future = PData.getWallsPbyQuery(tex);
+                                  }
+                                });
+                              },
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            setState(() {
-                              isSubmitted = true;
-                              if (selectedProvider == "WallHaven") {
-                                WData.wallsS = [];
-                                _future = WData.getWallsbyQuery(tex);
-                              } else if (selectedProvider == "Pexels") {
-                                PData.wallsPS = [];
-                                _future = PData.getWallsPbyQuery(tex);
-                              }
-                            });
-                          },
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.1,
+                  child: PopupMenuButton(
+                    icon: Icon(JamIcons.more_vertical),
+                    elevation: 4,
+                    initialValue: selectedProviders,
+                    onCanceled: () {
+                      print('You have not choosed anything');
+                    },
+                    tooltip: 'Providers',
+                    onSelected: (choice) {
+                      setState(() {
+                        selectedProviders = choice;
+                        selectedProvider = choice.title;
+                        if (searchController.text != "") {
+                          isSubmitted = true;
+                          if (choice.title == "WallHaven") {
+                            WData.wallsS = [];
+                            _future =
+                                WData.getWallsbyQuery(searchController.text);
+                          } else if (choice.title == "Pexels") {
+                            PData.wallsPS = [];
+                            _future =
+                                PData.getWallsPbyQuery(searchController.text);
+                          }
+                        }
+                      });
+                    },
+                    itemBuilder: (BuildContext context) {
+                      return providers.map((choice) {
+                        return PopupMenuItem(
+                          textStyle: Theme.of(context)
+                              .textTheme
+                              .headline4
+                              .copyWith(color: Theme.of(context).accentColor),
+                          value: choice,
+                          child: Row(
+                            children: <Widget>[
+                              Icon(choice.icon),
+                              SizedBox(width: 10),
+                              Text(choice.title),
+                            ],
+                          ),
+                        );
+                      }).toList();
+                    },
+                  ),
+                )
+              ],
             ),
             bottom: PreferredSize(
                 child: SizedBox(
