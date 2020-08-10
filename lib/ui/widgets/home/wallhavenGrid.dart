@@ -1,5 +1,4 @@
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/data/categories/provider/categoriesProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
 import 'package:Prism/global/categoryProvider.dart';
@@ -12,7 +11,6 @@ import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 class WallHavenGrid extends StatefulWidget {

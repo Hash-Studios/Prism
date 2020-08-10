@@ -1,13 +1,8 @@
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as WData;
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/widgets/home/homeGrid.dart';
 import 'package:Prism/ui/widgets/home/wallhavenGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
-import 'package:Prism/ui/widgets/home/wallpaperLoader.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';

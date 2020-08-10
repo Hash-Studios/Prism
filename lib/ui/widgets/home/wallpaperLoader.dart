@@ -1,5 +1,4 @@
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
