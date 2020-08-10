@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class CustomPopupMenu {
-  String title;
+  String name;
   // Future func;
   String provider;
   IconData icon;
-  CustomPopupMenu({this.title, this.provider, this.icon});
+  CustomPopupMenu({this.name, this.provider, this.icon});
 }

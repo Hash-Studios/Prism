@@ -1,5 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/prism/provider/prismProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
@@ -94,8 +94,8 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
     await Future.delayed(Duration(milliseconds: 500));
     if (widget.provider == "WallHaven") {
       Provider.of<WallHavenProvider>(context, listen: false).walls = [];
-      switch (Provider.of<CategoryProvider>(context, listen: false)
-          .selectedCategory) {
+      switch (Provider.of<TabProvider>(context, listen: false)
+          .selectedTab) {
         case "For you":
           Provider.of<WallHavenProvider>(context, listen: false).getData();
           break;
@@ -141,8 +141,8 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
       }
     } else if (widget.provider == "Pexels") {
       Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
-      switch (Provider.of<CategoryProvider>(context, listen: false)
-          .selectedCategory) {
+      switch (Provider.of<TabProvider>(context, listen: false)
+          .selectedTab) {
         case "Curated":
           Provider.of<PexelsProvider>(context, listen: false).getDataP();
           break;
@@ -223,8 +223,8 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
             if (widget.provider == "WallHaven") {
               if (!seeMoreLoader) {
-                switch (Provider.of<CategoryProvider>(context, listen: false)
-                    .selectedCategory) {
+                switch (Provider.of<TabProvider>(context, listen: false)
+                    .selectedTab) {
                   case "For you":
                     Provider.of<WallHavenProvider>(context, listen: false)
                         .getData();
@@ -290,8 +290,8 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
               }
             } else if (widget.provider == "Pexels") {
               if (!seeMoreLoader) {
-                switch (Provider.of<CategoryProvider>(context, listen: false)
-                    .selectedCategory) {
+                switch (Provider.of<TabProvider>(context, listen: false)
+                    .selectedTab) {
                   case "Curated":
                     Provider.of<PexelsProvider>(context, listen: false)
                         .getDataP();
@@ -430,9 +430,9 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        switch (Provider.of<CategoryProvider>(context,
+                        switch (Provider.of<TabProvider>(context,
                                 listen: false)
-                            .selectedCategory) {
+                            .selectedTab) {
                           case "For you":
                             Provider.of<WallHavenProvider>(context,
                                     listen: false)
@@ -538,9 +538,9 @@ class _HomeGridState extends State<HomeGrid> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        switch (Provider.of<CategoryProvider>(context,
+                        switch (Provider.of<TabProvider>(context,
                                 listen: false)
-                            .selectedCategory) {
+                            .selectedTab) {
                           case "Curated":
                             Provider.of<PexelsProvider>(context, listen: false)
                                 .getDataP();

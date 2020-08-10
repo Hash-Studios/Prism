@@ -6,7 +6,7 @@ import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
@@ -59,8 +59,8 @@ void main() {
                       ChangeNotifierProvider<PexelsProvider>(
                         create: (context) => PexelsProvider(),
                       ),
-                      ChangeNotifierProvider<CategoryProvider>(
-                        create: (context) => CategoryProvider(),
+                      ChangeNotifierProvider<TabProvider>(
+                        create: (context) => TabProvider(),
                       ),
                       ChangeNotifierProvider<FavouriteProvider>(
                         create: (context) => FavouriteProvider(),

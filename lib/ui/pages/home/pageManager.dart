@@ -1,4 +1,4 @@
-import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/globals.dart';
 import 'package:Prism/ui/pages/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/homeScreen.dart';
@@ -19,8 +19,8 @@ class _PageManagerState extends State<PageManager> {
   int page = 0;
   @override
   void initState() {
-    Provider.of<CategoryProvider>(context, listen: false)
-        .updateSelectedCategory("Wallpapers");
+    Provider.of<TabProvider>(context, listen: false)
+        .updateSelectedTab("Wallpapers");
     super.initState();
   }
 
@@ -52,11 +52,11 @@ class _PageManagerState extends State<PageManager> {
                   categoryController.scrollToIndex(index,
                       preferPosition: AutoScrollPosition.begin);
                   if (index == 0) {
-                    Provider.of<CategoryProvider>(context, listen: false)
-                        .updateSelectedCategory("Wallpapers");
+                    Provider.of<TabProvider>(context, listen: false)
+                        .updateSelectedTab("Wallpapers");
                   } else if (index == 1) {
-                    Provider.of<CategoryProvider>(context, listen: false)
-                        .updateSelectedCategory("Collections");
+                    Provider.of<TabProvider>(context, listen: false)
+                        .updateSelectedTab("Collections");
                   }
                 },
                 controller: pageController,

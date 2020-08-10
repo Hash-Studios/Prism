@@ -1,4 +1,4 @@
-import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
@@ -524,8 +524,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               controller: globals.categoryController,
-              itemCount:
-                  Provider.of<CategoryProvider>(context).categories.length,
+              itemCount: Provider.of<TabProvider>(context).tabs.length,
               itemBuilder: (context, index) {
                 return _wrapScrollTag(
                   index: index,
@@ -544,14 +543,14 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                 pressElevation: 5,
                                 padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
                                 label: Text(
-                                    Provider.of<CategoryProvider>(context)
-                                        .categories[index],
+                                    Provider.of<TabProvider>(context)
+                                        .tabs[index],
                                     style:
                                         Theme.of(context).textTheme.headline4),
                                 onPressed: () {
-                                  switch (Provider.of<CategoryProvider>(context,
+                                  switch (Provider.of<TabProvider>(context,
                                           listen: false)
-                                      .categories[index]) {
+                                      .tabs[index]) {
                                     case "Wallpapers":
                                       PM.pageController.jumpToPage(0);
                                       break;
@@ -563,10 +562,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                   }
                                 }),
                             crossFadeState:
-                                Provider.of<CategoryProvider>(context)
-                                            .categories[index] ==
-                                        Provider.of<CategoryProvider>(context)
-                                            .selectedCategory
+                                Provider.of<TabProvider>(context).tabs[index] ==
+                                        Provider.of<TabProvider>(context)
+                                            .selectedTab
                                     ? CrossFadeState.showFirst
                                     : CrossFadeState.showSecond,
                             firstChild: ActionChip(
@@ -574,8 +572,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                 padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
                                 backgroundColor: Theme.of(context).accentColor,
                                 label: Text(
-                                    Provider.of<CategoryProvider>(context)
-                                        .categories[index],
+                                    Provider.of<TabProvider>(context)
+                                        .tabs[index],
                                     style: Theme.of(context)
                                         .textTheme
                                         .headline4
