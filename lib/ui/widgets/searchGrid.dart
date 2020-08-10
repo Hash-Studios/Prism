@@ -140,7 +140,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
         child: GridView.builder(
           controller: controller,
           padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
-          itemCount: WData.wallsS.length == 0 ? 24 : WData.wallsS.length,
+          itemCount: widget.selectedProvider == "WallHaven"
+              ? WData.wallsS.length == 0 ? 24 : WData.wallsS.length
+              : PData.wallsPS.length == 0 ? 24 : PData.wallsPS.length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent:
