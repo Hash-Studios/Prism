@@ -131,7 +131,7 @@ Future<List<WallPaper>> getWallsbyQuery(String query) async {
               current_page: resp["meta"]["current_page"]),
         );
       }
-      pageGetQuery = pageGetQuery + 1;
+      pageGetQuery = 2;
       return wallsS;
     },
   );
