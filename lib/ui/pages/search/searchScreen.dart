@@ -1,5 +1,6 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -22,6 +23,8 @@ class _SearchScreenState extends State<SearchScreen> {
     print(navStack);
     return true;
   }
+
+  String selectedProvider = "Pexels";
 
   final List<String> tags = [
     'Art',
@@ -96,8 +99,13 @@ class _SearchScreenState extends State<SearchScreen> {
                           onSubmitted: (tex) {
                             setState(() {
                               isSubmitted = true;
-                              WData.wallsS = [];
-                              _future = WData.getWallsbyQuery(tex);
+                              if (selectedProvider == "WallHaven") {
+                                WData.wallsS = [];
+                                _future = WData.getWallsbyQuery(tex);
+                              } else if (selectedProvider == "Pexels") {
+                                PData.wallsPS = [];
+                                _future = PData.getWallsPbyQuery(tex);
+                              }
                             });
                           },
                         ),
@@ -145,9 +153,15 @@ class _SearchScreenState extends State<SearchScreen> {
                                     setState(() {
                                       searchController.text = tags[index];
                                       isSubmitted = true;
-                                      WData.wallsS = [];
-                                      _future =
-                                          WData.getWallsbyQuery(tags[index]);
+                                      if (selectedProvider == "WallHaven") {
+                                        WData.wallsS = [];
+                                        _future =
+                                            WData.getWallsbyQuery(tags[index]);
+                                      } else if (selectedProvider == "Pexels") {
+                                        PData.wallsPS = [];
+                                        _future =
+                                            PData.getWallsPbyQuery(tags[index]);
+                                      }
                                     });
                                   }),
                             ),
@@ -164,6 +178,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ? SearchLoader(
                     future: _future,
                     query: searchController.text,
+                    selectedProvider: selectedProvider,
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -194,7 +209,11 @@ class _SearchScreenState extends State<SearchScreen> {
 class SearchLoader extends StatefulWidget {
   final Future future;
   final String query;
-  SearchLoader({@required this.future, @required this.query});
+  final String selectedProvider;
+  SearchLoader(
+      {@required this.future,
+      @required this.query,
+      @required this.selectedProvider});
   @override
   _SearchLoaderState createState() => _SearchLoaderState();
 }
@@ -207,9 +226,16 @@ class _SearchLoaderState extends State<SearchLoader>
 
   @override
   void initState() {
-    WData.wallsS = [];
-    WData.pageGetQuery = 1;
-    _future = widget.future;
+    if (widget.selectedProvider == "WallHaven") {
+      WData.wallsS = [];
+      WData.pageGetQuery = 1;
+      _future = widget.future;
+    } else if (widget.selectedProvider == "Pexels") {
+      PData.wallsPS = [];
+      PData.pageGetQueryP = 1;
+      _future = widget.future;
+    }
+
     super.initState();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -284,6 +310,7 @@ class _SearchLoaderState extends State<SearchLoader>
           // print("snapshot done");
           return SearchGrid(
             query: widget.query,
+            selectedProvider: widget.selectedProvider,
           );
         }
       },
