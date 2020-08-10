@@ -129,48 +129,45 @@ final List choices = [
 ];
 
 class CategorySupplier extends ChangeNotifier {
+  Future<List> wallpaperFutureRefresh = Data.getPrismWalls();
   Future<List> home() async {
     Data.getPrismWalls();
   }
 
-  CustomPopupMenu selectedChoices = choices[0];
-
+  CustomPopupMenu selectedChoice = choices[0];
   void changeSelectedChoice(choice) {
-    this.selectedChoices = choice;
+    this.selectedChoice = choice;
     notifyListeners();
   }
 
-  Future<List> returnFuture(String mode) {
-    return this.selectedChoices.title == choices[0].title
+  Future<List> changeWallpaperFuture(choice, String mode) {
+    this.wallpaperFutureRefresh = choice.title == choices[0].title
         ? Data.getPrismWalls()
-        : this.selectedChoices.title == choices[2].title
+        : choice.title == choices[2].title
             ? WData.getData(mode)
-            : this.selectedChoices.title == choices[4].title
+            : choice.title == choices[4].title
                 ? WData.getLandscapeWalls(mode)
-                : this.selectedChoices.title == choices[6].title
+                : choice.title == choices[6].title
                     ? WData.get4KWalls(mode)
-                    : this.selectedChoices.title == choices[8].title
+                    : choice.title == choices[8].title
                         ? WData.getPatternWalls(mode)
-                        : this.selectedChoices.title == choices[10].title
+                        : choice.title == choices[10].title
                             ? WData.getAnimeWalls(mode)
-                            : this.selectedChoices.title == choices[12].title
+                            : choice.title == choices[12].title
                                 ? WData.getTechnologyWalls(mode)
-                                : this.selectedChoices.title ==
-                                        choices[14].title
+                                : choice.title == choices[14].title
                                     ? WData.getCodeWalls(mode)
-                                    : this.selectedChoices.title ==
-                                            choices[16].title
+                                    : choice.title == choices[16].title
                                         ? WData.getCarsWalls(mode)
-                                        : this.selectedChoices.title ==
-                                                choices[18].title
+                                        : choice.title == choices[18].title
                                             ? WData.getSkyscapeWalls(mode)
-                                            : this.selectedChoices.title ==
-                                                    choices[20].title
+                                            : choice.title == choices[20].title
                                                 ? WData.getArchitectureWalls(
                                                     mode)
-                                                : this.selectedChoices.title ==
+                                                : choice.title ==
                                                         choices[22].title
                                                     ? WData.getMarvelWalls(mode)
                                                     : WData.getData(mode);
+    notifyListeners();
   }
 }

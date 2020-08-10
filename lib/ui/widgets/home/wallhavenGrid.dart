@@ -95,7 +95,9 @@ class _WallHavenGridState extends State<WallHavenGrid>
     refreshHomeKey.currentState?.show(atTop: true);
     await Future.delayed(Duration(milliseconds: 500));
     WData.walls = [];
-    Provider.of<CategorySupplier>(context).returnFuture("r");
+    Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(
+        Provider.of<CategorySupplier>(context, listen: false).selectedChoice,
+        "r");
     return null;
   }
 
@@ -119,7 +121,11 @@ class _WallHavenGridState extends State<WallHavenGrid>
         onNotification: (ScrollNotification scrollInfo) {
           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
             if (!seeMoreLoader) {
-              Provider.of<CategorySupplier>(context).returnFuture("s");
+              Provider.of<CategorySupplier>(context, listen: false)
+                  .changeWallpaperFuture(
+                      Provider.of<CategorySupplier>(context, listen: false)
+                          .selectedChoice,
+                      "s");
 
               setState(() {
                 seeMoreLoader = true;
@@ -154,7 +160,12 @@ class _WallHavenGridState extends State<WallHavenGrid>
                       borderRadius: BorderRadius.circular(20)),
                   onPressed: () {
                     if (!seeMoreLoader) {
-                      Provider.of<CategorySupplier>(context).returnFuture("s");
+                      Provider.of<CategorySupplier>(context, listen: false)
+                          .changeWallpaperFuture(
+                              Provider.of<CategorySupplier>(context,
+                                      listen: false)
+                                  .selectedChoice,
+                              "s");
 
                       setState(() {
                         seeMoreLoader = true;
