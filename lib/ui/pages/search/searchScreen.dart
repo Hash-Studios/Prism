@@ -1,11 +1,12 @@
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
+    as WData;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/gridLoader.dart';
-import 'package:Prism/ui/widgets/home/homeGrid.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/searchGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -95,12 +96,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           onSubmitted: (tex) {
                             setState(() {
                               isSubmitted = true;
-                              Provider.of<WallHavenProvider>(context,
-                                      listen: false)
-                                  .wallsS = [];
-                              _future = Provider.of<WallHavenProvider>(context,
-                                      listen: false)
-                                  .getWallsbyQuery(tex);
+                              WData.wallsS = [];
+                              _future = WData.getWallsbyQuery(tex);
                             });
                           },
                         ),
@@ -148,13 +145,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                     setState(() {
                                       searchController.text = tags[index];
                                       isSubmitted = true;
-                                      Provider.of<WallHavenProvider>(context,
-                                              listen: false)
-                                          .wallsS = [];
-                                      _future = Provider.of<WallHavenProvider>(
-                                              context,
-                                              listen: false)
-                                          .getWallsbyQuery(tags[index]);
+                                      WData.wallsS = [];
+                                      _future =
+                                          WData.getWallsbyQuery(tags[index]);
                                     });
                                   }),
                             ),
@@ -170,7 +163,7 @@ class _SearchScreenState extends State<SearchScreen> {
             child: isSubmitted
                 ? SearchLoader(
                     future: _future,
-                    provider: searchController.text,
+                    query: searchController.text,
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -200,8 +193,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
 class SearchLoader extends StatefulWidget {
   final Future future;
-  final String provider;
-  SearchLoader({@required this.future, @required this.provider});
+  final String query;
+  SearchLoader({@required this.future, @required this.query});
   @override
   _SearchLoaderState createState() => _SearchLoaderState();
 }
@@ -214,8 +207,8 @@ class _SearchLoaderState extends State<SearchLoader>
 
   @override
   void initState() {
-    Provider.of<WallHavenProvider>(context, listen: false).wallsS = [];
-    Provider.of<WallHavenProvider>(context, listen: false).pageGetQuery = 1;
+    WData.wallsS = [];
+    WData.pageGetQuery = 1;
     _future = widget.future;
     super.initState();
     _controller = AnimationController(
@@ -289,8 +282,8 @@ class _SearchLoaderState extends State<SearchLoader>
           return LoadingCards(controller: controller, animation: animation);
         } else {
           // print("snapshot done");
-          return HomeGrid(
-            provider: widget.provider,
+          return SearchGrid(
+            query: widget.query,
           );
         }
       },
