@@ -16,46 +16,40 @@ List<Map<String, int>> pageNumbersP = categories
         category['provider'] == "Pexels" && category['type'] == 'search')
     .map((category) => {category['name']: 1});
 
-List<Map<String, Future<List<WallPaperP>> Function(String)>> functionsP =
-    categories
-        .where((category) =>
-            category['provider'] == "Pexels" && category['type'] == 'search')
-        .map((category) => {
-              category['name']: (String mode) async {
-                int index = pageNumbersP.indexOf(pageNumbersP.firstWhere(
-                    (element) => element.keys.toList()[0] == category['name']));
-                if (navStack.last == "Home") {
-                  http.get(
-                      "https://api.pexels.com/v1/search?query=${category['name']}&per_page=80&page=${pageNumbersP[index]}",
-                      headers: {
-                        "Authorization":
-                            "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-                      }).then(
-                    (http.Response response) {
-                      var resp = json.decode(response.body);
-                      for (int i = 0; i < resp["photos"].length; i++) {
-                        wallsP.add(
-                          WallPaperP(
-                              id: resp["photos"][i]["id"].toString(),
-                              url: resp["photos"][i]["url"],
-                              width: resp["photos"][i]["width"].toString(),
-                              height: resp["photos"][i]["height"].toString(),
-                              photographer: resp["photos"][i]["photographer"],
-                              src: resp["photos"][i]["src"],
-                              current_page: resp["page"]),
-                        );
-                      }
-                      pageNumbersP[index] = resp["page"] + 1;
-                      print("data done");
-                      return wallsP;
-                    },
-                  );
-                } else {
-                  print("Refresh Blocked");
-                }
-                return wallsP;
-              }
-            });
+Future<List<WallPaperP>> categoryDataFetcherP(
+    String categoryName, String mode) async {
+  int index = pageNumbersP.indexOf(pageNumbersP
+      .firstWhere((element) => element.keys.toList()[0] == categoryName));
+  if (navStack.last == "Home") {
+    http.get(
+        "https://api.pexels.com/v1/search?query=${categoryName}&per_page=80&page=${pageNumbersP[index]}",
+        headers: {
+          "Authorization":
+              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+        }).then(
+      (http.Response response) {
+        var resp = json.decode(response.body);
+        for (int i = 0; i < resp["photos"].length; i++) {
+          wallsP.add(
+            WallPaperP(
+                id: resp["photos"][i]["id"].toString(),
+                url: resp["photos"][i]["url"],
+                width: resp["photos"][i]["width"].toString(),
+                height: resp["photos"][i]["height"].toString(),
+                photographer: resp["photos"][i]["photographer"],
+                src: resp["photos"][i]["src"],
+                current_page: resp["page"]),
+          );
+        }
+        pageNumbersP[index] = resp["page"] + 1;
+        print("data done");
+        return wallsP;
+      },
+    );
+  } else {
+    print("Refresh Blocked");
+  }
+}
 
 // int pageAbstractP = 1;
 // int pageNatureP = 1;
