@@ -5,6 +5,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/themeModel.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
 class GeneralList extends StatelessWidget {
@@ -61,8 +62,10 @@ class GeneralList extends StatelessWidget {
                   "Clear locally cached images",
                   style: TextStyle(fontSize: 12),
                 ),
-                onTap: () {
+                onTap: () async {
                   DefaultCacheManager().emptyCache();
+                  await Hive.box('wallpapers').deleteFromDisk();
+                  await Hive.openBox('wallpapers');
                   toasts.codeSend("Cleared cache!");
                 }),
             ListTile(
