@@ -41,7 +41,7 @@ void main() {
     await remoteConfig.setDefaults(<String, dynamic>{
       'categories': categories.toString(),
     });
-    await remoteConfig.fetch(expiration: const Duration(seconds: 0));
+    await remoteConfig.fetch(expiration: const Duration(hours: 6));
     await remoteConfig.activateFetched();
     var cList = [];
     var tempVar = remoteConfig
