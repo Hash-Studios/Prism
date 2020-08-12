@@ -35,7 +35,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Both', 'result': 'Success'});
-        toasts.setWallpaper();
+        toasts.codeSend("Wallpaper set successfully!");
       } else {
         print("Failed");
         toasts.error("Something went wrong!");
@@ -64,7 +64,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Lock', 'result': 'Success'});
-        toasts.setWallpaper();
+        toasts.codeSend("Wallpaper set successfully!");
       } else {
         print("Failed");
         toasts.error("Something went wrong!");
@@ -93,7 +93,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Home', 'result': 'Success'});
-        toasts.setWallpaper();
+        toasts.codeSend("Wallpaper set successfully!");
       } else {
         print("Failed");
         toasts.error("Something went wrong!");

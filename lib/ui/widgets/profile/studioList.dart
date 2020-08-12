@@ -119,7 +119,7 @@ class _StudioListState extends State<StudioList> {
     PurchaseDetails purchase = _hasPurchased(productID);
     if (purchase != null) {
       if (purchase.status == PurchaseStatus.purchased) {
-        toasts.supportSuccess();
+        toasts.codeSend("Thanks for your support! It means a lot.");
       }
     } else {
       toasts.error("Invalid Purchase!");

@@ -63,7 +63,7 @@ class GeneralList extends StatelessWidget {
                 ),
                 onTap: () {
                   DefaultCacheManager().emptyCache();
-                  toasts.clearCache();
+                  toasts.codeSend("Cleared cache!");
                 }),
             ListTile(
               onTap: () {

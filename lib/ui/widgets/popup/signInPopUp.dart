@@ -223,7 +223,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     context: context,
                     builder: (BuildContext context) => loaderDialog);
                 globals.gAuth.signInWithGoogle().then((value) {
-                  toasts.successLog();
+                  toasts.codeSend("Login Successful!");
                   main.prefs.put("isLoggedin", true);
                   Navigator.pop(context);
                   func();

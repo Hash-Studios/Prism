@@ -95,13 +95,13 @@ class _DownloadButtonState extends State<DownloadButton> {
           isLoading = true;
         });
         print(widget.link);
-        toasts.startDownload();
+        toasts.codeSend("Starting Download");
         Future.delayed(Duration(seconds: 2)).then(
           (value) => GallerySaver.saveImage(widget.link, albumName: "Prism")
               .then((value) {
             analytics.logEvent(
                 name: 'download_wallpaper', parameters: {'link': widget.link});
-            toasts.completedDownload();
+            toasts.codeSend("Image Downloaded in Pictures/Prism!");
             setState(() {
               isLoading = false;
             });
@@ -126,11 +126,11 @@ class _DownloadButtonState extends State<DownloadButton> {
         isLoading = true;
       });
       print(widget.link);
-      toasts.startDownload();
+      toasts.codeSend("Starting Download");
       GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
         analytics.logEvent(
             name: 'download_wallpaper', parameters: {'link': widget.link});
-        toasts.completedDownload();
+        toasts.codeSend("Image Downloaded in Pictures/Prism!");
         setState(() {
           isLoading = false;
         });

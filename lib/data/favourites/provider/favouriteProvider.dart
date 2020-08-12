@@ -117,9 +117,9 @@ class FavouriteProvider extends ChangeNotifier {
         if (index == null) {
           print("Fav");
           createDataByWall(provider, wallhaven, pexels, prism);
-          toasts.favWall();
+          toasts.codeSend("Wallpaper added to favourites!");
         } else {
-          toasts.unfavWall();
+          toasts.error("Wallpaper removed from favourites!");
           deleteDataByID(id);
           return false;
         }
