@@ -146,18 +146,3 @@ final List categories = [
     'type': 'search',
   },
 ];
-
-final int pCounter = categories
-    .where((category) =>
-        category['provider'] == "Prism" && category['type'] == 'search')
-    .length;
-
-final int whCounter = categories
-    .where((category) =>
-        category['provider'] == "WallHaven" && category['type'] == 'search')
-    .length;
-
-final int pexelsCounter = categories
-    .where((category) =>
-        category['provider'] == "Pexels" && category['type'] == 'search')
-    .length;
