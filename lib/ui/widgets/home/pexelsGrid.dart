@@ -128,6 +128,7 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
               });
             }
           }
+          return false;
         },
         child: GridView.builder(
           controller: controller,

@@ -56,15 +56,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
       isLoading = true;
     });
     try {
-      image = new CachedNetworkImageProvider(thumb, errorListener: () {
-        colors = [
-          Color(0xFFFFFFFF),
-          Color(0xFFc7c7c7),
-          Color(0xFF848484),
-          Color(0xFF3d3d3d),
-          Color(0xFF000000)
-        ];
-      });
+      image = new CachedNetworkImageProvider(thumb);
     } catch (e) {
       // toasts.error(e.toString());
     }
