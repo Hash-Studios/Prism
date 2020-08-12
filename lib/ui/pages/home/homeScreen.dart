@@ -1,6 +1,7 @@
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/home/pexelsGrid.dart';
 import 'package:Prism/ui/widgets/home/wallhavenGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
@@ -200,19 +201,29 @@ class _HomeScreenState extends State<HomeScreen> {
             default:
               if (snapshot.hasError)
                 return new Text('Error: ${snapshot.error}');
-              else if (Provider.of<CategorySupplier>(context)
-                      .selectedChoice
-                      .provider ==
-                  "WallHaven") {
-                return new WallHavenGrid(
-                    provider: Provider.of<CategorySupplier>(context)
+              else {
+                if (Provider.of<CategorySupplier>(context)
                         .selectedChoice
-                        .provider);
-              } else {
-                return new WallpaperGrid(
-                    provider: Provider.of<CategorySupplier>(context)
+                        .provider ==
+                    "WallHaven") {
+                  return new WallHavenGrid(
+                      provider: Provider.of<CategorySupplier>(context)
+                          .selectedChoice
+                          .provider);
+                } else if (Provider.of<CategorySupplier>(context)
                         .selectedChoice
-                        .provider);
+                        .provider ==
+                    "Pexels") {
+                  return new PexelsGrid(
+                      provider: Provider.of<CategorySupplier>(context)
+                          .selectedChoice
+                          .provider);
+                } else {
+                  return new WallpaperGrid(
+                      provider: Provider.of<CategorySupplier>(context)
+                          .selectedChoice
+                          .provider);
+                }
               }
           }
         },

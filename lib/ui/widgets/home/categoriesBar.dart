@@ -630,7 +630,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                         children: <Widget>[
                           Icon(choice.icon),
                           SizedBox(width: 10),
-                          Text(choice.title),
+                          Text(choice.name),
                         ],
                       ),
                     );
