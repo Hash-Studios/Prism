@@ -1,7 +1,7 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
-import 'package:Prism/global/customPopupMenu.dart';
+import 'package:Prism/global/customPopupMenu2.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -28,8 +28,8 @@ class _SearchScreenState extends State<SearchScreen> {
   String selectedProvider;
   var selectedProviders;
   final List providers = [
-    CustomPopupMenu(title: 'WallHaven', icon: JamIcons.pizza_slice),
-    CustomPopupMenu(title: 'Pexels', icon: JamIcons.pizza_slice)
+    CustomPopupMenu2(title: 'WallHaven', icon: JamIcons.pizza_slice),
+    CustomPopupMenu2(title: 'Pexels', icon: JamIcons.pizza_slice)
   ];
   final List<String> tags = [
     'Art',
