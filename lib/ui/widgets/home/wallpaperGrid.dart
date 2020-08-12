@@ -1,9 +1,13 @@
+// import 'package:Prism/routes/router.dart' as router;
+// import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
+// import 'package:Prism/ui/pages/home/wallpaperScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
+// import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -170,27 +174,63 @@ class _WallpaperGridState extends State<WallpaperGrid>
                         print('${offsetAnimation.value + 8.0}');
                       return GestureDetector(
                         child: Padding(
-                          padding: index == longTapIndex
-                              ? EdgeInsets.symmetric(
-                                  vertical: offsetAnimation.value / 2,
-                                  horizontal: offsetAnimation.value)
-                              : EdgeInsets.all(0),
-                          child: Container(
-                            decoration: Data.subPrismWalls.length == 0
-                                ? BoxDecoration(
-                                    color: animation.value,
-                                    borderRadius: BorderRadius.circular(20),
-                                  )
-                                : BoxDecoration(
-                                    color: animation.value,
-                                    borderRadius: BorderRadius.circular(20),
-                                    image: DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                            Data.subPrismWalls[index]
-                                                ["wallpaper_thumb"]),
-                                        fit: BoxFit.cover)),
-                          ),
-                        ),
+                            padding: index == longTapIndex
+                                ? EdgeInsets.symmetric(
+                                    vertical: offsetAnimation.value / 2,
+                                    horizontal: offsetAnimation.value)
+                                : EdgeInsets.all(0),
+                            child:
+                                //  OpenContainer(
+                                // transitionDuration: Duration(milliseconds: 300),
+                                // closedColor: Colors.transparent,
+                                // closedElevation: 0,
+                                // openElevation: 10,
+                                // openColor: Colors.transparent,
+                                // onClosed: (data) {
+                                //   if (router.navStack.length > 1)
+                                //     router.navStack.removeLast();
+                                //   print(router.navStack);
+                                // },
+                                // closedShape: RoundedRectangleBorder(
+                                //     borderRadius: BorderRadius.circular(20)),
+                                // openShape: RoundedRectangleBorder(
+                                //     borderRadius: BorderRadius.circular(20)),
+                                // openBuilder: (context, action) {
+                                //   if (Data.subPrismWalls != []) {
+                                //     if (router.navStack.last != "Wallpaper")
+                                //       router.navStack.add("Wallpaper");
+                                //     print(router.navStack);
+                                //     router.SecureWindow();
+                                //     analytics.setCurrentScreen(
+                                //         screenName: WallpaperRoute);
+                                //     return WallpaperScreen(arguments: [
+                                //       widget.provider,
+                                //       index,
+                                //       Data.subPrismWalls[index]["wallpaper_thumb"],
+                                //     ]);
+                                //   }
+                                // },
+                                // closedBuilder: (context, action) {
+                                //   return
+                                Container(
+                              decoration: Data.subPrismWalls.length == 0
+                                  ? BoxDecoration(
+                                      color: animation.value,
+                                      borderRadius: BorderRadius.circular(20),
+                                    )
+                                  : BoxDecoration(
+                                      color: animation.value,
+                                      borderRadius: BorderRadius.circular(20),
+                                      image: DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                              Data.subPrismWalls[index]
+                                                  ["wallpaper_thumb"]),
+                                          fit: BoxFit.cover)),
+                            )
+                            // ;
+                            // },
+                            // ),
+                            ),
                         onTap: () {
                           if (Data.subPrismWalls == []) {
                           } else {
