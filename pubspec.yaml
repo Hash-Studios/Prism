@@ -52,6 +52,7 @@ dependencies:
   flutter_windowmanager: ^0.0.2
   purchases_flutter: ^1.2.1
   firebase_remote_config: ^0.3.1+1
+  animations: ^1.1.2
 
 dependency_overrides:
   image: 2.1.12

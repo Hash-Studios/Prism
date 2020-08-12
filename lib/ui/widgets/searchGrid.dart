@@ -134,6 +134,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               });
             }
           }
+          return false;
         },
         child: GridView.builder(
           controller: controller,
