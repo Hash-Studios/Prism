@@ -7,6 +7,7 @@ import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -197,7 +198,7 @@ class _WallHavenGridState extends State<WallHavenGrid>
                                     color: animation.value,
                                     borderRadius: BorderRadius.circular(20),
                                     image: DecorationImage(
-                                        image: NetworkImage(WData
+                                        image: CachedNetworkImageProvider(WData
                                             .walls[index].thumbs["original"]),
                                         fit: BoxFit.cover)),
                           ),
