@@ -73,7 +73,13 @@ Future<List<WallPaperP>> categoryDataFetcherP(
 // int pageSportsP = 1;
 // int pageMusicP = 1;
 int pageColorsP = 1;
-Future<List<WallPaperP>> getDataP() async {
+Future<List<WallPaperP>> getDataP(String mode) async {
+  if (mode == "r") {
+    wallsP = [];
+    pageGetDataP = 1;
+  } else {
+    pageGetDataP = pageGetDataP + 1;
+  }
   if (navStack.last == "Home") {
     http.get(
         "https://api.pexels.com/v1/curated?per_page=24&page=${pageGetDataP}",

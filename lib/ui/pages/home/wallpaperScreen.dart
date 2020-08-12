@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
@@ -17,7 +17,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:palette_generator/palette_generator.dart';
-import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:tutorial_coach_mark/animated_focus_light.dart';
@@ -1301,19 +1300,22 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   .width *
                                               .8,
                                           child: Text(
-                                            Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                                ? Provider.of<PexelsProvider>(context, listen: false)
-                                                        .wallsP[index]
-                                                        .url
+                                            PData.wallsP[index].url
+                                                        .toString()
+                                                        .replaceAll(
+                                                            "https://www.pexels.com/photo/", "")
+                                                        .replaceAll("-", " ")
+                                                        .replaceAll("/", "")
+                                                        .length >
+                                                    8
+                                                ? PData.wallsP[index].url
                                                         .toString()
                                                         .replaceAll(
                                                             "https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")[0]
                                                         .toUpperCase() +
-                                                    Provider.of<PexelsProvider>(context, listen: false)
-                                                        .wallsP[index]
-                                                        .url
+                                                    PData.wallsP[index].url
                                                         .toString()
                                                         .replaceAll(
                                                             "https://www.pexels.com/photo/", "")
@@ -1321,22 +1323,16 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         .replaceAll("/", "")
                                                         .substring(
                                                             1,
-                                                            Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                            PData.wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
                                                                 7)
-                                                : Provider.of<PexelsProvider>(context, listen: false)
-                                                        .wallsP[index]
-                                                        .url
+                                                : PData.wallsP[index].url
                                                         .toString()
                                                         .replaceAll(
                                                             "https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")[0]
                                                         .toUpperCase() +
-                                                    Provider.of<PexelsProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .wallsP[index]
-                                                        .url
+                                                    PData.wallsP[index].url
                                                         .toString()
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
@@ -1378,10 +1374,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                 .width *
                                                             .4,
                                                     child: Text(
-                                                      Provider.of<PexelsProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .wallsP[index]
+                                                      PData.wallsP[index]
                                                           .photographer
                                                           .toString(),
                                                       textAlign: TextAlign.left,
@@ -1402,7 +1395,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].height.toString()}",
+                                                    "${PData.wallsP[index].width.toString()}x${PData.wallsP[index].height.toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -1421,11 +1414,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               Row(
                                                 children: [
                                                   Text(
-                                                    Provider.of<PexelsProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .wallsP[index]
-                                                        .id
+                                                    PData.wallsP[index].id
                                                         .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
@@ -1474,49 +1463,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         colorChanged: colorChanged,
                                         link: screenshotTaken
                                             ? _imageFile.path
-                                            : Provider.of<PexelsProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .wallsP[index]
-                                                .src["original"]
+                                            : PData
+                                                .wallsP[index].src["original"]
                                                 .toString()),
                                     SetWallpaperButton(
                                         colorChanged: colorChanged,
                                         url: screenshotTaken
                                             ? _imageFile.path
-                                            : Provider.of<PexelsProvider>(
-                                                    context)
-                                                .wallsP[index]
-                                                .src["original"]),
+                                            : PData
+                                                .wallsP[index].src["original"]),
                                     FavouriteWallpaperButton(
-                                      id: Provider.of<PexelsProvider>(context,
-                                              listen: false)
-                                          .wallsP[index]
-                                          .id
-                                          .toString(),
+                                      id: PData.wallsP[index].id.toString(),
                                       provider: "Pexels",
-                                      pexels: Provider.of<PexelsProvider>(
-                                              context,
-                                              listen: false)
-                                          .wallsP[index],
+                                      pexels: PData.wallsP[index],
                                       trash: false,
                                     ),
                                     ShareButton(
-                                        id: Provider.of<PexelsProvider>(context,
-                                                listen: false)
-                                            .wallsP[index]
-                                            .id,
+                                        id: PData.wallsP[index].id,
                                         provider: provider,
-                                        url: Provider.of<PexelsProvider>(
-                                                context,
-                                                listen: false)
-                                            .wallsP[index]
-                                            .src["original"],
-                                        thumbUrl: Provider.of<PexelsProvider>(
-                                                context,
-                                                listen: false)
-                                            .wallsP[index]
-                                            .src["medium"])
+                                        url:
+                                            PData.wallsP[index].src["original"],
+                                        thumbUrl:
+                                            PData.wallsP[index].src["medium"])
                                   ],
                                 ),
                               ),
@@ -1533,9 +1501,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   return GestureDetector(
                                     child: CachedNetworkImage(
                                       imageUrl:
-                                          Provider.of<PexelsProvider>(context)
-                                              .wallsP[index]
-                                              .src["portrait"],
+                                          PData.wallsP[index].src["portrait"],
                                       imageBuilder: (context, imageProvider) =>
                                           Screenshot(
                                         controller: screenshotController,
@@ -1631,11 +1597,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   onPressed: () {
-                                    var link = Provider.of<PexelsProvider>(
-                                            context,
-                                            listen: false)
-                                        .wallsP[index]
-                                        .src["portrait"];
+                                    var link =
+                                        PData.wallsP[index].src["portrait"];
                                     Navigator.push(
                                         context,
                                         PageRouteBuilder(
@@ -1835,21 +1798,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       .width *
                                                   .8,
                                               child: Text(
-                                                Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                                    ? Provider.of<PexelsProvider>(context, listen: false)
-                                                            .wallsC[index]
-                                                            .url
-                                                            .toString()
-                                                            .replaceAll(
-                                                                "https://www.pexels.com/photo/", "")
-                                                            .replaceAll(
-                                                                "-", " ")
-                                                            .replaceAll(
-                                                                "/", "")[0]
-                                                            .toUpperCase() +
-                                                        Provider.of<PexelsProvider>(context, listen: false)
-                                                            .wallsC[index]
-                                                            .url
+                                                PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                                    ? PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
+                                                        PData.wallsC[index].url
                                                             .toString()
                                                             .replaceAll(
                                                                 "https://www.pexels.com/photo/", "")
@@ -1858,18 +1809,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                             .replaceAll("/", "")
                                                             .substring(
                                                                 1,
-                                                                Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                                PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
                                                                     7)
-                                                    : Provider.of<PexelsProvider>(context, listen: false)
-                                                            .wallsC[index]
-                                                            .url
+                                                    : PData.wallsC[index].url
                                                             .toString()
                                                             .replaceAll(
                                                                 "https://www.pexels.com/photo/", "")
-                                                            .replaceAll("-", " ")
-                                                            .replaceAll("/", "")[0]
+                                                            .replaceAll(
+                                                                "-", " ")
+                                                            .replaceAll(
+                                                                "/", "")[0]
                                                             .toUpperCase() +
-                                                        Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
+                                                        PData.wallsC[index].url
+                                                            .toString()
+                                                            .replaceAll(
+                                                                "https://www.pexels.com/photo/",
+                                                                "")
+                                                            .replaceAll("-", " ")
+                                                            .replaceAll("/", "")
+                                                            .substring(1),
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText1,
@@ -1906,10 +1864,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                 .width *
                                                             .4,
                                                         child: Text(
-                                                          Provider.of<PexelsProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .wallsC[index]
+                                                          PData.wallsC[index]
                                                               .photographer
                                                               .toString(),
                                                           textAlign:
@@ -1932,7 +1887,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       ),
                                                       SizedBox(width: 10),
                                                       Text(
-                                                        "${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].height.toString()}",
+                                                        "${PData.wallsC[index].width.toString()}x${PData.wallsC[index].height.toString()}",
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyText2,
@@ -1951,11 +1906,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        Provider.of<PexelsProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .wallsC[index]
-                                                            .id
+                                                        PData.wallsC[index].id
                                                             .toString(),
                                                         style: Theme.of(context)
                                                             .textTheme
@@ -2004,53 +1955,29 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           colorChanged: colorChanged,
                                           link: screenshotTaken
                                               ? _imageFile.path
-                                              : Provider.of<PexelsProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .wallsC[index]
-                                                  .src["original"]
+                                              : PData
+                                                  .wallsC[index].src["original"]
                                                   .toString(),
                                         ),
                                         SetWallpaperButton(
                                             colorChanged: colorChanged,
                                             url: screenshotTaken
                                                 ? _imageFile.path
-                                                : Provider.of<PexelsProvider>(
-                                                        context)
-                                                    .wallsC[index]
+                                                : PData.wallsC[index]
                                                     .src["original"]),
                                         FavouriteWallpaperButton(
-                                          id: Provider.of<PexelsProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .wallsC[index]
-                                              .id
-                                              .toString(),
+                                          id: PData.wallsC[index].id.toString(),
                                           provider: "Pexels",
-                                          pexels: Provider.of<PexelsProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .wallsC[index],
+                                          pexels: PData.wallsC[index],
                                           trash: false,
                                         ),
                                         ShareButton(
-                                            id: Provider.of<PexelsProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .wallsC[index]
-                                                .id,
+                                            id: PData.wallsC[index].id,
                                             provider: "Pexels",
-                                            url: Provider.of<PexelsProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .wallsC[index]
-                                                .src["original"],
-                                            thumbUrl:
-                                                Provider.of<PexelsProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .wallsC[index]
-                                                    .src["medium"])
+                                            url: PData
+                                                .wallsC[index].src["original"],
+                                            thumbUrl: PData
+                                                .wallsC[index].src["medium"])
                                       ],
                                     ),
                                   ),
@@ -2059,8 +1986,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             ),
                             body: Stack(
                               children: <Widget>[
-                                Provider.of<PexelsProvider>(context).wallsC ==
-                                        null
+                                PData.wallsC == null
                                     ? Container()
                                     : AnimatedBuilder(
                                         animation: offsetAnimation,
@@ -2070,12 +1996,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 '${offsetAnimation.value + 8.0}');
                                           return GestureDetector(
                                             child: CachedNetworkImage(
-                                              imageUrl:
-                                                  Provider.of<PexelsProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .wallsC[index]
-                                                      .src["portrait"],
+                                              imageUrl: PData.wallsC[index]
+                                                  .src["portrait"],
                                               imageBuilder:
                                                   (context, imageProvider) =>
                                                       Screenshot(
@@ -2187,11 +2109,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding: const EdgeInsets.all(8.0),
                                     child: IconButton(
                                       onPressed: () {
-                                        var link = Provider.of<PexelsProvider>(
-                                                context,
-                                                listen: false)
-                                            .wallsC[index]
-                                            .src["portrait"];
+                                        var link =
+                                            PData.wallsC[index].src["portrait"];
                                         Navigator.push(
                                             context,
                                             PageRouteBuilder(
