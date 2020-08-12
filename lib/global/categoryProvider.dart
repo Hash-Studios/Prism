@@ -4,6 +4,7 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/global/categoryMenu.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/cupertino.dart';
 
 final List choices = categories
@@ -11,16 +12,21 @@ final List choices = categories
       (category) => CategoryMenu(
         name: category['name'],
         provider: category['provider'],
-        icon: category['icon'],
+        icon: JamIcons.arrow_right,
       ),
     )
     .toList();
 
 class CategorySupplier extends ChangeNotifier {
-  Future<List> wallpaperFutureRefresh = Data.getPrismWalls();
-  Future<List> home() async {
-    Data.getPrismWalls();
-  }
+  Future<List> wallpaperFutureRefresh = categories[0]['type'] == 'non-search'
+      ? categories[0]['name'] == 'Popular'
+          ? WData.getData("r")
+          : categories[0]['name'] == 'Curated'
+              ? PData.getDataP("r")
+              : categories[0]['name'] == 'Community'
+                  ? Data.getPrismWalls()
+                  : Data.getPrismWalls()
+      : Data.getPrismWalls();
 
   CategoryMenu selectedChoice = choices[0];
   void changeSelectedChoice(choice) {
