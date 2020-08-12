@@ -27,6 +27,7 @@ class _BottomBarState extends State<BottomBar>
   AnimationController _controller;
   Animation<Offset> _offsetAnimation;
   bool isScrollingDown = false;
+  bool isOnTop = true;
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _BottomBarState extends State<BottomBar>
           ScrollDirection.reverse) {
         if (!isScrollingDown) {
           isScrollingDown = true;
+          isOnTop = false;
           hideBottomBar();
         }
       }
@@ -73,6 +75,7 @@ class _BottomBarState extends State<BottomBar>
           ScrollDirection.forward) {
         if (isScrollingDown) {
           isScrollingDown = false;
+          isOnTop = true;
           showBottomBar();
         }
       }
@@ -102,7 +105,31 @@ class _BottomBarState extends State<BottomBar>
             position: _offsetAnimation,
             child: BottomNavBar(),
           ),
-        )
+        ),
+        isOnTop
+            ? Container()
+            : Positioned(
+                right: 10,
+                bottom: 10,
+                child: FloatingActionButton(
+                  mini: true,
+                  onPressed: () {
+                    scrollBottomBarController
+                        .animateTo(
+                            scrollBottomBarController.position.minScrollExtent,
+                            duration: Duration(milliseconds: 500),
+                            curve: Curves.easeIn)
+                        .then((value) {
+                      setState(() {
+                        isOnTop = true;
+                        isScrollingDown = false;
+                      });
+                      showBottomBar();
+                    });
+                  },
+                  child: Icon(JamIcons.arrow_up),
+                ),
+              )
       ],
     );
   }
