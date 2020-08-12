@@ -26,6 +26,7 @@ const String SetupRoute = '/setups';
 const String SetupViewRoute = '/setupsview';
 const String UploadWallRoute = '/uploadw';
 const String ProfileWallViewRoute = '/profilew';
+const String UserProfileWallViewRoute = '/uprofilew';
 const String ThemeViewRoute = '/themes';
 const String PremiumRoute = '/buyPremium';
 const String PhotographerProfileRoute = '/phprofile';

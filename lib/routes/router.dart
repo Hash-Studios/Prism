@@ -12,6 +12,7 @@ import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
 import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
 import 'package:Prism/ui/pages/profile/themeView.dart';
+import 'package:Prism/ui/pages/profile/userProfileWallViewScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/pages/search/searchWallpaperScreen.dart';
 import 'package:Prism/ui/pages/setupScreen.dart';
@@ -64,7 +65,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("User Profile");
       print(navStack);
       analytics.setCurrentScreen(screenName: PhotographerProfileRoute);
-      return CupertinoPageRoute(builder: (context) => UserProfile());
+      return CupertinoPageRoute(
+          builder: (context) => UserProfile(settings.arguments));
     case DownloadRoute:
       navStack.add("Downloads");
       print(navStack);
@@ -136,10 +138,17 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case ProfileWallViewRoute:
       navStack.add("ProfileWallpaper");
       print(navStack);
-      analytics.setCurrentScreen(screenName: FavWallViewRoute);
+      analytics.setCurrentScreen(screenName: ProfileWallViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
               ProfileWallViewScreen(arguments: settings.arguments));
+    case UserProfileWallViewRoute:
+      navStack.add("User ProfileWallpaper");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: UserProfileWallViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              UserProfileWallViewScreen(arguments: settings.arguments));
     case ThemeViewRoute:
       navStack.add("Themes");
       print(navStack);
