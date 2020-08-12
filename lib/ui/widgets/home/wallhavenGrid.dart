@@ -131,6 +131,7 @@ class _WallHavenGridState extends State<WallHavenGrid>
               });
             }
           }
+          return false;
         },
         child: GridView.builder(
           controller: controller,
