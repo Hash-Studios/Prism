@@ -1,37 +1,57 @@
 import 'dart:async';
-import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/profile/profileLoader.dart';
+import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
 import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
 
 class UserProfile extends StatefulWidget {
+  final List arguments;
+  UserProfile(this.arguments);
   @override
   _UserProfileState createState() => _UserProfileState();
 }
 
 class _UserProfileState extends State<UserProfile> {
+  Future<bool> onWillPop() async {
+    if (navStack.length > 1) navStack.removeLast();
+    print(navStack);
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ProfileChild(),
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: Scaffold(
+        body: UserProfileChild(arguments: widget.arguments),
+      ),
     );
   }
 }
 
-class ProfileChild extends StatefulWidget {
+class UserProfileChild extends StatefulWidget {
+  final List arguments;
+  UserProfileChild({@required this.arguments});
   @override
-  _ProfileChildState createState() => _ProfileChildState();
+  _UserProfileChildState createState() => _UserProfileChildState();
 }
 
-class _ProfileChildState extends State<ProfileChild> {
+class _UserProfileChildState extends State<UserProfileChild> {
   int profileCount = 0;
+  String name;
+  String email;
+  String userPhoto;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {
+    name = widget.arguments[0];
+    email = widget.arguments[1];
+    userPhoto = widget.arguments[2];
     super.initState();
   }
 
@@ -69,7 +89,7 @@ class _ProfileChildState extends State<ProfileChild> {
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Spacer(flex: 5),
-                              main.prefs.get("googleimage") == null
+                              userPhoto == null
                                   ? Container()
                                   : Container(
                                       decoration: BoxDecoration(
@@ -84,61 +104,21 @@ class _ProfileChildState extends State<ProfileChild> {
                                           ]),
                                       child: CircleAvatar(
                                         radius: 50,
-                                        backgroundImage: NetworkImage(
-                                            main.prefs.get("googleimage")),
+                                        backgroundImage:
+                                            NetworkImage(userPhoto),
                                       ),
                                     ),
                               Spacer(flex: 2),
-                              main.prefs.get("name") == null
+                              name == null
                                   ? Container()
-                                  : !main.prefs.get('premium')
-                                      ? Text(
-                                          main.prefs.get("name"),
-                                          style: TextStyle(
-                                              fontFamily: "Proxima Nova",
-                                              color: Colors.white,
-                                              fontSize: 32,
-                                              fontWeight: FontWeight.w700),
-                                        )
-                                      : Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: <Widget>[
-                                            Text(
-                                              main.prefs.get("name"),
-                                              style: TextStyle(
-                                                  fontFamily: "Proxima Nova",
-                                                  color: Colors.white,
-                                                  fontSize: 32,
-                                                  fontWeight: FontWeight.w700),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 8.0),
-                                              child: Container(
-                                                padding: EdgeInsets.symmetric(
-                                                    vertical: 3, horizontal: 5),
-                                                decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            50),
-                                                    color: Color(0xFFFFFFFF)),
-                                                child: Text(
-                                                  "PRO",
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText2
-                                                      .copyWith(
-                                                          fontSize: 10,
-                                                          color: Color(
-                                                              0xFFE57697)),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
+                                  : Text(
+                                      name,
+                                      style: TextStyle(
+                                          fontFamily: "Proxima Nova",
+                                          color: Colors.white,
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.w700),
+                                    ),
                               Spacer(flex: 1),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -148,11 +128,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                   Row(
                                     children: <Widget>[
                                       Text(
-                                        Provider.of<ProfileWallProvider>(
-                                                    context)
-                                                .len
-                                                .toString() +
-                                            " ",
+                                        UserData.len.toString() + " ",
                                         style: TextStyle(
                                             fontFamily: "Proxima Nova",
                                             fontSize: 24,
@@ -180,9 +156,9 @@ class _ProfileChildState extends State<ProfileChild> {
             ],
             body: Padding(
               padding: const EdgeInsets.only(top: 5.0),
-              child: ProfileLoader(
-                future: Provider.of<ProfileWallProvider>(context, listen: false)
-                    .getProfileWalls(),
+              child: UserProfileLoader(
+                email: email,
+                future: UserData.getuserProfileWalls(email),
               ),
             ),
           ),

@@ -853,8 +853,20 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ],
                                         ),
                                         onTap: () {
-                                          Navigator.pushNamed(context,
-                                              PhotographerProfileRoute);
+                                          SystemChrome
+                                              .setEnabledSystemUIOverlays([
+                                            SystemUiOverlay.top,
+                                            SystemUiOverlay.bottom
+                                          ]);
+                                          Navigator.pushNamed(
+                                              context, PhotographerProfileRoute,
+                                              arguments: [
+                                                Data.subPrismWalls[index]["by"],
+                                                Data.subPrismWalls[index]
+                                                    ["email"],
+                                                Data.subPrismWalls[index]
+                                                    ["userPhoto"]
+                                              ]);
                                         },
                                       ),
                                       SizedBox(height: 5),
