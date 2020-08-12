@@ -8,10 +8,7 @@ import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
-import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
-import 'package:Prism/data/prism/provider/prismProvider.dart';
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
@@ -54,12 +51,6 @@ void main() {
                 RestartWidget(
                   child: MultiProvider(
                     providers: [
-                      ChangeNotifierProvider<WallHavenProvider>(
-                        create: (context) => WallHavenProvider(),
-                      ),
-                      ChangeNotifierProvider<PexelsProvider>(
-                        create: (context) => PexelsProvider(),
-                      ),
                       ChangeNotifierProvider<TabProvider>(
                         create: (context) => TabProvider(),
                       ),
@@ -71,9 +62,6 @@ void main() {
                       ),
                       ChangeNotifierProvider<SetupProvider>(
                         create: (context) => SetupProvider(),
-                      ),
-                      ChangeNotifierProvider<PrismProvider>(
-                        create: (context) => PrismProvider(),
                       ),
                       ChangeNotifierProvider<ProfileWallProvider>(
                         create: (context) => ProfileWallProvider(),

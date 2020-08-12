@@ -368,7 +368,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
 
                             if (appData.isPro) {
                               main.prefs.put('premium', appData.isPro);
-                              toasts.premiumSuccess();
+                              toasts.codeSend("You are now a premium member.");
                               // Alert(
                               //   context: context,
                               //   style: kWelcomeAlertStyle,
@@ -866,7 +866,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                     print('is user pro? ${appData.isPro}');
 
                     if (appData.isPro) {
-                      toasts.premiumSuccess();
+                      toasts.codeSend("You are now a premium member.");
                       // Alert(
                       //   context: context,
                       //   style: kWelcomeAlertStyle,

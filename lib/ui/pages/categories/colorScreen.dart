@@ -1,11 +1,10 @@
-import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/home/gridLoader.dart';
+import 'package:Prism/ui/widgets/home/colorLoader.dart';
 import 'package:Prism/ui/widgets/home/headingChipBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:provider/provider.dart';
 
 class ColorScreen extends StatelessWidget {
   final List arguments;
@@ -39,9 +38,8 @@ class ColorScreen extends StatelessWidget {
             preferredSize: Size(double.infinity, 55),
           ),
           body: BottomBar(
-            child: GridLoader(
-              future: Provider.of<PexelsProvider>(context, listen: false)
-                  .getWallsPbyColor("color: ${arguments[0]}"),
+            child: ColorLoader(
+              future: PData.getWallsPbyColor("color: ${arguments[0]}"),
               provider: "Colors - color: ${arguments[0]}",
             ),
           )),

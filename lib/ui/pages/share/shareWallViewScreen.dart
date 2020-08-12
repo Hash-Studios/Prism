@@ -1,8 +1,9 @@
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
-import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
+    as WData;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -16,7 +17,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:palette_generator/palette_generator.dart';
-import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'dart:io';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -105,14 +105,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
     thumb = widget.arguments[3];
     isLoading = true;
     if (provider == "WallHaven") {
-      future = Provider.of<WallHavenProvider>(context, listen: false)
-          .getWallbyID(id);
+      future = WData.getWallbyID(id);
     } else if (provider == "Pexels") {
-      future =
-          Provider.of<PexelsProvider>(context, listen: false).getWallbyIDP(id);
+      future = PData.getWallbyIDP(id);
     } else if (provider == "Prism") {
-      future =
-          Data.getDataByID(id);
+      future = Data.getDataByID(id);
     }
     _updatePaletteGenerator();
     super.initState();
@@ -332,7 +329,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               ),
                                               SizedBox(width: 10),
                                               Text(
-                                                "${Provider.of<WallHavenProvider>(context).wall == null ? 0 : Provider.of<WallHavenProvider>(context).wall.views.toString()}",
+                                                "${WData.wall == null ? 0 : WData.wall.views.toString()}",
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
@@ -349,7 +346,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               ),
                                               SizedBox(width: 10),
                                               Text(
-                                                "${Provider.of<WallHavenProvider>(context).wall == null ? 0 : Provider.of<WallHavenProvider>(context).wall.favourites.toString()}",
+                                                "${WData.wall == null ? 0 : WData.wall.favourites.toString()}",
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
@@ -366,7 +363,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               ),
                                               SizedBox(width: 10),
                                               Text(
-                                                "${Provider.of<WallHavenProvider>(context).wall == null ? 0 : (double.parse(((double.parse(Provider.of<WallHavenProvider>(context).wall.file_size.toString()) / 1000000).toString())).toStringAsFixed(2))} MB",
+                                                "${WData.wall == null ? 0 : (double.parse(((double.parse(WData.wall.file_size.toString()) / 1000000).toString())).toStringAsFixed(2))} MB",
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
@@ -388,21 +385,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             child: Row(
                                               children: [
                                                 Text(
-                                                  Provider.of<WallHavenProvider>(
-                                                                  context)
-                                                              .wall ==
-                                                          null
+                                                  WData.wall == null
                                                       ? "General"
-                                                      : (Provider.of<WallHavenProvider>(
-                                                                  context)
-                                                              .wall
-                                                              .category
+                                                      : (WData.wall.category
                                                               .toString()[0]
                                                               .toUpperCase() +
-                                                          Provider.of<WallHavenProvider>(
-                                                                  context)
-                                                              .wall
-                                                              .category
+                                                          WData.wall.category
                                                               .toString()
                                                               .substring(1)),
                                                   style: Theme.of(context)
@@ -422,7 +410,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           Row(
                                             children: [
                                               Text(
-                                                "${Provider.of<WallHavenProvider>(context).wall == null ? 0x0 : Provider.of<WallHavenProvider>(context).wall.resolution.toString()}",
+                                                "${WData.wall == null ? 0x0 : WData.wall.resolution.toString()}",
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
@@ -468,52 +456,25 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                         colorChanged: colorChanged,
                                         link: screenshotTaken
                                             ? _imageFile.path
-                                            : Provider.of<WallHavenProvider>(
-                                                            context)
-                                                        .wall ==
-                                                    null
+                                            : WData.wall == null
                                                 ? ""
-                                                : Provider.of<
-                                                            WallHavenProvider>(
-                                                        context)
-                                                    .wall
-                                                    .path
-                                                    .toString()),
+                                                : WData.wall.path.toString()),
                                     SetWallpaperButton(
                                       colorChanged: colorChanged,
                                       url: screenshotTaken
                                           ? _imageFile.path
-                                          : Provider.of<WallHavenProvider>(
-                                                          context)
-                                                      .wall ==
-                                                  null
+                                          : WData.wall == null
                                               ? ""
-                                              : Provider.of<WallHavenProvider>(
-                                                      context)
-                                                  .wall
-                                                  .path
-                                                  .toString(),
+                                              : WData.wall.path.toString(),
                                     ),
                                     FavouriteWallpaperButton(
-                                      id: Provider.of<WallHavenProvider>(
-                                                      context)
-                                                  .wall ==
-                                              null
+                                      id: WData.wall == null
                                           ? ""
-                                          : Provider.of<WallHavenProvider>(
-                                                  context)
-                                              .wall
-                                              .id
-                                              .toString(),
+                                          : WData.wall.id.toString(),
                                       provider: "WallHaven",
-                                      wallhaven: Provider.of<WallHavenProvider>(
-                                                      context)
-                                                  .wall ==
-                                              null
+                                      wallhaven: WData.wall == null
                                           ? WallPaper()
-                                          : Provider.of<WallHavenProvider>(
-                                                  context)
-                                              .wall,
+                                          : WData.wall,
                                       trash: false,
                                     )
                                   ],
@@ -904,17 +865,13 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                 child: Row(
                                                   children: [
                                                     Text(
-                                                      Data
-                                                                  .wall ==
-                                                              null
+                                                      Data.wall == null
                                                           ? "General"
-                                                          : (Data
-                                                                  .wall[
+                                                          : (Data.wall[
                                                                       "category"]
                                                                   .toString()[0]
                                                                   .toUpperCase() +
-                                                              Data
-                                                                  .wall[
+                                                              Data.wall[
                                                                       "category"]
                                                                   .toString()
                                                                   .substring(
@@ -982,40 +939,27 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             colorChanged: colorChanged,
                                             link: screenshotTaken
                                                 ? _imageFile.path
-                                                : Data
-                                                            .wall ==
-                                                        null
+                                                : Data.wall == null
                                                     ? ""
-                                                    : Data
-                                                        .wall["wallpaper_url"]
+                                                    : Data.wall["wallpaper_url"]
                                                         .toString()),
                                         SetWallpaperButton(
                                           colorChanged: colorChanged,
                                           url: screenshotTaken
                                               ? _imageFile.path
-                                              : Data
-                                                          .wall ==
-                                                      null
+                                              : Data.wall == null
                                                   ? ""
-                                                  : Data
-                                                      .wall["wallpaper_url"]
+                                                  : Data.wall["wallpaper_url"]
                                                       .toString(),
                                         ),
                                         FavouriteWallpaperButton(
-                                          id: Data
-                                                      .wall ==
-                                                  null
+                                          id: Data.wall == null
                                               ? ""
-                                              : Data
-                                                  .wall["id"]
-                                                  .toString(),
+                                              : Data.wall["id"].toString(),
                                           provider: "Prism",
-                                          prism: Data
-                                                      .wall ==
-                                                  null
+                                          prism: Data.wall == null
                                               ? {}
-                                              : Data
-                                                  .wall,
+                                              : Data.wall,
                                           trash: false,
                                         )
                                       ],
@@ -1298,12 +1242,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                   .width *
                                               .8,
                                           child: Text(
-                                            Provider.of<PexelsProvider>(context).wall == null
+                                            PData.wall == null
                                                 ? "Wallpaper"
-                                                : (Provider.of<PexelsProvider>(context).wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                                    ? Provider.of<PexelsProvider>(context)
-                                                            .wall
-                                                            .url
+                                                : (PData.wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                                    ? PData.wall.url
                                                             .toString()
                                                             .replaceAll(
                                                                 "https://www.pexels.com/photo/", "")
@@ -1312,13 +1254,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                             .replaceAll(
                                                                 "/", "")[0]
                                                             .toUpperCase() +
-                                                        Provider.of<PexelsProvider>(context).wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(
+                                                        PData.wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(
                                                             1,
-                                                            Provider.of<PexelsProvider>(context).wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                            PData.wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
                                                                 7)
-                                                    : Provider.of<PexelsProvider>(context)
-                                                            .wall
-                                                            .url
+                                                    : PData.wall.url
                                                             .toString()
                                                             .replaceAll(
                                                                 "https://www.pexels.com/photo/", "")
@@ -1327,11 +1267,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                             .replaceAll(
                                                                 "/", "")[0]
                                                             .toUpperCase() +
-                                                        Provider.of<PexelsProvider>(context)
-                                                            .wall
-                                                            .url
+                                                        PData.wall.url
                                                             .toString()
-                                                            .replaceAll("https://www.pexels.com/photo/", "")
+                                                            .replaceAll(
+                                                                "https://www.pexels.com/photo/", "")
                                                             .replaceAll("-", " ")
                                                             .replaceAll("/", "")
                                                             .substring(1)),
@@ -1371,16 +1310,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                 .width *
                                                             .4,
                                                     child: Text(
-                                                      Provider.of<PexelsProvider>(
-                                                                      context)
-                                                                  .wall ==
-                                                              null
+                                                      PData.wall == null
                                                           ? "Photographer"
-                                                          : Provider.of<
-                                                                      PexelsProvider>(
-                                                                  context)
-                                                              .wall
-                                                              .photographer
+                                                          : PData
+                                                              .wall.photographer
                                                               .toString(),
                                                       textAlign: TextAlign.left,
                                                       style: Theme.of(context)
@@ -1400,7 +1333,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${Provider.of<PexelsProvider>(context).wall == null ? 0 : Provider.of<PexelsProvider>(context).wall.width.toString()}x${Provider.of<PexelsProvider>(context).wall == null ? 0 : Provider.of<PexelsProvider>(context).wall.height.toString()}",
+                                                    "${PData.wall == null ? 0 : PData.wall.width.toString()}x${PData.wall == null ? 0 : PData.wall.height.toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -1476,26 +1409,13 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           : url.toString(),
                                     ),
                                     FavouriteWallpaperButton(
-                                      id: Provider.of<PexelsProvider>(context,
-                                                      listen: false)
-                                                  .wall ==
-                                              null
+                                      id: PData.wall == null
                                           ? ""
-                                          : Provider.of<PexelsProvider>(context,
-                                                  listen: false)
-                                              .wall
-                                              .id
-                                              .toString(),
+                                          : PData.wall.id.toString(),
                                       provider: "Pexels",
-                                      pexels:
-                                          Provider.of<PexelsProvider>(context)
-                                                      .wall ==
-                                                  null
-                                              ? WallPaperP()
-                                              : Provider.of<PexelsProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .wall,
+                                      pexels: PData.wall == null
+                                          ? WallPaperP()
+                                          : PData.wall,
                                       trash: false,
                                     )
                                   ],

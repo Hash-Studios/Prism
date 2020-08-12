@@ -33,7 +33,7 @@ List<Color> colors = [
 Color currentColor = Color(0xFFFF0000);
 
 Color showColors(BuildContext context) {
-  Dialog aboutPopUp = Dialog(
+  Dialog colorPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: Container(
       decoration: BoxDecoration(
@@ -136,5 +136,5 @@ Color showColors(BuildContext context) {
       ),
     ),
   );
-  showDialog(context: context, builder: (BuildContext context) => aboutPopUp);
+  showDialog(context: context, builder: (BuildContext context) => colorPopUp);
 }

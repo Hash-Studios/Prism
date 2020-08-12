@@ -262,7 +262,7 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
     Clipboard.setData(
         ClipboardData(text: "🔥Check this out ➜ " + shortUrl.toString()));
     analytics.logShare(contentType: 'focussedMenu', itemId: id, method: 'link');
-    toasts.shareWall();
+    toasts.codeSend("Sharing link copied!");
     print(shortUrl);
   }
 }

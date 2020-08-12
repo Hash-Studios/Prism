@@ -47,7 +47,7 @@ class UserList extends StatelessWidget {
                         context: context,
                         builder: (BuildContext context) => loaderDialog);
                     globals.gAuth.signInWithGoogle().then((value) {
-                      toasts.successLog();
+                      toasts.codeSend("Login Successful!");
                       main.prefs.put("isLoggedin", true);
                       Navigator.pop(context);
                       main.RestartWidget.restartApp(context);
@@ -117,7 +117,7 @@ class UserList extends StatelessWidget {
                                 shape: StadiumBorder(),
                                 onPressed: () {
                                   Navigator.of(context).pop();
-                                  toasts.clearFav();
+                                  toasts.error("Cleared all favourites!");
                                   Provider.of<FavouriteProvider>(context,
                                           listen: false)
                                       .deleteData();
@@ -168,7 +168,7 @@ class UserList extends StatelessWidget {
                       ),
                       onTap: () {
                         globals.gAuth.signOutGoogle();
-                        toasts.successLogOut();
+                        toasts.codeSend("Log out Successful!");
                         main.RestartWidget.restartApp(context);
                       }),
                 ],

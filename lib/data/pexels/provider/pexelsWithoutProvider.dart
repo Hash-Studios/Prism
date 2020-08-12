@@ -214,35 +214,35 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
   );
 }
 
-// Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
-//   print(
-//       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}");
-//   http.get(
-//       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}",
-//       headers: {
-//         "Authorization":
-//             "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-//       }).then(
-//     (http.Response response) {
-//       var resp = json.decode(response.body);
-//       for (int i = 0; i < resp["photos"].length; i++) {
-//         wallsC.add(
-//           WallPaperP(
-//               id: resp["photos"][i]["id"].toString(),
-//               url: resp["photos"][i]["url"],
-//               width: resp["photos"][i]["width"].toString(),
-//               height: resp["photos"][i]["height"].toString(),
-//               photographer: resp["photos"][i]["photographer"],
-//               src: resp["photos"][i]["src"],
-//               current_page: resp["page"]),
-//         );
-//       }
-//       pageColorsP = resp["page"] + 1;
-//       print("data done");
-//       return wallsC;
-//     },
-//   );
-// }
+Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
+  print(
+      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}");
+  http.get(
+      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}",
+      headers: {
+        "Authorization":
+            "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+      }).then(
+    (http.Response response) {
+      var resp = json.decode(response.body);
+      for (int i = 0; i < resp["photos"].length; i++) {
+        wallsC.add(
+          WallPaperP(
+              id: resp["photos"][i]["id"].toString(),
+              url: resp["photos"][i]["url"],
+              width: resp["photos"][i]["width"].toString(),
+              height: resp["photos"][i]["height"].toString(),
+              photographer: resp["photos"][i]["photographer"],
+              src: resp["photos"][i]["src"],
+              current_page: resp["page"]),
+        );
+      }
+      pageColorsP = resp["page"] + 1;
+      print("data done");
+      return wallsC;
+    },
+  );
+}
 
 // Future<List<WallPaperP>> getAbstractWalls() async {
 //   if (navStack.last == "Home") {

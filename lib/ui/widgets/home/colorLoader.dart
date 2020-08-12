@@ -1,21 +1,19 @@
-import 'package:Prism/data/pexels/provider/pexels.dart';
-import 'package:Prism/data/prism/provider/prismProvider.dart';
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/widgets/home/homeGrid.dart';
+import 'package:Prism/ui/widgets/home/colorGrid.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class GridLoader extends StatefulWidget {
+class ColorLoader extends StatefulWidget {
   final Future future;
   final String provider;
-  GridLoader({@required this.future, @required this.provider});
+  ColorLoader({@required this.future, @required this.provider});
   @override
-  _GridLoaderState createState() => _GridLoaderState();
+  _ColorLoaderState createState() => _ColorLoaderState();
 }
 
-class _GridLoaderState extends State<GridLoader>
+class _ColorLoaderState extends State<ColorLoader>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
@@ -23,19 +21,7 @@ class _GridLoaderState extends State<GridLoader>
 
   @override
   void initState() {
-    if (widget.provider == "WallHaven") {
-      Provider.of<WallHavenProvider>(context, listen: false).walls = [];
-    } else if (widget.provider == "Pexels") {
-      Provider.of<PexelsProvider>(context, listen: false).wallsP = [];
-      // Provider.of<PexelsProvider>(context, listen: false).pageGetDataP = 1;
-    } else if (widget.provider == "Prism") {
-      Provider.of<PrismProvider>(context, listen: false).prismWalls = [];
-      Provider.of<PrismProvider>(context, listen: false).subPrismWalls = [];
-      // Provider.of<PexelsProvider>(context, listen: false).pageGetDataP = 1;
-    } else if (widget.provider.length > 6 &&
-        widget.provider.substring(0, 6) == "Colors") {
-      Provider.of<PexelsProvider>(context, listen: false).wallsC = [];
-    }
+    PData.wallsC = [];
     _future = widget.future;
     super.initState();
     _controller = AnimationController(
@@ -109,7 +95,7 @@ class _GridLoaderState extends State<GridLoader>
           return LoadingCards(controller: controller, animation: animation);
         } else {
           // print("snapshot done");
-          return HomeGrid(
+          return ColorGrid(
             provider: widget.provider,
           );
         }
