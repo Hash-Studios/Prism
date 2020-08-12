@@ -43,7 +43,7 @@ class CategorySupplier extends ChangeNotifier {
           if (category['name'] == 'Community') {
             this.wallpaperFutureRefresh = Data.getPrismWalls();
           } else if (category['name'] == 'Curated') {
-            this.wallpaperFutureRefresh = PData.getDataP();
+            this.wallpaperFutureRefresh = PData.getDataP(mode);
           } else if (category['name'] == 'Popular') {
             this.wallpaperFutureRefresh = WData.getData(mode);
           }

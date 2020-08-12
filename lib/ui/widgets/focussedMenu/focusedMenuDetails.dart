@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
-import 'package:Prism/data/pexels/provider/pexels.dart';
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
@@ -628,10 +628,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                         color: Colors.white,
                                                         size: 20),
                                                     label: Text(
-                                                      Provider.of<PexelsProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .wallsP[index]
+                                                      PData.wallsP[index]
                                                           .photographer
                                                           .toString(),
                                                       style: Theme.of(context)
@@ -647,10 +644,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                                       const EdgeInsets.fromLTRB(
                                                           0, 5, 0, 10),
                                                   child: Text(
-                                                    Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                                        ? Provider.of<PexelsProvider>(context, listen: false)
-                                                                .wallsP[index]
-                                                                .url
+                                                    PData.wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                                        ? PData.wallsP[index].url
                                                                 .toString()
                                                                 .replaceAll(
                                                                     "https://www.pexels.com/photo/", "")
@@ -659,13 +654,11 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                 .replaceAll(
                                                                     "/", "")[0]
                                                                 .toUpperCase() +
-                                                            Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(
+                                                            PData.wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(
                                                                 1,
-                                                                Provider.of<PexelsProvider>(context, listen: false).wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                                PData.wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
                                                                     7)
-                                                        : Provider.of<PexelsProvider>(context, listen: false)
-                                                                .wallsP[index]
-                                                                .url
+                                                        : PData.wallsP[index].url
                                                                 .toString()
                                                                 .replaceAll(
                                                                     "https://www.pexels.com/photo/", "")
@@ -674,11 +667,10 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                 .replaceAll(
                                                                     "/", "")[0]
                                                                 .toUpperCase() +
-                                                            Provider.of<PexelsProvider>(context, listen: false)
-                                                                .wallsP[index]
-                                                                .url
+                                                            PData.wallsP[index].url
                                                                 .toString()
-                                                                .replaceAll("https://www.pexels.com/photo/", "")
+                                                                .replaceAll(
+                                                                    "https://www.pexels.com/photo/", "")
                                                                 .replaceAll("-", " ")
                                                                 .replaceAll("/", "")
                                                                 .substring(1),
@@ -696,7 +688,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                     ),
                                                     SizedBox(width: 5),
                                                     Text(
-                                                      "${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsP[index].height.toString()}",
+                                                      "${PData.wallsP[index].width.toString()}x${PData.wallsP[index].height.toString()}",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .headline6,
@@ -1572,10 +1564,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                     .white,
                                                                 size: 20),
                                                             label: Text(
-                                                              Provider.of<PexelsProvider>(
-                                                                      context,
-                                                                      listen:
-                                                                          false)
+                                                              PData
                                                                   .wallsC[index]
                                                                   .photographer
                                                                   .toString(),
@@ -1595,10 +1584,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                       .fromLTRB(
                                                                   0, 5, 0, 10),
                                                           child: Text(
-                                                            Provider.of<PexelsProvider>(context, listen: false)
-                                                                        .wallsC[
-                                                                            index]
-                                                                        .url
+                                                            PData.wallsC[index].url
                                                                         .toString()
                                                                         .replaceAll(
                                                                             "https://www.pexels.com/photo/", "")
@@ -1608,27 +1594,29 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                             "/", "")
                                                                         .length >
                                                                     8
-                                                                ? Provider.of<PexelsProvider>(context, listen: false)
-                                                                        .wallsC[
-                                                                            index]
-                                                                        .url
+                                                                ? PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
+                                                                    PData.wallsC[index].url
                                                                         .toString()
                                                                         .replaceAll(
                                                                             "https://www.pexels.com/photo/", "")
                                                                         .replaceAll(
-                                                                            "-", " ")
-                                                                        .replaceAll("/", "")[
-                                                                            0]
-                                                                        .toUpperCase() +
-                                                                    Provider.of<PexelsProvider>(context, listen: false)
+                                                                            "-",
+                                                                            " ")
+                                                                        .replaceAll(
+                                                                            "/", "")
+                                                                        .substring(
+                                                                            1,
+                                                                            PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                                                7)
+                                                                : PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
+                                                                    PData
                                                                         .wallsC[index]
                                                                         .url
                                                                         .toString()
                                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                                         .replaceAll("-", " ")
                                                                         .replaceAll("/", "")
-                                                                        .substring(1, Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length - 7)
-                                                                : Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + Provider.of<PexelsProvider>(context, listen: false).wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
+                                                                        .substring(1),
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
@@ -1646,7 +1634,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                             ),
                                                             SizedBox(width: 5),
                                                             Text(
-                                                              "${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].width.toString()}x${Provider.of<PexelsProvider>(context, listen: false).wallsC[index].height.toString()}",
+                                                              "${PData.wallsC[index].width.toString()}x${PData.wallsC[index].height.toString()}",
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
@@ -1896,11 +1884,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                 .profileWalls[index]["wallpaper_url"]
                                 .toString()
                             : provider == "Pexels"
-                                ? Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .wallsP[index]
-                                    .src["original"]
-                                    .toString()
+                                ? PData.wallsP[index].src["original"].toString()
                                 : provider == "Liked"
                                     ? Provider.of<FavouriteProvider>(context,
                                             listen: false)
@@ -1908,10 +1892,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                         .toString()
                                     : provider.length > 6 &&
                                             provider.substring(0, 6) == "Colors"
-                                        ? Provider.of<PexelsProvider>(context,
-                                                listen: false)
-                                            .wallsC[index]
-                                            .src["original"]
+                                        ? PData.wallsC[index].src["original"]
                                             .toString()
                                         : WData.wallsS[index].path.toString(),
               ),
@@ -1947,15 +1928,9 @@ class FocusedMenuDetails extends StatelessWidget {
                             )
                           : provider == "Pexels"
                               ? FavouriteWallpaperButton(
-                                  id: Provider.of<PexelsProvider>(context,
-                                          listen: false)
-                                      .wallsP[index]
-                                      .id
-                                      .toString(),
+                                  id: PData.wallsP[index].id.toString(),
                                   provider: "Pexels",
-                                  pexels: Provider.of<PexelsProvider>(context,
-                                          listen: false)
-                                      .wallsP[index],
+                                  pexels: PData.wallsP[index],
                                   trash: false,
                                 )
                               : provider == "Liked"
@@ -1975,17 +1950,9 @@ class FocusedMenuDetails extends StatelessWidget {
                                   : provider.length > 6 &&
                                           provider.substring(0, 6) == "Colors"
                                       ? FavouriteWallpaperButton(
-                                          id: Provider.of<PexelsProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .wallsC[index]
-                                              .id
-                                              .toString(),
+                                          id: PData.wallsC[index].id.toString(),
                                           provider: "Pexels",
-                                          pexels: Provider.of<PexelsProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .wallsC[index],
+                                          pexels: PData.wallsC[index],
                                           trash: false,
                                         )
                                       : FavouriteWallpaperButton(
@@ -2010,11 +1977,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                 .profileWalls[index]["wallpaper_url"]
                                 .toString()
                             : provider == "Pexels"
-                                ? Provider.of<PexelsProvider>(context,
-                                        listen: false)
-                                    .wallsP[index]
-                                    .src["original"]
-                                    .toString()
+                                ? PData.wallsP[index].src["original"].toString()
                                 : provider == "Liked"
                                     ? Provider.of<FavouriteProvider>(context,
                                             listen: false)
@@ -2022,10 +1985,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                         .toString()
                                     : provider.length > 6 &&
                                             provider.substring(0, 6) == "Colors"
-                                        ? Provider.of<PexelsProvider>(context,
-                                                listen: false)
-                                            .wallsC[index]
-                                            .src["original"]
+                                        ? PData.wallsC[index].src["original"]
                                             .toString()
                                         : WData.wallsS[index].path.toString(),
               ),

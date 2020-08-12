@@ -82,7 +82,7 @@ Future<List<WallPaper>> getData(String mode) async {
     walls = [];
     pageGetData = 1;
   } else {
-    pageGetData = 2;
+    pageGetData = pageGetData + 1;
   }
   if (navStack.last == "Home") {
     http
