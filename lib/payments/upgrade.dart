@@ -1,3 +1,4 @@
+import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -104,7 +105,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
           )));
     } else {
       if (_purchaserInfo.entitlements.all.isNotEmpty &&
-          _purchaserInfo.entitlements.all['prism_premium'].isActive != null) {
+          _purchaserInfo.entitlements.all['prism_premium'] != null) {
         appData.isPro =
             _purchaserInfo.entitlements.all['prism_premium'].isActive;
       } else {
@@ -130,6 +131,12 @@ class UpsellScreen extends StatefulWidget {
   _UpsellScreenState createState() => _UpsellScreenState();
 }
 
+Future<bool> onWillPop() async {
+  if (navStack.length > 1) navStack.removeLast();
+  print(navStack);
+  return true;
+}
+
 class _UpsellScreenState extends State<UpsellScreen> {
   @override
   Widget build(BuildContext context) {
@@ -141,281 +148,355 @@ class _UpsellScreenState extends State<UpsellScreen> {
         if (
             // monthly != null &&
             lifetime != null) {
-          return Scaffold(
-              backgroundColor: Theme.of(context).primaryColor,
-              appBar: AppBar(title: Text("Purchase")),
-              body: Container(
-                  height: MediaQuery.of(context).size.height,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: <Widget>[
-                      Container(
-                        height: 150,
-                        width: MediaQuery.of(context).size.width * .78,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                topRight: Radius.circular(20)),
-                            color: Theme.of(context).hintColor),
-                        child: FlareActor(
-                          "assets/animations/Premium.flr",
-                          isPaused: false,
-                          alignment: Alignment.center,
-                          animation: "premium",
+          return WillPopScope(
+            onWillPop: onWillPop,
+            child: Scaffold(
+                backgroundColor: Theme.of(context).primaryColor,
+                appBar: AppBar(
+                  automaticallyImplyLeading: false,
+                  title: Text("Purchase"),
+                  leading: IconButton(
+                    icon: Icon(JamIcons.close),
+                    onPressed: () {
+                      if (navStack.length > 1) navStack.removeLast();
+                      print(navStack);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+                body: Container(
+                    height: MediaQuery.of(context).size.height,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        Container(
+                          height: 200,
+                          width: MediaQuery.of(context).size.width,
+                          decoration:
+                              BoxDecoration(color: Theme.of(context).hintColor),
+                          child: FlareActor(
+                            "assets/animations/Premium.flr",
+                            isPaused: false,
+                            alignment: Alignment.center,
+                            animation: "premium",
+                          ),
                         ),
-                      ),
-                      Row(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                            child: Text(
-                              'PREMIUM UNLOCKS:',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                  color: Theme.of(context).accentColor),
+                        Spacer(
+                          flex: 4,
+                        ),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                              child: Text(
+                                'PREMIUM UNLOCKS:',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    color: Theme.of(context).accentColor),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Icon(
-                            JamIcons.instant_picture,
-                            size: 22,
-                            color: Color(0xFFE57697),
-                          ),
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.6,
-                            child: Text(
-                              "The ability to view setups.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline6
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
+                          ],
+                        ),
+                        Spacer(
+                          flex: 1,
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 20,
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Icon(
-                            JamIcons.filter,
-                            size: 22,
-                            color: Color(0xFFE57697),
-                          ),
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.6,
-                            child: Text(
-                              "Download or set variants of wallpapers.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline6
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
+                            Icon(
+                              JamIcons.instant_picture,
+                              size: 22,
+                              color: Color(0xFFE57697),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Icon(
-                            JamIcons.user,
-                            size: 22,
-                            color: Color(0xFFE57697),
-                          ),
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.6,
-                            child: Text(
-                              "Get PRO badge in front of your profile.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline6
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
+                            SizedBox(
+                              width: 20,
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Icon(
-                            JamIcons.clock,
-                            size: 22,
-                            color: Color(0xFFE57697),
-                          ),
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.6,
-                            child: Text(
-                              "Get uploads reviewed instantly.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline6
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "Get more exclusive Home Screen setups!",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Icon(
-                            JamIcons.coffee,
-                            size: 22,
-                            color: Color(0xFFE57697),
-                          ),
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.6,
-                            child: Text(
-                              "Support development of the app.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headline6
-                                  .copyWith(
-                                      color: Theme.of(context).accentColor),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 20,
                             ),
-                          ),
-                        ],
-                      ),
-                      // PurchaseButton(package: monthly),
-                      PurchaseButton(package: lifetime),
-                      FlatButton(
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.5,
-                          decoration: BoxDecoration(
-                              color: Theme.of(context).accentColor,
-                              borderRadius: BorderRadius.circular(20)),
-                          padding: const EdgeInsets.all(10.0),
+                            Icon(
+                              JamIcons.filter,
+                              size: 22,
+                              color: Color(0xFFE57697),
+                            ),
+                            SizedBox(
+                              width: 20,
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "Download or set upto 5 variants of each wallpaper!",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                            ),
+                            Icon(
+                              JamIcons.user,
+                              size: 22,
+                              color: Color(0xFFE57697),
+                            ),
+                            SizedBox(
+                              width: 20,
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "Get PRO badge on your profile.",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                            ),
+                            Icon(
+                              JamIcons.clock,
+                              size: 22,
+                              color: Color(0xFFE57697),
+                            ),
+                            SizedBox(
+                              width: 20,
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "Get your uploads reviewed instantly.",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                            ),
+                            Icon(
+                              JamIcons.coffee,
+                              size: 22,
+                              color: Color(0xFFE57697),
+                            ),
+                            SizedBox(
+                              width: 20,
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "Prism is completely ad-free and therfore this is the only way to support the development of the app.",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Spacer(
+                          flex: 4,
+                        ),
+                        PurchaseButton(package: lifetime),
+                        Spacer(
+                          flex: 2,
+                        ),
+                        FlatButton(
                           child: Container(
-                            width: MediaQuery.of(context).size.width * 0.4,
-                            child: Text(
-                              'Restore Purchases',
-                              style: TextStyle(
-                                  fontSize: 16, color: Color(0xFFE57697)),
-                              textAlign: TextAlign.center,
+                            width: MediaQuery.of(context).size.width * 0.45,
+                            decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .accentColor
+                                    .withOpacity(0.75),
+                                borderRadius: BorderRadius.circular(20)),
+                            padding: const EdgeInsets.all(10.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width * 0.4,
+                              child: Text(
+                                'Restore Purchases',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: Theme.of(context).primaryColor),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
-                        ),
-                        onPressed: () async {
-                          try {
-                            print('now trying to restore');
-                            PurchaserInfo restoredInfo =
-                                await Purchases.restoreTransactions();
-                            print('restore completed');
-                            print(restoredInfo.toString());
+                          onPressed: () async {
+                            try {
+                              print('now trying to restore');
+                              PurchaserInfo restoredInfo =
+                                  await Purchases.restoreTransactions();
+                              print('restore completed');
+                              print(restoredInfo.toString());
 
-                            appData.isPro = restoredInfo
-                                .entitlements.all["prism_premium"].isActive;
+                              appData.isPro = restoredInfo
+                                  .entitlements.all["prism_premium"].isActive;
 
-                            print('is user pro? ${appData.isPro}');
+                              print('is user pro? ${appData.isPro}');
 
-                            if (appData.isPro) {
-                              main.prefs.put('premium', appData.isPro);
-                              toasts.codeSend("You are now a premium member.");
-                              // Alert(
-                              //   context: context,
-                              //   style: kWelcomeAlertStyle,
-                              //   image: Image.asset(
-                              //     "assets/images/avatar_demo.png",
-                              //     height: 150,
-                              //   ),
-                              //   title: "Congratulations",
-                              //   content: Column(
-                              //     children: <Widget>[
-                              //       Padding(
-                              //         padding: const EdgeInsets.only(
-                              //             top: 20.0,
-                              //             right: 8.0,
-                              //             left: 8.0,
-                              //             bottom: 20.0),
-                              //         child: Text(
-                              //           'Your purchase has been restored!',
-                              //           textAlign: TextAlign.center,
-                              //           style: kSendButtonTextStyle,
-                              //         ),
-                              //       )
-                              //     ],
-                              //   ),
-                              //   buttons: [
-                              //     DialogButton(
-                              //       radius: BorderRadius.circular(10),
-                              //       child: Text(
-                              //         "COOL",
-                              //         style: kSendButtonTextStyle,
-                              //       ),
-                              //       onPressed: () {
-                              //         Navigator.of(context, rootNavigator: true)
-                              //             .pop();
-                              //         Navigator.of(context, rootNavigator: true)
-                              //             .pop();
-                              //         Navigator.of(context, rootNavigator: true)
-                              //             .pop();
-                              //       },
-                              //       width: 127,
-                              //       height: 52,
-                              //     ),
-                              //   ],
-                              // ).show();
-                            } else {
-                              toasts.error(
-                                  "There was an error. Please try again later.");
+                              if (appData.isPro) {
+                                main.prefs.put('premium', appData.isPro);
+                                toasts
+                                    .codeSend("You are now a premium member.");
+                                // Alert(
+                                //   context: context,
+                                //   style: kWelcomeAlertStyle,
+                                //   image: Image.asset(
+                                //     "assets/images/avatar_demo.png",
+                                //     height: 150,
+                                //   ),
+                                //   title: "Congratulations",
+                                //   content: Column(
+                                //     children: <Widget>[
+                                //       Padding(
+                                //         padding: const EdgeInsets.only(
+                                //             top: 20.0,
+                                //             right: 8.0,
+                                //             left: 8.0,
+                                //             bottom: 20.0),
+                                //         child: Text(
+                                //           'Your purchase has been restored!',
+                                //           textAlign: TextAlign.center,
+                                //           style: kSendButtonTextStyle,
+                                //         ),
+                                //       )
+                                //     ],
+                                //   ),
+                                //   buttons: [
+                                //     DialogButton(
+                                //       radius: BorderRadius.circular(10),
+                                //       child: Text(
+                                //         "COOL",
+                                //         style: kSendButtonTextStyle,
+                                //       ),
+                                //       onPressed: () {
+                                //         Navigator.of(context, rootNavigator: true)
+                                //             .pop();
+                                //         Navigator.of(context, rootNavigator: true)
+                                //             .pop();
+                                //         Navigator.of(context, rootNavigator: true)
+                                //             .pop();
+                                //       },
+                                //       width: 127,
+                                //       height: 52,
+                                //     ),
+                                //   ],
+                                // ).show();
+                              } else {
+                                toasts.error(
+                                    "There was an error. Please try again later.");
+                                // Alert(
+                                //   context: context,
+                                //   style: kWelcomeAlertStyle,
+                                //   image: Image.asset(
+                                //     "assets/images/avatar_demo.png",
+                                //     height: 150,
+                                //   ),
+                                //   title: "Error",
+                                //   content: Column(
+                                //     children: <Widget>[
+                                //       Padding(
+                                //         padding: const EdgeInsets.only(
+                                //             top: 20.0,
+                                //             right: 8.0,
+                                //             left: 8.0,
+                                //             bottom: 20.0),
+                                //         child: Text(
+                                //           'There was an error. Please try again later',
+                                //           textAlign: TextAlign.center,
+                                //           style: kSendButtonTextStyle,
+                                //         ),
+                                //       )
+                                //     ],
+                                //   ),
+                                //   buttons: [
+                                //     DialogButton(
+                                //       radius: BorderRadius.circular(10),
+                                //       child: Text(
+                                //         "COOL",
+                                //         style: kSendButtonTextStyle,
+                                //       ),
+                                //       onPressed: () {
+                                //         Navigator.of(context, rootNavigator: true)
+                                //             .pop();
+                                //       },
+                                //       width: 127,
+                                //       height: 52,
+                                //     ),
+                                //   ],
+                                // ).show();
+                              }
+                            } on PlatformException catch (e) {
+                              print('----xx-----');
+                              var errorCode =
+                                  PurchasesErrorHelper.getErrorCode(e);
+                              if (errorCode ==
+                                  PurchasesErrorCode.purchaseCancelledError) {
+                                toasts.error("User cancelled purchase.");
+                              } else if (errorCode ==
+                                  PurchasesErrorCode.purchaseNotAllowedError) {
+                                toasts.error("User not allowed to purchase.");
+                              }
                               // Alert(
                               //   context: context,
                               //   style: kWelcomeAlertStyle,
@@ -457,71 +538,25 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               //   ],
                               // ).show();
                             }
-                          } on PlatformException catch (e) {
-                            print('----xx-----');
-                            var errorCode =
-                                PurchasesErrorHelper.getErrorCode(e);
-                            if (errorCode ==
-                                PurchasesErrorCode.purchaseCancelledError) {
-                              toasts.error("User cancelled purchase.");
-                            } else if (errorCode ==
-                                PurchasesErrorCode.purchaseNotAllowedError) {
-                              toasts.error("User not allowed to purchase.");
-                            }
-                            // Alert(
-                            //   context: context,
-                            //   style: kWelcomeAlertStyle,
-                            //   image: Image.asset(
-                            //     "assets/images/avatar_demo.png",
-                            //     height: 150,
-                            //   ),
-                            //   title: "Error",
-                            //   content: Column(
-                            //     children: <Widget>[
-                            //       Padding(
-                            //         padding: const EdgeInsets.only(
-                            //             top: 20.0,
-                            //             right: 8.0,
-                            //             left: 8.0,
-                            //             bottom: 20.0),
-                            //         child: Text(
-                            //           'There was an error. Please try again later',
-                            //           textAlign: TextAlign.center,
-                            //           style: kSendButtonTextStyle,
-                            //         ),
-                            //       )
-                            //     ],
-                            //   ),
-                            //   buttons: [
-                            //     DialogButton(
-                            //       radius: BorderRadius.circular(10),
-                            //       child: Text(
-                            //         "COOL",
-                            //         style: kSendButtonTextStyle,
-                            //       ),
-                            //       onPressed: () {
-                            //         Navigator.of(context, rootNavigator: true)
-                            //             .pop();
-                            //       },
-                            //       width: 127,
-                            //       height: 52,
-                            //     ),
-                            //   ],
-                            // ).show();
-                          }
-                          return UpgradeScreen();
-                        },
-                      )
-                    ],
-                  )));
+                            return UpgradeScreen();
+                          },
+                        ),
+                        Spacer(
+                          flex: 1,
+                        ),
+                      ],
+                    ))),
+          );
         }
       }
     }
     return Scaffold(
         appBar: AppBar(title: Text("Upsell Screen")),
+        backgroundColor: Theme.of(context).primaryColor,
         body: Center(
-          child: Text("Loading..."),
-        ));
+            child: Text(
+          "Loading...",
+        )));
   }
 }
 // class UpsellScreen extends StatefulWidget {
@@ -844,7 +879,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20.0, right: 20.0),
+      padding: const EdgeInsets.only(left: 30.0, right: 30.0),
       child: Container(
         width: double.infinity,
         child: Column(
@@ -1002,27 +1037,28 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                 },
                 padding: const EdgeInsets.all(0.0),
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.75,
+                  width: MediaQuery.of(context).size.width * 0.9,
                   decoration: BoxDecoration(
                       color: Color(0xFFE57697),
-                      borderRadius: BorderRadius.circular(20)),
+                      borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.all(10.0),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: <Widget>[
                       Container(
                         width: MediaQuery.of(context).size.width * 0.4,
                         child: Text(
                           'Buy ${widget.package.product.title}',
-                          style: TextStyle(fontSize: 16),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600),
                           textAlign: TextAlign.center,
                         ),
                       ),
                       Container(
-                        width: MediaQuery.of(context).size.width * 0.27,
+                        width: MediaQuery.of(context).size.width * 0.2,
                         child: Text(
                           '${widget.package.product.priceString}',
-                          style: TextStyle(fontSize: 20),
+                          style: TextStyle(fontSize: 22),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -1037,7 +1073,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                 '${widget.package.product.description}',
                 textAlign: TextAlign.center,
                 style: kSendButtonTextStyle.copyWith(
-                    fontSize: 16, fontWeight: FontWeight.normal),
+                    fontSize: 13, fontWeight: FontWeight.w400),
               ),
             )
           ],
