@@ -14,15 +14,25 @@ int pageGetQueryP = 1;
 List<Map<String, int>> pageNumbersP = categories
     .where((category) =>
         category['provider'] == "Pexels" && category['type'] == 'search')
-    .map((category) => {category['name']: 1});
+    .map((category) => {category['name'].toString(): 1})
+    .toList();
 
 Future<List<WallPaperP>> categoryDataFetcherP(
     String categoryName, String mode) async {
   int index = pageNumbersP.indexOf(pageNumbersP
       .firstWhere((element) => element.keys.toList()[0] == categoryName));
+  if (mode == "r") {
+    wallsP = [];
+    pageNumbersP[index] = {categoryName: 1};
+  } else {
+    int origPageNumber = pageNumbersP[index][categoryName];
+    pageNumbersP[index] = {categoryName: origPageNumber + 1};
+  }
   if (navStack.last == "Home") {
+    print(
+        "https://api.pexels.com/v1/search?query=${categoryName}&per_page=80&page=${pageNumbersP[index][categoryName]}");
     http.get(
-        "https://api.pexels.com/v1/search?query=${categoryName}&per_page=80&page=${pageNumbersP[index]}",
+        "https://api.pexels.com/v1/search?query=${categoryName}&per_page=80&page=${pageNumbersP[index][categoryName]}",
         headers: {
           "Authorization":
               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
@@ -41,7 +51,7 @@ Future<List<WallPaperP>> categoryDataFetcherP(
                 current_page: resp["page"]),
           );
         }
-        pageNumbersP[index] = resp["page"] + 1;
+        pageNumbersP[index][categoryName] = resp["page"] + 1;
         print("data done");
         return wallsP;
       },

@@ -16,7 +16,8 @@ int pageGetPeople = 1;
 List<Map<String, int>> pageNumbers = categories
     .where((category) =>
         category['provider'] == "WallHaven" && category['type'] == 'search')
-    .map((category) => {category['name']: 1});
+    .map((category) => {category['name'].toString(): 1})
+    .toList();
 
 Future<List<WallPaper>> categoryDataFetcher(
     String categoryName, String mode) async {
@@ -26,12 +27,13 @@ Future<List<WallPaper>> categoryDataFetcher(
     walls = [];
     pageNumbers[index] = {categoryName: 1};
   } else {
-    pageNumbers[index] = {categoryName: 2};
+    int origPageNumber = pageNumbers[index][categoryName];
+    pageNumbers[index] = {categoryName: origPageNumber + 1};
   }
   if (navStack.last == "Home") {
     http
         .get(
-            "https://wallhaven.cc/api/v1/search?q=${categoryName}&page=${pageNumbers[index]}")
+            "https://wallhaven.cc/api/v1/search?q=${categoryName}&page=${pageNumbers[index][categoryName]}")
         .then(
       (http.Response response) {
         var resp = json.decode(response.body);
@@ -55,7 +57,7 @@ Future<List<WallPaper>> categoryDataFetcher(
                 current_page: resp["meta"]["current_page"]),
           );
         }
-        pageNumbers[index] = resp["meta"]["current_page"] + 1;
+        pageNumbers[index][categoryName] = resp["meta"]["current_page"] + 1;
         print("data done");
         return walls;
       },
