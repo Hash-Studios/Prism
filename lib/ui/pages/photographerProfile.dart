@@ -1,13 +1,10 @@
 import 'dart:async';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/profile/profileLoader.dart';
 import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
-import 'package:Prism/main.dart' as main;
-import 'package:provider/provider.dart';
 
 class UserProfile extends StatefulWidget {
   final List arguments;
@@ -42,7 +39,6 @@ class UserProfileChild extends StatefulWidget {
 }
 
 class _UserProfileChildState extends State<UserProfileChild> {
-  int profileCount = 0;
   String name;
   String email;
   String userPhoto;
@@ -127,14 +123,24 @@ class _UserProfileChildState extends State<UserProfileChild> {
                                   Spacer(flex: 3),
                                   Row(
                                     children: <Widget>[
-                                      Text(
-                                        UserData.len.toString() + " ",
-                                        style: TextStyle(
-                                            fontFamily: "Proxima Nova",
-                                            fontSize: 24,
-                                            color: Colors.white70,
-                                            fontWeight: FontWeight.normal),
-                                      ),
+                                      FutureBuilder(
+                                          future:
+                                              UserData.getProfileWallsLength(
+                                                  email),
+                                          builder: (context, snapshot) {
+                                            return Text(
+                                              snapshot.data == null
+                                                  ? "0 "
+                                                  : snapshot.data.toString() +
+                                                      " ",
+                                              style: TextStyle(
+                                                  fontFamily: "Proxima Nova",
+                                                  fontSize: 24,
+                                                  color: Colors.white70,
+                                                  fontWeight:
+                                                      FontWeight.normal),
+                                            );
+                                          }),
                                       Icon(
                                         JamIcons.picture,
                                         color: Colors.white70,

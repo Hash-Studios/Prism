@@ -835,40 +835,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .bodyText1,
                                         ),
                                       ),
-                                      GestureDetector(
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.camera,
-                                              size: 20,
-                                              color: Colors.white70,
-                                            ),
-                                            SizedBox(width: 10),
-                                            Text(
-                                              "${Data.subPrismWalls[index]["by"].toString()}",
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText2,
-                                            ),
-                                          ],
-                                        ),
-                                        onTap: () {
-                                          SystemChrome
-                                              .setEnabledSystemUIOverlays([
-                                            SystemUiOverlay.top,
-                                            SystemUiOverlay.bottom
-                                          ]);
-                                          Navigator.pushNamed(
-                                              context, PhotographerProfileRoute,
-                                              arguments: [
-                                                Data.subPrismWalls[index]["by"],
-                                                Data.subPrismWalls[index]
-                                                    ["email"],
-                                                Data.subPrismWalls[index]
-                                                    ["userPhoto"]
-                                              ]);
-                                        },
-                                      ),
                                       SizedBox(height: 5),
                                       Row(
                                         children: [
@@ -910,27 +876,61 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: <Widget>[
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            0, 0, 0, 0),
-                                        child: Row(
-                                          children: [
-                                            Text(
-                                              Data.subPrismWalls[index]
-                                                      ["category"]
-                                                  .toString(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText2,
-                                            ),
-                                            SizedBox(width: 10),
-                                            Icon(
-                                              JamIcons.unordered_list,
-                                              size: 20,
-                                              color: Colors.white70,
-                                            ),
-                                          ],
+                                      // Padding(
+                                      //   padding: const EdgeInsets.fromLTRB(
+                                      //       0, 0, 0, 0),
+                                      //   child: Row(
+                                      //     children: [
+                                      //       Text(
+                                      //         Data.subPrismWalls[index]
+                                      //                 ["category"]
+                                      //             .toString(),
+                                      //         style: Theme.of(context)
+                                      //             .textTheme
+                                      //             .bodyText2,
+                                      //       ),
+                                      //       SizedBox(width: 10),
+                                      //       Icon(
+                                      //         JamIcons.unordered_list,
+                                      //         size: 20,
+                                      //         color: Colors.white70,
+                                      //       ),
+                                      //     ],
+                                      //   ),
+                                      // ),
+                                      ActionChip(
+                                        onPressed: () {
+                                          SystemChrome
+                                              .setEnabledSystemUIOverlays([
+                                            SystemUiOverlay.top,
+                                            SystemUiOverlay.bottom
+                                          ]);
+                                          Navigator.pushNamed(
+                                              context, PhotographerProfileRoute,
+                                              arguments: [
+                                                Data.subPrismWalls[index]["by"],
+                                                Data.subPrismWalls[index]
+                                                    ["email"],
+                                                Data.subPrismWalls[index]
+                                                    ["userPhoto"]
+                                              ]);
+                                        },
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 5, horizontal: 5),
+                                        avatar: CircleAvatar(
+                                          backgroundImage:
+                                              CachedNetworkImageProvider(
+                                                  Data.subPrismWalls[index]
+                                                      ["userPhoto"]),
                                         ),
+                                        labelPadding:
+                                            EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                        label: Text(
+                                            "${Data.subPrismWalls[index]["by"].toString()}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2
+                                                .copyWith(fontSize: 16)),
                                       ),
                                       SizedBox(height: 5),
                                       Row(

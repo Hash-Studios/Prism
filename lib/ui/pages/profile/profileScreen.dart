@@ -218,19 +218,27 @@ class _ProfileChildState extends State<ProfileChild> {
                                           Spacer(flex: 1),
                                           Row(
                                             children: <Widget>[
-                                              Text(
-                                                Provider.of<ProfileWallProvider>(
-                                                            context)
-                                                        .len
-                                                        .toString() +
-                                                    " ",
-                                                style: TextStyle(
-                                                    fontFamily: "Proxima Nova",
-                                                    fontSize: 24,
-                                                    color: Colors.white70,
-                                                    fontWeight:
-                                                        FontWeight.normal),
-                                              ),
+                                              FutureBuilder(
+                                                  future: Provider.of<
+                                                              ProfileWallProvider>(
+                                                          context)
+                                                      .getProfileWallsLength(),
+                                                  builder: (context, snapshot) {
+                                                    return Text(
+                                                      snapshot.data == null
+                                                          ? "0 "
+                                                          : snapshot.data
+                                                                  .toString() +
+                                                              " ",
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          fontSize: 24,
+                                                          color: Colors.white70,
+                                                          fontWeight: FontWeight
+                                                              .normal),
+                                                    );
+                                                  }),
                                               Icon(
                                                 JamIcons.picture,
                                                 color: Colors.white70,
