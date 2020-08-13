@@ -27,4 +27,26 @@ class ProfileWallProvider extends ChangeNotifier {
     });
     return this.profileWalls;
   }
+
+  Future<int> getProfileWallsLength() async {
+    var tempList = [];
+    await databaseReference
+        .collection("walls")
+        .where('review', isEqualTo: true)
+        .where('email', isEqualTo: main.prefs.get('email'))
+        .orderBy("createdAt", descending: true)
+        .getDocuments()
+        .then((value) {
+      tempList = [];
+      value.documents.forEach((f) {
+        tempList.add(f.data);
+      });
+      this.len = tempList.length;
+      print(this.len);
+    }).catchError((e) {
+      print(e.toString());
+      print("data done with error");
+    });
+    return this.len;
+  }
 }

@@ -6,11 +6,13 @@ import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -323,14 +325,16 @@ class FocusedMenuDetails extends StatelessWidget {
                                       children: <Widget>[
                                         ActionChip(
                                             pressElevation: 5,
-                                            padding: EdgeInsets.fromLTRB(
-                                                14, 11, 14, 11),
-                                            avatar: Icon(
-                                              JamIcons.camera,
-                                              color: Colors.white,
-                                              size: 20,
+                                            padding: EdgeInsets.all(5),
+                                            avatar: CircleAvatar(
+                                              backgroundImage:
+                                                  CachedNetworkImageProvider(
+                                                      Data.subPrismWalls[index]
+                                                          ["userPhoto"]),
                                             ),
                                             backgroundColor: Colors.black,
+                                            labelPadding:
+                                                EdgeInsets.fromLTRB(7, 3, 7, 3),
                                             label: Text(
                                               Data.subPrismWalls[index]["by"]
                                                       .toString()[0]
@@ -346,7 +350,18 @@ class FocusedMenuDetails extends StatelessWidget {
                                                     color: Colors.white,
                                                   ),
                                             ),
-                                            onPressed: () {}),
+                                            onPressed: () {
+                                              Navigator.pushNamed(context,
+                                                  PhotographerProfileRoute,
+                                                  arguments: [
+                                                    Data.subPrismWalls[index]
+                                                        ["by"],
+                                                    Data.subPrismWalls[index]
+                                                        ["email"],
+                                                    Data.subPrismWalls[index]
+                                                        ["userPhoto"]
+                                                  ]);
+                                            }),
                                         Padding(
                                           padding: const EdgeInsets.fromLTRB(
                                               0, 5, 0, 10),
