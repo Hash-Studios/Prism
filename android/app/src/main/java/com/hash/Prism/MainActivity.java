@@ -40,7 +40,7 @@ public class MainActivity extends FlutterActivity {
                         (call, result) -> {
 
                             res = result;
-                            if (call.method.equals("set_lock_wallpaper")){
+                            if (call.method.equals("set_wallpaper")){
 
                                 String url = call.argument("url"); // .argument returns the correct type
                                 android.util.Log.i("Arguments ", "configureFlutterEngine: "+url);
@@ -51,49 +51,9 @@ public class MainActivity extends FlutterActivity {
                                         .into(new CustomTarget<Bitmap>() {
                                             @Override
                                             public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                                                Log.i("Arguments ", "configureFlutterEngine: "+"Ready 1");
+                                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+"Ready");
                                                 SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
                                                 setWallPaperTask.execute(new Pair(resource,"1"));
-                                            }
-                                            @Override
-                                            public void onLoadCleared(@Nullable Drawable placeholder) {
-                                            }
-                                        });
-
-                            } else if (call.method.equals("set_home_wallpaper")){
-
-                                String url = call.argument("url"); // .argument returns the correct type
-                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+url);
-
-                                Glide.with(getActivity())
-                                        .asBitmap()
-                                        .load(url)
-                                        .into(new CustomTarget<Bitmap>() {
-                                            @Override
-                                            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+"Ready");
-                                                SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
-                                                setWallPaperTask.execute(new Pair  (resource,"2"));
-                                            }
-                                            @Override
-                                            public void onLoadCleared(@Nullable Drawable placeholder) {
-                                            }
-                                        });
-
-                            }else if (call.method.equals("set_wallpaper")){
-
-                                String url = call.argument("url"); // .argument returns the correct type
-                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+url);
-
-                                Glide.with(getActivity())
-                                        .asBitmap()
-                                        .load(url)
-                                        .into(new CustomTarget<Bitmap>() {
-                                            @Override
-                                            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                                                android.util.Log.i("Arguments ", "configureFlutterEngine: "+"Ready");
-                                                SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
-                                                setWallPaperTask.execute(new Pair(resource,"3"));
                                             }
                                             @Override
                                             public void onLoadCleared(@Nullable Drawable placeholder) {
@@ -115,47 +75,17 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap,String>,Boolean,Boolean>{
 
     @Override
     protected final Boolean doInBackground(Pair<Bitmap, String>... pairs) {
-        switch (pairs[0].second) {
-            case "1": {
-                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        wallpaperManager.setBitmap(pairs[0].first, null, true, WallpaperManager.FLAG_LOCK);
-                    }
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    return false;
-                }
-                break;
-            }
-            case "2": {
-                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        wallpaperManager.setBitmap(pairs[0].first, null, true, WallpaperManager.FLAG_SYSTEM);
-                    }
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    return false;
-                }
-                break;
-            }
-            case "3": {
-                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
-                try {
-                    Uri tempUri = getImageUri(mContext, pairs[0].first);
-                    File finalFile = new File(getRealPathFromURI(tempUri));
-                    Uri contentURI = getImageContentUri(mContext, finalFile.getAbsolutePath());
-                    mContext.startActivity(wallpaperManager.getCropAndSetWallpaperIntent(contentURI));
-                    // wallpaperManager.setBitmap(pairs[0].first);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    return false;
-                }
-                break;
-            }
+        WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
+        try {
+            Uri tempUri = getImageUri(mContext, pairs[0].first);
+            File finalFile = new File(getRealPathFromURI(tempUri));
+            Uri contentURI = getImageContentUri(mContext, finalFile.getAbsolutePath());
+            mContext.startActivity(wallpaperManager.getCropAndSetWallpaperIntent(contentURI));
+            // wallpaperManager.setBitmap(pairs[0].first);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
         }
-
         return true;
     }
 
