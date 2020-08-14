@@ -219,7 +219,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 ConnectionState.waiting ||
                             snapshot.connectionState == ConnectionState.none) {
                           print("snapshot none, waiting in share route");
-                          return CircularProgressIndicator();
+                          return Center(child: Loader());
                         } else {
                           print("done");
                           return Column(
@@ -695,7 +695,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 snapshot.connectionState ==
                                     ConnectionState.none) {
                               print("snapshot none, waiting in share route");
-                              return CircularProgressIndicator();
+                              return Center(child: Loader());
                             } else {
                               print("done");
                               return Column(
@@ -791,22 +791,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       .bodyText1,
                                                 ),
                                               ),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.camera,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Text(
-                                                    "${Data.wall == null ? 0 : Data.wall["by"].toString()}",
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2,
-                                                  ),
-                                                ],
-                                              ),
                                               SizedBox(height: 5),
                                               Row(
                                                 children: [
@@ -850,36 +834,44 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.end,
                                             children: <Widget>[
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        0, 0, 0, 0),
-                                                child: Row(
-                                                  children: [
-                                                    Text(
-                                                      Data.wall == null
-                                                          ? "General"
-                                                          : (Data.wall[
-                                                                      "category"]
-                                                                  .toString()[0]
-                                                                  .toUpperCase() +
+                                              ActionChip(
+                                                onPressed: Data.wall == null
+                                                    ? () {}
+                                                    : () {
+                                                        SystemChrome
+                                                            .setEnabledSystemUIOverlays([
+                                                          SystemUiOverlay.top,
+                                                          SystemUiOverlay.bottom
+                                                        ]);
+                                                        Navigator.pushNamed(
+                                                            context,
+                                                            PhotographerProfileRoute,
+                                                            arguments: [
+                                                              Data.wall["by"],
                                                               Data.wall[
-                                                                      "category"]
-                                                                  .toString()
-                                                                  .substring(
-                                                                      1)),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText2,
-                                                    ),
-                                                    SizedBox(width: 10),
-                                                    Icon(
-                                                      JamIcons.unordered_list,
-                                                      size: 20,
-                                                      color: Colors.white70,
-                                                    ),
-                                                  ],
+                                                                  "email"],
+                                                              Data.wall[
+                                                                  "userPhoto"]
+                                                            ]);
+                                                      },
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 5, horizontal: 5),
+                                                avatar: CircleAvatar(
+                                                  backgroundImage:
+                                                      CachedNetworkImageProvider(
+                                                          Data.wall[
+                                                              "userPhoto"]),
                                                 ),
+                                                labelPadding:
+                                                    EdgeInsets.fromLTRB(
+                                                        7, 3, 7, 3),
+                                                label: Text(
+                                                    "${Data.wall == null ? "Photographer" : Data.wall["by"].toString()}",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2
+                                                        .copyWith(
+                                                            fontSize: 16)),
                                               ),
                                               SizedBox(height: 5),
                                               Row(
@@ -1108,10 +1100,34 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   ? Scaffold(
                       resizeToAvoidBottomPadding: false,
                       key: _scaffoldKey,
-                      backgroundColor: isLoading
-                          ? Theme.of(context).primaryColor
-                          : colors[0],
+                      backgroundColor:
+                          isLoading ? Theme.of(context).primaryColor : accent,
                       body: SlidingUpPanel(
+                        onPanelOpened: () {
+                          if (panelClosed) {
+                            print('Screenshot Starting');
+                            screenshotController
+                                .capture(
+                              pixelRatio: 3,
+                              delay: Duration(milliseconds: 10),
+                            )
+                                .then((File image) async {
+                              setState(() {
+                                _imageFile = image;
+                                screenshotTaken = true;
+                                panelClosed = false;
+                              });
+                              print('Screenshot Taken');
+                            }).catchError((onError) {
+                              print(onError);
+                            });
+                          }
+                        },
+                        onPanelClosed: () {
+                          setState(() {
+                            panelClosed = true;
+                          });
+                        },
                         backdropEnabled: true,
                         backdropTapClosesPanel: true,
                         borderRadius: BorderRadius.only(
@@ -1143,279 +1159,324 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         maxHeight: MediaQuery.of(context).size.height * .46,
                         controller: panelController,
                         panel: Container(
-                          height: MediaQuery.of(context).size.height * .42,
-                          width: MediaQuery.of(context).size.width,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20),
-                            ),
-                            color: Color(0xFF2F2F2F),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Center(
-                                  child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Icon(
-                                  JamIcons.chevron_down,
-                                  color: Colors.white,
-                                ),
-                              )),
-                              Expanded(
-                                flex: 2,
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: List.generate(
-                                    colors == null ? 5 : colors.length,
-                                    (color) {
-                                      return GestureDetector(
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color: colors == null
-                                                  ? Color(0xFF000000)
-                                                  : colors[color],
-                                              borderRadius:
-                                                  BorderRadius.circular(500),
-                                            ),
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .width /
-                                                8,
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width /
-                                                8,
-                                          ),
-                                          onTap: () {
-                                            // String route = currentRoute;
-                                            // currentRoute = previousRoute;
-                                            // previousRoute = route;
-                                            // print(currentRoute);
-                                            SystemChrome
-                                                .setEnabledSystemUIOverlays([
-                                              SystemUiOverlay.top,
-                                              SystemUiOverlay.bottom
-                                            ]);
-                                            Navigator.pushNamed(
-                                              context,
-                                              ColorRoute,
-                                              arguments: [
-                                                colors[color]
-                                                    .toString()
-                                                    .replaceAll(
-                                                        "Color(0xff", "")
-                                                    .replaceAll(")", ""),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                  ),
-                                ),
+                            height: MediaQuery.of(context).size.height * .42,
+                            width: MediaQuery.of(context).size.width,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
                               ),
-                              Expanded(
-                                flex: 4,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(35, 0, 35, 15),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            0, 5, 0, 10),
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              .8,
-                                          child: Text(
-                                            PData.wall == null
-                                                ? "Wallpaper"
-                                                : (PData.wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                                    ? PData.wall.url
-                                                            .toString()
-                                                            .replaceAll(
-                                                                "https://www.pexels.com/photo/", "")
-                                                            .replaceAll(
-                                                                "-", " ")
-                                                            .replaceAll(
-                                                                "/", "")[0]
-                                                            .toUpperCase() +
-                                                        PData.wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(
-                                                            1,
-                                                            PData.wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
-                                                                7)
-                                                    : PData.wall.url
-                                                            .toString()
-                                                            .replaceAll(
-                                                                "https://www.pexels.com/photo/", "")
-                                                            .replaceAll(
-                                                                "-", " ")
-                                                            .replaceAll(
-                                                                "/", "")[0]
-                                                            .toUpperCase() +
-                                                        PData.wall.url
-                                                            .toString()
-                                                            .replaceAll(
-                                                                "https://www.pexels.com/photo/", "")
-                                                            .replaceAll("-", " ")
-                                                            .replaceAll("/", "")
-                                                            .substring(1)),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText1,
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
+                              color: Color(0xFF2F2F2F),
+                            ),
+                            child: FutureBuilder<Map>(
+                                future: future,
+                                builder:
+                                    (context, AsyncSnapshot<Map> snapshot) {
+                                  if (snapshot.connectionState ==
+                                          ConnectionState.waiting ||
+                                      snapshot.connectionState ==
+                                          ConnectionState.none) {
+                                    print(
+                                        "snapshot none, waiting in share route");
+                                    return Center(child: Loader());
+                                  } else {
+                                    print("done");
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Center(
+                                            child: Padding(
+                                          padding: const EdgeInsets.all(10.0),
+                                          child: Icon(
+                                            JamIcons.chevron_down,
+                                            color: Colors.white,
+                                          ),
+                                        )),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: List.generate(
+                                              colors == null
+                                                  ? 5
+                                                  : colors.length,
+                                              (color) {
+                                                return GestureDetector(
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                        color: colors == null
+                                                            ? Color(0xFF000000)
+                                                            : colors[color],
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(500),
+                                                      ),
+                                                      height:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width /
+                                                              8,
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width /
+                                                              8,
+                                                    ),
+                                                    onTap: () {
+                                                      // String route = currentRoute;
+                                                      // currentRoute = previousRoute;
+                                                      // previousRoute = route;
+                                                      // print(currentRoute);
+                                                      SystemChrome
+                                                          .setEnabledSystemUIOverlays([
+                                                        SystemUiOverlay.top,
+                                                        SystemUiOverlay.bottom
+                                                      ]);
+                                                      Navigator.pushNamed(
+                                                        context,
+                                                        ColorRoute,
+                                                        arguments: [
+                                                          colors[color]
+                                                              .toString()
+                                                              .replaceAll(
+                                                                  "Color(0xff",
+                                                                  "")
+                                                              .replaceAll(
+                                                                  ")", ""),
+                                                        ],
+                                                      );
+                                                    });
+                                              },
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: <Widget>[
-                                          Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: <Widget>[
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.camera,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Container(
+                                        Expanded(
+                                          flex: 4,
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                35, 0, 35, 15),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          0, 5, 0, 10),
+                                                  child: Container(
                                                     width:
                                                         MediaQuery.of(context)
                                                                 .size
                                                                 .width *
-                                                            .4,
+                                                            .8,
                                                     child: Text(
                                                       PData.wall == null
-                                                          ? "Photographer"
-                                                          : PData
-                                                              .wall.photographer
-                                                              .toString(),
-                                                      textAlign: TextAlign.left,
+                                                          ? "Wallpaper"
+                                                          : (PData.wall.url
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          "https://www.pexels.com/photo/", "")
+                                                                      .replaceAll(
+                                                                          "-", " ")
+                                                                      .replaceAll(
+                                                                          "/", "")
+                                                                      .length >
+                                                                  8
+                                                              ? PData.wall.url
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          "https://www.pexels.com/photo/", "")
+                                                                      .replaceAll(
+                                                                          "-", " ")
+                                                                      .replaceAll(
+                                                                          "/",
+                                                                          "")[0]
+                                                                      .toUpperCase() +
+                                                                  PData.wall.url
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          "https://www.pexels.com/photo/", "")
+                                                                      .replaceAll(
+                                                                          "-", " ")
+                                                                      .replaceAll("/", "")
+                                                                      .substring(1, PData.wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length - 7)
+                                                              : PData.wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + PData.wall.url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1)),
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .bodyText2,
+                                                          .bodyText1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 5),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.set_square,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Text(
-                                                    "${PData.wall == null ? 0 : PData.wall.width.toString()}x${PData.wall == null ? 0 : PData.wall.height.toString()}",
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2,
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
+                                                ),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: <Widget>[
+                                                    Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: <Widget>[
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              JamIcons.camera,
+                                                              size: 20,
+                                                              color: Colors
+                                                                  .white70,
+                                                            ),
+                                                            SizedBox(width: 10),
+                                                            Container(
+                                                              width: MediaQuery.of(
+                                                                          context)
+                                                                      .size
+                                                                      .width *
+                                                                  .4,
+                                                              child: Text(
+                                                                PData.wall ==
+                                                                        null
+                                                                    ? "Photographer"
+                                                                    : PData.wall
+                                                                        .photographer
+                                                                        .toString(),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .left,
+                                                                style: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .bodyText2,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        SizedBox(height: 5),
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              JamIcons
+                                                                  .set_square,
+                                                              size: 20,
+                                                              color: Colors
+                                                                  .white70,
+                                                            ),
+                                                            SizedBox(width: 10),
+                                                            Text(
+                                                              "${PData.wall == null ? 0 : PData.wall.width.toString()}x${PData.wall == null ? 0 : PData.wall.height.toString()}",
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText2,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .end,
+                                                      children: <Widget>[
+                                                        Row(
+                                                          children: [
+                                                            Text(
+                                                              id.toString(),
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText2,
+                                                            ),
+                                                            SizedBox(width: 10),
+                                                            Icon(
+                                                              JamIcons.info,
+                                                              size: 20,
+                                                              color: Colors
+                                                                  .white70,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        SizedBox(height: 5),
+                                                        Row(
+                                                          children: [
+                                                            Text(
+                                                              provider
+                                                                  .toString(),
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText2,
+                                                            ),
+                                                            SizedBox(width: 10),
+                                                            Icon(
+                                                              JamIcons.database,
+                                                              size: 20,
+                                                              color: Colors
+                                                                  .white70,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                          Column(
-                                            mainAxisSize: MainAxisSize.min,
+                                        ),
+                                        Expanded(
+                                          flex: 3,
+                                          child: Row(
                                             mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
+                                                MainAxisAlignment.spaceEvenly,
                                             children: <Widget>[
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    id.toString(),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
-                                                    JamIcons.info,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                ],
+                                              DownloadButton(
+                                                colorChanged: colorChanged,
+                                                link: screenshotTaken
+                                                    ? _imageFile.path
+                                                    : url.toString(),
                                               ),
-                                              SizedBox(height: 5),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    provider.toString(),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
-                                                    JamIcons.database,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                ],
+                                              SetWallpaperButton(
+                                                colorChanged: colorChanged,
+                                                url: screenshotTaken
+                                                    ? _imageFile.path
+                                                    : url.toString(),
                                               ),
+                                              FavouriteWallpaperButton(
+                                                id: PData.wall == null
+                                                    ? ""
+                                                    : PData.wall.id.toString(),
+                                                provider: "Pexels",
+                                                pexels: PData.wall == null
+                                                    ? WallPaperP()
+                                                    : PData.wall,
+                                                trash: false,
+                                              )
                                             ],
                                           ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: <Widget>[
-                                    DownloadButton(
-                                      colorChanged: colorChanged,
-                                      link: screenshotTaken
-                                          ? _imageFile.path
-                                          : url.toString(),
-                                    ),
-                                    SetWallpaperButton(
-                                      colorChanged: colorChanged,
-                                      url: screenshotTaken
-                                          ? _imageFile.path
-                                          : url.toString(),
-                                    ),
-                                    FavouriteWallpaperButton(
-                                      id: PData.wall == null
-                                          ? ""
-                                          : PData.wall.id.toString(),
-                                      provider: "Pexels",
-                                      pexels: PData.wall == null
-                                          ? WallPaperP()
-                                          : PData.wall,
-                                      trash: false,
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                                        ),
+                                      ],
+                                    );
+                                  }
+                                })),
                         body: Stack(
                           children: <Widget>[
                             AnimatedBuilder(
@@ -1427,18 +1488,25 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     child: CachedNetworkImage(
                                       imageUrl: url,
                                       imageBuilder: (context, imageProvider) =>
-                                          Container(
-                                        margin: EdgeInsets.symmetric(
-                                            vertical:
-                                                offsetAnimation.value * 1.25,
-                                            horizontal:
-                                                offsetAnimation.value / 2),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                              offsetAnimation.value),
-                                          image: DecorationImage(
-                                            image: imageProvider,
-                                            fit: BoxFit.cover,
+                                          Screenshot(
+                                        controller: screenshotController,
+                                        child: Container(
+                                          margin: EdgeInsets.symmetric(
+                                              vertical:
+                                                  offsetAnimation.value * 1.25,
+                                              horizontal:
+                                                  offsetAnimation.value / 2),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                                offsetAnimation.value),
+                                            image: DecorationImage(
+                                              colorFilter: colorChanged
+                                                  ? ColorFilter.mode(
+                                                      accent, BlendMode.hue)
+                                                  : null,
+                                              image: imageProvider,
+                                              fit: BoxFit.cover,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1459,7 +1527,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             JamIcons.close_circle_f,
                                             color: isLoading
                                                 ? Theme.of(context).accentColor
-                                                : colors[0].computeLuminance() >
+                                                : accent.computeLuminance() >
                                                         0.5
                                                     ? Colors.black
                                                     : Colors.white,
@@ -1474,11 +1542,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       }
                                     },
                                     onLongPress: () {
+                                      setState(() {
+                                        colorChanged = false;
+                                      });
                                       HapticFeedback.vibrate();
                                       shakeController.forward(from: 0.0);
                                     },
                                     onTap: () {
                                       HapticFeedback.vibrate();
+                                      !isLoading ? updateAccent() : print("");
                                       shakeController.forward(from: 0.0);
                                     },
                                   );

@@ -1,10 +1,12 @@
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/globals.dart';
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/pages/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/homeScreen.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/categoriesBar.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:provider/provider.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
@@ -24,8 +26,47 @@ class _PageManagerState extends State<PageManager> {
     super.initState();
   }
 
+  void initDynamicLinks(BuildContext context) async {
+    final PendingDynamicLinkData data =
+        await FirebaseDynamicLinks.instance.getInitialLink();
+    final Uri deepLink = data?.link;
+
+    if (deepLink != null) {
+      print("opened while closed altogether via deep link");
+      Future.delayed(Duration(seconds: 0))
+          .then((value) => Navigator.pushNamed(context, ShareRoute, arguments: [
+                deepLink.queryParameters["id"],
+                deepLink.queryParameters["provider"],
+                deepLink.queryParameters["url"],
+                deepLink.queryParameters["thumb"],
+              ]));
+      print("opened while closed altogether via deep link2345");
+    }
+
+    FirebaseDynamicLinks.instance.onLink(
+        onSuccess: (PendingDynamicLinkData dynamicLink) async {
+      final Uri deepLink = dynamicLink?.link;
+
+      if (deepLink != null) {
+        print("opened while bg via deep link1");
+        Future.delayed(Duration(seconds: 0)).then(
+            (value) => Navigator.pushNamed(context, ShareRoute, arguments: [
+                  deepLink.queryParameters["id"],
+                  deepLink.queryParameters["provider"],
+                  deepLink.queryParameters["url"],
+                  deepLink.queryParameters["thumb"],
+                ]));
+        print("opened while bg via deep link2345");
+      }
+    }, onError: (OnLinkErrorException e) async {
+      print('onLinkError');
+      print(e.message);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    initDynamicLinks(context);
     return WillPopScope(
       onWillPop: () async {
         if (page != 0) {
