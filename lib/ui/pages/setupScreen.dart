@@ -94,12 +94,12 @@ class _SetupPageState extends State<SetupPage> {
               builder: (context, snapshot) {
                 if (snapshot == null) {
                   print("snapshot null");
-                  return Loader();
+                  return Center(child: Loader());
                 }
                 if (snapshot.connectionState == ConnectionState.waiting ||
                     snapshot.connectionState == ConnectionState.none) {
                   print("snapshot none, waiting");
-                  return Loader();
+                  return Center(child: Loader());
                 } else {
                   Future.delayed(Duration(seconds: 0))
                       .then((value) => setState(() {
