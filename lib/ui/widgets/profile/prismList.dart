@@ -82,6 +82,24 @@ class PrismList extends StatelessWidget {
             }),
         ListTile(
             leading: Icon(
+              JamIcons.twitter,
+            ),
+            title: new Text(
+              "Follow Prism on Twitter",
+              style: TextStyle(
+                  color: Theme.of(context).accentColor,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: Text(
+              "We regularly share setups, wallpapers & organise giveaways.",
+              style: TextStyle(fontSize: 12),
+            ),
+            onTap: () {
+              launch("https://twitter.com/PrismWallpapers");
+            }),
+        ListTile(
+            leading: Icon(
               JamIcons.users,
             ),
             title: new Text(
@@ -234,7 +252,7 @@ class PrismList extends StatelessWidget {
               style: TextStyle(fontSize: 12),
             ),
             onTap: () {
-              launch("https://github.com/Hash-Studios/Prism/issues");
+              launch("mailto:hash.studios.inc@gmail.com?subject=[BUG REPORT]");
             }),
       ],
     );
