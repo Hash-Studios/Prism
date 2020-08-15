@@ -64,7 +64,6 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
 
   void onPaint() async {
     HapticFeedback.vibrate();
-    Navigator.of(context).pop();
     if (widget.colorChanged) {
       showPremiumPopUp(() async {
         setState(() {
