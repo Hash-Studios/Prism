@@ -60,6 +60,7 @@ public class MainActivity extends FlutterActivity {
                         String url = call.argument("url"); // .argument returns the correct type
                         android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
                         Picasso.get().load(url).into(target);
+                        android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Image Downloaded");
 
                     }
                 });
@@ -79,8 +80,10 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
         WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
         try {
             Uri tempUri = getImageUri(mContext, pairs[0].first);
+            android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Saved image to storage");
             File finalFile = new File(getRealPathFromURI(tempUri));
             Uri contentURI = getImageContentUri(mContext, finalFile.getAbsolutePath());
+            android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Opening crop intent");
             mContext.startActivity(wallpaperManager.getCropAndSetWallpaperIntent(contentURI));
             // wallpaperManager.setBitmap(pairs[0].first);
         } catch (Exception ex) {

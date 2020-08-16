@@ -49,3 +49,4 @@ android/app/.classpath
 android/.project
 .vscode/settings.json
 android/.settings/org.eclipse.buildship.core.prefs
+android/gradle/wrapper/gradle-wrapper.properties
