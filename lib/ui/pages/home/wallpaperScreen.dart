@@ -24,6 +24,7 @@ import 'package:tutorial_coach_mark/target_position.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -333,6 +334,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     width:
                                         MediaQuery.of(context).size.width / 8,
                                   ),
+                                  onLongPress: () {
+                                    HapticFeedback.vibrate();
+                                    Clipboard.setData(ClipboardData(
+                                      text: colors[color]
+                                          .toString()
+                                          .replaceAll("Color(0xff", "")
+                                          .replaceAll(")", ""),
+                                    )).then((result) {
+                                      toasts.color(colors[color]);
+                                    });
+                                  },
                                   onTap: () {
                                     navStack.removeLast();
                                     print(navStack);
@@ -782,6 +794,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             MediaQuery.of(context).size.width /
                                                 8,
                                       ),
+                                      onLongPress: () {
+                                        HapticFeedback.vibrate();
+                                        Clipboard.setData(ClipboardData(
+                                          text: colors[color]
+                                              .toString()
+                                              .replaceAll("Color(0xff", "")
+                                              .replaceAll(")", ""),
+                                        )).then((result) {
+                                          toasts.color(colors[color]);
+                                        });
+                                      },
                                       onTap: () {
                                         navStack.removeLast();
                                         print(navStack);
@@ -1265,6 +1288,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     .width /
                                                 8,
                                           ),
+                                          onLongPress: () {
+                                            HapticFeedback.vibrate();
+                                            Clipboard.setData(ClipboardData(
+                                              text: colors[color]
+                                                  .toString()
+                                                  .replaceAll("Color(0xff", "")
+                                                  .replaceAll(")", ""),
+                                            )).then((result) {
+                                              toasts.color(colors[color]);
+                                            });
+                                          },
                                           onTap: () {
                                             navStack.removeLast();
                                             print(navStack);
@@ -1761,6 +1795,18 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         .width /
                                                     8,
                                               ),
+                                              onLongPress: () {
+                                                HapticFeedback.vibrate();
+                                                Clipboard.setData(ClipboardData(
+                                                  text: colors[color]
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "Color(0xff", "")
+                                                      .replaceAll(")", ""),
+                                                )).then((result) {
+                                                  toasts.color(colors[color]);
+                                                });
+                                              },
                                               onTap: () {
                                                 navStack.removeLast();
                                                 print(navStack);
@@ -2274,6 +2320,18 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         .width /
                                                     8,
                                               ),
+                                              onLongPress: () {
+                                                HapticFeedback.vibrate();
+                                                Clipboard.setData(ClipboardData(
+                                                  text: colors[color]
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "Color(0xff", "")
+                                                      .replaceAll(")", ""),
+                                                )).then((result) {
+                                                  toasts.color(colors[color]);
+                                                });
+                                              },
                                               onTap: () {
                                                 navStack.removeLast();
                                                 print(navStack);
