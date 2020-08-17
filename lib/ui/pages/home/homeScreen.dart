@@ -1,5 +1,6 @@
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/widgets/home/loading.dart';
 import 'package:Prism/ui/widgets/home/pexelsGrid.dart';
 import 'package:Prism/ui/widgets/home/wallhavenGrid.dart';
@@ -42,40 +43,37 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List> _future;
   //Check for update if available
   String currentAppVersion = globals.currentAppVersion;
-  final databaseReference = Firestore.instance;
-
   Future<void> _checkUpdate() async {
     print("checking for update");
     try {
-      databaseReference.collection("appConfig").getDocuments().then((value) {
-        print("Current App Version :" + currentAppVersion);
-        print("Latest Version :" +
-            value.documents[0]["currentVersion"].toString());
-        setState(() {
-          if (currentAppVersion !=
-              value.documents[0]["currentVersion"].toString()) {
-            setState(() {
-              globals.updateAvailable = true;
-              globals.versionInfo = {
-                "version_number":
-                    value.documents[0]["currentVersion"].toString(),
-                "version_desc": value.documents[0]["versionDesc"],
-              };
-            });
-          } else {
-            setState(() {
-              globals.updateAvailable = false;
-            });
-          }
-        });
-        globals.updateAvailable
-            ? !globals.noNewNotification
-                ? showUpdate(context)
-                : print("No new notification")
-            : print("No update");
+      print("Current App Version :" + currentAppVersion);
+      print("Latest Version :" +
+          remoteConfig.getString("currentVersion").toString());
+      setState(() {
+        if (currentAppVersion !=
+            remoteConfig.getString("currentVersion").toString()) {
+          setState(() {
+            globals.updateAvailable = true;
+            globals.versionInfo = {
+              "version_number":
+                  remoteConfig.getString("currentVersion").toString(),
+              "version_desc": remoteConfig.getString("versionDesc").toString(),
+            };
+          });
+          globals.updateAvailable
+              ? !globals.noNewNotification
+                  ? Future.delayed(Duration(seconds: 0))
+                      .whenComplete(() => {showUpdate(context)})
+                  : print("No new notification")
+              : print("No update");
+        } else {
+          setState(() {
+            globals.updateAvailable = false;
+          });
+        }
       });
     } catch (e) {
-      print("Error while checking for updates!");
+      print("Error while checking for updates! :" + e.toString());
     }
     setState(() {
       globals.updateChecked = true;
@@ -92,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isNew;
   @override
   void initState() {
+    super.initState();
     if (!globals.updateChecked) {
       _checkUpdate();
     }
@@ -100,7 +99,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _future = Future.delayed(Duration(seconds: 0)).then((value) =>
         Provider.of<CategorySupplier>(context, listen: false)
             .wallpaperFutureRefresh);
-    super.initState();
   }
 
   void _updateToken() {

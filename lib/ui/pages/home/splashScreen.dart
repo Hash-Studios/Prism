@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flare_splash_screen/flare_splash_screen.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 RemoteConfig remoteConfig;
 
@@ -35,6 +36,9 @@ class SplashWidget extends StatelessWidget {
             .setConfigSettings(RemoteConfigSettings(debugMode: false));
         await remoteConfig.setDefaults(<String, dynamic>{
           'categories': categories.toString(),
+          'currentVersion': globals.currentAppVersion.toString(),
+          'versionDesc':
+              "Prism Premium is here, for the personalisaton lords!^*^Setups are here! Change the way of personalisation.^*^Favourites moved to profile.",
         });
         await remoteConfig.fetch(expiration: const Duration(hours: 6));
         await remoteConfig.activateFetched();
