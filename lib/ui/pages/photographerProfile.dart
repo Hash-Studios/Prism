@@ -67,8 +67,8 @@ class _UserProfileChildState extends State<UserProfileChild> {
             headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
               SliverAppBar(
                 backgroundColor: Color(0xFFE57697),
-                automaticallyImplyLeading: false,
-                pinned: false,
+                automaticallyImplyLeading: true,
+                pinned: true,
                 expandedHeight: 260.0,
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
