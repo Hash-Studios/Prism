@@ -1,9 +1,9 @@
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/clockOverlay.dart';
+import 'package:Prism/ui/widgets/home/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -195,46 +195,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                       color: Colors.white,
                     ),
                   )),
-                  Expanded(
-                    flex: 2,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(
-                        colors == null ? 5 : colors.length,
-                        (color) {
-                          return GestureDetector(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: colors == null
-                                      ? Color(0xFF000000)
-                                      : colors[color],
-                                  borderRadius: BorderRadius.circular(500),
-                                ),
-                                height: MediaQuery.of(context).size.width / 8,
-                                width: MediaQuery.of(context).size.width / 8,
-                              ),
-                              onTap: () {
-                                navStack.removeLast();
-                                print(navStack);
-                                SystemChrome.setEnabledSystemUIOverlays([
-                                  SystemUiOverlay.top,
-                                  SystemUiOverlay.bottom
-                                ]);
-                                Navigator.pushNamed(
-                                  context,
-                                  ColorRoute,
-                                  arguments: [
-                                    colors[color]
-                                        .toString()
-                                        .replaceAll("Color(0xff", "")
-                                        .replaceAll(")", ""),
-                                  ],
-                                );
-                              });
-                        },
-                      ),
-                    ),
-                  ),
+                  ColorBar(colors: colors),
                   Expanded(
                     flex: 4,
                     child: Padding(
