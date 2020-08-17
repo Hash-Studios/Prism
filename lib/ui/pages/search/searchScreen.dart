@@ -6,8 +6,7 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/home/colorLoader.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/home/loading.dart';
 import 'package:Prism/ui/widgets/searchGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -282,10 +281,7 @@ class SearchLoader extends StatefulWidget {
   _SearchLoaderState createState() => _SearchLoaderState();
 }
 
-class _SearchLoaderState extends State<SearchLoader>
-    with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+class _SearchLoaderState extends State<SearchLoader> {
   Future _future;
 
   @override
@@ -301,75 +297,21 @@ class _SearchLoaderState extends State<SearchLoader>
     }
 
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
-        ? TweenSequence<Color>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
-                  end: Colors.white10,
-                ),
-              ),
-            ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black12.withOpacity(.1),
-                  end: Colors.black.withOpacity(.14),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withOpacity(.14),
-                  end: Colors.black.withOpacity(.1),
-                ),
-              ),
-            ],
-          ).animate(_controller)
-      ..addListener(() {
-        setState(() {});
-      });
-    _controller.repeat();
-  }
-
-  @override
-  dispose() {
-    _controller?.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
     return FutureBuilder(
       future: _future,
       builder: (ctx, snapshot) {
         if (snapshot == null) {
           print("snapshot null");
-          return LoadingCards(controller: controller, animation: animation);
+          return LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
           print("snapshot none, waiting");
-          return LoadingCards(controller: controller, animation: animation);
+          return LoadingCards();
         } else {
           // print("snapshot done");
           return SearchGrid(

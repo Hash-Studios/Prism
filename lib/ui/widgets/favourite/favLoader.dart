@@ -1,10 +1,8 @@
 // import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/favourite/favGrid.dart';
-import 'package:Prism/ui/widgets/profile/profileLoader.dart';
+import 'package:Prism/ui/widgets/home/loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:provider/provider.dart';
 
 class FavLoader extends StatefulWidget {
   final Future<List> future;
@@ -13,10 +11,7 @@ class FavLoader extends StatefulWidget {
   _FavLoaderState createState() => _FavLoaderState();
 }
 
-class _FavLoaderState extends State<FavLoader>
-    with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+class _FavLoaderState extends State<FavLoader> {
   Future<List> _future;
   @override
   void initState() {
@@ -24,58 +19,6 @@ class _FavLoaderState extends State<FavLoader>
     // _future =
     //     Provider.of<FavouriteProvider>(context, listen: false).getDataBase();
     _future = widget.future;
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
-        ? TweenSequence<Color>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
-                  end: Colors.white10,
-                ),
-              ),
-            ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black12.withOpacity(.1),
-                  end: Colors.black.withOpacity(.14),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withOpacity(.14),
-                  end: Colors.black.withOpacity(.1),
-                ),
-              ),
-            ],
-          ).animate(_controller)
-      ..addListener(() {
-        setState(() {});
-      });
-    _controller.repeat();
-  }
-
-  @override
-  dispose() {
-    _controller?.dispose();
-    super.dispose();
   }
 
   @override
@@ -93,13 +36,13 @@ class _FavLoaderState extends State<FavLoader>
         if (snapshot == null) {
           print("snapshot null");
           // return CircularProgressIndicator();
-          return LoadingCards(animation: animation);
+          return LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
           print("snapshot none, waiting");
           //   return CircularProgressIndicator();
-          return LoadingCards(animation: animation);
+          return LoadingCards();
         } else {
           return FavouriteGrid();
         }
