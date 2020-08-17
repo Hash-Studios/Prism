@@ -1,5 +1,6 @@
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/ui/widgets/home/loading.dart';
 import 'package:Prism/ui/widgets/home/pexelsGrid.dart';
 import 'package:Prism/ui/widgets/home/wallhavenGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
@@ -156,7 +157,9 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
-              return new Text('Loading....');
+              return new LoadingCards();
+            case ConnectionState.none:
+              return new LoadingCards();
             default:
               if (snapshot.hasError)
                 return new Text('Error: ${snapshot.error}');

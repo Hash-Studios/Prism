@@ -3,6 +3,7 @@ import 'package:Prism/global/globals.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/pages/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/homeScreen.dart';
+import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/categoriesBar.dart';
 import 'package:flutter/material.dart';
@@ -74,6 +75,7 @@ class _PageManagerState extends State<PageManager> {
         } else {
           return true;
         }
+        return false;
       },
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
@@ -109,6 +111,7 @@ class _PageManagerState extends State<PageManager> {
                   } else if (index == 1) {
                     return CollectionScreen();
                   }
+                  return UndefinedScreen();
                 }),
           )),
     );
