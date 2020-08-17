@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
@@ -14,7 +12,6 @@ import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:firebase_analytics/observer.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
@@ -26,7 +23,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/services.dart';
 
-RemoteConfig remoteConfig;
 Box prefs;
 Directory dir;
 var darkMode;
@@ -36,25 +32,6 @@ void main() {
   Crashlytics.instance.enableInDevMode = false;
   FlutterError.onError = Crashlytics.instance.recordFlutterError;
   getApplicationDocumentsDirectory().then((dir) async {
-    remoteConfig = await RemoteConfig.instance;
-    await remoteConfig.setConfigSettings(RemoteConfigSettings(debugMode: true));
-    await remoteConfig.setDefaults(<String, dynamic>{
-      'categories': categories.toString(),
-    });
-    await remoteConfig.fetch(expiration: const Duration(hours: 6));
-    await remoteConfig.activateFetched();
-    var cList = [];
-    var tempVar = remoteConfig
-        .getString('categories')
-        .replaceAll('[', "")
-        .replaceAll(']', "")
-        .split("},");
-    tempVar = tempVar.sublist(0, tempVar.length - 1);
-    tempVar.forEach((element) {
-      cList.add(element.split('"name": "')[1].split('",')[0].toString());
-      categories[tempVar.indexOf(element)] = json.decode(element + "}");
-    });
-    print(cList);
     Hive.init(dir.path);
     // var box = await Hive.openBox('wallpapers');
     // box.deleteFromDisk();
