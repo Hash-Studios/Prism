@@ -1,4 +1,3 @@
-import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
