@@ -27,15 +27,27 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   void _setWallPaper() async {
     bool result;
     try {
-      result = await platform.invokeMethod("set_wallpaper", <String, dynamic>{
-        'url': widget.url,
-      });
+      if (widget.url.contains("com.hash.prism")) {
+        result =
+            await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
+          'url': widget.url,
+        });
+      } else if (widget.url.contains("/0/")) {
+        result =
+            await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
+          'url': "/" + widget.url.replaceAll("/0//", "/0/"),
+        });
+      } else {
+        result = await platform.invokeMethod("set_wallpaper", <String, dynamic>{
+          'url': widget.url,
+        });
+      }
       if (result) {
         print("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Both', 'result': 'Success'});
-        toasts.codeSend("Wallpaper set successfully!");
+        // toasts.codeSend("Wallpaper set successfully!");
       } else {
         print("Failed");
         toasts.error("Something went wrong!");
