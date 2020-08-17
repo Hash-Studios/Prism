@@ -12,6 +12,7 @@ import android.app.WallpaperManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Build;
 import android.util.Log;
 import android.util.Pair;
@@ -36,7 +37,7 @@ public class MainActivity extends FlutterActivity {
     private Target target = new Target() {
         @Override
         public void onBitmapLoaded(Bitmap resource, Picasso.LoadedFrom from) {
-            android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Ready");
+            android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Image Downloaded");
             SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
             setWallPaperTask.execute(new Pair(resource, "1"));
         }
@@ -60,7 +61,11 @@ public class MainActivity extends FlutterActivity {
                         String url = call.argument("url"); // .argument returns the correct type
                         android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
                         Picasso.get().load(url).into(target);
-                        android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Image Downloaded");
+
+                    } else if (call.method.equals("set_wallpaper_file")) {
+                        String url = call.argument("url"); // .argument returns the correct type
+                        android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
+                        Picasso.get().load("file://" + url).into(target);
 
                     }
                 });
@@ -129,6 +134,7 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
     public Uri getImageUri(Context inContext, Bitmap inImage) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        fixMediaDir();
         String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
         return Uri.parse(path);
     }
@@ -138,5 +144,22 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
         cursor.moveToFirst();
         int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
         return cursor.getString(idx);
+    }
+
+    void fixMediaDir() {
+        File sdcard = Environment.getExternalStorageDirectory();
+        if (sdcard != null) {
+            File mediaDir = new File(sdcard, "DCIM/Camera");
+            if (!mediaDir.exists()) {
+                mediaDir.mkdirs();
+            }
+        }
+
+        if (sdcard != null) {
+            File mediaDir = new File(sdcard, "Pictures");
+            if (!mediaDir.exists()) {
+                mediaDir.mkdirs();
+            }
+        }
     }
 }
