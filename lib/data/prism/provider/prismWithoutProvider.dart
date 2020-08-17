@@ -31,28 +31,31 @@ Future<List> getPrismWalls() async {
           map['createdAt'] = map['createdAt'].toString();
           prismWalls.add(map);
         });
-        // prismWalls.shuffle(Random.secure());
         box.delete('wallpapers');
-        box.put('wallpapers', prismWalls);
-        print("Wallpapers saved");
-        box.put(
-          'date',
-          DateFormat("yy-MM-dd").format(
-            DateTime.now(),
-          ),
-        );
-        print(prismWalls.length);
-        subPrismWalls = box.get('wallpapers').sublist(0, 24);
+        if (prismWalls != []) {
+          box.put('wallpapers', prismWalls);
+          print("Wallpapers saved");
+          box.put(
+            'date',
+            DateFormat("yy-MM-dd").format(
+              DateTime.now(),
+            ),
+          );
+          print(prismWalls.length);
+          subPrismWalls = box.get('wallpapers').sublist(0, 24);
+        } else {
+          print("Not connected to Internet");
+          subPrismWalls = [];
+        }
       }).catchError((e) {
         print(e.toString());
         print("data done with error");
       });
     } else {
-      print("Fetching data from cache");
+      print("Community : Data Fetched from cache");
       prismWalls = [];
       subPrismWalls = [];
       prismWalls = box.get('wallpapers');
-      // prismWalls.shuffle(Random.secure());
       subPrismWalls = prismWalls.sublist(0, 24);
     }
   } else {
