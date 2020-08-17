@@ -6,6 +6,8 @@ import 'package:Prism/ui/pages/home/homeScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/categoriesBar.dart';
+import 'package:Prism/ui/widgets/offlineBanner.dart';
+import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:provider/provider.dart';
@@ -20,10 +22,23 @@ class PageManager extends StatefulWidget {
 
 class _PageManagerState extends State<PageManager> {
   int page = 0;
+  bool result = true;
+
+  void checkConnection() async {
+    result = await DataConnectionChecker().hasConnection;
+    if (result) {
+      print("Internet working as expected!");
+    } else {
+      print("Not connected to Internet!");
+    }
+    setState(() {});
+  }
+
   @override
   void initState() {
     Provider.of<TabProvider>(context, listen: false)
         .updateSelectedTab("Wallpapers");
+    checkConnection();
     super.initState();
   }
 
@@ -85,34 +100,39 @@ class _PageManagerState extends State<PageManager> {
                 height: MediaQuery.of(context).size.height),
             preferredSize: Size(double.infinity, 55),
           ),
-          body: BottomBar(
-            child: PageView.builder(
-                onPageChanged: (index) {
-                  print("Index cat: " + index.toString());
-                  setState(() {
-                    page = index;
-                  });
-                  categoryController.scrollToIndex(index,
-                      preferPosition: AutoScrollPosition.begin);
-                  if (index == 0) {
-                    Provider.of<TabProvider>(context, listen: false)
-                        .updateSelectedTab("Wallpapers");
-                  } else if (index == 1) {
-                    Provider.of<TabProvider>(context, listen: false)
-                        .updateSelectedTab("Collections");
-                  }
-                },
-                controller: pageController,
-                itemCount: 2,
-                itemBuilder: (context, index) {
-                  print("Index : " + index.toString());
-                  if (index == 0) {
-                    return HomeScreen();
-                  } else if (index == 1) {
-                    return CollectionScreen();
-                  }
-                  return UndefinedScreen();
-                }),
+          body: Stack(
+            children: <Widget>[
+              BottomBar(
+                child: PageView.builder(
+                    onPageChanged: (index) {
+                      print("Index cat: " + index.toString());
+                      setState(() {
+                        page = index;
+                      });
+                      categoryController.scrollToIndex(index,
+                          preferPosition: AutoScrollPosition.begin);
+                      if (index == 0) {
+                        Provider.of<TabProvider>(context, listen: false)
+                            .updateSelectedTab("Wallpapers");
+                      } else if (index == 1) {
+                        Provider.of<TabProvider>(context, listen: false)
+                            .updateSelectedTab("Collections");
+                      }
+                    },
+                    controller: pageController,
+                    itemCount: 2,
+                    itemBuilder: (context, index) {
+                      print("Index : " + index.toString());
+                      if (index == 0) {
+                        return HomeScreen();
+                      } else if (index == 1) {
+                        return CollectionScreen();
+                      }
+                      return UndefinedScreen();
+                    }),
+              ),
+              !result ? ConnectivityWidget() : Container(),
+            ],
           )),
     );
   }
