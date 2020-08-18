@@ -3,6 +3,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/theme/thumbModel.dart';
 import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
@@ -26,6 +27,7 @@ import 'package:flutter/services.dart';
 Box prefs;
 Directory dir;
 var darkMode;
+var hqThumbs;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
@@ -39,6 +41,11 @@ void main() {
     await Hive.openBox('favourites');
     prefs = await Hive.openBox('prefs');
     print("Box Opened");
+    hqThumbs = prefs.get('hqThumbs') ?? false;
+    if (hqThumbs)
+      prefs.put('hqThumbs', true);
+    else
+      prefs.put('hqThumbs', false);
     darkMode = prefs.get('darkMode') ?? true;
     if (darkMode)
       prefs.put('darkMode', true);
@@ -69,6 +76,10 @@ void main() {
                         create: (context) => ThemeModel(
                             darkMode ? kDarkTheme : kLightTheme,
                             darkMode ? ThemeType.Dark : ThemeType.Light),
+                      ),
+                      ChangeNotifierProvider<ThumbModel>(
+                        create: (context) => ThumbModel(
+                            hqThumbs ? ThumbType.High : ThumbType.Low),
                       )
                     ],
                     child: MyApp(),
