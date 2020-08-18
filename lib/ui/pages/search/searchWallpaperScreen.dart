@@ -819,7 +819,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             print('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
-                              imageUrl: PData.wallsPS[index].src["portrait"],
+                              imageUrl: PData.wallsPS[index].src["original"],
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
                                 controller: screenshotController,
@@ -911,7 +911,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
-                            var link = PData.wallsPS[index].src["portrait"];
+                            var link = PData.wallsPS[index].src["original"];
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(

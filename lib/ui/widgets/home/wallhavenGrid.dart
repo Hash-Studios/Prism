@@ -3,6 +3,7 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
@@ -199,8 +200,14 @@ class _WallHavenGridState extends State<WallHavenGrid>
                                     color: animation.value,
                                     borderRadius: BorderRadius.circular(20),
                                     image: DecorationImage(
-                                        image: CachedNetworkImageProvider(WData
-                                            .walls[index].thumbs["original"]),
+                                        image: CachedNetworkImageProvider(
+                                            Provider.of<ThumbModel>(context,
+                                                            listen: false)
+                                                        .thumbType ==
+                                                    ThumbType.High
+                                                ? WData.walls[index].path
+                                                : WData.walls[index]
+                                                    .thumbs["original"]),
                                         fit: BoxFit.cover)),
                           ),
                         ),

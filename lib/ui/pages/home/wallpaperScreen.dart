@@ -1370,7 +1370,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   return GestureDetector(
                                     child: CachedNetworkImage(
                                       imageUrl:
-                                          PData.wallsP[index].src["portrait"],
+                                          PData.wallsP[index].src["original"],
                                       imageBuilder: (context, imageProvider) =>
                                           Screenshot(
                                         controller: screenshotController,
@@ -1467,7 +1467,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 child: IconButton(
                                   onPressed: () {
                                     var link =
-                                        PData.wallsP[index].src["portrait"];
+                                        PData.wallsP[index].src["original"];
                                     Navigator.push(
                                         context,
                                         PageRouteBuilder(
@@ -1811,7 +1811,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           return GestureDetector(
                                             child: CachedNetworkImage(
                                               imageUrl: PData.wallsC[index]
-                                                  .src["portrait"],
+                                                  .src["original"],
                                               imageBuilder:
                                                   (context, imageProvider) =>
                                                       Screenshot(
@@ -1924,7 +1924,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: IconButton(
                                       onPressed: () {
                                         var link =
-                                            PData.wallsC[index].src["portrait"];
+                                            PData.wallsC[index].src["original"];
                                         Navigator.push(
                                             context,
                                             PageRouteBuilder(
