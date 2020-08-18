@@ -123,12 +123,13 @@ class _WallpaperGridState extends State<WallpaperGrid>
                 expandedHeight: 200,
                 flexibleSpace: SizedBox(
                   child: Stack(
-                    alignment: Alignment.center,
+                    alignment: AlignmentDirectional.bottomEnd,
                     children: <Widget>[
                       CarouselSlider.builder(
                         carouselController: carouselController,
                         itemCount: 5,
                         options: CarouselOptions(
+                            pauseAutoPlayOnTouch: true,
                             height: 200,
                             viewportFraction: 0.8,
                             initialPage: 0,
@@ -162,9 +163,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                       child: Container(
                                         width:
                                             MediaQuery.of(context).size.width,
-                                        color: Theme.of(context)
-                                            .primaryColor
-                                            .withOpacity(0.4),
+                                        color: Colors.black.withOpacity(0.4),
                                         child: Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: Text(
@@ -176,6 +175,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                                 .headline2
                                                 .copyWith(
                                                     fontSize: 20,
+                                                    color: Colors.white,
                                                     fontWeight:
                                                         FontWeight.bold),
                                           ),
@@ -231,8 +231,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                                 width: MediaQuery.of(context)
                                                     .size
                                                     .width,
-                                                color: Theme.of(context)
-                                                    .primaryColor
+                                                color: Colors.black
                                                     .withOpacity(0.4),
                                                 child: Padding(
                                                   padding:
@@ -251,6 +250,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                                         .textTheme
                                                         .headline2
                                                         .copyWith(
+                                                            color: Colors.white,
                                                             fontSize: 20,
                                                             fontWeight:
                                                                 FontWeight
@@ -294,26 +294,28 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                 ),
                               ),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [0, 1, 2, 3, 4].map((i) {
-                            return Container(
-                              width: 8.0,
-                              height: 8.0,
-                              margin: EdgeInsets.symmetric(
-                                  vertical: 14.0, horizontal: 2.0),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _current == i
-                                    ? Theme.of(context).accentColor
-                                    : Theme.of(context)
-                                        .primaryColor
-                                        .withOpacity(0.4),
-                              ),
-                            );
-                          }).toList(),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [0, 1, 2, 3, 4].map((i) {
+                              return Container(
+                                width: 8.0,
+                                height: 8.0,
+                                margin: EdgeInsets.symmetric(
+                                    vertical: 14.0, horizontal: 2.0),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _current == i
+                                      ? Color(0xFFFFFFFF)
+                                      : Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.4),
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ],
