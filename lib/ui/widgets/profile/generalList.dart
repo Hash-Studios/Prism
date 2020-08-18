@@ -65,6 +65,7 @@ class GeneralList extends StatelessWidget {
                 ),
                 onTap: () async {
                   DefaultCacheManager().emptyCache();
+                  PaintingBinding.instance.imageCache.clear();
                   await Hive.box('wallpapers').deleteFromDisk();
                   await Hive.openBox('wallpapers');
                   toasts.codeSend("Cleared cache!");

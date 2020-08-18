@@ -30,7 +30,7 @@ class FavWallpaperViewScreen extends StatefulWidget {
 class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
-    if(navStack.length>1)navStack.removeLast();
+    if (navStack.length > 1) navStack.removeLast();
     print(navStack);
     return true;
   }
@@ -56,7 +56,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new NetworkImage(thumb),
+      new CachedNetworkImageProvider(thumb),
       maximumColorCount: 20,
     );
     setState(() {
@@ -94,7 +94,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     super.initState();
     SystemChrome.setEnabledSystemUIOverlays([]);
   }
-
 
   void UnsecureWindow() async {
     await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
@@ -949,8 +948,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           color: Colors.white,
                         ),
                       )),
-                                            ColorBar(colors: colors),
-
+                      ColorBar(colors: colors),
                       Expanded(
                         flex: 4,
                         child: Padding(

@@ -58,7 +58,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new NetworkImage(link),
+      new CachedNetworkImageProvider(link),
       maximumColorCount: 20,
     );
     setState(() {

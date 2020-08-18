@@ -54,7 +54,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new NetworkImage(thumb),
+      new CachedNetworkImageProvider(thumb),
       maximumColorCount: 20,
     );
     setState(() {
