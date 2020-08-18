@@ -65,7 +65,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new NetworkImage(link),
+      new CachedNetworkImageProvider(link),
       maximumColorCount: 20,
     );
     setState(() {
