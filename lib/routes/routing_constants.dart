@@ -30,3 +30,4 @@ const String UserProfileWallViewRoute = '/uprofilew';
 const String ThemeViewRoute = '/themes';
 const String PremiumRoute = '/buyPremium';
 const String PhotographerProfileRoute = '/phprofile';
+const String NotificationsRoute = '/notifications';

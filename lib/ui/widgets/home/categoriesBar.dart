@@ -15,6 +15,7 @@ import 'package:tutorial_coach_mark/target_position.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:Prism/routes/routing_constants.dart';
 
 class CategoriesBar extends StatefulWidget {
   final width;
@@ -360,39 +361,36 @@ class _CategoriesBarState extends State<CategoriesBar> {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          globals.updateAvailable
-              ? SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.1,
-                  height: 100,
-                  child: IconButton(
-                    icon: globals.noNewNotification
-                        ? Icon(JamIcons.bell)
-                        : Stack(children: <Widget>[
-                            Icon(JamIcons.bell_f),
-                            Positioned(
-                              top: 0.0,
-                              right: 0.0,
-                              child: Icon(
-                                Icons.brightness_1,
-                                size: 9.0,
-                                color: Color(0xFFE57697),
-                              ),
-                            )
-                          ]),
-                    onPressed: () {
-                      setState(() {
-                        globals.noNewNotification = true;
-                      });
-                      showUpdate(context);
-                    },
-                  ),
-                )
-              : Container(),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.1,
+            height: 100,
+            child: IconButton(
+              icon: globals.noNewNotification
+                  ? Icon(JamIcons.bell)
+                  : Stack(children: <Widget>[
+                      Icon(JamIcons.bell_f),
+                      Positioned(
+                        top: 0.0,
+                        right: 0.0,
+                        child: Icon(
+                          Icons.brightness_1,
+                          size: 9.0,
+                          color: Color(0xFFE57697),
+                        ),
+                      )
+                    ]),
+              onPressed: () {
+                setState(() {
+                  globals.noNewNotification = true;
+                });
+                // showUpdate(context);
+                Navigator.pushNamed(context, NotificationsRoute);
+              },
+            ),
+          ),
           SizedBox(
             // key: globals.keyCategoriesBar,
-            width: globals.updateAvailable
-                ? MediaQuery.of(context).size.width * 0.7
-                : MediaQuery.of(context).size.width * 0.8,
+            width: MediaQuery.of(context).size.width * 0.7,
             height: 100,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
