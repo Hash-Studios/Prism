@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:url_launcher/url_launcher.dart';
 
 class WallpaperGrid extends StatefulWidget {
@@ -236,13 +237,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                                   padding:
                                                       const EdgeInsets.all(8.0),
                                                   child: Text(
-                                                    i == 0
-                                                        ? "TOP-RATED"
-                                                        : i == 1
-                                                            ? "BEST OF COMMUNITY"
-                                                            : i == 2
-                                                                ? "USER FAVOURITE"
-                                                                : "TRENDING WALL",
+                                                    globals.topTitleText[i],
                                                     textAlign: TextAlign.center,
                                                     maxLines: 1,
                                                     style: Theme.of(context)

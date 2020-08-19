@@ -34,6 +34,7 @@ void main() {
   Crashlytics.instance.enableInDevMode = false;
   FlutterError.onError = Crashlytics.instance.recordFlutterError;
   getApplicationDocumentsDirectory().then((dir) async {
+    globals.topTitleText.shuffle();
     Hive.init(dir.path);
     // var box = await Hive.openBox('wallpapers');
     // box.deleteFromDisk();
