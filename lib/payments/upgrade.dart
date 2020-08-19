@@ -551,8 +551,19 @@ class _UpsellScreenState extends State<UpsellScreen> {
       }
     }
     return Scaffold(
-        appBar: AppBar(title: Text("Upsell Screen")),
         backgroundColor: Theme.of(context).primaryColor,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: Text("Purchase"),
+          leading: IconButton(
+            icon: Icon(JamIcons.close),
+            onPressed: () {
+              if (navStack.length > 1) navStack.removeLast();
+              print(navStack);
+              Navigator.pop(context);
+            },
+          ),
+        ),
         body: Center(
             child: Text(
           "Loading...",
