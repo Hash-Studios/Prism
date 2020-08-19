@@ -19,6 +19,7 @@ import 'package:Prism/ui/pages/setupScreen.dart';
 import 'package:Prism/ui/pages/setupViewScreen.dart';
 import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
+import 'package:Prism/ui/pages/notificationScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -77,6 +78,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       print(navStack);
       analytics.setCurrentScreen(screenName: PremiumRoute);
       return CupertinoPageRoute(builder: (context) => UpgradeScreen());
+    case NotificationsRoute:
+      navStack.add("Notifications");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: NotificationsRoute);
+      return CupertinoPageRoute(builder: (context) => NotificationScreen());
     case ColorRoute:
       navStack.add("Color");
       print(navStack);
