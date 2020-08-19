@@ -1066,7 +1066,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                         ),
                       ),
                       Container(
-                        width: MediaQuery.of(context).size.width * 0.2,
+                        width: MediaQuery.of(context).size.width * 0.24,
                         child: Text(
                           '${widget.package.product.priceString}',
                           style: TextStyle(fontSize: 22),
