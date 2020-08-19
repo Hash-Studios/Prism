@@ -11,5 +11,12 @@ var versionInfo = {};
 var noNewNotification = false;
 var height = 1440.0;
 
+var topTitleText = [
+  "TOP-RATED",
+  "BEST OF COMMUNITY",
+  "FAN-FAVOURITE",
+  "TRENDING",
+];
+
 AutoScrollController categoryController =
     AutoScrollController(axis: Axis.horizontal);
