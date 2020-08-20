@@ -20,6 +20,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     } else {
       notifications = box.get('notifications');
     }
+    notifications = new List.from(notifications.reversed);
     super.initState();
   }
 
@@ -57,6 +58,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         setState(() {
                           notifications.removeAt(index);
                         });
+                        Box<List> box = Hive.box('notifications');
+                        box.put('notifications', notifications);
                       },
                       dismissThresholds: {
                         DismissDirection.startToEnd: 0.5,
