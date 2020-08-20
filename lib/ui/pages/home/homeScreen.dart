@@ -9,9 +9,11 @@ import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
 Future<dynamic> myBackgroundMessageHandler(Map<String, dynamic> message) {
@@ -106,7 +108,24 @@ class _HomeScreenState extends State<HomeScreen> {
     f.requestNotificationPermissions();
     f.configure(
       onMessage: (Map<String, dynamic> message) async {
-        print("onMessage: $message");
+        // print("onMessage: $message");
+        Box<List> box = Hive.box('notifications');
+        var notifications = box.get('notifications');
+        if (notifications == null) {
+          notifications = [];
+        }
+        print(notifications);
+        notifications.add(NotifData(
+          title: message['notification']['title'] ?? "Notification",
+          desc: message['notification']['body'] ?? "",
+          imageUrl: message['data']['imageUrl'] ??
+              "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
+          pageName: message['data']['pageName'],
+          arguments: message['data']['arguments'] ?? [],
+        ));
+        print(notifications);
+        box.put('notifications', notifications);
+        print(box.get('notifications')[0].title);
         // _showItemDialog(message);
       },
       onBackgroundMessage: myBackgroundMessageHandler,
@@ -121,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     f.getToken().then((value) {
-      // print(value);
+      print(value);
       Firestore.instance.collection('tokens').document(value).setData({
         "devtoken": value.toString(),
         "createdAt": DateTime.now().toIso8601String()
