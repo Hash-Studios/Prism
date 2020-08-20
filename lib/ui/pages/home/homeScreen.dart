@@ -16,20 +16,25 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
+void writeNotifications(Map<String, dynamic> message) {
+  Box<List> box = Hive.box('notifications');
+  var notifications = box.get('notifications');
+  if (notifications == null) {
+    notifications = [];
+  }
+  notifications.add(NotifData(
+    title: message['notification']['title'] ?? "Notification",
+    desc: message['notification']['body'] ?? "",
+    imageUrl: message['data']['imageUrl'] ??
+        "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
+    pageName: message['data']['pageName'],
+    arguments: message['data']['arguments'] ?? [],
+  ));
+  box.put('notifications', notifications);
+}
+
 Future<dynamic> myBackgroundMessageHandler(Map<String, dynamic> message) {
-  if (message.containsKey('data')) {
-    // Handle data message
-    final dynamic data = message['data'];
-    print(data);
-  }
-
-  if (message.containsKey('notification')) {
-    // Handle notification message
-    final dynamic notification = message['notification'];
-    print(notification);
-  }
-
-  // Or do other work.
+  writeNotifications(message);
 }
 
 class HomeScreen extends StatefulWidget {
@@ -109,32 +114,18 @@ class _HomeScreenState extends State<HomeScreen> {
     f.configure(
       onMessage: (Map<String, dynamic> message) async {
         // print("onMessage: $message");
-        Box<List> box = Hive.box('notifications');
-        var notifications = box.get('notifications');
-        if (notifications == null) {
-          notifications = [];
-        }
-        print(notifications);
-        notifications.add(NotifData(
-          title: message['notification']['title'] ?? "Notification",
-          desc: message['notification']['body'] ?? "",
-          imageUrl: message['data']['imageUrl'] ??
-              "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
-          pageName: message['data']['pageName'],
-          arguments: message['data']['arguments'] ?? [],
-        ));
-        print(notifications);
-        box.put('notifications', notifications);
-        print(box.get('notifications')[0].title);
+        writeNotifications(message);
         // _showItemDialog(message);
       },
       onBackgroundMessage: myBackgroundMessageHandler,
       onLaunch: (Map<String, dynamic> message) async {
         print("onLaunch: $message");
+        writeNotifications(message);
         // _navigateToItemDetail(message);
       },
       onResume: (Map<String, dynamic> message) async {
         print("onResume: $message");
+        writeNotifications(message);
         // _navigateToItemDetail(message);
       },
     );
