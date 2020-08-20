@@ -50,6 +50,54 @@ public class MainActivity extends FlutterActivity {
         public void onPrepareLoad(Drawable placeHolderDrawable) {
         }
     };
+    private Target target1 = new Target() {
+        @Override
+        public void onBitmapLoaded(Bitmap resource, Picasso.LoadedFrom from) {
+            android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Image Downloaded");
+            SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
+            setWallPaperTask.execute(new Pair(resource, "2"));
+        }
+
+        @Override
+        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+        }
+    };
+    private Target target2 = new Target() {
+        @Override
+        public void onBitmapLoaded(Bitmap resource, Picasso.LoadedFrom from) {
+            android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Image Downloaded");
+            SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
+            setWallPaperTask.execute(new Pair(resource, "3"));
+        }
+
+        @Override
+        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+        }
+    };
+    private Target target3 = new Target() {
+        @Override
+        public void onBitmapLoaded(Bitmap resource, Picasso.LoadedFrom from) {
+            android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Image Downloaded");
+            SetWallPaperTask setWallPaperTask = new SetWallPaperTask(getActivity());
+            setWallPaperTask.execute(new Pair(resource, "4"));
+        }
+
+        @Override
+        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+        }
+    };
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
@@ -67,6 +115,36 @@ public class MainActivity extends FlutterActivity {
                         android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
                         Picasso.get().load("file://" + url).into(target);
 
+                    } else if (call.method.equals("set_lock_wallpaper")) {
+                        String url = call.argument("url"); // .argument returns the correct type
+                        android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
+                        Picasso.get().load(url).into(target1);
+
+                    } else if (call.method.equals("set_home_wallpaper")) {
+                        String url = call.argument("url"); // .argument returns the correct type
+                        android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
+                        Picasso.get().load(url).into(target2);
+
+                    } else if (call.method.equals("set_both_wallpaper")) {
+                        String url = call.argument("url"); // .argument returns the correct type
+                        android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
+                        Picasso.get().load(url).into(target3);
+
+                    } else if (call.method.equals("set_lock_wallpaper_file")) {
+                        String url = call.argument("url"); // .argument returns the correct type
+                        android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
+                        Picasso.get().load("file://" + url).into(target1);
+
+                    } else if (call.method.equals("set_home_wallpaper_file")) {
+                        String url = call.argument("url"); // .argument returns the correct type
+                        android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
+                        Picasso.get().load("file://" + url).into(target2);
+
+                    } else if (call.method.equals("set_both_wallpaper_file")) {
+                        String url = call.argument("url"); // .argument returns the correct type
+                        android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
+                        Picasso.get().load("file://" + url).into(target3);
+
                     }
                 });
     }
@@ -82,20 +160,62 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
 
     @Override
     protected final Boolean doInBackground(Pair<Bitmap, String>... pairs) {
-        WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
-        try {
-            Uri tempUri = getImageUri(mContext, pairs[0].first);
-            android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Saved image to storage");
-            File finalFile = new File(getRealPathFromURI(tempUri));
-            Uri contentURI = getImageContentUri(mContext, finalFile.getAbsolutePath());
-            android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Opening crop intent");
-            mContext.startActivity(wallpaperManager.getCropAndSetWallpaperIntent(contentURI));
-            // wallpaperManager.setBitmap(pairs[0].first);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return false;
+        switch (pairs[0].second) {
+            case "1": {
+                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
+                try {
+                    Uri tempUri = getImageUri(mContext, pairs[0].first);
+                    android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Saved image to storage");
+                    File finalFile = new File(getRealPathFromURI(tempUri));
+                    Uri contentURI = getImageContentUri(mContext, finalFile.getAbsolutePath());
+                    android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Opening crop intent");
+                    mContext.startActivity(wallpaperManager.getCropAndSetWallpaperIntent(contentURI));
+                    // wallpaperManager.setBitmap(pairs[0].first);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
+            }
+            case "2": {
+                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        wallpaperManager.setBitmap(pairs[0].first, null, true, WallpaperManager.FLAG_LOCK);
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
+                break;
+            }
+            case "3": {
+                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        wallpaperManager.setBitmap(pairs[0].first, null, true, WallpaperManager.FLAG_SYSTEM);
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
+                break;
+            }
+            case "4": {
+                WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        wallpaperManager.setBitmap(pairs[0].first, null, true,
+                                WallpaperManager.FLAG_LOCK | WallpaperManager.FLAG_SYSTEM);
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
+                break;
+            }
+                return true;
         }
-        return true;
+
     }
 
     @Override
