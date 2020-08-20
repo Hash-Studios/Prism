@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
@@ -40,6 +41,8 @@ void main() {
     // box.deleteFromDisk();
     await Hive.openBox('wallpapers');
     await Hive.openBox('favourites');
+    Hive.registerAdapter(NotifDataAdapter());
+    await Hive.openBox<List>('notifications');
     prefs = await Hive.openBox('prefs');
     print("Box Opened");
     hqThumbs = prefs.get('hqThumbs') ?? false;
