@@ -75,8 +75,6 @@ public class MainActivity extends FlutterActivity {
 class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean> {
 
     private final Context mContext;
-    File finalFile;
-    Uri tempUri;
 
     public SetWallPaperTask(final Context context) {
         mContext = context;
@@ -86,22 +84,9 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
     protected final Boolean doInBackground(Pair<Bitmap, String>... pairs) {
         WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
         try {
-            tempUri = getImageUri(mContext, pairs[0].first);
+            Uri tempUri = getImageUri(mContext, pairs[0].first);
             android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Saved image to storage");
-            finalFile = new File(getRealPathFromURI(tempUri));
-            android.util.Log.i("Arguments ", "configureFlutterEngine: " + getRealPathFromURI(tempUri));
-            File mediaDir = new File("/storage/emulated/0/", "Prism_Temp");
-            if (!mediaDir.exists()) {
-                mediaDir.mkdirs();
-            }
-            Boolean success = finalFile.renameTo(new File("/storage/emulated/0/Prism_Temp/temp.jpg"));
-            android.util.Log.i("Arguments ",
-                    "configureFlutterEngine: " + "Moved to temp storage : " + Boolean.toString(success));
-            finalFile.delete();
-            mContext.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                    Uri.fromFile(new File(getRealPathFromURI(tempUri)))));
-            finalFile = new File("/storage/emulated/0/Prism_Temp/temp.jpg");
-            android.util.Log.i("Arguments ", "configureFlutterEngine: " + finalFile.getAbsolutePath());
+            File finalFile = new File(getRealPathFromURI(tempUri));
             Uri contentURI = getImageContentUri(mContext, finalFile.getAbsolutePath());
             android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Opening crop intent");
             mContext.startActivity(wallpaperManager.getCropAndSetWallpaperIntent(contentURI));
@@ -147,10 +132,10 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
     }
 
     public Uri getImageUri(Context inContext, Bitmap inImage) {
-        fixMediaDir();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
-        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "temp", null);
+        fixMediaDir();
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
         return Uri.parse(path);
     }
 
