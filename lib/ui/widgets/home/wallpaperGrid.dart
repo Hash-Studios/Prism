@@ -149,7 +149,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                         itemBuilder: (BuildContext context, int i) => i == 4
                             ? Container(
                                 width: MediaQuery.of(context).size.width,
-                                margin: EdgeInsets.fromLTRB(5, 1, 5, 7),
+                                margin: EdgeInsets.fromLTRB(3, 1, 3, 6),
                                 child: GestureDetector(
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -191,7 +191,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                               )
                             : Container(
                                 width: MediaQuery.of(context).size.width,
-                                margin: EdgeInsets.fromLTRB(5, 1, 5, 7),
+                                margin: EdgeInsets.fromLTRB(3, 1, 3, 6),
                                 child: GestureDetector(
                                   child: Padding(
                                     padding: i == longTapIndex

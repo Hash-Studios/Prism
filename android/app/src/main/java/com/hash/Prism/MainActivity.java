@@ -97,6 +97,9 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
             Boolean success = finalFile.renameTo(new File("/storage/emulated/0/Prism_Temp/temp.jpg"));
             android.util.Log.i("Arguments ",
                     "configureFlutterEngine: " + "Moved to temp storage : " + Boolean.toString(success));
+            finalFile.delete();
+            mContext.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                    Uri.fromFile(new File(getRealPathFromURI(tempUri)))));
             finalFile = new File("/storage/emulated/0/Prism_Temp/temp.jpg");
             android.util.Log.i("Arguments ", "configureFlutterEngine: " + finalFile.getAbsolutePath());
             Uri contentURI = getImageContentUri(mContext, finalFile.getAbsolutePath());
@@ -147,7 +150,7 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
         fixMediaDir();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
-        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "temp", null);
         return Uri.parse(path);
     }
 
