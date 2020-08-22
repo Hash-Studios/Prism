@@ -1,6 +1,8 @@
+import 'dart:io' show Platform;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:device_info/device_info.dart';
 // import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -314,8 +316,20 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: () {
-        isLoading ? print("") : onPaint();
+      onLongPress: () async {
+        if (Platform.isAndroid) {
+          var androidInfo = await DeviceInfoPlugin().androidInfo;
+          var sdkInt = androidInfo.version.sdkInt;
+          print('(SDK $sdkInt)');
+          isLoading
+              ? print("")
+              : sdkInt >= 24
+                  ? onPaint()
+                  : toasts
+                      .error("Crop is supported for Android 7.0 and above!");
+        } else {
+          toasts.error("Sorry crop is supported for Android 7.0 and above!");
+        }
       },
       onTap: () {
         isLoading ? print("") : onTapPaint();
