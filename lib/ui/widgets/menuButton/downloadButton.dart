@@ -229,8 +229,8 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
       }
     };
     videoAd.load(
-        adUnitId: RewardedVideoAd.testAdUnitId,
-        // adUnitId: "ca-app-pub-6979592252372323/9849990237",
+        // adUnitId: RewardedVideoAd.testAdUnitId,
+        adUnitId: "ca-app-pub-6979592252372323/9849990237",
         targetingInfo: targetingInfo);
     super.initState();
   }

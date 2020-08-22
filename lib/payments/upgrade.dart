@@ -43,7 +43,7 @@ Future<void> checkPremium() async {
   PurchaserInfo purchaserInfo;
   try {
     purchaserInfo = await Purchases.getPurchaserInfo();
-    print(purchaserInfo.toString());
+    // print(purchaserInfo.toString());
     if (purchaserInfo.entitlements.all['prism_premium'] != null) {
       appData.isPro = purchaserInfo.entitlements.all['prism_premium'].isActive;
     } else {
@@ -143,11 +143,8 @@ class _UpsellScreenState extends State<UpsellScreen> {
     if (widget.offerings != null) {
       final offering = widget.offerings.current;
       if (offering != null) {
-        // final monthly = offering.monthly;
         final lifetime = offering.lifetime;
-        if (
-            // monthly != null &&
-            lifetime != null) {
+        if (lifetime != null) {
           return WillPopScope(
             onWillPop: onWillPop,
             child: Scaffold(
@@ -398,93 +395,10 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                 main.prefs.put('premium', appData.isPro);
                                 toasts
                                     .codeSend("You are now a premium member.");
-                                // Alert(
-                                //   context: context,
-                                //   style: kWelcomeAlertStyle,
-                                //   image: Image.asset(
-                                //     "assets/images/avatar_demo.png",
-                                //     height: 150,
-                                //   ),
-                                //   title: "Congratulations",
-                                //   content: Column(
-                                //     children: <Widget>[
-                                //       Padding(
-                                //         padding: const EdgeInsets.only(
-                                //             top: 20.0,
-                                //             right: 8.0,
-                                //             left: 8.0,
-                                //             bottom: 20.0),
-                                //         child: Text(
-                                //           'Your purchase has been restored!',
-                                //           textAlign: TextAlign.center,
-                                //           style: kSendButtonTextStyle,
-                                //         ),
-                                //       )
-                                //     ],
-                                //   ),
-                                //   buttons: [
-                                //     DialogButton(
-                                //       radius: BorderRadius.circular(10),
-                                //       child: Text(
-                                //         "COOL",
-                                //         style: kSendButtonTextStyle,
-                                //       ),
-                                //       onPressed: () {
-                                //         Navigator.of(context, rootNavigator: true)
-                                //             .pop();
-                                //         Navigator.of(context, rootNavigator: true)
-                                //             .pop();
-                                //         Navigator.of(context, rootNavigator: true)
-                                //             .pop();
-                                //       },
-                                //       width: 127,
-                                //       height: 52,
-                                //     ),
-                                //   ],
-                                // ).show();
+                                main.RestartWidget.restartApp(context);
                               } else {
                                 toasts.error(
                                     "There was an error. Please try again later.");
-                                // Alert(
-                                //   context: context,
-                                //   style: kWelcomeAlertStyle,
-                                //   image: Image.asset(
-                                //     "assets/images/avatar_demo.png",
-                                //     height: 150,
-                                //   ),
-                                //   title: "Error",
-                                //   content: Column(
-                                //     children: <Widget>[
-                                //       Padding(
-                                //         padding: const EdgeInsets.only(
-                                //             top: 20.0,
-                                //             right: 8.0,
-                                //             left: 8.0,
-                                //             bottom: 20.0),
-                                //         child: Text(
-                                //           'There was an error. Please try again later',
-                                //           textAlign: TextAlign.center,
-                                //           style: kSendButtonTextStyle,
-                                //         ),
-                                //       )
-                                //     ],
-                                //   ),
-                                //   buttons: [
-                                //     DialogButton(
-                                //       radius: BorderRadius.circular(10),
-                                //       child: Text(
-                                //         "COOL",
-                                //         style: kSendButtonTextStyle,
-                                //       ),
-                                //       onPressed: () {
-                                //         Navigator.of(context, rootNavigator: true)
-                                //             .pop();
-                                //       },
-                                //       width: 127,
-                                //       height: 52,
-                                //     ),
-                                //   ],
-                                // ).show();
                               }
                             } on PlatformException catch (e) {
                               print('----xx-----');
@@ -496,47 +410,9 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               } else if (errorCode ==
                                   PurchasesErrorCode.purchaseNotAllowedError) {
                                 toasts.error("User not allowed to purchase.");
+                              } else {
+                                toasts.error(e.toString());
                               }
-                              // Alert(
-                              //   context: context,
-                              //   style: kWelcomeAlertStyle,
-                              //   image: Image.asset(
-                              //     "assets/images/avatar_demo.png",
-                              //     height: 150,
-                              //   ),
-                              //   title: "Error",
-                              //   content: Column(
-                              //     children: <Widget>[
-                              //       Padding(
-                              //         padding: const EdgeInsets.only(
-                              //             top: 20.0,
-                              //             right: 8.0,
-                              //             left: 8.0,
-                              //             bottom: 20.0),
-                              //         child: Text(
-                              //           'There was an error. Please try again later',
-                              //           textAlign: TextAlign.center,
-                              //           style: kSendButtonTextStyle,
-                              //         ),
-                              //       )
-                              //     ],
-                              //   ),
-                              //   buttons: [
-                              //     DialogButton(
-                              //       radius: BorderRadius.circular(10),
-                              //       child: Text(
-                              //         "COOL",
-                              //         style: kSendButtonTextStyle,
-                              //       ),
-                              //       onPressed: () {
-                              //         Navigator.of(context, rootNavigator: true)
-                              //             .pop();
-                              //       },
-                              //       width: 127,
-                              //       height: 52,
-                              //     ),
-                              //   ],
-                              // ).show();
                             }
                             return UpgradeScreen();
                           },
@@ -570,312 +446,6 @@ class _UpsellScreenState extends State<UpsellScreen> {
         )));
   }
 }
-// class UpsellScreen extends StatefulWidget {
-//   final Offerings offerings;
-
-//   UpsellScreen({Key key, @required this.offerings}) : super(key: key);
-
-//   @override
-//   _UpsellScreenState createState() => _UpsellScreenState();
-// }
-
-// class _UpsellScreenState extends State<UpsellScreen> {
-//   _launchURLWebsite(String zz) async {
-//     if (await canLaunch(zz)) {
-//       await launch(zz);
-//     } else {
-//       throw 'Could not launch $zz';
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     if (widget.offerings != null) {
-//       print('offeringS is not null');
-//       print(widget.offerings.current.toString());
-//       print('--');
-//       print(widget.offerings.toString());
-//       final offering = widget.offerings.current;
-//       if (offering != null) {
-//         final yearly = offering.lifetime;
-//         if (yearly != null) {
-//           return Scaffold(
-//               body: Center(
-//             child: SingleChildScrollView(
-//               child: Container(
-//                 height: MediaQuery.of(context).size.height,
-//                 child: Column(
-//                   mainAxisSize: MainAxisSize.min,
-//                   children: <Widget>[
-//                     Text(
-//                       'Thanks for your interest in our app!',
-//                       textAlign: TextAlign.center,
-//                       style: kSendButtonTextStyle,
-//                     ),
-//                     Padding(
-//                       padding: const EdgeInsets.all(18.0),
-//                       child: Container(
-//                         height: 100,
-//                         child: FlareActor(
-//                           "assets/animations/Premium.flr",
-//                           isPaused: false,
-//                           alignment: Alignment.center,
-//                           animation: "premium",
-//                         ),
-//                       ),
-//                     ),
-//                     Text(
-//                       'Choose one of the plan to continue to get access to all the app content.\n',
-//                       textAlign: TextAlign.center,
-//                       style: kSendButtonTextStyle,
-//                     ),
-//                     Padding(
-//                       padding: const EdgeInsets.all(8.0),
-//                       child: PurchaseButton(package: yearly),
-//                     ),
-//                     Padding(
-//                       padding: const EdgeInsets.all(18.0),
-//                       child: GestureDetector(
-//                         child: Container(
-//                           decoration: new BoxDecoration(
-//                             borderRadius:
-//                                 new BorderRadius.all(Radius.circular(10)),
-//                           ),
-//                           child: Padding(
-//                             padding: const EdgeInsets.all(18.0),
-//                             child: Text(
-//                               'Restore Purchase',
-//                               style: kSendButtonTextStyle.copyWith(
-//                                 fontSize: 16,
-//                                 fontWeight: FontWeight.normal,
-//                               ),
-//                             ),
-//                           ),
-//                         ),
-// onTap: () async {
-//   try {
-//     print('now trying to restore');
-//     PurchaserInfo restoredInfo =
-//         await Purchases.restoreTransactions();
-//     print('restore completed');
-//     print(restoredInfo.toString());
-
-//     appData.isPro = restoredInfo
-//         .entitlements.all["prism_premium"].isActive;
-
-//     print('is user pro? ${appData.isPro}');
-
-//     if (appData.isPro) {
-//       main.prefs.put('premium', appData.isPro);
-//       toasts.premiumSuccess();
-//       Alert(
-//         context: context,
-//         style: kWelcomeAlertStyle,
-//         image: Image.asset(
-//           "assets/images/avatar_demo.png",
-//           height: 150,
-//         ),
-//         title: "Congratulations",
-//         content: Column(
-//           children: <Widget>[
-//             Padding(
-//               padding: const EdgeInsets.only(
-//                   top: 20.0,
-//                   right: 8.0,
-//                   left: 8.0,
-//                   bottom: 20.0),
-//               child: Text(
-//                 'Your purchase has been restored!',
-//                 textAlign: TextAlign.center,
-//                 style: kSendButtonTextStyle,
-//               ),
-//             )
-//           ],
-//         ),
-//         buttons: [
-//           DialogButton(
-//             radius: BorderRadius.circular(10),
-//             child: Text(
-//               "COOL",
-//               style: kSendButtonTextStyle,
-//             ),
-//             onPressed: () {
-//               Navigator.of(context, rootNavigator: true)
-//                   .pop();
-//               Navigator.of(context, rootNavigator: true)
-//                   .pop();
-//               Navigator.of(context, rootNavigator: true)
-//                   .pop();
-//             },
-//             width: 127,
-//             height: 52,
-//           ),
-//         ],
-//       ).show();
-//     } else {
-//       Alert(
-//         context: context,
-//         style: kWelcomeAlertStyle,
-//         image: Image.asset(
-//           "assets/images/avatar_demo.png",
-//           height: 150,
-//         ),
-//         title: "Error",
-//         content: Column(
-//           children: <Widget>[
-//             Padding(
-//               padding: const EdgeInsets.only(
-//                   top: 20.0,
-//                   right: 8.0,
-//                   left: 8.0,
-//                   bottom: 20.0),
-//               child: Text(
-//                 'There was an error. Please try again later',
-//                 textAlign: TextAlign.center,
-//                 style: kSendButtonTextStyle,
-//               ),
-//             )
-//           ],
-//         ),
-//         buttons: [
-//           DialogButton(
-//             radius: BorderRadius.circular(10),
-//             child: Text(
-//               "COOL",
-//               style: kSendButtonTextStyle,
-//             ),
-//             onPressed: () {
-//               Navigator.of(context, rootNavigator: true)
-//                   .pop();
-//             },
-//             width: 127,
-//             height: 52,
-//           ),
-//         ],
-//       ).show();
-//     }
-//   } on PlatformException catch (e) {
-//     print('----xx-----');
-//     var errorCode =
-//         PurchasesErrorHelper.getErrorCode(e);
-//     if (errorCode ==
-//         PurchasesErrorCode.purchaseCancelledError) {
-//       print("User cancelled");
-//     } else if (errorCode ==
-//         PurchasesErrorCode.purchaseNotAllowedError) {
-//       print("User not allowed to purchase");
-//     }
-//     Alert(
-//       context: context,
-//       style: kWelcomeAlertStyle,
-//       image: Image.asset(
-//         "assets/images/avatar_demo.png",
-//         height: 150,
-//       ),
-//       title: "Error",
-//       content: Column(
-//         children: <Widget>[
-//           Padding(
-//             padding: const EdgeInsets.only(
-//                 top: 20.0,
-//                 right: 8.0,
-//                 left: 8.0,
-//                 bottom: 20.0),
-//             child: Text(
-//               'There was an error. Please try again later',
-//               textAlign: TextAlign.center,
-//               style: kSendButtonTextStyle,
-//             ),
-//           )
-//         ],
-//       ),
-//       buttons: [
-//         DialogButton(
-//           radius: BorderRadius.circular(10),
-//           child: Text(
-//             "COOL",
-//             style: kSendButtonTextStyle,
-//           ),
-//           onPressed: () {
-//             Navigator.of(context, rootNavigator: true)
-//                 .pop();
-//           },
-//           width: 127,
-//           height: 52,
-//         ),
-//       ],
-//     ).show();
-//   }
-//   return UpgradeScreen();
-// },
-// ),
-//                     ),
-//                     SizedBox(
-//                       height: 20.0,
-//                     ),
-//                     Padding(
-//                       padding: const EdgeInsets.all(18.0),
-//                       child: GestureDetector(
-//                         onTap: () {
-//                           _launchURLWebsite('https://google.com');
-//                         },
-//                         child: Text(
-//                           'Privacy Policy (click to read)',
-//                           style: kSendButtonTextStyle.copyWith(
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.normal,
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                     Padding(
-//                       padding: const EdgeInsets.all(18.0),
-//                       child: GestureDetector(
-//                         onTap: () {
-//                           _launchURLWebsite('https://yahoo.com');
-//                         },
-//                         child: Text(
-//                           'Term of Use (click to read)',
-//                           style: kSendButtonTextStyle.copyWith(
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.normal,
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ));
-//         }
-//       }
-//     }
-//     return Scaffold(
-//         body: Center(
-//       child: Column(
-//         mainAxisAlignment: MainAxisAlignment.center,
-//         children: <Widget>[
-//           Padding(
-//             padding: const EdgeInsets.all(18.0),
-//             child: Icon(
-//               Icons.error,
-//               size: 44.0,
-//             ),
-//           ),
-//           Padding(
-//             padding: const EdgeInsets.all(12.0),
-//             child: Text(
-//               "There was an error. Please check that your device is allowed to make purchases and try again. Please contact us at xxx@xxx.com if the problem persists.",
-//               textAlign: TextAlign.center,
-//               style: kSendButtonTextStyle,
-//             ),
-//           ),
-//         ],
-//       ),
-//     ));
-//   }
-// }
 
 class PurchaseButton extends StatefulWidget {
   final Package package;
@@ -913,89 +483,10 @@ class _PurchaseButtonState extends State<PurchaseButton> {
 
                     if (appData.isPro) {
                       toasts.codeSend("You are now a premium member.");
-                      // Alert(
-                      //   context: context,
-                      //   style: kWelcomeAlertStyle,
-                      //   image: Image.asset(
-                      //     "assets/images/avatar_demo.png",
-                      //     height: 150,
-                      //   ),
-                      //   title: "Congratulations",
-                      //   content: Column(
-                      //     children: <Widget>[
-                      //       Padding(
-                      //         padding: const EdgeInsets.only(
-                      //             top: 20.0,
-                      //             right: 8.0,
-                      //             left: 8.0,
-                      //             bottom: 20.0),
-                      //         child: Text(
-                      //           'Well done, you now have full access to the app',
-                      //           textAlign: TextAlign.center,
-                      //           style: kSendButtonTextStyle,
-                      //         ),
-                      //       )
-                      //     ],
-                      //   ),
-                      //   buttons: [
-                      //     DialogButton(
-                      //       radius: BorderRadius.circular(10),
-                      //       child: Text(
-                      //         "COOL",
-                      //         style: kSendButtonTextStyle,
-                      //       ),
-                      //       onPressed: () {
-                      //         Navigator.of(context, rootNavigator: true).pop();
-                      //         Navigator.of(context, rootNavigator: true).pop();
-                      //         Navigator.of(context, rootNavigator: true).pop();
-                      //       },
-                      //       width: 127,
-                      //       height: 52,
-                      //     ),
-                      //   ],
-                      // ).show();
+                      main.RestartWidget.restartApp(context);
                     } else {
                       toasts
                           .error("There was an error, please try again later.");
-                      // Alert(
-                      //   context: context,
-                      //   style: kWelcomeAlertStyle,
-                      //   image: Image.asset(
-                      //     "assets/images/avatar_demo.png",
-                      //     height: 150,
-                      //   ),
-                      //   title: "Error",
-                      //   content: Column(
-                      //     children: <Widget>[
-                      //       Padding(
-                      //         padding: const EdgeInsets.only(
-                      //             top: 20.0,
-                      //             right: 8.0,
-                      //             left: 8.0,
-                      //             bottom: 20.0),
-                      //         child: Text(
-                      //           'There was an error. Please try again later',
-                      //           textAlign: TextAlign.center,
-                      //           style: kSendButtonTextStyle,
-                      //         ),
-                      //       )
-                      //     ],
-                      //   ),
-                      //   buttons: [
-                      //     DialogButton(
-                      //       radius: BorderRadius.circular(10),
-                      //       child: Text(
-                      //         "COOL",
-                      //         style: kSendButtonTextStyle,
-                      //       ),
-                      //       onPressed: () {
-                      //         Navigator.of(context, rootNavigator: true).pop();
-                      //       },
-                      //       width: 127,
-                      //       height: 52,
-                      //     ),
-                      //   ],
-                      // ).show();
                     }
                   } on PlatformException catch (e) {
                     print('----xx-----');
@@ -1006,43 +497,9 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                     } else if (errorCode ==
                         PurchasesErrorCode.purchaseNotAllowedError) {
                       toasts.error("User not allowed to purchase.");
+                    } else {
+                      toasts.error(e.toString());
                     }
-                    // Alert(
-                    //   context: context,
-                    //   style: kWelcomeAlertStyle,
-                    //   image: Image.asset(
-                    //     "assets/images/avatar_demo.png",
-                    //     height: 150,
-                    //   ),
-                    //   title: "Error",
-                    //   content: Column(
-                    //     children: <Widget>[
-                    //       Padding(
-                    //         padding: const EdgeInsets.only(
-                    //             top: 20.0, right: 8.0, left: 8.0, bottom: 20.0),
-                    //         child: Text(
-                    //           'There was an error. Please try again later',
-                    //           textAlign: TextAlign.center,
-                    //           style: kSendButtonTextStyle,
-                    //         ),
-                    //       )
-                    //     ],
-                    //   ),
-                    //   buttons: [
-                    //     DialogButton(
-                    //       radius: BorderRadius.circular(10),
-                    //       child: Text(
-                    //         "COOL",
-                    //         style: kSendButtonTextStyle,
-                    //       ),
-                    //       onPressed: () {
-                    //         Navigator.of(context, rootNavigator: true).pop();
-                    //       },
-                    //       width: 127,
-                    //       height: 52,
-                    //     ),
-                    //   ],
-                    // ).show();
                   }
                   return UpgradeScreen();
                 },
