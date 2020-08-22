@@ -1,5 +1,7 @@
+import 'dart:io' show Platform;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
+import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
@@ -251,8 +253,17 @@ class PrismList extends StatelessWidget {
               "Tell us if you found out a bug",
               style: TextStyle(fontSize: 12),
             ),
-            onTap: () {
-              launch("mailto:hash.studios.inc@gmail.com?subject=[BUG REPORT]");
+            onTap: () async {
+              if (Platform.isAndroid) {
+                var androidInfo = await DeviceInfoPlugin().androidInfo;
+                var release = androidInfo.version.release;
+                var sdkInt = androidInfo.version.sdkInt;
+                var manufacturer = androidInfo.manufacturer;
+                var model = androidInfo.model;
+                print('Android $release (SDK $sdkInt), $manufacturer $model');
+                launch(
+                    "mailto:hash.studios.inc@gmail.com?subject=%5BBUG%20REPORT%5D&body=Enter%20the%20bug%2Fissue%20below%20---%0D%0A%0D%0A%0D%0A%0D%0A%0D%0A%0D%0A%0D%0A----x-x-x----%0D%0A%0D%0ADevice%20Info%20-%0D%0A%0D%0AAndroid%20Version%3A%20Android%20$release%0D%0ASDK%20Number%3A%20SDK%20$sdkInt%0D%0ADevice%20Manufacturer%3A%20$manufacturer%0D%0ADevice%20Model%3A%20$model");
+              }
             }),
       ],
     );
