@@ -110,7 +110,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future deleteFile() async {
-    var github = GitHub(auth: Authentication.basic(username, password));
+    var github = GitHub(auth: Authentication.withToken(token));
     await github.repositories.deleteFile(
         RepositorySlug('codenameakshay2', 'prism-walls'),
         wallpaperPath,
@@ -134,7 +134,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     try {
       String base64Image = base64Encode(imageBytes);
       String base64ImageThumb = base64Encode(imageBytesThumb);
-      var github = GitHub(auth: Authentication.basic(username, password));
+      var github = GitHub(auth: Authentication.withToken(token));
       await github.repositories
           .createFile(
               RepositorySlug('codenameakshay2', 'prism-walls'),
@@ -280,7 +280,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                         padding: const EdgeInsets.all(8.0),
                         child: Center(
                           child: Text(
-                            "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile section.",
+                            "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 10,
