@@ -14,7 +14,14 @@ class NotifData {
   final String imageUrl;
   @HiveField(4)
   final List arguments;
+  @HiveField(5)
+  final String url;
 
   NotifData(
-      {this.pageName, this.title, this.desc, this.imageUrl, this.arguments});
+      {this.pageName,
+      this.title,
+      this.desc,
+      this.imageUrl,
+      this.arguments,
+      this.url});
 }

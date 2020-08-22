@@ -5,6 +5,7 @@ import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:Prism/ui/widgets/popup/tutorialCompletePopUp.dart';
 import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/ui/pages/home/pageManager.dart' as PM;
 import 'package:Prism/global/globals.dart' as globals;
@@ -32,6 +33,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
   List<TargetFocus> targets = List();
   @override
   void initState() {
+    globals.noNewNotification = checkNewNotification();
     isNew = true;
     super.initState();
     globals.height = widget.height;
@@ -350,6 +352,18 @@ class _CategoriesBarState extends State<CategoriesBar> {
         child: child,
         highlightColor: Colors.black.withOpacity(0.1),
       );
+  bool checkNewNotification() {
+    Box<List> box = Hive.box('notifications');
+    var notifications = box.get('notifications');
+    if (notifications == null) {
+      notifications = [];
+    }
+    if (notifications.length == 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -21,13 +21,14 @@ class NotifDataAdapter extends TypeAdapter<NotifData> {
       desc: fields[2] as String,
       imageUrl: fields[3] as String,
       arguments: (fields[4] as List)?.cast<dynamic>(),
+      url: fields[5] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, NotifData obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -37,6 +38,8 @@ class NotifDataAdapter extends TypeAdapter<NotifData> {
       ..writeByte(3)
       ..write(obj.imageUrl)
       ..writeByte(4)
-      ..write(obj.arguments);
+      ..write(obj.arguments)
+      ..writeByte(5)
+      ..write(obj.url);
   }
 }
