@@ -171,7 +171,17 @@ class _HomeScreenState extends State<HomeScreen> {
               return new LoadingCards();
             default:
               if (snapshot.hasError)
-                return new Text('Error: ${snapshot.error}');
+                return RefreshIndicator(
+                    onRefresh: () async {
+                      setState(() {});
+                    },
+                    child: Column(
+                      children: <Widget>[
+                        Spacer(),
+                        new Text("Can't connect to the Servers!"),
+                        Spacer(),
+                      ],
+                    ));
               else {
                 if (Provider.of<CategorySupplier>(context)
                         .selectedChoice
