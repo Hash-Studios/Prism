@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
+import 'package:Prism/gitkey.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:http/http.dart' as http;
 
@@ -33,10 +34,7 @@ Future<List<WallPaperP>> categoryDataFetcherP(
         "https://api.pexels.com/v1/search?query=${categoryName}&per_page=80&page=${pageNumbersP[index][categoryName]}");
     http.get(
         "https://api.pexels.com/v1/search?query=${categoryName}&per_page=80&page=${pageNumbersP[index][categoryName]}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
+        headers: {"Authorization": pexelApiKey}).then(
       (http.Response response) {
         var resp = json.decode(response.body);
         for (int i = 0; i < resp["photos"].length; i++) {
@@ -83,10 +81,7 @@ Future<List<WallPaperP>> getDataP(String mode) async {
   if (navStack.last == "Home") {
     http.get(
         "https://api.pexels.com/v1/curated?per_page=24&page=${pageGetDataP}",
-        headers: {
-          "Authorization":
-              "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-        }).then(
+        headers: {"Authorization": pexelApiKey}).then(
       (http.Response response) {
         var resp = json.decode(response.body);
         for (int i = 0; i < resp["photos"].length; i++) {
@@ -114,9 +109,8 @@ Future<List<WallPaperP>> getDataP(String mode) async {
 Future<WallPaperP> getWallbyIDP(String id) async {
   print("https://api.pexels.com/v1/photos/$id");
   wall = null;
-  http.get("https://api.pexels.com/v1/photos/$id", headers: {
-    "Authorization": "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-  }).then(
+  http.get("https://api.pexels.com/v1/photos/$id",
+      headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       var resp = json.decode(response.body);
       wall = WallPaperP(
@@ -133,10 +127,7 @@ Future<WallPaperP> getWallbyIDP(String id) async {
 
 Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
   http.get("https://api.pexels.com/v1/search?query=$query&per_page=80&page=1",
-      headers: {
-        "Authorization":
-            "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-      }).then(
+      headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       var resp = json.decode(response.body);
       for (int i = 0; i < resp["photos"].length; i++) {
@@ -161,10 +152,7 @@ Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
 Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
   http.get(
       "https://api.pexels.com/v1/search?query=$query&per_page=80&page=${pageGetQueryP}",
-      headers: {
-        "Authorization":
-            "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-      }).then(
+      headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       var resp = json.decode(response.body);
       for (int i = 0; i < resp["photos"].length; i++) {
@@ -189,10 +177,7 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
 Future<List<WallPaperP>> getWallsPbyColor(String query) async {
   print("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1");
   http.get("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1",
-      headers: {
-        "Authorization":
-            "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-      }).then(
+      headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       var resp = json.decode(response.body);
       for (int i = 0; i < resp["photos"].length; i++) {
@@ -219,10 +204,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}");
   http.get(
       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}",
-      headers: {
-        "Authorization":
-            "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
-      }).then(
+      headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       var resp = json.decode(response.body);
       for (int i = 0; i < resp["photos"].length; i++) {
@@ -250,7 +232,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=abstract&per_page=80&page=${pageAbstractP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -283,7 +265,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=nature&per_page=80&page=${pageNatureP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -315,7 +297,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=art&per_page=80&page=${pageArtP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -348,7 +330,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=Minimal&per_page=80&page=${pageMinimalP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -381,7 +363,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=Textures&per_page=80&page=${pageTexturesP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -414,7 +396,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=Monochrome&per_page=80&page=${pageMonochromeP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -447,7 +429,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=Space&per_page=80&page=${pageSpaceP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -480,7 +462,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=Animals&per_page=80&page=${pageAnimalsP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -513,7 +495,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=Neon&per_page=80&page=${pageNeonP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -546,7 +528,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=Sports&per_page=80&page=${pageSportsP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
@@ -579,7 +561,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
 //         "https://api.pexels.com/v1/search?query=Music&per_page=80&page=${pageMusicP}",
 //         headers: {
 //           "Authorization":
-//               "563492ad6f91700001000001e0e52638f3384cdc9b61f560cc2e087c"
+//               pexelApiKey
 //         }).then(
 //       (http.Response response) {
 //         var resp = json.decode(response.body);
