@@ -16,6 +16,8 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
+final FirebaseMessaging f = new FirebaseMessaging();
+
 void writeNotifications(Map<String, dynamic> message) {
   Box<List> box = Hive.box('notifications');
   var notifications = box.get('notifications');
@@ -23,13 +25,13 @@ void writeNotifications(Map<String, dynamic> message) {
     notifications = [];
   }
   notifications.add(NotifData(
-    title: message['notification']['title'] ?? "Notification",
-    desc: message['notification']['body'] ?? "",
-    imageUrl: message['data']['imageUrl'] ??
-        "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
-    pageName: message['data']['pageName'],
-    arguments: message['data']['arguments'] ?? [],
-  ));
+      title: message['notification']['title'] ?? "Notification",
+      desc: message['notification']['body'] ?? "",
+      imageUrl: message['data']['imageUrl'] ??
+          "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
+      pageName: message['data']['pageName'],
+      arguments: message['data']['arguments'] ?? [],
+      url: message['data']['url'] ?? ""));
   box.put('notifications', notifications);
 }
 
@@ -109,7 +111,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _updateToken() {
-    FirebaseMessaging f = new FirebaseMessaging();
     f.requestNotificationPermissions();
     f.configure(
       onMessage: (Map<String, dynamic> message) async {

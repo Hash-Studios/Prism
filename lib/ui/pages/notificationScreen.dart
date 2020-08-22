@@ -4,6 +4,10 @@ import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:hive/hive.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/ui/pages/home/homeScreen.dart' as home;
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/main.dart' as main;
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -47,6 +51,103 @@ class _NotificationScreenState extends State<NotificationScreen> {
               Navigator.pop(context);
             },
           ),
+          actions: <Widget>[
+            IconButton(
+                icon: main.prefs.get("Subscriber") == false
+                    ? Icon(JamIcons.bell)
+                    : Icon(JamIcons.bell_off),
+                onPressed: () {
+                  Dialog notificationsPopUp = Dialog(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(context).primaryColor),
+                      width: MediaQuery.of(context).size.width * .7,
+                      height: MediaQuery.of(context).size.height * .2,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Row(
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                                child: Text(
+                                  main.prefs.get("Subscriber") == false
+                                      ? 'Subscribe to notifications?'
+                                      : 'Unsubscribe to notifications?',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                      color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 25,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: <Widget>[
+                              FlatButton(
+                                shape: StadiumBorder(),
+                                color: Color(0xFFE57697),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text(
+                                  'NO',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              FlatButton(
+                                shape: StadiumBorder(),
+                                color: Color(0xFFE57697),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  if (main.prefs.get("Subscriber") == false) {
+                                    main.prefs.delete("Subscriber");
+                                    home.f.unsubscribeFromTopic(
+                                        'NoNotificationSquad');
+                                    toasts.codeSend("Succesfully Subscribed!");
+                                  } else {
+                                    main.prefs.put("Subscriber", false);
+                                    home.f.subscribeToTopic(
+                                        'NoNotificationSquad');
+                                    toasts
+                                        .codeSend("Succesfully unsubscribed!");
+                                  }
+                                },
+                                child: Text(
+                                  'YES',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 15,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) => notificationsPopUp);
+                })
+          ],
         ),
         body: Container(
           child: notifications.length > 0
@@ -137,8 +238,12 @@ class NotificationCard extends StatelessWidget {
                   ),
                 ),
                 onTap: () {
-                  Navigator.pushNamed(context, notification.pageName,
-                      arguments: notification.arguments);
+                  if (notification.url == "") {
+                    Navigator.pushNamed(context, notification.pageName,
+                        arguments: notification.arguments);
+                  } else {
+                    launch(notification.url);
+                  }
                 },
               )
             ],
