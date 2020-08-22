@@ -213,9 +213,9 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
                 }
                 break;
             }
-                return true;
-        }
 
+        }
+                return true;
     }
 
     @Override

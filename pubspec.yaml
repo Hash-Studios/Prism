@@ -55,6 +55,8 @@ dependencies:
   data_connection_checker: ^0.3.4
   carousel_slider: ^2.2.1
   firebase_admob: ^0.9.3+4
+  image_editor: ^0.7.1
+  extended_image: ^0.9.0
 
 dependency_overrides:
   image: 2.1.12
