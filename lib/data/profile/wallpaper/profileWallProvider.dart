@@ -47,6 +47,7 @@ class ProfileWallProvider extends ChangeNotifier {
       print(e.toString());
       print("data done with error");
     });
+    main.prefs.put('userPosts', this.len);
     return this.len;
   }
 }

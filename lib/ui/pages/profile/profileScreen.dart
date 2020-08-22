@@ -41,8 +41,8 @@ class ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<ProfileChild> {
-  int favCount = 0;
-  int profileCount = 0;
+  int favCount = main.prefs.get('userFavs') ?? 0;
+  int profileCount = main.prefs.get('userPosts') ?? 0;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {
@@ -66,6 +66,7 @@ class _ProfileChildState extends State<ProfileChild> {
           setState(
             () {
               favCount = value;
+              main.prefs.put('userFavs', value);
             },
           );
         },
@@ -221,12 +222,15 @@ class _ProfileChildState extends State<ProfileChild> {
                                               FutureBuilder(
                                                   future: Provider.of<
                                                               ProfileWallProvider>(
-                                                          context)
+                                                          context,
+                                                          listen: false)
                                                       .getProfileWallsLength(),
                                                   builder: (context, snapshot) {
                                                     return Text(
                                                       snapshot.data == null
-                                                          ? "0 "
+                                                          ? profileCount
+                                                                  .toString() +
+                                                              " "
                                                           : snapshot.data
                                                                   .toString() +
                                                               " ",
