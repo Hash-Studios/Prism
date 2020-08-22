@@ -45,9 +45,9 @@ class SplashWidget extends StatelessWidget {
         await remoteConfig.fetch(expiration: const Duration(hours: 6));
         await remoteConfig.activateFetched();
         var text = remoteConfig.getString('topTitleText');
-        text.replaceAll('"', '');
-        text.replaceAll("[", "");
-        text.replaceAll(",]", "");
+        text = text.replaceAll('"', '');
+        text = text.replaceAll("[", "");
+        text = text.replaceAll(",]", "");
         globals.topTitleText = text.split(",");
         var cList = [];
         var tempVar = remoteConfig
