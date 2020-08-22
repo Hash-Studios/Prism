@@ -30,13 +30,20 @@ class ProfileWallProvider extends ChangeNotifier {
 
   Future<int> getProfileWallsLength() async {
     var tempList = [];
-    await databaseReference
-        .collection("walls")
-        .where('review', isEqualTo: true)
-        .where('email', isEqualTo: main.prefs.get('email'))
-        .orderBy("createdAt", descending: true)
-        .getDocuments()
-        .then((value) {
+    var db;
+    if (main.prefs.get('premium') == true) {
+      db = databaseReference
+          .collection("walls")
+          .where('email', isEqualTo: main.prefs.get('email'))
+          .orderBy("createdAt", descending: true);
+    } else {
+      db = databaseReference
+          .collection("walls")
+          .where('review', isEqualTo: true)
+          .where('email', isEqualTo: main.prefs.get('email'))
+          .orderBy("createdAt", descending: true);
+    }
+    await db.getDocuments().then((value) {
       tempList = [];
       value.documents.forEach((f) {
         tempList.add(f.data);
