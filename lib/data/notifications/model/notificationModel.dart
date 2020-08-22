@@ -1,4 +1,3 @@
-import 'package:Prism/routes/routing_constants.dart';
 import 'package:hive/hive.dart';
 part 'notificationModel.g.dart';
 
