@@ -1,6 +1,5 @@
 import 'package:Prism/ui/widgets/home/loading.dart';
 import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 
 class WallpaperLoader extends StatefulWidget {
@@ -25,8 +24,6 @@ class _WallpaperLoaderState extends State<WallpaperLoader> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
     return FutureBuilder(
       future: _future,
       builder: (ctx, snapshot) {

@@ -25,7 +25,6 @@ import 'package:tutorial_coach_mark/target_position.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
