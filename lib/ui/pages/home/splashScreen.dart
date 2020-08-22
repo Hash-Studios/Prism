@@ -39,9 +39,16 @@ class SplashWidget extends StatelessWidget {
           'currentVersion': globals.currentAppVersion.toString(),
           'versionDesc':
               "Prism Premium is here, for the personalisaton lords!^*^Setups are here! Change the way of personalisation.^*^Favourites moved to profile.",
+          'topTitleText':
+              '["TOP-RATED","BEST OF COMMUNITY","FAN-FAVOURITE","TRENDING",]',
         });
         await remoteConfig.fetch(expiration: const Duration(hours: 6));
         await remoteConfig.activateFetched();
+        var text = remoteConfig.getString('topTitleText');
+        text.replaceAll('"', '');
+        text.replaceAll("[", "");
+        text.replaceAll(",]", "");
+        globals.topTitleText = text.split(",");
         var cList = [];
         var tempVar = remoteConfig
             .getString('categories')
