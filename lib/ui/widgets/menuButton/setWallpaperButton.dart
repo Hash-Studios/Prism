@@ -315,10 +315,10 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onLongPress: () {
-        onPaint();
+        isLoading ? print("") : onPaint();
       },
       onTap: () {
-        onTapPaint();
+        isLoading ? print("") : onTapPaint();
       },
       child: Stack(
         children: [
