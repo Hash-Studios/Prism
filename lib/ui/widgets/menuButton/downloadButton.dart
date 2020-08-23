@@ -211,7 +211,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
           });
           break;
         case RewardedVideoAdEvent.failedToLoad:
-          toasts.codeSend("Failed to load ad");
+          toasts.error("Failed to load ad");
           Navigator.pop(context);
           break;
         case RewardedVideoAdEvent.leftApplication:
@@ -322,7 +322,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                 color: Theme.of(context).accentColor.withOpacity(0.3),
                 onPressed: () {
                   globals.loadingAd
-                      ? toasts.error("No ad available")
+                      ? toasts.error("Loading ads")
                       : videoAd.show();
                   globals.loadingAd ? print("") : Navigator.of(context).pop();
                   setState(() {
