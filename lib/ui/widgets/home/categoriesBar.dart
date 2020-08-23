@@ -436,10 +436,14 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                           listen: false)
                                       .tabs[index]) {
                                     case "Wallpapers":
-                                      PM.pageController.jumpToPage(0);
+                                      PM.pageController.animateToPage(0,
+                                          duration: Duration(milliseconds: 200),
+                                          curve: Curves.easeInCubic);
                                       break;
                                     case "Collections":
-                                      PM.pageController.jumpToPage(1);
+                                      PM.pageController.animateToPage(1,
+                                          duration: Duration(milliseconds: 200),
+                                          curve: Curves.easeInCubic);
                                       break;
                                     default:
                                       break;
@@ -501,6 +505,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
                       .changeSelectedChoice(choice);
                   Provider.of<CategorySupplier>(context, listen: false)
                       .changeWallpaperFuture(choice, "r");
+                  PM.pageController.animateToPage(0,
+                      duration: Duration(milliseconds: 200),
+                      curve: Curves.easeInCubic);
                 },
                 itemBuilder: (BuildContext context) {
                   return choices.map((choice) {
