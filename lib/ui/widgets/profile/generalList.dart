@@ -68,6 +68,8 @@ class GeneralList extends StatelessWidget {
                   PaintingBinding.instance.imageCache.clear();
                   await Hive.box('wallpapers').deleteFromDisk();
                   await Hive.openBox('wallpapers');
+                  await Hive.box('collections').deleteFromDisk();
+                  await Hive.openBox('collections');
                   toasts.codeSend("Cleared cache!");
                 }),
             SwitchListTile(

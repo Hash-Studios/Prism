@@ -41,6 +41,7 @@ void main() {
     // box.deleteFromDisk();
     await Hive.openBox('wallpapers');
     await Hive.openBox('favourites');
+    await Hive.openBox('collections');
     Hive.registerAdapter(NotifDataAdapter());
     await Hive.openBox<List>('notifications');
     prefs = await Hive.openBox('prefs');
