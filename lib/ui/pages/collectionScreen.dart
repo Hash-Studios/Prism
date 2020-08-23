@@ -41,12 +41,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
               if (snapshot.hasError)
                 return RefreshIndicator(
                     onRefresh: () async {
-                      setState(() {});
+                      getCollections();
                     },
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.max,
                       children: <Widget>[
                         Spacer(),
-                        new Text("Can't connect to the Servers!"),
+                        Center(
+                            child: new Text("Can't connect to the Servers!")),
                         Spacer(),
                       ],
                     ));
