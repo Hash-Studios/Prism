@@ -138,9 +138,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                   ),
                 ),
                 onTap: () {
-                  Navigator.pushNamed(context, WallpaperRoute, arguments: [
+                  Navigator.pushNamed(context, ShareRoute, arguments: [
+                    widget.arguments[index]["id"],
                     widget.arguments[index]["wallpaper_provider"],
-                    index,
+                    widget.arguments[index]["wallpaper_url"],
                     widget.arguments[index]["wallpaper_thumb"]
                   ]);
                 },
