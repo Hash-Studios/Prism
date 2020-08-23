@@ -84,7 +84,7 @@ List seeMorePrism() {
   print(len);
   print(pages);
   print(page);
-  if (page < pages.round()) {
+  if (page < pages.floor()) {
     subPrismWalls.addAll(
         prismWalls.sublist(subPrismWalls.length, subPrismWalls.length + 24));
     page += 1;
