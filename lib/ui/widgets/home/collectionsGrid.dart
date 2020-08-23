@@ -1,4 +1,6 @@
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -121,12 +123,16 @@ class _CollectionsGridState extends State<CollectionsGrid>
                       borderRadius: BorderRadius.circular(20),
                       image: DecorationImage(
                           image: CachedNetworkImageProvider(
-                            CData.collections[
-                                CData.collectionNames.toList()[index]][CData
-                                    .collections[
-                                        CData.collectionNames.toList()[index]]
-                                    .length -
-                                1]["wallpaper_thumb"],
+                            Provider.of<ThumbModel>(context, listen: false).thumbType ==
+                                    ThumbType.High
+                                ? CData.collections[CData.collectionNames.toList()[index]]
+                                        [CData.collections[CData.collectionNames.toList()[index]].length - 1]
+                                    ["wallpaper_url"]
+                                : CData.collections[
+                                    CData.collectionNames.toList()[index]][CData
+                                        .collections[CData.collectionNames.toList()[index]]
+                                        .length -
+                                    1]["wallpaper_thumb"],
                           ),
                           fit: BoxFit.cover)),
               child: Center(
@@ -143,7 +149,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       style: Theme.of(context).textTheme.headline2.copyWith(
-                          fontSize: 24,
+                          fontSize: 20,
                           color: Colors.white,
                           fontWeight: FontWeight.bold),
                     ),
@@ -151,17 +157,22 @@ class _CollectionsGridState extends State<CollectionsGrid>
                 ),
               ),
             ),
-            // onTap: () {
-            //   if (Data.subPrismWalls == []) {
-            //   } else {
-            //     Navigator.pushNamed(context, WallpaperRoute,
-            //         arguments: [
-            //           widget.provider,
-            //           index,
-            //           Data.subPrismWalls[index]["wallpaper_thumb"],
-            //         ]);
-            //   }
-            // },
+            onTap: () {
+              if (CData.collections == {}) {
+              } else {
+                Navigator.pushNamed(context, CollectionViewRoute, arguments: [
+                  CData.collectionNames
+                          .toList()[index]
+                          .toString()[0]
+                          .toUpperCase() +
+                      CData.collectionNames
+                          .toList()[index]
+                          .toString()
+                          .substring(1),
+                  CData.collections[CData.collectionNames.toList()[index]],
+                ]);
+              }
+            },
           );
         },
       ),

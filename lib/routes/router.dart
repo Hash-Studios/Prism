@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/ui/pages/collectionsViewScreen.dart';
 import 'package:Prism/ui/pages/download/downloadScreen.dart';
 import 'package:Prism/ui/pages/download/downloadWallpaperViewScreen.dart';
 import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
@@ -88,9 +89,15 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Color");
       print(navStack);
       analytics.setCurrentScreen(screenName: ColorRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) =>
-              ColorScreen(arguments: settings.arguments));
+      return CupertinoPageRoute(
+          builder: (context) => ColorScreen(arguments: settings.arguments));
+    case CollectionViewRoute:
+      navStack.add("Color");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: CollectionViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              CollectionViewScreen(arguments: settings.arguments));
     case WallpaperRoute:
       navStack.add("Wallpaper");
       print(navStack);
