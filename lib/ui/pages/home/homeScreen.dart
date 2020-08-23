@@ -69,11 +69,32 @@ class _HomeScreenState extends State<HomeScreen> {
               "version_desc": remoteConfig.getString("versionDesc").toString(),
             };
           });
+          bool updateAlerted = false;
+          Box<List> box = Hive.box('notifications');
+          for (var i in box.get('notifications')) {
+            if (i.url ==
+                "https://play.google.com/store/apps/details?id=com.hash.prism") {
+              updateAlerted = true;
+            }
+          }
           globals.updateAvailable
-              ? !globals.noNewNotification
-                  ? Future.delayed(Duration(seconds: 0))
-                      .whenComplete(() => {showUpdate(context)})
-                  : print("No new notification")
+              ? !updateAlerted
+                  ? writeNotifications({
+                      'notification': {
+                        'title': 'New version ' +
+                            globals.versionInfo["version_number"] +
+                            ' Available!',
+                        'body':
+                            'Update now available on the Google Play Store.',
+                      },
+                      'data': {
+                        'imageUrl':
+                            "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
+                        'url':
+                            "https://play.google.com/store/apps/details?id=com.hash.prism",
+                      }
+                    })
+                  : print("Updated is alreday alerted!")
               : print("No update");
         } else {
           setState(() {
