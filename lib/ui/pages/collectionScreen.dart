@@ -1,6 +1,6 @@
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:Prism/ui/widgets/home/collectionsGrid.dart';
 import 'package:flutter/material.dart';
 
 class CollectionScreen extends StatefulWidget {
@@ -50,24 +50,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       ],
                     ));
               else {
-                return ListView.builder(
-                    itemCount: snapshot.data.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        height: 300,
-                        width: MediaQuery.of(context).size.width,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: CachedNetworkImageProvider(
-                              snapshot.data[collectionNames.toList()[index]][0]
-                                  ["wallpaper_thumb"],
-                            ),
-                            fit: BoxFit.cover,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      );
-                    });
+                return CollectionsGrid();
               }
           }
         },
