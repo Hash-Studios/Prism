@@ -27,8 +27,8 @@ class _SearchScreenState extends State<SearchScreen> {
   String selectedProvider;
   var selectedProviders;
   final List providers = [
-    SearchProviderMenuItem(title: 'WallHaven', icon: JamIcons.pizza_slice),
-    SearchProviderMenuItem(title: 'Pexels', icon: JamIcons.pizza_slice)
+    SearchProviderMenuItem(title: 'WallHaven', icon: JamIcons.arrow_right),
+    SearchProviderMenuItem(title: 'Pexels', icon: JamIcons.arrow_right)
   ];
   final List<String> tags = [
     'Art',
