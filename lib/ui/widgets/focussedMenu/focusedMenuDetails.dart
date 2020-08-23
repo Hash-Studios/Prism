@@ -90,7 +90,7 @@ class FocusedMenuDetails extends StatelessWidget {
             ? size.width * 0.05
             : size.width * 0.02;
     print(provider);
-    // try {
+    try {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
@@ -2019,11 +2019,11 @@ class FocusedMenuDetails extends StatelessWidget {
         ),
       ),
     );
-    // } catch (e) {
-    //   print(e.toString());
-    //   Navigator.pop(context);
-    //   return Container();
-    // }
+    } catch (e) {
+      print(e.toString());
+      Navigator.pop(context);
+      return Container();
+    }
   }
 }
 
