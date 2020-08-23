@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
@@ -44,6 +45,13 @@ Future<Map> getCollections() async {
             }
           }
         }
+
+        var r = Random();
+        var randomList = [];
+        var count = 0;
+        for (var i = 0; i < 10; i++) {
+          randomList.add(r.nextInt(wallpapersForCollections.length));
+        }
         for (var wall in wallpapersForCollections) {
           for (var collectionName in wall['collections']) {
             if (!collections.containsKey(collectionName)) {
@@ -52,6 +60,15 @@ Future<Map> getCollections() async {
             } else {
               collections[collectionName].add(wall);
             }
+            if (count == 0) {
+              collections["random"] = [];
+              collectionNames.add("random");
+            }
+
+            if (randomList.contains(count)) {
+              collections["random"].add(wall);
+            }
+            count++;
           }
         }
         print("Data grouped");
@@ -90,6 +107,13 @@ Future<Map> getCollections() async {
           }
         }
       }
+
+      var r = Random();
+      var randomList = [];
+      var count = 0;
+      for (var i = 0; i < 10; i++) {
+        randomList.add(r.nextInt(wallpapersForCollections.length));
+      }
       for (var wall in wallpapersForCollections) {
         for (var collectionName in wall['collections']) {
           if (!collections.containsKey(collectionName)) {
@@ -98,8 +122,18 @@ Future<Map> getCollections() async {
           } else {
             collections[collectionName].add(wall);
           }
+          if (count == 0) {
+            collections["random"] = [];
+            collectionNames.add("random");
+          }
+
+          if (randomList.contains(count)) {
+            collections["random"].add(wall);
+          }
+          count++;
         }
       }
+      print(collectionNames.length);
     }
   } else {
     print("Refresh blocked");
