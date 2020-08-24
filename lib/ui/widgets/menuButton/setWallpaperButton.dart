@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:device_info/device_info.dart';
 // import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:flutter/material.dart';
@@ -190,12 +191,24 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   }
 
   void showPremiumPopUp(Function func) {
-    if (!main.prefs.get("premium")) {
+    if (!main.prefs.get("isLoggedin")) {
       toasts.codeSend("Variants are a premium feature.");
-      Navigator.pushNamed(context, PremiumRoute);
-      // premiumPopUp(context, func);
+      googleSignInPopUp(context, () {
+        if (!main.prefs.get("premium")) {
+          Navigator.pushNamed(context, PremiumRoute);
+          // premiumPopUp(context, func);
+        } else {
+          func();
+        }
+      });
     } else {
-      func();
+      if (!main.prefs.get("premium")) {
+        toasts.codeSend("Variants are a premium feature.");
+        Navigator.pushNamed(context, PremiumRoute);
+        // premiumPopUp(context, func);
+      } else {
+        func();
+      }
     }
   }
 
