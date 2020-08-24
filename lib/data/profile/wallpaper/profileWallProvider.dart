@@ -8,13 +8,20 @@ class ProfileWallProvider extends ChangeNotifier {
   int len = 0;
   Future<List> getProfileWalls() async {
     this.profileWalls = [];
-    await databaseReference
-        .collection("walls")
-        .where('review', isEqualTo: true)
-        .where('email', isEqualTo: main.prefs.get('email'))
-        .orderBy("createdAt", descending: true)
-        .getDocuments()
-        .then((value) {
+    var db;
+    if (main.prefs.get('premium') == true) {
+      db = databaseReference
+          .collection("walls")
+          .where('email', isEqualTo: main.prefs.get('email'))
+          .orderBy("createdAt", descending: true);
+    } else {
+      db = databaseReference
+          .collection("walls")
+          .where('review', isEqualTo: true)
+          .where('email', isEqualTo: main.prefs.get('email'))
+          .orderBy("createdAt", descending: true);
+    }
+    await db.getDocuments().then((value) {
       this.profileWalls = [];
       value.documents.forEach((f) {
         this.profileWalls.add(f.data);
@@ -30,20 +37,20 @@ class ProfileWallProvider extends ChangeNotifier {
 
   Future<int> getProfileWallsLength() async {
     var tempList = [];
-    var db;
+    var db2;
     if (main.prefs.get('premium') == true) {
-      db = databaseReference
+      db2 = databaseReference
           .collection("walls")
           .where('email', isEqualTo: main.prefs.get('email'))
           .orderBy("createdAt", descending: true);
     } else {
-      db = databaseReference
+      db2 = databaseReference
           .collection("walls")
           .where('review', isEqualTo: true)
           .where('email', isEqualTo: main.prefs.get('email'))
           .orderBy("createdAt", descending: true);
     }
-    await db.getDocuments().then((value) {
+    await db2.getDocuments().then((value) {
       tempList = [];
       value.documents.forEach((f) {
         tempList.add(f.data);
