@@ -211,7 +211,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                         FontWeight.normal),
                                               ),
                                               Icon(
-                                                JamIcons.heart,
+                                                JamIcons.heart_f,
                                                 color: Colors.white70,
                                               ),
                                             ],
