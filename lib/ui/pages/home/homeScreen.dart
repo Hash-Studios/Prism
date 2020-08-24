@@ -11,7 +11,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
@@ -69,16 +68,15 @@ class _HomeScreenState extends State<HomeScreen> {
               "version_desc": remoteConfig.getString("versionDesc").toString(),
             };
           });
-          bool updateAlerted = false;
           Box<List> box = Hive.box('notifications');
-          for (var i in box.get('notifications')) {
+          for (var i in box.get('notifications') ?? []) {
             if (i.url ==
                 "https://play.google.com/store/apps/details?id=com.hash.prism") {
-              updateAlerted = true;
+              globals.updateAlerted = true;
             }
           }
           globals.updateAvailable
-              ? !updateAlerted
+              ? !globals.updateAlerted
                   ? writeNotifications({
                       'notification': {
                         'title': 'New version ' +

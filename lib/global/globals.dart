@@ -11,6 +11,7 @@ var versionInfo = {};
 var noNewNotification = false;
 var height = 1440.0;
 bool loadingAd = true;
+bool updateAlerted = false;
 
 var topTitleText = [
   "TOP-RATED",
