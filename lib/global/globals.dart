@@ -9,6 +9,7 @@ var updateChecked = false;
 var updateAvailable = false;
 var versionInfo = {};
 var height = 1440.0;
+var width = 720.0;
 bool loadingAd = true;
 bool updateAlerted = false;
 
