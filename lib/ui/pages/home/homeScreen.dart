@@ -100,16 +100,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void showChangelogCheck(BuildContext context) {
-    var newApp = main.prefs.get("newApp");
-    if (newApp == null) {
+    var newDevice = main.prefs.get("newDevice");
+    if (newDevice == null) {
       showChangelog(context, () {
         setState(() {
           isNew = false;
         });
       });
-      main.prefs.put("newApp", false);
+      main.prefs.put("newDevice", false);
     } else {
-      main.prefs.put("newApp", false);
+      main.prefs.put("newDevice", false);
     }
   }
 

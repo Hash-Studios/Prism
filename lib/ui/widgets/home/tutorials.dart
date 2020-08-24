@@ -231,11 +231,11 @@ void initTargets(List<TargetFocus> targets, var width, var height) {
                   padding: const EdgeInsets.only(top: 10.0),
                   child: RichText(
                     text: TextSpan(
-                        text: "➜ Here you can access your ",
+                        text: "➜ Here you can ",
                         style: TextStyle(color: Colors.white),
                         children: [
                           TextSpan(
-                            text: "favorites, downloads,",
+                            text: "access, upload,",
                             style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
@@ -248,9 +248,9 @@ void initTargets(List<TargetFocus> targets, var width, var height) {
                                 fontWeight: FontWeight.bold),
                           ),
                           TextSpan(text: " for more wallpapers.\n\n"),
-                          TextSpan(text: "➜ You can also upload your own "),
+                          TextSpan(text: "➜ You can also view "),
                           TextSpan(
-                            text: "wallpapers ",
+                            text: "home screen setups ",
                             style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),

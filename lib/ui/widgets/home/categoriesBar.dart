@@ -74,12 +74,12 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   void afterLayout(_) {
-    var newApp = main.prefs.get("newApp");
-    if (newApp == null || newApp == true) {
+    var newDevice = main.prefs.get("newDevice");
+    if (newDevice == null || newDevice == true) {
       Future.delayed(Duration(milliseconds: 100), showTutorial);
-      main.prefs.put("newApp", false);
+      main.prefs.put("newDevice", false);
     } else {
-      main.prefs.put("newApp", false);
+      main.prefs.put("newDevice", false);
     }
   }
 
