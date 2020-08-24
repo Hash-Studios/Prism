@@ -1066,10 +1066,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               ),
                               color: Color(0xFF2F2F2F),
                             ),
-                            child: FutureBuilder<Map>(
+                            child: FutureBuilder<WallPaperP>(
                                 future: future,
-                                builder:
-                                    (context, AsyncSnapshot<Map> snapshot) {
+                                builder: (context,
+                                    AsyncSnapshot<WallPaperP> snapshot) {
                                   if (snapshot.connectionState ==
                                           ConnectionState.waiting ||
                                       snapshot.connectionState ==
