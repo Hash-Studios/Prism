@@ -200,7 +200,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
   @override
   void initState() {
     FirebaseAdMob.instance
-        .initialize(appId: "ca-app-pub-6979592252372323~1722435814");
+        .initialize(appId: "ca-app-pub-4649644680694757~6175744196");
     videoAd.listener =
         (RewardedVideoAdEvent event, {String rewardType, int rewardAmount}) {
       print("REWARDED VIDEO AD $event");
@@ -230,7 +230,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
     };
     videoAd.load(
         // adUnitId: RewardedVideoAd.testAdUnitId,
-        adUnitId: "ca-app-pub-6979592252372323/9849990237",
+        adUnitId: "ca-app-pub-4649644680694757/3358009164",
         targetingInfo: targetingInfo);
     super.initState();
   }
