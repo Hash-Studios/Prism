@@ -239,8 +239,10 @@ class NotificationCard extends StatelessWidget {
                 ),
                 onTap: () {
                   if (notification.url == "") {
-                    Navigator.pushNamed(context, notification.pageName,
-                        arguments: notification.arguments);
+                    if (notification.pageName != null) {
+                      Navigator.pushNamed(context, notification.pageName,
+                          arguments: notification.arguments);
+                    }
                   } else {
                     launch(notification.url);
                   }
