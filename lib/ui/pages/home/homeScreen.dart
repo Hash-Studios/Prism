@@ -1,6 +1,5 @@
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/widgets/home/loading.dart';
 import 'package:Prism/ui/widgets/home/pexelsGrid.dart';
 import 'package:Prism/ui/widgets/home/wallhavenGrid.dart';
@@ -11,7 +10,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
@@ -49,64 +47,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Future<List> _future;
-  //Check for update if available
-  String currentAppVersion = globals.currentAppVersion;
-  Future<void> _checkUpdate() async {
-    print("checking for update");
-    try {
-      print("Current App Version :" + currentAppVersion);
-      print("Latest Version :" +
-          remoteConfig.getString("currentVersion").toString());
-      setState(() {
-        if (currentAppVersion !=
-            remoteConfig.getString("currentVersion").toString()) {
-          setState(() {
-            globals.updateAvailable = true;
-            globals.versionInfo = {
-              "version_number":
-                  remoteConfig.getString("currentVersion").toString(),
-              "version_desc": remoteConfig.getString("versionDesc").toString(),
-            };
-          });
-          Box<List> box = Hive.box('notifications');
-          for (var i in box.get('notifications') ?? []) {
-            if (i.url ==
-                "https://play.google.com/store/apps/details?id=com.hash.prism") {
-              globals.updateAlerted = true;
-            }
-          }
-          globals.updateAvailable
-              ? !globals.updateAlerted
-                  ? writeNotifications({
-                      'notification': {
-                        'title': 'New version ' +
-                            globals.versionInfo["version_number"] +
-                            ' Available!',
-                        'body':
-                            'Update now available on the Google Play Store.',
-                      },
-                      'data': {
-                        'imageUrl':
-                            "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
-                        'url':
-                            "https://play.google.com/store/apps/details?id=com.hash.prism",
-                      }
-                    })
-                  : print("Updated is alreday alerted!")
-              : print("No update");
-        } else {
-          setState(() {
-            globals.updateAvailable = false;
-          });
-        }
-      });
-    } catch (e) {
-      print("Error while checking for updates! :" + e.toString());
-    }
-    setState(() {
-      globals.updateChecked = true;
-    });
-  }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
@@ -119,9 +59,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    if (!globals.updateChecked) {
-      _checkUpdate();
-    }
     isNew = true;
     _updateToken();
     _future = Future.delayed(Duration(seconds: 0)).then((value) =>

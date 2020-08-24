@@ -1,6 +1,8 @@
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/pages/home/homeScreen.dart';
+import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:Prism/ui/widgets/popup/tutorialCompletePopUp.dart';
 import 'package:flutter/material.dart';
@@ -29,14 +31,18 @@ class CategoriesBar extends StatefulWidget {
 
 class _CategoriesBarState extends State<CategoriesBar> {
   bool isNew;
+  bool noNotification = false;
   List<TargetFocus> targets = List();
   @override
   void initState() {
-    globals.noNewNotification = checkNewNotification();
     isNew = true;
     super.initState();
     globals.height = widget.height;
     initTargets();
+    if (!globals.updateChecked) {
+      _checkUpdate();
+    }
+    noNotification = checkNewNotification();
     if (isNew) {
       Future.delayed(Duration(seconds: 0)).then(
           (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
@@ -358,10 +364,94 @@ class _CategoriesBarState extends State<CategoriesBar> {
       notifications = [];
     }
     if (notifications.length == 0) {
+      setState(() {
+        noNotification = true;
+      });
       return true;
     } else {
+      setState(() {
+        noNotification = false;
+      });
       return false;
     }
+  }
+
+  //Check for update if available
+  String currentAppVersion = globals.currentAppVersion;
+  Future<void> _checkUpdate() async {
+    print("checking for update");
+    try {
+      print("Current App Version :" + currentAppVersion);
+      print("Latest Version :" +
+          remoteConfig.getString("currentVersion").toString());
+      setState(() {
+        if (currentAppVersion !=
+            remoteConfig.getString("currentVersion").toString()) {
+          setState(() {
+            globals.updateAvailable = true;
+            globals.versionInfo = {
+              "version_number":
+                  remoteConfig.getString("currentVersion").toString(),
+              "version_desc": remoteConfig.getString("versionDesc").toString(),
+            };
+          });
+          Box<List> box = Hive.box('notifications');
+          for (var i in box.get('notifications') ?? []) {
+            if (i.url ==
+                "https://play.google.com/store/apps/details?id=com.hash.prism") {
+              globals.updateAlerted = true;
+            }
+          }
+          if (globals.updateAvailable) {
+            if (!globals.updateAlerted) {
+              writeNotifications({
+                'notification': {
+                  'title': 'New version ' +
+                      globals.versionInfo["version_number"] +
+                      ' Available!',
+                  'body': 'Update now available on the Google Play Store.',
+                },
+                'data': {
+                  'imageUrl':
+                      "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
+                  'url':
+                      "https://play.google.com/store/apps/details?id=com.hash.prism",
+                }
+              });
+              Future.delayed(Duration(seconds: 0))
+                  .then((value) => noNotification = checkNewNotification());
+              final snackBar = SnackBar(
+                behavior: SnackBarBehavior.floating,
+                content: Text('New version ' +
+                    globals.versionInfo["version_number"] +
+                    ' Available!'),
+                action: SnackBarAction(
+                  label: 'VIEW',
+                  textColor: Color(0xFFE57697),
+                  onPressed: () {
+                    Navigator.pushNamed(context, NotificationsRoute);
+                  },
+                ),
+              );
+              Scaffold.of(context).showSnackBar(snackBar);
+            } else {
+              print("Updated is alreday alerted!");
+            }
+          } else {
+            print("No update");
+          }
+        } else {
+          setState(() {
+            globals.updateAvailable = false;
+          });
+        }
+      });
+    } catch (e) {
+      print("Error while checking for updates! :" + e.toString());
+    }
+    setState(() {
+      globals.updateChecked = true;
+    });
   }
 
   @override
@@ -378,7 +468,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
             width: MediaQuery.of(context).size.width * 0.1,
             height: 100,
             child: IconButton(
-              icon: globals.noNewNotification
+              icon: noNotification
                   ? Icon(JamIcons.bell)
                   : Stack(children: <Widget>[
                       Icon(JamIcons.bell_f),
@@ -394,7 +484,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                     ]),
               onPressed: () {
                 setState(() {
-                  globals.noNewNotification = true;
+                  noNotification = true;
                 });
                 // showUpdate(context);
                 Navigator.pushNamed(context, NotificationsRoute);
