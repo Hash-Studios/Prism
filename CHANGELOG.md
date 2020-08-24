@@ -1,5 +1,28 @@
 ## Changelog
 
+### v2.7.0
+- Added collections, find wallpapers easily
+- Simplified UI, easily switch between different categories
+- Added wallpaper editing options before uploading
+- Added all-new notifications center
+- Added option to change search provider (WallHaven & Pexels)
+- Added option to view other users' profile
+- Added new payments experience
+- Wallpapers are now sorted by latest
+- Added wallpaper crop intent, by long-press
+- Now download wallpapers, without sign-in
+- Added dynamic categories
+- Added scroll to top button
+- Added option to switch to high-quality thumbnails
+- Updated password authentication in GitHub API to Personal access token based
+- Improved overall caching, leading to low internet usage
+- Added no network indicator
+- Added option to copy color codes by long-press
+- Used Firebase remote config for app version, categories to easily change them
+- Premium uploads get reviewed instantly now
+- Fixed excessive requests and rebuilding
+- Major bug fixes
+
 ### v2.4.7
 - Added Prism Premium, for the personalisation lords
 - Setups added, change the way of personalisation
@@ -14,7 +37,7 @@
 - Added Internet connectivity checks
 
 ### v2.4.4
-- Upto 24 new Categories added, full list [here](#categories)
+- Upto 24 new Categories added
 - Added upload section
 - Added new themes page
 - Added new animations
@@ -83,29 +106,3 @@
 - Clear Cache, Downloads and Favourites with one-tap
 - Optimised storage using minimal packages
 - Adaptive UI (changes colour based on wallpaper)
-
-### Categories
-- Home
-- Curated
-- For you
-- Abstract
-- Landscape
-- Nature
-- 4K
-- Art
-- Pattern
-- Minimal
-- Anime
-- Textures
-- Technology
-- Monochrome
-- Code
-- Space
-- Cars
-- Animals
-- Skyscape
-- Neon
-- Architecture
-- Sports
-- Marvel
-- Music
