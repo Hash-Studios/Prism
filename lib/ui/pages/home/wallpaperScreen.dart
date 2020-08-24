@@ -116,17 +116,18 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       padding: const EdgeInsets.only(top: 10.0),
                       child: RichText(
                         text: TextSpan(
-                            text: "➡ Tap to quickly cycle between ",
+                            text:
+                                "➜ Tap on the wallpaper to quickly cycle between ",
                             style: TextStyle(color: Colors.white),
                             children: [
                               TextSpan(
-                                text: "color variants ",
+                                text: "color variants.",
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold),
                               ),
-                              TextSpan(text: "of the wallpaper.\n\n"),
-                              TextSpan(text: "➡ Press and hold to "),
+                              TextSpan(text: "\n\n"),
+                              TextSpan(text: "➜ Press and hold to "),
                               TextSpan(
                                 text: "reset ",
                                 style: TextStyle(
@@ -136,7 +137,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               TextSpan(text: "the variant.\n\n"),
                               TextSpan(
                                   text:
-                                      "➡ To download and set variants of a wallpaper, you need to be a "),
+                                      "➜ To set variants of a wallpaper, you need to be a "),
                               TextSpan(
                                 text: "premium ",
                                 style: TextStyle(
@@ -150,9 +151,160 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   ],
                 ),
               ),
-            ))
+            )),
       ],
       shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Target 1",
+      targetPosition: TargetPosition(
+          Size(globals.width, 100), Offset(0, globals.height / 2 + 70)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the color palette.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: RichText(
+                      text: TextSpan(
+                          text: "➜ Tap on any color to find wallpapers with ",
+                          style: TextStyle(color: Colors.white),
+                          children: [
+                            TextSpan(
+                              text: "similar color.",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: "\n\n"),
+                            TextSpan(text: "➜ Press and hold any color to "),
+                            TextSpan(
+                              text: "copy ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: "its color code.\n\n"),
+                          ]),
+                    ),
+                  )
+                ],
+              ),
+            )),
+      ],
+      shape: ShapeLightFocus.RRect,
+    ));
+    targets.add(TargetFocus(
+      identify: "Target 2",
+      targetPosition: TargetPosition(
+          Size(globals.width, 150), Offset(0, globals.height / 2 + 200)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the quick info section.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: RichText(
+                      text: TextSpan(
+                          text: "➜ Tap on user name to ",
+                          style: TextStyle(color: Colors.white),
+                          children: [
+                            TextSpan(
+                              text: "view more wallpapers",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: " from them.\n\n"),
+                          ]),
+                    ),
+                  )
+                ],
+              ),
+            )),
+      ],
+      shape: ShapeLightFocus.RRect,
+    ));
+    targets.add(TargetFocus(
+      identify: "Target 3",
+      targetPosition: TargetPosition(
+          Size(globals.width, 100), Offset(0, globals.height / 2 + 335)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "This is the quick action section.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: RichText(
+                      text: TextSpan(
+                          text: "➜ Here you can ",
+                          style: TextStyle(color: Colors.white),
+                          children: [
+                            TextSpan(
+                              text: "download, apply, favourite",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: " and"),
+                            TextSpan(
+                              text: " share",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: " this wallpaper.\n\n"),
+                            TextSpan(
+                                text:
+                                    "➜ Press and hold apply wallpaper button to "),
+                            TextSpan(
+                              text: "crop and apply ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: "this wallpaper.\n\n"),
+                          ]),
+                    ),
+                  )
+                ],
+              ),
+            )),
+      ],
+      shape: ShapeLightFocus.RRect,
     ));
   }
 
@@ -173,12 +325,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   }
 
   void afterLayout(_) {
-    var newApp2 = main.prefs.get("newApp2");
-    if (newApp2 == null || newApp2 == true) {
+    var newDevice2 = main.prefs.get("newDevice2");
+    if (newDevice2 == null || newDevice2 == true) {
       Future.delayed(Duration(milliseconds: 100), showTutorial);
-      main.prefs.put("newApp2", false);
+      panelController.open();
+      main.prefs.put("newDevice2", false);
     } else {
-      main.prefs.put("newApp2", false);
+      main.prefs.put("newDevice2", false);
     }
   }
 

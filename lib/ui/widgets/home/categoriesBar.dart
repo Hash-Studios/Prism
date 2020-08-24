@@ -36,6 +36,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
     isNew = true;
     super.initState();
     globals.height = widget.height;
+    globals.width = widget.width;
     initTargets(targets, widget.width, widget.height);
     if (!globals.updateChecked) {
       _checkUpdate();
