@@ -20,6 +20,7 @@
 - Added option to copy color codes by long-press
 - Used Firebase remote config for app version, categories to easily change them
 - Premium uploads get reviewed instantly now
+- Bumped up the targetSDK, compileSDK to 29
 - Fixed excessive requests and rebuilding
 - Major bug fixes
 
