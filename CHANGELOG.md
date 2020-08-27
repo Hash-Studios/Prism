@@ -1,28 +1,64 @@
 ## Changelog
 
-### v2.7.0
-- Added collections, find wallpapers easily
-- Simplified UI, easily switch between different categories
+### v2.5.5
+- Premium uploads get reviewed instantly now
+- Added collections, find similar wallpapers easily
+- Update popup replaced with update notification
+- Update app tutorial
+- Bumped up the targetSDK, compileSDK to 29
+- Major bug fixes
+
+### v2.5.4
+- Updated password authentication in GitHub API to Personal access token based
 - Added wallpaper editing options before uploading
+- Improved overall caching, leading to low internet usage
+- Major bug fixes
+
+### v2.5.3
+- Added set wallpaper Action Dialog
+- Fixed set wallpaper intent
+- Added long press to crop and tap to set
+- Added notifications subscription
 - Added all-new notifications center
-- Added option to change search provider (WallHaven & Pexels)
+- Minor bug fixes
+
+### v2.5.2
+- Added carousel widget in home screen
+- Added rewarded video ads for wallpaper downloads
+- Now download wallpapers, without sign-in
+- Variants can now also be downloaded by watching an ad
+- Added all-new notifications center
+- Minor bug fixes
+
+### v2.5.1
+- Added option to switch to high-quality thumbnails
+- Added no network indicator
+- Added Remote Config for update popup
+- Refactored more code
+- Minor bug fixes
+
+### v2.5.0
 - Added option to view other users' profile
+- Added wallpaper crop intent
+- Removed set wallpaper Action Dialog
+- Replaced Glide with Picasso
+- Added option to copy color codes by long-press
+- Major bug fixes
+
+### v2.4.9
+- Fixed excessive requests and rebuilding
+- Added scroll to top button
+- Used Firebase remote config for app version, categories to easily change them
+- Added dynamic categories
+- Added cache to images
+- Major bug fixes
+
+### v2.4.8
 - Added new payments experience
 - Wallpapers are now sorted by latest
-- Added wallpaper crop intent, by long-press
-- Now download wallpapers, without sign-in
-- Added dynamic categories
-- Added scroll to top button
-- Added option to switch to high-quality thumbnails
-- Updated password authentication in GitHub API to Personal access token based
-- Improved overall caching, leading to low internet usage
-- Added no network indicator
-- Added option to copy color codes by long-press
-- Used Firebase remote config for app version, categories to easily change them
-- Premium uploads get reviewed instantly now
-- Bumped up the targetSDK, compileSDK to 29
-- Fixed excessive requests and rebuilding
-- Major bug fixes
+- Simplified UI, easily switch between different categories
+- Added option to change search provider (WallHaven & Pexels)
+- Minor bug fixes
 
 ### v2.4.7
 - Added Prism Premium, for the personalisation lords
