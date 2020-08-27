@@ -6,7 +6,7 @@
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
 ![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-1K+-green.svg)
-![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.7-blue.svg)
+![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.4-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
@@ -23,7 +23,7 @@ Now users can upload wallpapers, which will be shown in the Community section. T
 
 Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated every day. It also features categories like Abstract, Nature, 4K, Art, Landscape, Minimal, Space, Neon, etc. if you are into these. Then it allows one to find wallpapers based on colors, i.e. you can find wallpapers with a color that matches your icons or home screen setup. Not even that, it also shows you a palette of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
 
-Main features like finding and setting up wallpapers don't require Google Sign In, while features like Favourites or Downloads require you to sign up using Google. This signup is facilitated by Google Firebase, so it is secure and we only get your name, email, and profile photo for identification purposes. The app also has Dark Mode, if you want to save your phone's battery while getting in love with those wallpapers. The app also allows users to share wallpapers with others by giving them a unique link for every wallpaper, using Dynamic Links so that anyone can directly view the wallpaper.
+Main features like finding, downloading and setting up wallpapers don't require Google Sign In, while features like Favourites require you to sign up using Google. This signup is facilitated by Google Firebase, so it is secure and we only get your name, email, and profile photo for identification purposes. The app also has Dark Mode, if you want to save your phone's battery while getting in love with those wallpapers. The app also allows users to share wallpapers with others by giving them a unique link for every wallpaper, using Firebase Dynamic Links so that anyone can directly view the wallpaper.
 
 ### Introducing Prism Premium
 
@@ -37,6 +37,7 @@ You also get a PRO badge in front of your profile, plus you directly support the
 - The ability to download or set variants of wallpapers
 - Get PRO badge in front of your profile
 - Get uploads reviewed instantly
+- Get rid of all rewarded video ads
 - Support development of the app
 
 ## List of Contents
@@ -56,7 +57,7 @@ You also get a PRO badge in front of your profile, plus you directly support the
 ## Features
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
-- Over 300+ exclusive wallpapers, making it the best selection ever
+- Over 500+ exclusive wallpapers, making it the best selection ever
 - Community wallpapers uploaded by users all-around the world
 - Homescreen setups - Unique and exclusive setups designed with the perfect combination of wallpapers, icon pack and widgets
 - Each wallpaper comes with 5 color variants
@@ -65,7 +66,7 @@ You also get a PRO badge in front of your profile, plus you directly support the
 - Each wallpaper has a unique link, makes sharing them easier
 - Low Internet usage due to minimal loading and persistent data using Provider
 - Save Liked Images for later (works even after uninstalling the app)
-- Download any wallpaper to Gallery
+- Download any wallpaper to Gallery by watching a quick video ad
 - Secure data and favorites storage on Google Firebase
 - Search for Wallpapers by keyword
 - Check how the wallpaper will look with fake clock and app icons
@@ -78,25 +79,42 @@ You also get a PRO badge in front of your profile, plus you directly support the
 - Minimal design with smooth transitions and animations
 - Clear Cache, Downloads and Favourites with one-tap
 - Optimized storage using minimal packages
-- Application size under 11 MB
+- Application size under 14 MB
 - Adaptive UI (changes color based on wallpaper)
 
 ## Changelog
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-### v2.4.7
-- Added Prism Premium, for the personalisation lords
-- Setups added, change the way of personalisation
-- Favourites moved to profile
+### v2.5.5
+- Premium uploads get reviewed instantly now
+- Added collections, find similar wallpapers easily
+- Update popup replaced with update notification
+- Update app tutorial
+- Bumped up the targetSDK, compileSDK to 29
+- Major bug fixes
 
-### v2.4.6
-- Added Hive for improved data caching
-- Fixed excessive requests and rebuilding
+### v2.5.4
+- Updated password authentication in GitHub API to Personal access token based
+- Added wallpaper editing options before uploading
+- Improved overall caching, leading to low internet usage
+- Major bug fixes
 
-### v2.4.5
-- Removed excessive notifications
-- Added Internet connectivity checks
+### v2.5.3
+- Added set wallpaper Action Dialog
+- Fixed set wallpaper intent
+- Added long press to crop and tap to set
+- Added notifications subscription
+- Added all-new notifications center
+- Minor bug fixes
+
+### v2.5.2
+- Added carousel widget in home screen
+- Added rewarded video ads for wallpaper downloads
+- Now download wallpapers, without sign-in
+- Variants can now also be downloaded by watching an ad
+- Added all-new notifications center
+- Minor bug fixes
 
 
 ## Demo
@@ -156,27 +174,24 @@ Prism Wallpapers app is now available on Google Play, so you can support us by r
 
 The following packages are needed for the development of this application.
 
-- `provider: ^4.1.3` for caching data, and state management
-- `cached_network_image: ^2.2.0+1` for caching wallpapers
-- `palette_generator: ^0.2.2` for generating wallpaper colors
-- `fluttertoast: ^4.0.1` for toast notifications
-- `gallery_saver: ^2.0.1` for saving wallpapers to gallery
-- `shared_preferences: ^0.5.7` for storing settings like theme
 - `share: ^0.6.4` for sharing the wallpaper links
 - `url_launcher: ^5.4.5` for launching urls
 - `cloud_firestore: ^0.13.5` for storing liked images and other user based data
 - `firebase_core: ^0.4.4+3` for firebase support
 - `firebase_auth: ^0.16.0` for user authentication
-- `firebase_dynamic_links: ^0.5.1` for wallpaper link generation and handling
 - `google_sign_in: ^4.4.4` for Google sign in support
-- `permission_handler: ^5.0.1+1` for handling required device permissions
 - `flare_splash_screen: ^3.0.1` for the animated splash screen
+- `provider: ^4.1.3` for caching data, and state management
 - `flutter_svg: 0.17.4` for svg assets
+- `palette_generator: ^0.2.2` for generating wallpaper colors
+- `fluttertoast: ^4.0.1` for toast notifications
+- `gallery_saver: ^2.0.1` for saving wallpapers to gallery
+- `firebase_dynamic_links: ^0.5.1` for wallpaper link generation and handling
+- `permission_handler: ^5.0.1+1` for handling required device permissions
 - `sliding_up_panel: ^1.0.2` for sliding info panel
 - `firebase_analytics: ^5.0.16` for analytics
 - `firebase_messaging: ^6.0.16` for notifications
 - `in_app_purchase: ^0.3.4+1` for in-app purchases
-- `connectivity_widget: ^0.1.7` for checking Internet connectivity
 - `firebase_crashlytics: ^0.1.3+3` for handling crashes, and better reporting
 - `screenshot: ^0.2.0` for setting wallpapers
 - `tutorial_coach_mark: ^0.3.0` for showing new user tutorial
@@ -184,11 +199,20 @@ The following packages are needed for the development of this application.
 - `image_picker: ^0.6.7+4` for picking images
 - `github: ^6.2.2` for communicating with GitHub API
 - `photo_view: ^0.9.2` for showing images before uploading
+- `cached_network_image: ^2.2.0+1` for caching wallpapers
 - `flare_flutter: ^2.0.5` for animations
-- `image: 2.1.12` for editing wallpapers
 - `hive: ^1.4.1+1` for caaching data
 - `hive_flutter: ^0.3.0+1` for caching data
 - `path_provider: ^1.6.11` for getting Application storage directory path
+- `flutter_windowmanager: ^0.0.2` for adding security flags
+- `purchases_flutter: ^1.2.1` for RevenueCat support
+- `firebase_remote_config: ^0.3.1+1` for manipulating the app remotely
+- `data_connection_checker: ^0.3.4` for checking Internet connection
+- `carousel_slider: ^2.2.1` for carousel widget
+- `firebase_admob: ^0.9.3+4` for rewarded video ads
+- `image_editor: ^0.7.1` for manipulating wallpapers
+- `extended_image: ^0.9.0` for displaying wallpapers
+- `device_info: ^0.4.2+7` for getting device info for bug reports
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
 
@@ -320,10 +344,4 @@ If you have any questions or suggestions about our Privacy Policy, do not hesita
   <img src="https://contributors-img.web.app/image?repo=Hash-Studios/Prism" />
 </a>
 
-## If you made it here, thanks for your support. You can show more support by forking or starring this repo. Thanks forever.
-
-## To Do
-
-- [x] code refactoring
-- [ ] user collections
-- [ ] centrecrop java for search
+## If you made it here, thanks for your support. You can show more support by forking or starring this repo. See ya!
