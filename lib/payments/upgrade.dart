@@ -97,12 +97,15 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   @override
   Widget build(BuildContext context) {
     if (_purchaserInfo == null) {
-      return Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          body: Center(
-              child: Text(
-            "Loading...",
-          )));
+      return WillPopScope(
+        onWillPop: onWillPop,
+        child: Scaffold(
+            backgroundColor: Theme.of(context).primaryColor,
+            body: Center(
+                child: Text(
+              "Loading...",
+            ))),
+      );
     } else {
       if (_purchaserInfo.entitlements.all.isNotEmpty &&
           _purchaserInfo.entitlements.all['prism_premium'] != null) {
@@ -457,24 +460,27 @@ class _UpsellScreenState extends State<UpsellScreen> {
         }
       }
     }
-    return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text("Purchase"),
-          leading: IconButton(
-            icon: Icon(JamIcons.close),
-            onPressed: () {
-              if (navStack.length > 1) navStack.removeLast();
-              print(navStack);
-              Navigator.pop(context);
-            },
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: Scaffold(
+          backgroundColor: Theme.of(context).primaryColor,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: Text("Purchase"),
+            leading: IconButton(
+              icon: Icon(JamIcons.close),
+              onPressed: () {
+                if (navStack.length > 1) navStack.removeLast();
+                print(navStack);
+                Navigator.pop(context);
+              },
+            ),
           ),
-        ),
-        body: Center(
-            child: Text(
-          "Loading...",
-        )));
+          body: Center(
+              child: Text(
+            "Loading...",
+          ))),
+    );
   }
 }
 
@@ -585,44 +591,47 @@ class _PurchaseButtonState extends State<PurchaseButton> {
 class ProScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(18.0),
-                child: Icon(
-                  Icons.star,
-                  color: Color(0xFFE57697),
-                  size: 44.0,
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: Scaffold(
+          backgroundColor: Theme.of(context).primaryColor,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.all(18.0),
+                  child: Icon(
+                    Icons.star,
+                    color: Color(0xFFE57697),
+                    size: 44.0,
+                  ),
                 ),
-              ),
-              Padding(
-                  padding: const EdgeInsets.all(18.0),
-                  child: Text(
-                    "You are a Prism Premium user.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  )),
-              Padding(
-                  padding: const EdgeInsets.all(18.0),
-                  child: Text(
-                    "You can use the app in all its functionality.\n\nPlease contact us at hash.studios.inc@gmail.com if you have any problem.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ).copyWith(fontSize: 14),
-                  )),
-            ],
-          ),
-        ));
+                Padding(
+                    padding: const EdgeInsets.all(18.0),
+                    child: Text(
+                      "You are a Prism Premium user.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    )),
+                Padding(
+                    padding: const EdgeInsets.all(18.0),
+                    child: Text(
+                      "You can use the app in all its functionality.\n\nPlease contact us at hash.studios.inc@gmail.com if you have any problem.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ).copyWith(fontSize: 14),
+                    )),
+              ],
+            ),
+          )),
+    );
   }
 }
