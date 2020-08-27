@@ -2,7 +2,6 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/ui/pages/collectionViewScreen.dart';
-import 'package:Prism/ui/pages/collectionViewWallScreen.dart';
 import 'package:Prism/ui/pages/download/downloadScreen.dart';
 import 'package:Prism/ui/pages/download/downloadWallpaperViewScreen.dart';
 import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
