@@ -19,7 +19,6 @@
 - Fixed set wallpaper intent
 - Added long press to crop and tap to set
 - Added notifications subscription
-- Added all-new notifications center
 - Minor bug fixes
 
 ### v2.5.2

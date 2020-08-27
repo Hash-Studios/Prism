@@ -248,7 +248,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Container(
                               width: MediaQuery.of(context).size.width * 0.8,
                               child: Text(
-                                "Download or set upto 5 variants of each wallpaper!",
+                                "Directly set upto 5 variants of each wallpaper!",
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline6
@@ -331,6 +331,37 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               width: 20,
                             ),
                             Icon(
+                              JamIcons.download,
+                              size: 22,
+                              color: Color(0xFFE57697),
+                            ),
+                            SizedBox(
+                              width: 20,
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "Download any wallpaper instantly.",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                            ),
+                            Icon(
                               JamIcons.coffee,
                               size: 22,
                               color: Color(0xFFE57697),
@@ -341,7 +372,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Container(
                               width: MediaQuery.of(context).size.width * 0.8,
                               child: Text(
-                                "Prism is completely ad-free and therfore this is the only way to support the development of the app.",
+                                "Prism is completely free of disturbing ads and therfore this is the only way to support the development of the app.",
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline6
