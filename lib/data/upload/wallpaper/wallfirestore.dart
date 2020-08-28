@@ -27,6 +27,11 @@ void createRecord(
     'desc': wallpaperDesc,
     'review': review,
     'createdAt': DateTime.now(),
+    'collections': ["community"],
   });
-  toasts.codeSend("Your post is submitted, and is under review.");
+  if (main.prefs.get('premium') == true) {
+    toasts.codeSend("Succesfully uploaded");
+  } else {
+    toasts.codeSend("Your post is submitted, and is under review.");
+  }
 }
