@@ -130,13 +130,13 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 | :-------------:  | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |    Favourites    |    Downloads     |     Setups       |    Setups Info         Profile     |
 
-| ![](demo/28.jpg) | ![](demo/76.jpg)| ![](demo/77.jpg)       | ![](demo/68.jpg)  |
-| :-------------:  | :-------------: | :-------------:       | :-------------:  |
-|  Upload Popup    |    Edit Wallpaper       |  Uploading Wallpaper    | Uploader's Profile   |
+| ![](demo/28.jpg) | ![](demo/76.jpg)| ![](demo/77.jpg)       | ![](demo/68.jpg)  | ![](demo/88.jpg) |
+| :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------:  |
+|  Upload Popup    |    Edit Wallpaper       |  Uploading Wallpaper    | Uploader's Profile   |     Scroll to Top Button       |
 
-| ![](demo/70.jpg) | ![](demo/69.jpg) | ![](demo/88.jpg)| ![](demo/72.jpg) | ![](demo/71.jpg) |
+| ![](demo/70.jpg) | ![](demo/69.jpg) | ![](demo/87.jpg)| ![](demo/72.jpg) | ![](demo/71.jpg) |
 | :-------------: | :-------------: | :-------------: | :-------------:  | :-------------:  |
-|     Categories     |     Collections    | Collection (Shapes)  |    Notifications     |     Minimalistic       |
+|     Categories     |     Collections    | Collection (Shapes)  |    Notifications     |     Textures       |
 
 | ![](demo/63.jpg) | ![](demo/89.jpg) | ![](demo/37.jpg)       | ![](demo/38.jpg)  | ![](demo/67.jpg)|
 | :-------------:  | :-------------:  | :-------------:       | :-------------:  | :-------------: |
