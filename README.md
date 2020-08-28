@@ -128,7 +128,7 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 
 | ![](demo/78.jpg) | ![](demo/80.jpg) | ![](demo/60.jpg) | ![](demo/61.jpg) | ![](demo/79.jpg) |
 | :-------------:  | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|    Favourites    |    Downloads     |     Setups       |    Setups Info         Profile     |
+|    Favourites    |    Downloads     |     Setups       |    Setups Info    |     Profile     |
 
 | ![](demo/28.jpg) | ![](demo/76.jpg)| ![](demo/77.jpg)       | ![](demo/68.jpg)  | ![](demo/88.jpg) |
 | :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------:  |
