@@ -19,7 +19,7 @@ Prism offers an exclusive collection of wallpapers that are beautifully hand-cra
 
 Prism relies on its Community and [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/) APIs as its source of beautiful and large collection of Wallpapers. By utilizing their API, it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to make the smartphone customization experience, smooth and easy, yet giving the users amazing wallpapers, and features like downloading infinite (as much your storage allows) wallpapers or sharing the ones they like with others.
 
-Now users can upload wallpapers, which will be shown in the Community section. They can also view the wallpapers they uploaded in the Profile section.
+Now users can upload wallpapers, which will be shown in the Community section. They can also view the wallpapers they uploaded in the Profile section. We generally take upto 24 hours for reviewing every wallpaper, but premium users get their wallpapers reviewed instantly.
 
 Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated every day. It also features categories like Abstract, Nature, 4K, Art, Landscape, Minimal, Space, Neon, etc. if you are into these. Then it allows one to find wallpapers based on colors, i.e. you can find wallpapers with a color that matches your icons or home screen setup. Not even that, it also shows you a palette of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
 
@@ -29,15 +29,15 @@ Main features like finding, downloading and setting up wallpapers don't require 
 
 Now get access to more premium and exclusive stuff by buying Prism Premium.
 
-You get access to Variants (Download or set up to 5 color variants of each wallpaper!) and Setups (Get more exclusive Home Screen setups! Free version includes only 5 free setups).
+You get access to Variants (Set up to 5 color variants of each wallpaper!) and Setups (Get more exclusive Home Screen setups! Free version includes only 5 free setups).
 Your uploads are also reviewed instantly, rather than the 24 hours time constraint in the free version.
 You also get a PRO badge in front of your profile, plus you directly support the development of this forever ad-free app.
 
 - The ability to view setups (only 5 are present in the free version)
-- The ability to download or set variants of wallpapers
+- The ability to set variants of wallpapers
 - Get PRO badge in front of your profile
 - Get uploads reviewed instantly
-- Get rid of all rewarded video ads
+- Get rid of all rewarded video ads(Used for downloads)
 - Support development of the app
 
 ## List of Contents
@@ -60,11 +60,12 @@ You also get a PRO badge in front of your profile, plus you directly support the
 - Over 500+ exclusive wallpapers, making it the best selection ever
 - Community wallpapers uploaded by users all-around the world
 - Homescreen setups - Unique and exclusive setups designed with the perfect combination of wallpapers, icon pack and widgets
+- Exclusive collections updated daily
 - Each wallpaper comes with 5 color variants
 - Dark Mode supported
 - Optional Sign-in
 - Each wallpaper has a unique link, makes sharing them easier
-- Low Internet usage due to minimal loading and persistent data using Provider
+- Low Internet usage due to minimal loading and persistent data using Provider/ CacheNetworkImage
 - Save Liked Images for later (works even after uninstalling the app)
 - Download any wallpaper to Gallery by watching a quick video ad
 - Secure data and favorites storage on Google Firebase
@@ -164,7 +165,7 @@ If you like what we do, and would want to help us continue doing it, consider sp
 
 <a href="https://www.buymeacoffee.com/HashStudios" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height=51 width=217></a>
 
-Prism Wallpapers app is now available on Google Play, so you can support us by reviewing the app.
+Prism Wallpapers app is now available on Google Play, so you can support us by giving a rating to the app.
 
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width=200 /></a>
 
@@ -210,8 +211,8 @@ The following packages are needed for the development of this application.
 - `data_connection_checker: ^0.3.4` for checking Internet connection
 - `carousel_slider: ^2.2.1` for carousel widget
 - `firebase_admob: ^0.9.3+4` for rewarded video ads
-- `image_editor: ^0.7.1` for manipulating wallpapers
-- `extended_image: ^0.9.0` for displaying wallpapers
+- `image_editor: ^0.7.1` for editing wallpapers during upload
+- `extended_image: ^0.9.0` for cropping wallpapers before uploading
 - `device_info: ^0.4.2+7` for getting device info for bug reports
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
