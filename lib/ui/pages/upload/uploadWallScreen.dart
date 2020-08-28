@@ -14,6 +14,7 @@ import 'package:Prism/gitkey.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/main.dart' as main;
 
 class UploadWallScreen extends StatefulWidget {
   final List arguments;
@@ -187,7 +188,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           title: Text(
-            "Submit",
+            "Upload Wallpaper",
             style: TextStyle(color: Theme.of(context).accentColor),
           ),
         ),
@@ -279,16 +280,18 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Center(
-                          child: Text(
-                            "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Theme.of(context)
-                                  .accentColor
-                                  .withOpacity(0.6),
-                            ),
-                          ),
+                          child: main.prefs.get('premium') == true
+                              ? "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. Your photo will be visible in the profile/community section."
+                              : Text(
+                                  "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Theme.of(context)
+                                        .accentColor
+                                        .withOpacity(0.6),
+                                  ),
+                                ),
                         ),
                       ),
                     ),
