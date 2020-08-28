@@ -122,29 +122,25 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 
 **Screens**
 
-| ![](demo/1.jpg) | ![](demo/2.jpg) | ![](demo/6.jpg) | ![](demo/8.jpg) | ![](demo/4.jpg) |
+| ![](demo/65.jpg) | ![](demo/73.jpg) | ![](demo/74.jpg) | ![](demo/3.jpg) | ![](demo/4.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Explore     |    Curated    |    Abstract     |     Nature       |     Color Based     |
+|     Home     |    Search WallHaven   |    Search Pexels     |     Color Picker       |     Color Based     |
 
+| ![](demo/78.jpg) | ![](demo/80.jpg) | ![](demo/60.jpg) | ![](demo/61.jpg) | ![](demo/79.jpg) |
+| :-------------:  | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
+|    Favourites    |    Downloads     |     Setups       |    Setups Info         Profile     |
 
-| ![](demo/5.jpg) | ![](demo/24.jpg) | ![](demo/11.jpg) | ![](demo/16.jpg) | ![](demo/19.jpg) |
-| :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     For you     |    Sports    |    Pattern     |     Monochrome       |     Cars     |
+| ![](demo/28.jpg) | ![](demo/76.jpg)| ![](demo/77.jpg)       | ![](demo/68.jpg)  |
+| :-------------:  | :-------------: | :-------------:       | :-------------:  |
+|  Upload Popup    |    Edit Wallpaper       |  Uploading Wallpaper    | Uploader's Profile   |
 
+| ![](demo/70.jpg) | ![](demo/69.jpg) | ![](demo/88.jpg)| ![](demo/72.jpg) | ![](demo/71.jpg) |
+| :-------------: | :-------------: | :-------------: | :-------------:  | :-------------:  |
+|     Categories     |     Collections    | Collection (Shapes)  |    Notifications     |     Minimalistic       |
 
-| ![](demo/3.jpg) | ![](demo/31.jpg) | ![](demo/34.jpg) | ![](demo/27.jpg) | ![](demo/62.jpg) |
-| :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Color Picker    |    Favourites    |    Downloads     |     Search       |     Profile     |
-
-
-| ![](demo/60.jpg) | ![](demo/61.jpg) | ![](demo/63.jpg) | ![](demo/64.jpg) |
-| :-------------: | :-------------:  | :-------------:  | :-------------:  |
-|     Setups     |    Setups Info    |     Premium Info       |     Premium Pop Up    |
-
-
-| ![](demo/28.jpg) | ![](demo/30.jpg)| ![](demo/37.jpg)       | ![](demo/38.jpg)  | ![](demo/39.jpg)|
-| :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------: |
-|  Upload Popup    |    Uploading Screen       |  Wallpaper Display    | Clock for testing   | Wallpaper Info  |
+| ![](demo/63.jpg) | ![](demo/89.jpg) | ![](demo/37.jpg)       | ![](demo/38.jpg)  | ![](demo/67.jpg)|
+| :-------------:  | :-------------:  | :-------------:       | :-------------:  | :-------------: |
+|     Premium Info       |     Premium Page    |  Wallpaper Display    | Clock for testing   | Wallpaper Info  |
 
 | ![](demo/41.jpg) | ![](demo/40.jpg) | ![](demo/33.jpg) | ![](demo/35.jpg) | ![](demo/36.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
@@ -154,9 +150,9 @@ This theme switcher toggle button was inspired by [Shubham](https://github.com/s
 
 **Light Theme**
 
-| ![](demo/42.jpg) | ![](demo/43.jpg)| ![](demo/44.jpg)| ![](demo/50.jpg) | ![](demo/47.jpg)|
+| ![](demo/81.jpg) | ![](demo/83.jpg)| ![](demo/85.jpg)| ![](demo/84.jpg) | ![](demo/86.jpg)|
 | :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
-|  Explore  |Search|  Favourites    |      Downloads   |      Profile  |
+|  Home  |Search|  Favourites    |      Setups   |      Profile  |
 
 
 ## Support
