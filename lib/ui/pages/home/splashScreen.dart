@@ -49,6 +49,7 @@ class SplashWidget extends StatelessWidget {
         text = text.replaceAll("[", "");
         text = text.replaceAll(",]", "");
         globals.topTitleText = text.split(",");
+        globals.topTitleText.shuffle();
         var cList = [];
         var tempVar = remoteConfig
             .getString('categories')
