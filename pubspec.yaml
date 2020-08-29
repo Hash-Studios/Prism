@@ -11,7 +11,7 @@ description: A new Flutter project.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.4.7+13
+version: 2.5.5+16
 
 environment:
   sdk: ">=2.6.0 <3.0.0"
@@ -50,6 +50,14 @@ dependencies:
   hive_flutter: ^0.3.0+1
   path_provider: ^1.6.11
   flutter_windowmanager: ^0.0.2
+  purchases_flutter: ^1.2.1
+  firebase_remote_config: ^0.3.1+1
+  data_connection_checker: ^0.3.4
+  carousel_slider: ^2.2.1
+  firebase_admob: ^0.9.3+4
+  image_editor: ^0.7.1
+  extended_image: ^0.9.0
+  device_info: ^0.4.2+7
 
 dependency_overrides:
   image: 2.1.12
@@ -63,7 +71,6 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
-
 # The following section is specific to Flutter.
 flutter:
   # The following line ensures that the Material Icons font is
@@ -73,7 +80,6 @@ flutter:
 
   assets:
     - assets/images/
-    # - assets/setups/
     - assets/animations/
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -109,6 +115,6 @@ flutter:
     - family: JamIcons
       fonts:
         - asset: assets/fonts/JamIcons.ttf
-  #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+

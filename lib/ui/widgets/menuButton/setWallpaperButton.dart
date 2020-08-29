@@ -1,6 +1,10 @@
+import 'dart:io' show Platform;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/popup/proPopUp.dart';
+import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:device_info/device_info.dart';
+// import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -26,15 +30,68 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   void _setWallPaper() async {
     bool result;
     try {
-      result = await platform.invokeMethod("set_wallpaper", <String, dynamic>{
-        'url': widget.url,
-      });
+      if (widget.url.contains("com.hash.prism")) {
+        result =
+            await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
+          'url': widget.url,
+        });
+      } else if (widget.url.contains("/0/")) {
+        result =
+            await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
+          'url': "/" + widget.url.replaceAll("/0//", "/0/"),
+        });
+      } else {
+        result = await platform.invokeMethod("set_wallpaper", <String, dynamic>{
+          'url': widget.url,
+        });
+      }
       if (result) {
         print("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Both', 'result': 'Success'});
-        toasts.setWallpaper();
+        // toasts.codeSend("Wallpaper set successfully!");
+      } else {
+        print("Failed");
+        toasts.error("Something went wrong!");
+      }
+      if (this.mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      analytics.logEvent(
+          name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      print(e);
+    }
+  }
+
+  void _setBothWallPaper() async {
+    bool result;
+    try {
+      if (widget.url.contains("com.hash.prism")) {
+        result = await platform
+            .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
+          'url': widget.url,
+        });
+      } else if (widget.url.contains("/0/")) {
+        result = await platform
+            .invokeMethod("set_both_wallpaper_file", <String, dynamic>{
+          'url': "/" + widget.url.replaceAll("/0//", "/0/"),
+        });
+      } else {
+        result =
+            await platform.invokeMethod("set_both_wallpaper", <String, dynamic>{
+          'url': widget.url,
+        });
+      }
+      if (result) {
+        print("Success");
+        analytics.logEvent(
+            name: 'set_wall',
+            parameters: {'type': 'Both', 'result': 'Success'});
+        toasts.codeSend("Wallpaper set successfully!");
       } else {
         print("Failed");
         toasts.error("Something went wrong!");
@@ -54,16 +111,28 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   void _setLockWallPaper() async {
     bool result;
     try {
-      result =
-          await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
-        'url': widget.url,
-      });
+      if (widget.url.contains("com.hash.prism")) {
+        result = await platform
+            .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
+          'url': widget.url,
+        });
+      } else if (widget.url.contains("/0/")) {
+        result = await platform
+            .invokeMethod("set_lock_wallpaper_file", <String, dynamic>{
+          'url': "/" + widget.url.replaceAll("/0//", "/0/"),
+        });
+      } else {
+        result =
+            await platform.invokeMethod("set_lock_wallpaper", <String, dynamic>{
+          'url': widget.url,
+        });
+      }
       if (result) {
         print("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Lock', 'result': 'Success'});
-        toasts.setWallpaper();
+        toasts.codeSend("Wallpaper set successfully!");
       } else {
         print("Failed");
         toasts.error("Something went wrong!");
@@ -83,16 +152,28 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   void _setHomeWallPaper() async {
     bool result;
     try {
-      result =
-          await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
-        'url': widget.url,
-      });
+      if (widget.url.contains("com.hash.prism")) {
+        result = await platform
+            .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
+          'url': widget.url,
+        });
+      } else if (widget.url.contains("/0/")) {
+        result = await platform
+            .invokeMethod("set_home_wallpaper_file", <String, dynamic>{
+          'url': "/" + widget.url.replaceAll("/0//", "/0/"),
+        });
+      } else {
+        result =
+            await platform.invokeMethod("set_home_wallpaper", <String, dynamic>{
+          'url': widget.url,
+        });
+      }
       if (result) {
         print("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Home', 'result': 'Success'});
-        toasts.setWallpaper();
+        toasts.codeSend("Wallpaper set successfully!");
       } else {
         print("Failed");
         toasts.error("Something went wrong!");
@@ -110,15 +191,45 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   }
 
   void showPremiumPopUp(Function func) {
-    if (!main.prefs.get("premium")) {
+    if (!main.prefs.get("isLoggedin")) {
       toasts.codeSend("Variants are a premium feature.");
-      premiumPopUp(context, func);
+      googleSignInPopUp(context, () {
+        if (!main.prefs.get("premium")) {
+          Navigator.pushNamed(context, PremiumRoute);
+          // premiumPopUp(context, func);
+        } else {
+          func();
+        }
+      });
     } else {
-      func();
+      if (!main.prefs.get("premium")) {
+        toasts.codeSend("Variants are a premium feature.");
+        Navigator.pushNamed(context, PremiumRoute);
+        // premiumPopUp(context, func);
+      } else {
+        func();
+      }
     }
   }
 
   void onPaint() async {
+    HapticFeedback.vibrate();
+    if (widget.colorChanged) {
+      showPremiumPopUp(() async {
+        setState(() {
+          isLoading = true;
+        });
+        Future.delayed(Duration(seconds: 1)).then((value) => _setWallPaper());
+      });
+    } else {
+      setState(() {
+        isLoading = true;
+      });
+      Future.delayed(Duration(seconds: 1)).then((value) => _setWallPaper());
+    }
+  }
+
+  void onTapPaint() async {
     showDialog(
       context: context,
       child: AlertDialog(
@@ -157,10 +268,8 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                                 setState(() {
                                   isLoading = true;
                                 });
-                                Future.delayed(Duration(seconds: 2)).then(
-                                    (value) => Future.delayed(
-                                            Duration(seconds: 1))
-                                        .then((value) => _setHomeWallPaper()));
+                                Future.delayed(Duration(seconds: 1))
+                                    .then((value) => _setHomeWallPaper());
                               });
                             } else {
                               setState(() {
@@ -179,11 +288,8 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                                     setState(() {
                                       isLoading = true;
                                     });
-                                    Future.delayed(Duration(seconds: 2)).then(
-                                        (value) =>
-                                            Future.delayed(Duration(seconds: 1))
-                                                .then((value) =>
-                                                    _setLockWallPaper()));
+                                    Future.delayed(Duration(seconds: 1))
+                                        .then((value) => _setLockWallPaper());
                                   });
                                 } else {
                                   setState(() {
@@ -201,17 +307,15 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                                     setState(() {
                                       isLoading = true;
                                     });
-                                    Future.delayed(Duration(seconds: 2)).then(
-                                        (value) => Future.delayed(
-                                                Duration(seconds: 1))
-                                            .then((value) => _setWallPaper()));
+                                    Future.delayed(Duration(seconds: 1))
+                                        .then((value) => _setBothWallPaper());
                                   });
                                 } else {
                                   setState(() {
                                     isLoading = true;
                                   });
                                   Future.delayed(Duration(seconds: 1))
-                                      .then((value) => _setWallPaper());
+                                      .then((value) => _setBothWallPaper());
                                 }
                               },
                   );
@@ -225,8 +329,23 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onLongPress: () async {
+        if (Platform.isAndroid) {
+          var androidInfo = await DeviceInfoPlugin().androidInfo;
+          var sdkInt = androidInfo.version.sdkInt;
+          print('(SDK $sdkInt)');
+          isLoading
+              ? print("")
+              : sdkInt >= 24
+                  ? onPaint()
+                  : toasts
+                      .error("Crop is supported for Android 7.0 and above!");
+        } else {
+          toasts.error("Sorry crop is supported for Android 7.0 and above!");
+        }
+      },
       onTap: () {
-        onPaint();
+        isLoading ? print("") : onTapPaint();
       },
       child: Stack(
         children: [

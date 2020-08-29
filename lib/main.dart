@@ -1,16 +1,15 @@
 import 'dart:io';
-
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/analytics/purchase_service.dart';
+import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/theme/thumbModel.dart';
 import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
-import 'package:Prism/data/pexels/provider/pexels.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
-import 'package:Prism/data/prism/provider/prismProvider.dart';
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
@@ -29,16 +28,28 @@ import 'package:flutter/services.dart';
 Box prefs;
 Directory dir;
 var darkMode;
+var hqThumbs;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
+  Crashlytics.instance.enableInDevMode = false;
   FlutterError.onError = Crashlytics.instance.recordFlutterError;
   getApplicationDocumentsDirectory().then((dir) async {
     Hive.init(dir.path);
+    // var box = await Hive.openBox('wallpapers');
+    // box.deleteFromDisk();
     await Hive.openBox('wallpapers');
     await Hive.openBox('favourites');
+    await Hive.openBox('collections');
+    Hive.registerAdapter(NotifDataAdapter());
+    await Hive.openBox<List>('notifications');
     prefs = await Hive.openBox('prefs');
     print("Box Opened");
+    hqThumbs = prefs.get('hqThumbs') ?? false;
+    if (hqThumbs)
+      prefs.put('hqThumbs', true);
+    else
+      prefs.put('hqThumbs', false);
     darkMode = prefs.get('darkMode') ?? true;
     if (darkMode)
       prefs.put('darkMode', true);
@@ -50,23 +61,17 @@ void main() {
                 RestartWidget(
                   child: MultiProvider(
                     providers: [
-                      ChangeNotifierProvider<WallHavenProvider>(
-                        create: (context) => WallHavenProvider(),
-                      ),
-                      ChangeNotifierProvider<PexelsProvider>(
-                        create: (context) => PexelsProvider(),
-                      ),
-                      ChangeNotifierProvider<CategoryProvider>(
-                        create: (context) => CategoryProvider(),
+                      ChangeNotifierProvider<TabProvider>(
+                        create: (context) => TabProvider(),
                       ),
                       ChangeNotifierProvider<FavouriteProvider>(
                         create: (context) => FavouriteProvider(),
                       ),
+                      ChangeNotifierProvider<CategorySupplier>(
+                        create: (context) => CategorySupplier(),
+                      ),
                       ChangeNotifierProvider<SetupProvider>(
                         create: (context) => SetupProvider(),
-                      ),
-                      ChangeNotifierProvider<PrismProvider>(
-                        create: (context) => PrismProvider(),
                       ),
                       ChangeNotifierProvider<ProfileWallProvider>(
                         create: (context) => ProfileWallProvider(),
@@ -75,6 +80,10 @@ void main() {
                         create: (context) => ThemeModel(
                             darkMode ? kDarkTheme : kLightTheme,
                             darkMode ? ThemeType.Dark : ThemeType.Light),
+                      ),
+                      ChangeNotifierProvider<ThumbModel>(
+                        create: (context) => ThumbModel(
+                            hqThumbs ? ThumbType.High : ThumbType.Low),
                       )
                     ],
                     child: MyApp(),
@@ -94,7 +103,7 @@ class _MyAppState extends State<MyApp> {
   void getLoginStatus() async {
     prefs = await Hive.openBox('prefs');
     globals.gAuth.googleSignIn.isSignedIn().then((value) {
-      if (value) getPremiumPurchaseData();
+      if (value) checkPremium();
       prefs.put("isLoggedin", value);
     });
   }

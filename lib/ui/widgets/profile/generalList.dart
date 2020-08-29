@@ -1,10 +1,12 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/thumbModel.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/themeModel.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
 class GeneralList extends StatelessWidget {
@@ -61,9 +63,35 @@ class GeneralList extends StatelessWidget {
                   "Clear locally cached images",
                   style: TextStyle(fontSize: 12),
                 ),
-                onTap: () {
+                onTap: () async {
                   DefaultCacheManager().emptyCache();
-                  toasts.clearCache();
+                  PaintingBinding.instance.imageCache.clear();
+                  await Hive.box('wallpapers').deleteFromDisk();
+                  await Hive.openBox('wallpapers');
+                  await Hive.box('collections').deleteFromDisk();
+                  await Hive.openBox('collections');
+                  toasts.codeSend("Cleared cache!");
+                }),
+            SwitchListTile(
+                activeColor: Color(0xFFE57697),
+                secondary: Icon(
+                  JamIcons.dashboard,
+                ),
+                value: Provider.of<ThumbModel>(context).thumbType ==
+                    ThumbType.High,
+                title: Text(
+                  "High Quality Thumbnails",
+                  style: TextStyle(
+                      color: Theme.of(context).accentColor,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
+                ),
+                subtitle: Text(
+                  "Disable this to reduce Internet consumption",
+                  style: TextStyle(fontSize: 12),
+                ),
+                onChanged: (bool value) async {
+                  Provider.of<ThumbModel>(context, listen: false).toggleThumb();
                 }),
             ListTile(
               onTap: () {
@@ -84,8 +112,8 @@ class GeneralList extends StatelessWidget {
             ),
             ListTile(
               onTap: () {
-                main.prefs.put("newApp", true);
-                main.prefs.put("newApp2", true);
+                main.prefs.put("newDevice", true);
+                main.prefs.put("newDevice2", true);
                 main.RestartWidget.restartApp(context);
               },
               leading: Icon(JamIcons.help),

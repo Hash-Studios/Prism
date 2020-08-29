@@ -117,9 +117,9 @@ class FavouriteProvider extends ChangeNotifier {
         if (index == null) {
           print("Fav");
           createDataByWall(provider, wallhaven, pexels, prism);
-          toasts.favWall();
+          toasts.codeSend("Wallpaper added to favourites!");
         } else {
-          toasts.unfavWall();
+          toasts.error("Wallpaper removed from favourites!");
           deleteDataByID(id);
           return false;
         }
@@ -128,7 +128,7 @@ class FavouriteProvider extends ChangeNotifier {
   }
 
   Future<int> countFav() async {
-    int favs;
+    int favs = 0;
     print("in countfav");
     await getDataBase().then((value) {
       print(value.length);

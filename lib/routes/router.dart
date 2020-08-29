@@ -1,32 +1,27 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/pages/categories/abstractScreen.dart';
-import 'package:Prism/ui/pages/categories/animalsScreen.dart';
-import 'package:Prism/ui/pages/categories/artScreen.dart';
-import 'package:Prism/ui/pages/categories/colorScreen.dart';
-import 'package:Prism/ui/pages/categories/curatedScreen.dart';
-import 'package:Prism/ui/pages/categories/minimalScreen.dart';
-import 'package:Prism/ui/pages/categories/monochromeScreen.dart';
-import 'package:Prism/ui/pages/categories/musicScreen.dart';
-import 'package:Prism/ui/pages/categories/natureScreen.dart';
-import 'package:Prism/ui/pages/categories/neonScreen.dart';
-import 'package:Prism/ui/pages/categories/spaceScreen.dart';
-import 'package:Prism/ui/pages/categories/sportsScreen.dart';
-import 'package:Prism/ui/pages/categories/texturesScreen.dart';
+import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/ui/pages/collectionViewScreen.dart';
 import 'package:Prism/ui/pages/download/downloadScreen.dart';
 import 'package:Prism/ui/pages/download/downloadWallpaperViewScreen.dart';
 import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
 import 'package:Prism/ui/pages/home/pageManager.dart';
 import 'package:Prism/ui/pages/home/splashScreen.dart';
 import 'package:Prism/ui/pages/home/wallpaperScreen.dart';
+import 'package:Prism/ui/pages/photographerProfile.dart';
+import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
 import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
 import 'package:Prism/ui/pages/profile/themeView.dart';
+import 'package:Prism/ui/pages/profile/userProfileWallViewScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
+import 'package:Prism/ui/pages/search/searchWallpaperScreen.dart';
 import 'package:Prism/ui/pages/setupScreen.dart';
 import 'package:Prism/ui/pages/setupViewScreen.dart';
 import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
+import 'package:Prism/ui/pages/notificationScreen.dart';
+import 'package:Prism/ui/pages/upload/editWallScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -69,90 +64,40 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: ProfileRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => ProfileScreen());
+    case PhotographerProfileRoute:
+      navStack.add("User Profile");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: PhotographerProfileRoute);
+      return CupertinoPageRoute(
+          builder: (context) => UserProfile(settings.arguments));
     case DownloadRoute:
       navStack.add("Downloads");
       print(navStack);
       analytics.setCurrentScreen(screenName: DownloadRoute);
       return CupertinoPageRoute(builder: (context) => DownloadScreen());
-    case CuratedRoute:
-      navStack.add("Curated");
+    case PremiumRoute:
+      navStack.add("Buy Premium");
       print(navStack);
-      analytics.setCurrentScreen(screenName: CuratedRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => CuratedScreen());
-    case AbstractRoute:
-      navStack.add("Abstract");
+      analytics.setCurrentScreen(screenName: PremiumRoute);
+      return CupertinoPageRoute(builder: (context) => UpgradeScreen());
+    case NotificationsRoute:
+      navStack.add("Notifications");
       print(navStack);
-      analytics.setCurrentScreen(screenName: AbstractRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => AbstractScreen());
-    case NatureRoute:
-      navStack.add("Nature");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: NatureRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => NatureScreen());
-    case ArtRoute:
-      navStack.add("Art");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: ArtRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => ArtScreen());
-    case MinimalRoute:
-      navStack.add("Minimal");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: MinimalRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => MinimalScreen());
-    case TexturesRoute:
-      navStack.add("Textures");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: TexturesRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => TexturesScreen());
-    case MonochromeRoute:
-      navStack.add("Monochrome");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: MonochromeRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => MonochromeScreen());
-    case SpaceRoute:
-      navStack.add("Space");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: SpaceRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => SpaceScreen());
-    case AnimalsRoute:
-      navStack.add("Animals");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: AnimalsRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => AnimalsScreen());
-    case NeonRoute:
-      navStack.add("Neon");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: NeonRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => NeonScreen());
-    case SportsRoute:
-      navStack.add("Sports");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: SportsRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => SportsScreen());
-    case MusicRoute:
-      navStack.add("Music");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: MusicRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => MusicScreen());
+      analytics.setCurrentScreen(screenName: NotificationsRoute);
+      return CupertinoPageRoute(builder: (context) => NotificationScreen());
     case ColorRoute:
       navStack.add("Color");
       print(navStack);
       analytics.setCurrentScreen(screenName: ColorRoute);
-      return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) =>
-              ColorScreen(arguments: settings.arguments));
+      return CupertinoPageRoute(
+          builder: (context) => ColorScreen(arguments: settings.arguments));
+    case CollectionViewRoute:
+      navStack.add("CollectionsView");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: CollectionViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              CollectionViewScreen(arguments: settings.arguments));
     case WallpaperRoute:
       navStack.add("Wallpaper");
       print(navStack);
@@ -160,6 +105,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: WallpaperRoute);
       return CupertinoPageRoute(
           builder: (context) => WallpaperScreen(arguments: settings.arguments));
+    case SearchWallpaperRoute:
+      navStack.add("Search Wallpaper");
+      print(navStack);
+      SecureWindow();
+      analytics.setCurrentScreen(screenName: SearchWallpaperRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              SearchWallpaperScreen(arguments: settings.arguments));
     case DownloadWallpaperRoute:
       navStack.add("DownloadedWallpaper");
       print(navStack);
@@ -199,16 +152,30 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case ProfileWallViewRoute:
       navStack.add("ProfileWallpaper");
       print(navStack);
-      analytics.setCurrentScreen(screenName: FavWallViewRoute);
+      analytics.setCurrentScreen(screenName: ProfileWallViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
               ProfileWallViewScreen(arguments: settings.arguments));
+    case UserProfileWallViewRoute:
+      navStack.add("User ProfileWallpaper");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: UserProfileWallViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              UserProfileWallViewScreen(arguments: settings.arguments));
     case ThemeViewRoute:
       navStack.add("Themes");
       print(navStack);
       analytics.setCurrentScreen(screenName: ThemeViewRoute);
       return CupertinoPageRoute(
           builder: (context) => ThemeView(arguments: settings.arguments));
+    case EditWallRoute:
+      navStack.add("Edit Wallpaper");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: EditWallRoute);
+      return MaterialPageRoute(
+          builder: (context) => EditWallScreen(arguments: settings.arguments),
+          fullscreenDialog: true);
     case UploadWallRoute:
       navStack.add("Add");
       print(navStack);

@@ -1,8 +1,10 @@
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/profile/profileLoader.dart';
+import 'package:Prism/ui/widgets/home/loading.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -151,10 +153,19 @@ class _ProfileGridState extends State<ProfileGrid>
                                 color: animation.value,
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
-                                    image: NetworkImage(
-                                      Provider.of<ProfileWallProvider>(context)
-                                              .profileWalls[index]
-                                          ["wallpaper_thumb"],
+                                    image: CachedNetworkImageProvider(
+                                      Provider.of<ThumbModel>(context,
+                                                      listen: false)
+                                                  .thumbType ==
+                                              ThumbType.High
+                                          ? Provider.of<ProfileWallProvider>(
+                                                      context)
+                                                  .profileWalls[index]
+                                              ["wallpaper_url"]
+                                          : Provider.of<ProfileWallProvider>(
+                                                      context)
+                                                  .profileWalls[index]
+                                              ["wallpaper_thumb"],
                                     ),
                                     fit: BoxFit.cover)),
                           ),
@@ -176,6 +187,6 @@ class _ProfileGridState extends State<ProfileGrid>
                         ),
                       );
                     })
-            : LoadingCards(animation: animation));
+            : LoadingCards());
   }
 }

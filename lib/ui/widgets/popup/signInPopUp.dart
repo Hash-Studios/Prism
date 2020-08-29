@@ -131,36 +131,6 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: 20,
                 ),
                 Icon(
-                  JamIcons.download,
-                  size: 22,
-                  color: Color(0xFFE57697),
-                ),
-                SizedBox(
-                  width: 20,
-                ),
-                Container(
-                  width: MediaQuery.of(context).size.width * 0.6,
-                  child: Text(
-                    "The ability to download wallpapers.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6
-                        .copyWith(color: Theme.of(context).accentColor),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 20,
-                ),
-                Icon(
                   JamIcons.upload,
                   size: 22,
                   color: Color(0xFFE57697),
@@ -223,7 +193,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                     context: context,
                     builder: (BuildContext context) => loaderDialog);
                 globals.gAuth.signInWithGoogle().then((value) {
-                  toasts.successLog();
+                  toasts.codeSend("Login Successful!");
                   main.prefs.put("isLoggedin", true);
                   Navigator.pop(context);
                   func();

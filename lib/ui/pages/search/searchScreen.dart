@@ -1,11 +1,13 @@
-import 'package:Prism/data/wallhaven/provider/wallhaven.dart';
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
+    as WData;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/home/gridLoader.dart';
-import 'package:Prism/ui/widgets/home/homeGrid.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/home/loading.dart';
+import 'package:Prism/ui/widgets/searchGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +24,12 @@ class _SearchScreenState extends State<SearchScreen> {
     return true;
   }
 
+  String selectedProvider;
+  var selectedProviders;
+  final List providers = [
+    SearchProviderMenuItem(title: 'WallHaven', icon: JamIcons.arrow_right),
+    SearchProviderMenuItem(title: 'Pexels', icon: JamIcons.arrow_right)
+  ];
   final List<String> tags = [
     'Art',
     'Abstract',
@@ -43,6 +51,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     isSubmitted = false;
+    selectedProvider = "WallHaven";
+    selectedProviders = providers[0];
     super.initState();
   }
 
@@ -57,58 +67,116 @@ class _SearchScreenState extends State<SearchScreen> {
             automaticallyImplyLeading: false,
             elevation: 0,
             titleSpacing: 0,
-            title: Padding(
-              padding: const EdgeInsets.only(top: 6.0),
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(500),
-                            color: Theme.of(context).hintColor),
-                        child: TextField(
-                          cursorColor: Color(0xFFE57697),
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline5
-                              .copyWith(color: Theme.of(context).accentColor),
-                          controller: searchController,
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.only(left: 30, top: 15),
-                            border: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            hintText: "Search",
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headline5
-                                .copyWith(color: Theme.of(context).accentColor),
-                            suffixIcon: Icon(
-                              JamIcons.search,
-                              color: Theme.of(context).accentColor,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 6.0),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(500),
+                                color: Theme.of(context).hintColor),
+                            child: TextField(
+                              cursorColor: Color(0xFFE57697),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline5
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                              controller: searchController,
+                              decoration: InputDecoration(
+                                contentPadding:
+                                    EdgeInsets.only(left: 30, top: 15),
+                                border: InputBorder.none,
+                                disabledBorder: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                hintText: "Search",
+                                hintStyle: Theme.of(context)
+                                    .textTheme
+                                    .headline5
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                                suffixIcon: Icon(
+                                  JamIcons.search,
+                                  color: Theme.of(context).accentColor,
+                                ),
+                              ),
+                              onSubmitted: (tex) {
+                                setState(() {
+                                  isSubmitted = true;
+                                  if (selectedProvider == "WallHaven") {
+                                    WData.wallsS = [];
+                                    _future = WData.getWallsbyQuery(tex);
+                                  } else if (selectedProvider == "Pexels") {
+                                    PData.wallsPS = [];
+                                    _future = PData.getWallsPbyQuery(tex);
+                                  }
+                                });
+                              },
                             ),
                           ),
-                          onSubmitted: (tex) {
-                            setState(() {
-                              isSubmitted = true;
-                              Provider.of<WallHavenProvider>(context,
-                                      listen: false)
-                                  .wallsS = [];
-                              _future = Provider.of<WallHavenProvider>(context,
-                                      listen: false)
-                                  .getWallsbyQuery(tex);
-                            });
-                          },
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.1,
+                  child: PopupMenuButton(
+                    icon: Icon(JamIcons.more_vertical),
+                    elevation: 4,
+                    initialValue: selectedProviders,
+                    onCanceled: () {
+                      print('You have not choosed anything');
+                    },
+                    tooltip: 'Providers',
+                    onSelected: (choice) {
+                      setState(() {
+                        selectedProviders = choice;
+                        selectedProvider = choice.title;
+                        if (searchController.text != "") {
+                          isSubmitted = true;
+                          if (choice.title == "WallHaven") {
+                            WData.wallsS = [];
+                            _future =
+                                WData.getWallsbyQuery(searchController.text);
+                          } else if (choice.title == "Pexels") {
+                            PData.wallsPS = [];
+                            _future =
+                                PData.getWallsPbyQuery(searchController.text);
+                          }
+                        }
+                      });
+                    },
+                    itemBuilder: (BuildContext context) {
+                      return providers.map((choice) {
+                        return PopupMenuItem(
+                          textStyle: Theme.of(context)
+                              .textTheme
+                              .headline4
+                              .copyWith(color: Theme.of(context).accentColor),
+                          value: choice,
+                          child: Row(
+                            children: <Widget>[
+                              Icon(choice.icon),
+                              SizedBox(width: 10),
+                              Text(choice.title),
+                            ],
+                          ),
+                        );
+                      }).toList();
+                    },
+                  ),
+                )
+              ],
             ),
             bottom: PreferredSize(
                 child: SizedBox(
@@ -148,13 +216,15 @@ class _SearchScreenState extends State<SearchScreen> {
                                     setState(() {
                                       searchController.text = tags[index];
                                       isSubmitted = true;
-                                      Provider.of<WallHavenProvider>(context,
-                                              listen: false)
-                                          .wallsS = [];
-                                      _future = Provider.of<WallHavenProvider>(
-                                              context,
-                                              listen: false)
-                                          .getWallsbyQuery(tags[index]);
+                                      if (selectedProvider == "WallHaven") {
+                                        WData.wallsS = [];
+                                        _future =
+                                            WData.getWallsbyQuery(tags[index]);
+                                      } else if (selectedProvider == "Pexels") {
+                                        PData.wallsPS = [];
+                                        _future =
+                                            PData.getWallsPbyQuery(tags[index]);
+                                      }
                                     });
                                   }),
                             ),
@@ -170,7 +240,8 @@ class _SearchScreenState extends State<SearchScreen> {
             child: isSubmitted
                 ? SearchLoader(
                     future: _future,
-                    provider: searchController.text,
+                    query: searchController.text,
+                    selectedProvider: selectedProvider,
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -200,97 +271,52 @@ class _SearchScreenState extends State<SearchScreen> {
 
 class SearchLoader extends StatefulWidget {
   final Future future;
-  final String provider;
-  SearchLoader({@required this.future, @required this.provider});
+  final String query;
+  final String selectedProvider;
+  SearchLoader(
+      {@required this.future,
+      @required this.query,
+      @required this.selectedProvider});
   @override
   _SearchLoaderState createState() => _SearchLoaderState();
 }
 
-class _SearchLoaderState extends State<SearchLoader>
-    with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+class _SearchLoaderState extends State<SearchLoader> {
   Future _future;
 
   @override
   void initState() {
-    Provider.of<WallHavenProvider>(context, listen: false).wallsS = [];
-    Provider.of<WallHavenProvider>(context, listen: false).pageGetQuery = 1;
-    _future = widget.future;
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
-        ? TweenSequence<Color>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
-                  end: Colors.white10,
-                ),
-              ),
-            ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black12.withOpacity(.1),
-                  end: Colors.black.withOpacity(.14),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withOpacity(.14),
-                  end: Colors.black.withOpacity(.1),
-                ),
-              ),
-            ],
-          ).animate(_controller)
-      ..addListener(() {
-        setState(() {});
-      });
-    _controller.repeat();
-  }
+    if (widget.selectedProvider == "WallHaven") {
+      WData.wallsS = [];
+      WData.pageGetQuery = 1;
+      _future = widget.future;
+    } else if (widget.selectedProvider == "Pexels") {
+      PData.wallsPS = [];
+      PData.pageGetQueryP = 1;
+      _future = widget.future;
+    }
 
-  @override
-  dispose() {
-    _controller?.dispose();
-    super.dispose();
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
     return FutureBuilder(
       future: _future,
       builder: (ctx, snapshot) {
         if (snapshot == null) {
           print("snapshot null");
-          return LoadingCards(controller: controller, animation: animation);
+          return LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
           print("snapshot none, waiting");
-          return LoadingCards(controller: controller, animation: animation);
+          return LoadingCards();
         } else {
           // print("snapshot done");
-          return HomeGrid(
-            provider: widget.provider,
+          return SearchGrid(
+            query: widget.query,
+            selectedProvider: widget.selectedProvider,
           );
         }
       },

@@ -41,8 +41,8 @@ class ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<ProfileChild> {
-  int favCount;
-  int profileCount;
+  int favCount = main.prefs.get('userFavs') ?? 0;
+  int profileCount = main.prefs.get('userPosts') ?? 0;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {
@@ -66,6 +66,7 @@ class _ProfileChildState extends State<ProfileChild> {
           setState(
             () {
               favCount = value;
+              main.prefs.put('userFavs', value);
             },
           );
         },
@@ -210,7 +211,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                         FontWeight.normal),
                                               ),
                                               Icon(
-                                                JamIcons.heart,
+                                                JamIcons.heart_f,
                                                 color: Colors.white70,
                                               ),
                                             ],
@@ -218,19 +219,30 @@ class _ProfileChildState extends State<ProfileChild> {
                                           Spacer(flex: 1),
                                           Row(
                                             children: <Widget>[
-                                              Text(
-                                                Provider.of<ProfileWallProvider>(
-                                                            context)
-                                                        .len
-                                                        .toString() +
-                                                    " ",
-                                                style: TextStyle(
-                                                    fontFamily: "Proxima Nova",
-                                                    fontSize: 24,
-                                                    color: Colors.white70,
-                                                    fontWeight:
-                                                        FontWeight.normal),
-                                              ),
+                                              FutureBuilder(
+                                                  future: Provider.of<
+                                                              ProfileWallProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .getProfileWallsLength(),
+                                                  builder: (context, snapshot) {
+                                                    return Text(
+                                                      snapshot.data == null
+                                                          ? profileCount
+                                                                  .toString() +
+                                                              " "
+                                                          : snapshot.data
+                                                                  .toString() +
+                                                              " ",
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          fontSize: 24,
+                                                          color: Colors.white70,
+                                                          fontWeight: FontWeight
+                                                              .normal),
+                                                    );
+                                                  }),
                                               Icon(
                                                 JamIcons.picture,
                                                 color: Colors.white70,

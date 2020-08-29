@@ -38,1467 +38,276 @@ void showChangelog(BuildContext context, Function func) {
               child: SingleChildScrollView(
                 controller: controller,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.4.7',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
+                  ChangeVersion(number: 'v2.5.5'),
+                  Change(
+                      icon: JamIcons.upload,
+                      text: "Premium uploads get reviewed instantly now."),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text:
+                          "Added collections, find similar wallpapers easily."),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Major bug fixes and improvements."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.5.4'),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text:
+                          "Added wallpaper editing options before uploading."),
+                  Change(
+                      icon: JamIcons.history,
+                      text:
+                          "Improved overall caching, leading to low internet usage."),
+                  Change(icon: JamIcons.bug, text: "Major bug fixes."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.5.3'),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text: "Added long press to crop wallpapers."),
+                  Change(
+                      icon: JamIcons.bell,
+                      text: "Added ability to unsubscribe notifications."),
+                  Change(icon: JamIcons.bug, text: "Minor bug fixes."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.5.2'),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text: "Added carousel widget in home screen."),
+                  Change(
+                      icon: JamIcons.download,
+                      text:
+                          "Added rewarded video ads for wallpaper downloads."),
+                  Change(
+                      icon: JamIcons.bell,
+                      text: "Added all-new notifications center."),
+                  Change(icon: JamIcons.bug, text: "Minor bug fixes."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.5.1'),
+                  Change(
+                      icon: JamIcons.dashboard,
+                      text:
+                          "Added option to switch to high-quality thumbnails."),
+                  Change(
+                      icon: JamIcons.world,
+                      text: "Added no network indicator."),
+                  Change(icon: JamIcons.bug, text: "Minor bug fixes."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.5.0'),
+                  Change(
+                      icon: JamIcons.user,
+                      text: "Added option to view other users' profile."),
+                  Change(
+                      icon: JamIcons.brush,
+                      text: "Added option to copy color codes by long-press."),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Major bug fixes and improvements."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.4.9'),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Fixed excessive requests and rebuilding."),
+                  Change(
+                      icon: JamIcons.arrow_circle_up,
+                      text: "Added scroll to top button."),
+                  Change(
+                      icon: JamIcons.database,
+                      text: "Added dynamic categories."),
+                  Change(
+                      icon: JamIcons.history, text: "Added cache to images."),
+                  Change(icon: JamIcons.bug, text: "Minor bug fixes."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.4.8'),
+                  Change(
+                      icon: JamIcons.coin,
+                      text: "Added new payments experience."),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text: "Wallpapers are now sorted by latest."),
+                  Change(
+                      icon: JamIcons.phone,
+                      text:
+                          "Simplified UI, easily switch between different categories."),
+                  Change(
+                      icon: JamIcons.search,
+                      text:
+                          "Added option to change search provider (WallHaven & Pexels)."),
+                  Change(icon: JamIcons.bug, text: "Minor bug fixes."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.4.7'),
+                  Change(
+                      icon: JamIcons.crown,
+                      text:
+                          "Added Prism Premium, for the personalisation lords."),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text: "Setups added, change the way of personalisation."),
+                  Change(
+                      icon: JamIcons.heart,
+                      text: "Favourites moved to profile."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.4.6'),
+                  Change(
+                    icon: JamIcons.database,
+                    text: "Improved data caching.",
+                  ),
+                  Change(
+                    icon: JamIcons.world,
+                    text: "Fixed excessive internet usage.",
                   ),
                   SizedBox(
-                    height: 20,
+                    height: 15,
                   ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.crown,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added Prism Premium, for the personalisation lords.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
+                  ChangeVersion(number: 'v2.4.5'),
+                  Change(
+                      icon: JamIcons.bell,
+                      text: "Removed excessive notifications."),
+                  Change(
+                      icon: JamIcons.world,
+                      text: "Added Internet connectivity checks."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.4.4'),
+                  Change(
+                      icon: JamIcons.database,
+                      text: "Added upto 24 new Categories."),
+                  Change(icon: JamIcons.upload, text: "Added upload section."),
+                  Change(icon: JamIcons.wrench, text: "Added new themes page."),
+                  Change(icon: JamIcons.clock, text: "Added new animations."),
+                  Change(
+                      icon: JamIcons.user,
+                      text: "Redesigned Profile section UI."),
+                  Change(icon: JamIcons.bug, text: "Major bug fixes."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.4.3'),
+                  Change(
+                      icon: JamIcons.picture,
+                      text: "Added over 300+ exclusive wallpapers."),
+                  Change(
+                      icon: JamIcons.pictures,
+                      text:
+                          "Added Variants, lets switch between color variants of a wallpaper."),
+                  Change(
+                      icon: JamIcons.bell,
+                      text: "Added new notification center."),
+                  Change(
+                      icon: JamIcons.user,
+                      text: "Improved user experience overall."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.4.2'),
+                  Change(
+                      icon: JamIcons.bell,
+                      text: "Improved overall notifications."),
+                  Change(
+                    icon: JamIcons.bug,
+                    text: "Minor bug fixes.",
                   ),
                   SizedBox(
-                    height: 10,
+                    height: 15,
                   ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.instant_picture,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Setups added, change the way of personalisation.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ChangeVersion(number: 'v2.4.1'),
+                  Change(icon: JamIcons.bug, text: "Minor bug fixes."),
                   SizedBox(
-                    height: 10,
+                    height: 15,
                   ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.heart,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Favourites moved to profile.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ChangeVersion(number: 'v2.4.0'),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Major bug fixes and improvements."),
+                  Change(
+                      icon: JamIcons.mountain,
+                      text: "Redesigned the wallpaper info sheet."),
+                  Change(
+                      icon: JamIcons.home,
+                      text: "Added swipe to change categories."),
+                  Change(
+                      icon: JamIcons.bar_chart,
+                      text: "Added Firebase analytics."),
+                  Change(
+                      icon: JamIcons.bell,
+                      text: "Added notifications support."),
                   SizedBox(
-                    height: 25,
+                    height: 15,
                   ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.4.6',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ChangeVersion(number: 'v2.3.5'),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Major bug fixes and improvements."),
                   SizedBox(
-                    height: 20,
+                    height: 15,
                   ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.database,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Improved data caching.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ChangeVersion(number: 'v2.3.0'),
+                  Change(icon: JamIcons.brush, text: "Changed app icon."),
+                  Change(
+                      icon: JamIcons.history,
+                      text: "Added backwards compatibility."),
+                  Change(
+                      icon: JamIcons.user, text: "Redesigned profile page UI."),
+                  Change(
+                      icon: JamIcons.heart,
+                      text: "Fixed favourites and downloads."),
                   SizedBox(
-                    height: 10,
+                    height: 15,
                   ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.world,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Fixed excessive internet usage.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ChangeVersion(number: 'v2.2.0'),
+                  Change(
+                      icon: JamIcons.clock,
+                      text: "Added clock overlay to test wallpapers."),
+                  Change(
+                      icon: JamIcons.share_alt,
+                      text: "Added ability to share wallpapers."),
+                  Change(
+                      icon: JamIcons.pie_chart_alt,
+                      text: "Added ability to clear app cache."),
+                  Change(
+                      icon: JamIcons.bug, text: "Major bug fixes and tweaks."),
                   SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.4.5',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bell,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Removed excessive notifications.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.world,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added Internet connectivity checks.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.4.4',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.database,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added upto 24 new Categories.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.upload,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added upload section.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.wrench,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added new themes page.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.clock,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added new animations.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.user,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Redesigned Profile section UI.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bug,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Major bug fixes.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.4.3',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.picture,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added over 300+ exclusive wallpapers.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.pictures,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added Variants, lets switch between color variants of a wallpaper.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bell,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added new notification center.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.user,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Improved user experience overall.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.4.2',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bell,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Improved overall notifications.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bug,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Minor bug fixes.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.4.1',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bug,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Minor bug fixes.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.4.0',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bug,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Major bug fixes and improvements.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.mountain,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Redesigned the wallpaper info sheet.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.home,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added swipe to change categories.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bar_chart,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added Firebase analytics.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bell,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added notifications support.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.3.5',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bug,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Major bug fixes and improvements.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.3.0',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.brush,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Changed app icon.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.history,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added backwards compatibility.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.user,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Redesigned profile page UI.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.heart,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Fixed favourites and downloads.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.2.0',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.clock,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added clock overlay to test wallpapers.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.share_alt,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added ability to share wallpapers.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.pie_chart_alt,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added ability to clear app cache.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.bug,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Major bug fixes and tweaks.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                        child: Text(
-                          'v2.0.0',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.phone,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Completely new redesigned UI.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.camera,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added Pexels API support.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.search,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added new color search.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.brush,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added new themes.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.pictures,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added 1M+ wallpapers.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.google,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added non intrusive sign in support.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.settings_alt,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added new quick wallpaper actions.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Icon(
-                        JamIcons.eyedropper,
-                        size: 22,
-                        color: Color(0xFFE57697),
-                      ),
-                      SizedBox(
-                        width: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          "Added new palette generator.",
-                          style: Theme.of(context)
-                              .textTheme
-                              .headline6
-                              .copyWith(color: Theme.of(context).accentColor),
-                        ),
-                      ),
-                    ],
-                  ),
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.0.0'),
+                  Change(
+                      icon: JamIcons.phone,
+                      text: "Completely new redesigned UI."),
+                  Change(
+                      icon: JamIcons.camera, text: "Added Pexels API support."),
+                  Change(
+                      icon: JamIcons.search, text: "Added new color search."),
+                  Change(icon: JamIcons.brush, text: "Added new themes."),
+                  Change(
+                      icon: JamIcons.pictures, text: "Added 1M+ wallpapers."),
+                  Change(
+                      icon: JamIcons.google,
+                      text: "Added non intrusive sign in support."),
+                  Change(
+                      icon: JamIcons.settings_alt,
+                      text: "Added new quick wallpaper actions."),
+                  Change(
+                      icon: JamIcons.eyedropper,
+                      text: "Added new palette generator."),
                 ]),
               ),
             ),
@@ -1529,4 +338,80 @@ void showChangelog(BuildContext context, Function func) {
     ),
   );
   showDialog(context: context, builder: (BuildContext context) => aboutPopUp);
+}
+
+class ChangeVersion extends StatelessWidget {
+  final String number;
+  ChangeVersion({@required this.number});
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
+              child: Text(
+                number,
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Theme.of(context).accentColor),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(
+          height: 20,
+        ),
+      ],
+    );
+  }
+}
+
+class Change extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  Change({@required this.icon, @required this.text});
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 20,
+            ),
+            Icon(
+              icon,
+              size: 22,
+              color: Color(0xFFE57697),
+            ),
+            SizedBox(
+              width: 20,
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width * 0.6,
+              child: Text(
+                text,
+                style: Theme.of(context)
+                    .textTheme
+                    .headline6
+                    .copyWith(color: Theme.of(context).accentColor),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(
+          height: 10,
+        ),
+      ],
+    );
+  }
 }
