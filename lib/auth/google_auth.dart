@@ -1,8 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/payments/upgrade.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 class GoogleAuth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -74,6 +76,7 @@ class GoogleAuth {
     final FirebaseUser currentUser = await _auth.currentUser();
     assert(user.uid == currentUser.uid);
     analytics.logLogin();
+    await checkPremium();
     return 'signInWithGoogle succeeded: $user';
   }
 
@@ -89,6 +92,7 @@ class GoogleAuth {
       value.put('logged', "false");
       value.put('premium', false);
     });
+    await Purchases.reset();
     print("User Sign Out");
   }
 

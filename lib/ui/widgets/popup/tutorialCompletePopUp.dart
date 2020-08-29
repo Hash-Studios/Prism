@@ -1,3 +1,4 @@
+import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 
@@ -73,19 +74,40 @@ void showTutorialComplete(BuildContext context) {
           SizedBox(
             height: 25,
           ),
-          FlatButton(
-            shape: StadiumBorder(),
-            color: Color(0xFFE57697),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text(
-              'CLOSE',
-              style: TextStyle(
-                fontSize: 16.0,
-                color: Colors.white,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              FlatButton(
+                shape: StadiumBorder(),
+                color: Color(0xFFE57697),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  showChangelog(context, () {});
+                },
+                child: Text(
+                  'VIEW CHANGELOG',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-            ),
+              FlatButton(
+                shape: StadiumBorder(),
+                color: Theme.of(context).accentColor.withOpacity(0.3),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  'CLOSE',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Theme.of(context).accentColor,
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(
             height: 15,

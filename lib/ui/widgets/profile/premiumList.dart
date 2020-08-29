@@ -1,7 +1,8 @@
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/popup/proPopUp.dart';
+// import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:flutter/material.dart';
 
 class PremiumList extends StatelessWidget {
@@ -33,15 +34,17 @@ class PremiumList extends StatelessWidget {
                       if (main.prefs.get("premium")) {
                         main.RestartWidget.restartApp(context);
                       } else {
-                        premiumPopUp(context, () {
-                          main.RestartWidget.restartApp(context);
-                        });
+                        Navigator.pushNamed(context, PremiumRoute);
+                        // premiumPopUp(context, () {
+                        //   main.RestartWidget.restartApp(context);
+                        // });
                       }
                     });
                   } else {
-                    premiumPopUp(context, () {
-                      main.RestartWidget.restartApp(context);
-                    });
+                    Navigator.pushNamed(context, PremiumRoute);
+                    // premiumPopUp(context, () {
+                    //   main.RestartWidget.restartApp(context);
+                    // });
                   }
                 },
                 leading: Icon(JamIcons.instant_picture_f),

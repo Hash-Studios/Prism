@@ -43,3 +43,10 @@ key.jks
 pubspec.lock
 android/app/google-services.json
 lib/gitkey.dart
+android/app/.settings/org.eclipse.buildship.core.prefs
+android/app/.project
+android/app/.classpath
+android/.project
+.vscode/settings.json
+android/.settings/org.eclipse.buildship.core.prefs
+android/gradle/wrapper/gradle-wrapper.properties

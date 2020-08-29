@@ -1,19 +1,21 @@
-import 'package:Prism/data/categories/provider/categoriesProvider.dart';
+import 'package:Prism/data/tabs/provider/tabsProvider.dart';
+import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/pages/home/homeScreen.dart';
+import 'package:Prism/ui/pages/home/splashScreen.dart';
+import 'package:Prism/ui/widgets/home/tutorials.dart';
 import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:Prism/ui/widgets/popup/tutorialCompletePopUp.dart';
-import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/ui/pages/home/pageManager.dart' as PM;
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:tutorial_coach_mark/animated_focus_light.dart';
-import 'package:tutorial_coach_mark/content_target.dart';
 import 'package:tutorial_coach_mark/target_focus.dart';
-import 'package:tutorial_coach_mark/target_position.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:Prism/routes/routing_constants.dart';
 
 class CategoriesBar extends StatefulWidget {
   final width;
@@ -27,429 +29,43 @@ class CategoriesBar extends StatefulWidget {
 
 class _CategoriesBarState extends State<CategoriesBar> {
   bool isNew;
+  bool noNotification = false;
   List<TargetFocus> targets = List();
   @override
   void initState() {
     isNew = true;
     super.initState();
     globals.height = widget.height;
-    initTargets();
+    globals.width = widget.width;
+    initTargets(targets, widget.width, widget.height);
+    if (!globals.updateChecked) {
+      _checkUpdate();
+    }
+    noNotification = checkNewNotification();
     if (isNew) {
       Future.delayed(Duration(seconds: 0)).then(
           (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
     }
   }
 
-  void initTargets() {
-    targets.add(TargetFocus(
-      identify: "Target 0",
-      targetPosition: TargetPosition(Size(0, 0), Offset(0, 0)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.bottom,
-            child: SizedBox(
-              height: widget.height,
-              child: Container(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      "Hey! Welcome to Prism.",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontSize: 20.0),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10.0),
-                      child: RichText(
-                        text: TextSpan(
-                          text:
-                              "➡ Let's start your beautiful journey with a quick intro.\n\n➡ Tap anywhere on the screen to continue.",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
-    targets.add(TargetFocus(
-      identify: "Target 1",
-      targetPosition: TargetPosition(Size(widget.width, 60), Offset(0, 20)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.bottom,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "This is the Categories Bar.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: RichText(
-                      text: TextSpan(
-                          text: "➡ Find all wallpaper categories like ",
-                          style: TextStyle(color: Colors.white),
-                          children: [
-                            TextSpan(
-                              text:
-                                  "Curated, 4k, Abstract, Nature, Art, Minimal ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: "etc, here.\n\n"),
-                            TextSpan(text: "➡ It also has a "),
-                            TextSpan(
-                              text: "Colors ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(
-                                text:
-                                    "button, which lets you find wallpapers by a specific color.\n\n"),
-                          ]),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.RRect,
-    ));
-    targets.add(TargetFocus(
-      identify: "Target 2",
-      targetPosition: TargetPosition(
-          Size(widget.width, widget.height - 400), Offset(0, 70)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.bottom,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "This is the Wallpapers Feed.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: RichText(
-                      text: TextSpan(
-                          text: "➡ Swipe ",
-                          style: TextStyle(color: Colors.white),
-                          children: [
-                            TextSpan(
-                              text: "vertically ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(
-                                text:
-                                    "to see all the wallpapers in a category.\n\n"),
-                            TextSpan(text: "➡ Swipe "),
-                            TextSpan(
-                              text: "horizontally ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(
-                                text:
-                                    "to switch between different categories.\n\n"),
-                          ]),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.RRect,
-    ));
-    targets.add(TargetFocus(
-      targetPosition: TargetPosition(
-          Size(widget.width * 0.5, widget.width * 0.5 / 0.6625), Offset(0, 70)),
-      identify: "Target 3",
-      contents: [
-        ContentTarget(
-            align: AlignContent.bottom,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "Tap on a wallpaper to view it.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: RichText(
-                      text: TextSpan(
-                          text: "➡ You can also ",
-                          style: TextStyle(color: Colors.white),
-                          children: [
-                            TextSpan(
-                              text: "apply, favorite,",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: " and"),
-                            TextSpan(
-                              text: " download",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(
-                                text: " it directly from the 3-dots menu.\n\n"),
-                            TextSpan(text: "➡ You can also "),
-                            TextSpan(
-                              text: "tap and hold ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(
-                                text:
-                                    "any wallpaper to quickly copy its sharing link.\n\n"),
-                          ]),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.RRect,
-    ));
-    targets.add(TargetFocus(
-      targetPosition: TargetPosition(Size(widget.width * 0.7, 100),
-          Offset(widget.width * 0.15, widget.height - 100)),
-      identify: "Target 4",
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "This is the navigation bar.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: RichText(
-                      text: TextSpan(
-                          text: "➡ Here you can access your ",
-                          style: TextStyle(color: Colors.white),
-                          children: [
-                            TextSpan(
-                              text: "favorites, downloads,",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: " and"),
-                            TextSpan(
-                              text: " search",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: " for more wallpapers.\n\n"),
-                            TextSpan(text: "➡ You can also upload your own "),
-                            TextSpan(
-                              text: "wallpapers ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: "from here.\n\n"),
-                            TextSpan(text: "➡ You can also access your "),
-                            TextSpan(
-                              text: "profile ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: "from here.\n\n"),
-                          ]),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.RRect,
-    ));
-    // targets.add(TargetFocus(
-    //   identify: "Target 5",
-    //   targetPosition: TargetPosition(
-    //       Size(40, 40), Offset(widget.width / 2 - 45, widget.height - 65)),
-    //   contents: [
-    //     ContentTarget(
-    //         align: AlignContent.top,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: <Widget>[
-    //               Text(
-    //                 "This is the Search Page.",
-    //                 style: TextStyle(
-    //                     fontWeight: FontWeight.bold,
-    //                     color: Colors.white,
-    //                     fontSize: 20.0),
-    //               ),
-    //               Padding(
-    //                 padding: const EdgeInsets.only(top: 10.0),
-    //                 child: Text(
-    //                   "Head over here to search Wallpapers, and apply them.",
-    //                   style: TextStyle(color: Colors.white),
-    //                 ),
-    //               )
-    //             ],
-    //           ),
-    //         ))
-    //   ],
-    //   shape: ShapeLightFocus.Circle,
-    // ));
-    // targets.add(TargetFocus(
-    //   identify: "Target 6",
-    //   targetPosition: TargetPosition(
-    //       Size(40, 40), Offset(widget.width / 2 + 5, widget.height - 65)),
-    //   contents: [
-    //     ContentTarget(
-    //         align: AlignContent.top,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: <Widget>[
-    //               Text(
-    //                 "This is the Favorites Page.",
-    //                 style: TextStyle(
-    //                     fontWeight: FontWeight.bold,
-    //                     color: Colors.white,
-    //                     fontSize: 20.0),
-    //               ),
-    //               Padding(
-    //                 padding: const EdgeInsets.only(top: 10.0),
-    //                 child: Text(
-    //                   "All your saved favorites are visible here, and you can apply them straight away from here.",
-    //                   style: TextStyle(color: Colors.white),
-    //                 ),
-    //               )
-    //             ],
-    //           ),
-    //         ))
-    //   ],
-    //   shape: ShapeLightFocus.Circle,
-    // ));
-    // targets.add(TargetFocus(
-    //   identify: "Target 7",
-    //   targetPosition: TargetPosition(
-    //       Size(40, 40), Offset(widget.width / 2 + 55, widget.height - 65)),
-    //   contents: [
-    //     ContentTarget(
-    //         align: AlignContent.top,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: <Widget>[
-    //               Text(
-    //                 "This is the Profile Page.",
-    //                 style: TextStyle(
-    //                     fontWeight: FontWeight.bold,
-    //                     color: Colors.white,
-    //                     fontSize: 20.0),
-    //               ),
-    //               Padding(
-    //                 padding: const EdgeInsets.only(top: 10.0),
-    //                 child: Text(
-    //                   "It lets you view your downloads, set wallpapers from downloaded ones, sign in or log out, change themes, clear your downloads and cache, and more experimental features. Clearly this is the next best thing in this app after wallpapers, so make sure to check it out.",
-    //                   style: TextStyle(color: Colors.white),
-    //                 ),
-    //               )
-    //             ],
-    //           ),
-    //         ))
-    //   ],
-    //   shape: ShapeLightFocus.Circle,
-    // ));
-    // targets.add(TargetFocus(
-    //   identify: "Target 7",
-    //   targetPosition: TargetPosition(Size(0, 0), Offset(300 * 0.6625, 370)),
-    //   contents: [
-    //     ContentTarget(
-    //         align: AlignContent.bottom,
-    //         child: Container(
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: <Widget>[
-    //               Text(
-    //                 "Congratulations.",
-    //                 style: TextStyle(
-    //                     fontWeight: FontWeight.bold,
-    //                     color: Colors.white,
-    //                     fontSize: 20.0),
-    //               ),
-    //               Padding(
-    //                 padding: const EdgeInsets.only(top: 10.0),
-    //                 child: Text(
-    //                   "You have successfully completed the tutorial and are ready to revamp your home screen.\n\nThank you for your awesomeness.",
-    //                   style: TextStyle(color: Colors.white),
-    //                 ),
-    //               )
-    //             ],
-    //           ),
-    //         ))
-    //   ],
-    //   shape: ShapeLightFocus.Circle,
-    // ));
-  }
-
+  var textSkip = "SKIP";
   void showTutorial() {
     TutorialCoachMark(context,
         targets: targets,
         colorShadow: Color(0xFFE57697),
-        textSkip: "SKIP",
+        textSkip: textSkip,
         paddingFocus: 1,
         opacityShadow: 0.9, finish: () {
       print("finish");
     }, clickTarget: (target) {
       print(target.identify);
+      if (target.identify == "Target 3") {
+        setState(() {
+          textSkip = "FINISH";
+        });
+      }
       if (target.identify == "Target 4") {
-        Future.delayed(Duration(milliseconds: 500))
+        Future.delayed(Duration(milliseconds: 800))
             .then((value) => showTutorialComplete(context));
       }
     }, clickSkip: () {
@@ -459,12 +75,12 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   void afterLayout(_) {
-    var newApp = main.prefs.get("newApp");
-    if (newApp == null || newApp == true) {
+    var newDevice = main.prefs.get("newDevice");
+    if (newDevice == null || newDevice == true) {
       Future.delayed(Duration(milliseconds: 100), showTutorial);
-      main.prefs.put("newApp", false);
+      main.prefs.put("newDevice", false);
     } else {
-      main.prefs.put("newApp", false);
+      main.prefs.put("newDevice", false);
     }
   }
 
@@ -475,6 +91,102 @@ class _CategoriesBarState extends State<CategoriesBar> {
         child: child,
         highlightColor: Colors.black.withOpacity(0.1),
       );
+  bool checkNewNotification() {
+    Box<List> box = Hive.box('notifications');
+    var notifications = box.get('notifications');
+    if (notifications == null) {
+      notifications = [];
+    }
+    if (notifications.length == 0) {
+      setState(() {
+        noNotification = true;
+      });
+      return true;
+    } else {
+      setState(() {
+        noNotification = false;
+      });
+      return false;
+    }
+  }
+
+  //Check for update if available
+  String currentAppVersion = globals.currentAppVersion;
+  Future<void> _checkUpdate() async {
+    print("checking for update");
+    try {
+      print("Current App Version :" + currentAppVersion);
+      print("Latest Version :" +
+          remoteConfig.getString("currentVersion").toString());
+      setState(() {
+        if (currentAppVersion !=
+            remoteConfig.getString("currentVersion").toString()) {
+          setState(() {
+            globals.updateAvailable = true;
+            globals.versionInfo = {
+              "version_number":
+                  remoteConfig.getString("currentVersion").toString(),
+              "version_desc": remoteConfig.getString("versionDesc").toString(),
+            };
+          });
+          Box<List> box = Hive.box('notifications');
+          for (var i in box.get('notifications') ?? []) {
+            if (i.url ==
+                "https://play.google.com/store/apps/details?id=com.hash.prism") {
+              globals.updateAlerted = true;
+            }
+          }
+          if (globals.updateAvailable) {
+            if (!globals.updateAlerted) {
+              writeNotifications({
+                'notification': {
+                  'title': 'New version ' +
+                      globals.versionInfo["version_number"] +
+                      ' Available!',
+                  'body': 'Update now available on the Google Play Store.',
+                },
+                'data': {
+                  'imageUrl':
+                      "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
+                  'url':
+                      "https://play.google.com/store/apps/details?id=com.hash.prism",
+                }
+              });
+              Future.delayed(Duration(seconds: 0))
+                  .then((value) => noNotification = checkNewNotification());
+              final snackBar = SnackBar(
+                behavior: SnackBarBehavior.floating,
+                content: Text('New version ' +
+                    globals.versionInfo["version_number"] +
+                    ' Available!'),
+                action: SnackBarAction(
+                  label: 'VIEW',
+                  textColor: Color(0xFFE57697),
+                  onPressed: () {
+                    Navigator.pushNamed(context, NotificationsRoute);
+                  },
+                ),
+              );
+              Scaffold.of(context).showSnackBar(snackBar);
+            } else {
+              print("Updated is alreday alerted!");
+            }
+          } else {
+            print("No update");
+          }
+        } else {
+          setState(() {
+            globals.updateAvailable = false;
+          });
+        }
+      });
+    } catch (e) {
+      print("Error while checking for updates! :" + e.toString());
+    }
+    setState(() {
+      globals.updateChecked = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -486,45 +198,41 @@ class _CategoriesBarState extends State<CategoriesBar> {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          globals.updateAvailable
-              ? SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.1,
-                  height: 100,
-                  child: IconButton(
-                    icon: globals.noNewNotification
-                        ? Icon(JamIcons.bell)
-                        : Stack(children: <Widget>[
-                            Icon(JamIcons.bell_f),
-                            Positioned(
-                              top: 0.0,
-                              right: 0.0,
-                              child: Icon(
-                                Icons.brightness_1,
-                                size: 9.0,
-                                color: Color(0xFFE57697),
-                              ),
-                            )
-                          ]),
-                    onPressed: () {
-                      setState(() {
-                        globals.noNewNotification = true;
-                      });
-                      showUpdate(context);
-                    },
-                  ),
-                )
-              : Container(),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.1,
+            height: 100,
+            child: IconButton(
+              icon: noNotification
+                  ? Icon(JamIcons.bell)
+                  : Stack(children: <Widget>[
+                      Icon(JamIcons.bell_f),
+                      Positioned(
+                        top: 0.0,
+                        right: 0.0,
+                        child: Icon(
+                          Icons.brightness_1,
+                          size: 9.0,
+                          color: Color(0xFFE57697),
+                        ),
+                      )
+                    ]),
+              onPressed: () {
+                setState(() {
+                  noNotification = true;
+                });
+                // showUpdate(context);
+                Navigator.pushNamed(context, NotificationsRoute);
+              },
+            ),
+          ),
           SizedBox(
             // key: globals.keyCategoriesBar,
-            width: globals.updateAvailable
-                ? MediaQuery.of(context).size.width * 0.9
-                : MediaQuery.of(context).size.width,
+            width: MediaQuery.of(context).size.width * 0.7,
             height: 100,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               controller: globals.categoryController,
-              itemCount:
-                  Provider.of<CategoryProvider>(context).categories.length,
+              itemCount: Provider.of<TabProvider>(context).tabs.length,
               itemBuilder: (context, index) {
                 return _wrapScrollTag(
                   index: index,
@@ -543,98 +251,32 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                 pressElevation: 5,
                                 padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
                                 label: Text(
-                                    Provider.of<CategoryProvider>(context)
-                                        .categories[index],
+                                    Provider.of<TabProvider>(context)
+                                        .tabs[index],
                                     style:
                                         Theme.of(context).textTheme.headline4),
                                 onPressed: () {
-                                  switch (Provider.of<CategoryProvider>(context,
+                                  switch (Provider.of<TabProvider>(context,
                                           listen: false)
-                                      .categories[index]) {
-                                    case "Home":
-                                      PM.pageController.jumpToPage(0);
+                                      .tabs[index]) {
+                                    case "Wallpapers":
+                                      PM.pageController.animateToPage(0,
+                                          duration: Duration(milliseconds: 200),
+                                          curve: Curves.easeInCubic);
                                       break;
-                                    case "Curated":
-                                      PM.pageController.jumpToPage(1);
-                                      break;
-                                    case "For you":
-                                      PM.pageController.jumpToPage(2);
-                                      break;
-                                    case "Abstract":
-                                      PM.pageController.jumpToPage(3);
-                                      break;
-                                    case "Landscape":
-                                      PM.pageController.jumpToPage(4);
-                                      break;
-                                    case "Nature":
-                                      PM.pageController.jumpToPage(5);
-                                      break;
-                                    case "4K":
-                                      PM.pageController.jumpToPage(6);
-                                      break;
-                                    case "Art":
-                                      PM.pageController.jumpToPage(7);
-                                      break;
-                                    case "Pattern":
-                                      PM.pageController.jumpToPage(8);
-                                      break;
-                                    case "Minimal":
-                                      PM.pageController.jumpToPage(9);
-                                      break;
-                                    case "Anime":
-                                      PM.pageController.jumpToPage(10);
-                                      break;
-                                    case "Textures":
-                                      PM.pageController.jumpToPage(11);
-                                      break;
-                                    case "Technology":
-                                      PM.pageController.jumpToPage(12);
-                                      break;
-                                    case "Monochrome":
-                                      PM.pageController.jumpToPage(13);
-                                      break;
-                                    case "Code":
-                                      PM.pageController.jumpToPage(14);
-                                      break;
-                                    case "Space":
-                                      PM.pageController.jumpToPage(15);
-                                      break;
-                                    case "Cars":
-                                      PM.pageController.jumpToPage(16);
-                                      break;
-                                    case "Animals":
-                                      PM.pageController.jumpToPage(17);
-                                      break;
-                                    case "Skyscape":
-                                      PM.pageController.jumpToPage(18);
-                                      break;
-                                    case "Neon":
-                                      PM.pageController.jumpToPage(19);
-                                      break;
-                                    case "Architecture":
-                                      PM.pageController.jumpToPage(20);
-                                      break;
-                                    case "Sports":
-                                      PM.pageController.jumpToPage(21);
-                                      break;
-                                    case "Marvel":
-                                      PM.pageController.jumpToPage(22);
-                                      break;
-                                    case "Music":
-                                      PM.pageController.jumpToPage(23);
-                                      break;
-                                    case "Colors":
-                                      showColors(context);
+                                    case "Collections":
+                                      PM.pageController.animateToPage(1,
+                                          duration: Duration(milliseconds: 200),
+                                          curve: Curves.easeInCubic);
                                       break;
                                     default:
                                       break;
                                   }
                                 }),
                             crossFadeState:
-                                Provider.of<CategoryProvider>(context)
-                                            .categories[index] ==
-                                        Provider.of<CategoryProvider>(context)
-                                            .selectedCategory
+                                Provider.of<TabProvider>(context).tabs[index] ==
+                                        Provider.of<TabProvider>(context)
+                                            .selectedTab
                                     ? CrossFadeState.showFirst
                                     : CrossFadeState.showSecond,
                             firstChild: ActionChip(
@@ -642,8 +284,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                 padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
                                 backgroundColor: Theme.of(context).accentColor,
                                 label: Text(
-                                    Provider.of<CategoryProvider>(context)
-                                        .categories[index],
+                                    Provider.of<TabProvider>(context)
+                                        .tabs[index],
                                     style: Theme.of(context)
                                         .textTheme
                                         .headline4
@@ -660,6 +302,56 @@ class _CategoriesBarState extends State<CategoriesBar> {
               },
             ),
           ),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.1,
+            height: 100,
+            child: IconButton(
+              icon: Icon(JamIcons.brush),
+              onPressed: () {
+                showColors(context);
+              },
+            ),
+          ),
+          SizedBox(
+              width: MediaQuery.of(context).size.width * 0.1,
+              height: 100,
+              child: PopupMenuButton(
+                icon: Icon(JamIcons.more_vertical),
+                elevation: 4,
+                initialValue:
+                    Provider.of<CategorySupplier>(context).selectedChoice,
+                onCanceled: () {
+                  print('You have not chossed anything');
+                },
+                tooltip: 'Categories',
+                onSelected: (choice) {
+                  Provider.of<CategorySupplier>(context, listen: false)
+                      .changeSelectedChoice(choice);
+                  Provider.of<CategorySupplier>(context, listen: false)
+                      .changeWallpaperFuture(choice, "r");
+                  PM.pageController.animateToPage(0,
+                      duration: Duration(milliseconds: 200),
+                      curve: Curves.easeInCubic);
+                },
+                itemBuilder: (BuildContext context) {
+                  return choices.map((choice) {
+                    return PopupMenuItem(
+                      textStyle: Theme.of(context)
+                          .textTheme
+                          .headline4
+                          .copyWith(color: Theme.of(context).accentColor),
+                      value: choice,
+                      child: Row(
+                        children: <Widget>[
+                          Icon(choice.icon),
+                          SizedBox(width: 10),
+                          Text(choice.name),
+                        ],
+                      ),
+                    );
+                  }).toList();
+                },
+              ))
         ],
       ),
     );

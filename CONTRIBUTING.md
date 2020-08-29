@@ -14,10 +14,15 @@ We use github to host code, to track issues and feature requests, as well as acc
 Pull requests are the best way to propose changes to the codebase (we use [Github Flow](https://guides.github.com/introduction/flow/index.html)). We actively welcome your pull requests:
 
 1. Fork the repo and create your branch from `master`.
-2. You need to create a file called gitkey.dart with the following syntax that stores the username and password for the GitHub Repository where you want to save your uploaded wallpapers.
+2. You need to create a file called gitkey.dart with the following syntax that stores the Personal Access Token for the GitHub Repository where you want to save your uploaded wallpapers.
+
+[You can follow this tutorial to create token.](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
+You also need to create a Revenuecat account for purchases regarding Prism Premium. You can follow tutorial [here](https://docs.revenuecat.com/docs/welcome). You can skip it entirely, if you don't need premium option in the app.
+And last you need pexels API key, to show wallpapers from their site. Request one [here](https://www.pexels.com/api/).
 ```
-const String username = 'username';
-const String password = 'password';
+const String token = 'github-personal-access-token';
+const String apiKey = 'revenuecat-payments-api-key';
+String pexelApiKey = 'pexels-api-key';
 ```
 3. You also need to create a Firebase project, download the google-services.json to `android/app/` directory. Then enable Cloud Firestore, and create a schema like this -
 ```
@@ -49,6 +54,7 @@ const String password = 'password';
         ├── by - 'Designer Name'
         ├── email - 'Designer email'
         ├── desc - 'Wallpaper Description or Copyright info'
+        ├── collections - ["name1","name2"]
         ├── userPhoto - 'Link of user profile photo'
         ├── id - 'Wallpaper ID'
         ├── category - 'Community'

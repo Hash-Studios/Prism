@@ -1,8 +1,7 @@
-import 'package:Prism/data/prism/provider/prismProvider.dart';
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenuDetails.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class FocusedMenuHolder extends StatefulWidget {
   final String provider;
@@ -40,7 +39,7 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
       key: containerKey,
       children: <Widget>[
         widget.child,
-        Provider.of<PrismProvider>(context, listen: false).subPrismWalls == []
+        Data.subPrismWalls == []
             ? Container()
             : Align(
                 alignment: Alignment.bottomRight,

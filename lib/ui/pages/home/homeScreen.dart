@@ -1,31 +1,39 @@
-import 'package:Prism/data/prism/provider/prismProvider.dart';
+import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/widgets/home/gridLoader.dart';
+import 'package:Prism/ui/widgets/home/loading.dart';
+import 'package:Prism/ui/widgets/home/pexelsGrid.dart';
+import 'package:Prism/ui/widgets/home/wallhavenGrid.dart';
+import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/ui/widgets/popup/updatePopUp.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:hive/hive.dart';
+import 'package:provider/provider.dart';
+
+final FirebaseMessaging f = new FirebaseMessaging();
+
+void writeNotifications(Map<String, dynamic> message) {
+  Box<List> box = Hive.box('notifications');
+  var notifications = box.get('notifications');
+  if (notifications == null) {
+    notifications = [];
+  }
+  notifications.add(NotifData(
+      title: message['notification']['title'] ?? "Notification",
+      desc: message['notification']['body'] ?? "",
+      imageUrl: message['data']['imageUrl'] ??
+          "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
+      pageName: message['data']['pageName'],
+      arguments: message['data']['arguments'] ?? [],
+      url: message['data']['url'] ?? ""));
+  box.put('notifications', notifications);
+}
 
 Future<dynamic> myBackgroundMessageHandler(Map<String, dynamic> message) {
-  if (message.containsKey('data')) {
-    // Handle data message
-    final dynamic data = message['data'];
-    print(data);
-  }
-
-  if (message.containsKey('notification')) {
-    // Handle notification message
-    final dynamic notification = message['notification'];
-    print(notification);
-  }
-
-  // Or do other work.
+  writeNotifications(message);
 }
 
 class HomeScreen extends StatefulWidget {
@@ -38,80 +46,43 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  //Check for update if available
-  String currentAppVersion = globals.currentAppVersion;
-  final databaseReference = Firestore.instance;
-
-  Future<void> _checkUpdate() async {
-    print("checking for update");
-    try {
-      databaseReference.collection("appConfig").getDocuments().then((value) {
-        print("Current App Version :" + currentAppVersion);
-        print("Latest Version :" +
-            value.documents[0]["currentVersion"].toString());
-        setState(() {
-          if (currentAppVersion !=
-              value.documents[0]["currentVersion"].toString()) {
-            setState(() {
-              globals.updateAvailable = true;
-              globals.versionInfo = {
-                "version_number":
-                    value.documents[0]["currentVersion"].toString(),
-                "version_desc": value.documents[0]["versionDesc"],
-              };
-            });
-          } else {
-            setState(() {
-              globals.updateAvailable = false;
-            });
-          }
-        });
-        globals.updateAvailable
-            ? !globals.noNewNotification
-                ? showUpdate(context)
-                : print("No new notification")
-            : print("No update");
-      });
-    } catch (e) {
-      print("Error while checking for updates!");
-    }
-    setState(() {
-      globals.updateChecked = true;
-    });
-  }
+  Future<List> _future;
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     print(navStack);
+    print("Bye! Have a good day!");
     return true;
   }
 
   bool isNew;
   @override
   void initState() {
-    if (!globals.updateChecked) {
-      _checkUpdate();
-    }
+    super.initState();
     isNew = true;
     _updateToken();
-    super.initState();
+    _future = Future.delayed(Duration(seconds: 0)).then((value) =>
+        Provider.of<CategorySupplier>(context, listen: false)
+            .wallpaperFutureRefresh);
   }
 
   void _updateToken() {
-    FirebaseMessaging f = new FirebaseMessaging();
     f.requestNotificationPermissions();
     f.configure(
       onMessage: (Map<String, dynamic> message) async {
-        print("onMessage: $message");
+        // print("onMessage: $message");
+        writeNotifications(message);
         // _showItemDialog(message);
       },
       onBackgroundMessage: myBackgroundMessageHandler,
       onLaunch: (Map<String, dynamic> message) async {
         print("onLaunch: $message");
+        writeNotifications(message);
         // _navigateToItemDetail(message);
       },
       onResume: (Map<String, dynamic> message) async {
         print("onResume: $message");
+        writeNotifications(message);
         // _navigateToItemDetail(message);
       },
     );
@@ -129,70 +100,73 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void showChangelogCheck(BuildContext context) {
-    var newApp = main.prefs.get("newApp");
-    if (newApp == null) {
+    var newDevice = main.prefs.get("newDevice");
+    if (newDevice == null) {
       showChangelog(context, () {
         setState(() {
           isNew = false;
         });
       });
-      main.prefs.put("newApp", false);
+      main.prefs.put("newDevice", false);
     } else {
-      main.prefs.put("newApp", false);
+      main.prefs.put("newDevice", false);
     }
-  }
-
-  void initDynamicLinks(BuildContext context) async {
-    final PendingDynamicLinkData data =
-        await FirebaseDynamicLinks.instance.getInitialLink();
-    final Uri deepLink = data?.link;
-
-    if (deepLink != null) {
-      print("opened while closed altogether via deep link");
-      Future.delayed(Duration(seconds: 0))
-          .then((value) => Navigator.pushNamed(context, ShareRoute, arguments: [
-                deepLink.queryParameters["id"],
-                deepLink.queryParameters["provider"],
-                deepLink.queryParameters["url"],
-                deepLink.queryParameters["thumb"],
-              ]));
-      print("opened while closed altogether via deep link2345");
-    }
-
-    FirebaseDynamicLinks.instance.onLink(
-        onSuccess: (PendingDynamicLinkData dynamicLink) async {
-      final Uri deepLink = dynamicLink?.link;
-
-      if (deepLink != null) {
-        print("opened while bg via deep link1");
-        Future.delayed(Duration(seconds: 0)).then(
-            (value) => Navigator.pushNamed(context, ShareRoute, arguments: [
-                  deepLink.queryParameters["id"],
-                  deepLink.queryParameters["provider"],
-                  deepLink.queryParameters["url"],
-                  deepLink.queryParameters["thumb"],
-                ]));
-        print("opened while bg via deep link2345");
-      }
-    }, onError: (OnLinkErrorException e) async {
-      print('onLinkError');
-      print(e.message);
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // if (isNew) {
-    //   Future.delayed(Duration(seconds: 0))
-    //       .then((value) => showChangelogCheck(context));
-    // }
-    initDynamicLinks(context);
     return WillPopScope(
       onWillPop: onWillPop,
-      child: GridLoader(
-        future:
-            Provider.of<PrismProvider>(context, listen: false).getPrismWalls(),
-        provider: "Prism",
+      child: new FutureBuilder<List>(
+        future: _future, // async work
+        builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
+          switch (snapshot.connectionState) {
+            case ConnectionState.waiting:
+              return new LoadingCards();
+            case ConnectionState.none:
+              return new LoadingCards();
+            default:
+              if (snapshot.hasError)
+                return RefreshIndicator(
+                    onRefresh: () async {
+                      _future;
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.max,
+                      children: <Widget>[
+                        Spacer(),
+                        Center(
+                            child: new Text("Can't connect to the Servers!")),
+                        Spacer(),
+                      ],
+                    ));
+              else {
+                if (Provider.of<CategorySupplier>(context)
+                        .selectedChoice
+                        .provider ==
+                    "WallHaven") {
+                  return new WallHavenGrid(
+                      provider: Provider.of<CategorySupplier>(context)
+                          .selectedChoice
+                          .provider);
+                } else if (Provider.of<CategorySupplier>(context)
+                        .selectedChoice
+                        .provider ==
+                    "Pexels") {
+                  return new PexelsGrid(
+                      provider: Provider.of<CategorySupplier>(context)
+                          .selectedChoice
+                          .provider);
+                } else {
+                  return new WallpaperGrid(
+                      provider: Provider.of<CategorySupplier>(context)
+                          .selectedChoice
+                          .provider);
+                }
+              }
+          }
+        },
       ),
     );
   }
