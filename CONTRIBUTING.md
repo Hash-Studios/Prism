@@ -17,10 +17,13 @@ Pull requests are the best way to propose changes to the codebase (we use [Githu
 2. You need to create a file called gitkey.dart with the following syntax that stores the Personal Access Token for the GitHub Repository where you want to save your uploaded wallpapers.
 
 [You can follow this tutorial to create token.](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
+Then you need to create a new repository for storing community wallpapers and remember its name.
 You also need to create a Revenuecat account for purchases regarding Prism Premium. You can follow tutorial [here](https://docs.revenuecat.com/docs/welcome). You can skip it entirely, if you don't need premium option in the app.
 And last you need pexels API key, to show wallpapers from their site. Request one [here](https://www.pexels.com/api/).
 ```
 const String token = 'github-personal-access-token';
+const String gitUserName = 'github-username';
+const String repoName = 'wallpapers-repository-name';
 const String apiKey = 'revenuecat-payments-api-key';
 String pexelApiKey = 'pexels-api-key';
 ```
