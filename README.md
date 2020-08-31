@@ -5,12 +5,13 @@
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
-![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-1K+-green.svg)
+![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-5K+-green.svg)
 ![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.4-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
 ![Stars](https://img.shields.io/github/stars/Hash-Studios/Prism)
+<a href='https://twitter.com/PrismWallpapers'><img alt='Follow on Twitter' src='https://img.shields.io/twitter/follow/PrismWallpapers?color=green&label=Follow&logo=Twitter&style=plastic'/></a>
 
 </div>
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
@@ -39,6 +40,13 @@ You also get a PRO badge in front of your profile, plus you directly support the
 - Get uploads reviewed instantly
 - Get rid of all rewarded video ads(Used for downloads)
 - Support development of the app
+
+### Twitter
+
+Prism Wallpapers is now on Twitter. We regularly share exclusive wallpapers, setups and organise giveaways.
+Follow us there to stay notified. [https://twitter.com/PrismWallpapers](https://twitter.com/PrismWallpapers)
+
+<a href='https://twitter.com/PrismWallpapers'><img alt='Follow on Twitter' src='https://img.shields.io/twitter/follow/PrismWallpapers?color=green&label=Follow&logo=Twitter&style=plastic'/></a>
 
 ## List of Contents
 
