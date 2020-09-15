@@ -158,7 +158,7 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                          "https://image.freepik.com/free-vector/abstract-gradient-background-with-fluid-shapes_47641-19.jpg"),
+                                          "https://unblast.com/wp-content/uploads/2018/08/Gradient-Mesh-21.jpg"),
                                       fit: BoxFit.cover)),
                               child: Center(
                                 child: Container(
