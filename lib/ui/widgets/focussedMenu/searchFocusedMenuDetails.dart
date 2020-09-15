@@ -9,6 +9,7 @@ import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SearchFocusedMenuDetails extends StatelessWidget {
   final String selectedProvider;
@@ -333,7 +334,9 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                                   color: Colors.white,
                                                 ),
                                           ),
-                                          onPressed: () {}),
+                                          onPressed: () {
+                                            launch(PData.wallsPS[index].url);
+                                          }),
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),

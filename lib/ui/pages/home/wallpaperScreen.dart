@@ -25,6 +25,7 @@ import 'package:tutorial_coach_mark/target_position.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:url_launcher/url_launcher.dart';
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -1380,31 +1381,38 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: <Widget>[
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.camera,
-                                                    size: 20,
-                                                    color: Colors.white70,
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Container(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            .4,
-                                                    child: Text(
-                                                      PData.wallsP[index]
-                                                          .photographer
-                                                          .toString(),
-                                                      textAlign: TextAlign.left,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText2,
+                                              GestureDetector(
+                                                onTap: () {
+                                                  launch(
+                                                      PData.wallsP[index].url);
+                                                },
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      JamIcons.camera,
+                                                      size: 20,
+                                                      color: Colors.white70,
                                                     ),
-                                                  ),
-                                                ],
+                                                    SizedBox(width: 10),
+                                                    Container(
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width *
+                                                              .4,
+                                                      child: Text(
+                                                        PData.wallsP[index]
+                                                            .photographer
+                                                            .toString(),
+                                                        textAlign:
+                                                            TextAlign.left,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                               SizedBox(height: 5),
                                               Row(
