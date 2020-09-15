@@ -1,7 +1,7 @@
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/theme/thumbModel.dart';
+// import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/loading.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -154,18 +154,18 @@ class _ProfileGridState extends State<ProfileGrid>
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      Provider.of<ThumbModel>(context,
-                                                      listen: false)
-                                                  .thumbType ==
-                                              ThumbType.High
-                                          ? Provider.of<ProfileWallProvider>(
-                                                      context)
-                                                  .profileWalls[index]
-                                              ["wallpaper_url"]
-                                          : Provider.of<ProfileWallProvider>(
-                                                      context)
-                                                  .profileWalls[index]
-                                              ["wallpaper_thumb"],
+                                      // Provider.of<ThumbModel>(context,
+                                      //                 listen: false)
+                                      //             .thumbType ==
+                                      //         ThumbType.High
+                                      //     ? Provider.of<ProfileWallProvider>(
+                                      //                 context)
+                                      //             .profileWalls[index]
+                                      //         ["wallpaper_url"]
+                                      //     :
+                                      Provider.of<ProfileWallProvider>(context)
+                                              .profileWalls[index]
+                                          ["wallpaper_thumb"],
                                     ),
                                     fit: BoxFit.cover)),
                           ),
