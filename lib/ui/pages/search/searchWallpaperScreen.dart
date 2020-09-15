@@ -19,6 +19,7 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SearchWallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -688,29 +689,35 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: <Widget>[
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            JamIcons.camera,
-                                            size: 20,
-                                            color: Colors.white70,
-                                          ),
-                                          SizedBox(width: 10),
-                                          Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                .4,
-                                            child: Text(
-                                              PData.wallsPS[index].photographer
-                                                  .toString(),
-                                              textAlign: TextAlign.left,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText2,
+                                      GestureDetector(
+                                        onTap: () {
+                                          launch(PData.wallsPS[index].url);
+                                        },
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.camera,
+                                              size: 20,
+                                              color: Colors.white70,
                                             ),
-                                          ),
-                                        ],
+                                            SizedBox(width: 10),
+                                            Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  .4,
+                                              child: Text(
+                                                PData
+                                                    .wallsPS[index].photographer
+                                                    .toString(),
+                                                textAlign: TextAlign.left,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       SizedBox(height: 5),
                                       Row(
