@@ -129,12 +129,21 @@ class _CollectionsGridState extends State<CollectionsGrid>
                             //             [CData.collections[CData.collectionNames.toList()[index]].length - 1]
                             //         ["wallpaper_url"]
                             //     :
-                            CData.collections[
-                                CData.collectionNames.toList()[index]][CData
-                                    .collections[
-                                        CData.collectionNames.toList()[index]]
-                                    .length -
-                                1]["wallpaper_thumb"],
+                            CData.collections[CData.collectionNames.toList()[index]][
+                                CData.collections[CData.collectionNames.toList()[index]].length %
+                                            2 ==
+                                        1
+                                    ? ((CData
+                                                .collections[CData.collectionNames
+                                                    .toList()[index]]
+                                                .length -
+                                            1) /
+                                        2)
+                                    : (CData
+                                            .collections[CData.collectionNames
+                                                .toList()[index]]
+                                            .length /
+                                        2)]["wallpaper_thumb"],
                           ),
                           fit: BoxFit.cover)),
               child: Center(
