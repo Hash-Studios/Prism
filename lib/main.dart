@@ -4,7 +4,7 @@ import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'package:Prism/theme/thumbModel.dart';
+// import 'package:Prism/theme/thumbModel.dart';
 import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
@@ -81,10 +81,10 @@ void main() {
                             darkMode ? kDarkTheme : kLightTheme,
                             darkMode ? ThemeType.Dark : ThemeType.Light),
                       ),
-                      ChangeNotifierProvider<ThumbModel>(
-                        create: (context) => ThumbModel(
-                            hqThumbs ? ThumbType.High : ThumbType.Low),
-                      )
+                      // ChangeNotifierProvider<ThumbModel>(
+                      //   create: (context) => ThumbModel(
+                      //       hqThumbs ? ThumbType.High : ThumbType.Low),
+                      // )
                     ],
                     child: MyApp(),
                   ),

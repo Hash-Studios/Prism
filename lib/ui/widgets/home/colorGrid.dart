@@ -1,7 +1,7 @@
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/theme/thumbModel.dart';
+// import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
@@ -185,14 +185,14 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                     borderRadius: BorderRadius.circular(20),
                                     image: DecorationImage(
                                         image: CachedNetworkImageProvider(
-                                            Provider.of<ThumbModel>(context,
-                                                            listen: false)
-                                                        .thumbType ==
-                                                    ThumbType.High
-                                                ? PData.wallsC[index]
-                                                    .src["original"]
-                                                : PData.wallsC[index]
-                                                    .src["medium"]),
+                                            // Provider.of<ThumbModel>(context,
+                                            //                 listen: false)
+                                            //             .thumbType ==
+                                            //         ThumbType.High
+                                            //     ? PData.wallsC[index]
+                                            //         .src["original"]
+                                            //     :
+                                            PData.wallsC[index].src["medium"]),
                                         fit: BoxFit.cover)),
                           ),
                         ),

@@ -38,6 +38,16 @@ void showChangelog(BuildContext context, Function func) {
               child: SingleChildScrollView(
                 controller: controller,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  ChangeVersion(number: 'v2.5.6'),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text: "Fixed curated wallpapers not loading."),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Minor bug fixes and improvements."),
+                  SizedBox(
+                    height: 15,
+                  ),
                   ChangeVersion(number: 'v2.5.5'),
                   Change(
                       icon: JamIcons.upload,

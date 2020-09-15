@@ -1,6 +1,6 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/theme/thumbModel.dart';
+// import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
@@ -214,17 +214,17 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                                     BorderRadius.circular(20),
                                                 image: DecorationImage(
                                                     image: CachedNetworkImageProvider(
-                                                        Provider.of<ThumbModel>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .thumbType ==
-                                                                ThumbType.High
-                                                            ? Data.subPrismWalls[
-                                                                    i][
-                                                                "wallpaper_url"]
-                                                            : Data.subPrismWalls[i]
-                                                                ["wallpaper_thumb"]),
+                                                        // Provider.of<ThumbModel>(
+                                                        //                 context,
+                                                        //                 listen:
+                                                        //                     false)
+                                                        //             .thumbType ==
+                                                        //         ThumbType.High
+                                                        //     ? Data.subPrismWalls[
+                                                        //             i][
+                                                        //         "wallpaper_url"]
+                                                        //     :
+                                                        Data.subPrismWalls[i]["wallpaper_thumb"]),
                                                     fit: BoxFit.cover)),
                                             child: Center(
                                               child: Container(
@@ -402,17 +402,17 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                               BorderRadius.circular(20),
                                           image: DecorationImage(
                                               image: CachedNetworkImageProvider(
-                                                  Provider.of<ThumbModel>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .thumbType ==
-                                                          ThumbType.High
-                                                      ? Data.subPrismWalls[
-                                                              index]
-                                                          ["wallpaper_url"]
-                                                      : Data.subPrismWalls[
-                                                              index]
-                                                          ["wallpaper_thumb"]),
+                                                  // Provider.of<ThumbModel>(
+                                                  //                 context,
+                                                  //                 listen: false)
+                                                  //             .thumbType ==
+                                                  //         ThumbType.High
+                                                  //     ? Data.subPrismWalls[
+                                                  //             index]
+                                                  //         ["wallpaper_url"]
+                                                  //     :
+                                                  Data.subPrismWalls[index]
+                                                      ["wallpaper_thumb"]),
                                               fit: BoxFit.cover)),
                                 )),
                             onTap: () {

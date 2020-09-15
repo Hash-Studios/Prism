@@ -1,7 +1,7 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/theme/thumbModel.dart';
+// import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/loading.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -152,16 +152,16 @@ class _FavouriteGridState extends State<FavouriteGrid>
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      Provider.of<ThumbModel>(context,
-                                                      listen: false)
-                                                  .thumbType ==
-                                              ThumbType.High
-                                          ? Provider.of<FavouriteProvider>(
-                                                  context)
-                                              .liked[index]["url"]
-                                          : Provider.of<FavouriteProvider>(
-                                                  context)
-                                              .liked[index]["thumb"],
+                                      // Provider.of<ThumbModel>(context,
+                                      //                 listen: false)
+                                      //             .thumbType ==
+                                      //         ThumbType.High
+                                      //     ? Provider.of<FavouriteProvider>(
+                                      //             context)
+                                      //         .liked[index]["url"]
+                                      //     :
+                                      Provider.of<FavouriteProvider>(context)
+                                          .liked[index]["thumb"],
                                     ),
                                     fit: BoxFit.cover)),
                           ),

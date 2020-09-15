@@ -1,6 +1,6 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/theme/thumbModel.dart';
+// import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -123,16 +123,18 @@ class _CollectionsGridState extends State<CollectionsGrid>
                       borderRadius: BorderRadius.circular(20),
                       image: DecorationImage(
                           image: CachedNetworkImageProvider(
-                            Provider.of<ThumbModel>(context, listen: false).thumbType ==
-                                    ThumbType.High
-                                ? CData.collections[CData.collectionNames.toList()[index]]
-                                        [CData.collections[CData.collectionNames.toList()[index]].length - 1]
-                                    ["wallpaper_url"]
-                                : CData.collections[
-                                    CData.collectionNames.toList()[index]][CData
-                                        .collections[CData.collectionNames.toList()[index]]
-                                        .length -
-                                    1]["wallpaper_thumb"],
+                            // Provider.of<ThumbModel>(context, listen: false).thumbType ==
+                            //         ThumbType.High
+                            //     ? CData.collections[CData.collectionNames.toList()[index]]
+                            //             [CData.collections[CData.collectionNames.toList()[index]].length - 1]
+                            //         ["wallpaper_url"]
+                            //     :
+                            CData.collections[
+                                CData.collectionNames.toList()[index]][CData
+                                    .collections[
+                                        CData.collectionNames.toList()[index]]
+                                    .length -
+                                1]["wallpaper_thumb"],
                           ),
                           fit: BoxFit.cover)),
               child: Center(

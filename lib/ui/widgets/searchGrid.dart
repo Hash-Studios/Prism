@@ -3,7 +3,7 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/theme/thumbModel.dart';
+// import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/searchFocusedMenu.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
@@ -228,12 +228,13 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                         borderRadius: BorderRadius.circular(20),
                                         image: DecorationImage(
                                             image: CachedNetworkImageProvider(
-                                                Provider.of<ThumbModel>(context,listen: false)
-                                                            .thumbType ==
-                                                        ThumbType.High
-                                                    ? WData.walls[index].path
-                                                    : WData.wallsS[index]
-                                                        .thumbs["original"]),
+                                                // Provider.of<ThumbModel>(context,listen: false)
+                                                //             .thumbType ==
+                                                //         ThumbType.High
+                                                //     ? WData.walls[index].path
+                                                //     :
+                                                WData.wallsS[index]
+                                                    .thumbs["original"]),
                                             fit: BoxFit.cover))
                                 : PData.wallsPS.length == 0
                                     ? BoxDecoration(
@@ -245,13 +246,15 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                         borderRadius: BorderRadius.circular(20),
                                         image: DecorationImage(
                                             image: CachedNetworkImageProvider(
-                                                Provider.of<ThumbModel>(context,listen: false)
-                                                            .thumbType ==
-                                                        ThumbType.High
-                                                    ? PData.wallsPS[index]
-                                                        .src["original"]
-                                                    : PData.wallsPS[index]
-                                                        .src["medium"]),
+                                                // Provider.of<ThumbModel>(context,
+                                                //                 listen: false)
+                                                //             .thumbType ==
+                                                //         ThumbType.High
+                                                //     ? PData.wallsPS[index]
+                                                //         .src["original"]
+                                                //     :
+                                                PData.wallsPS[index]
+                                                    .src["medium"]),
                                             fit: BoxFit.cover)),
                           ),
                         ),
