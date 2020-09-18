@@ -16,7 +16,6 @@ import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:screenshot/screenshot.dart';
 import 'dart:io';
@@ -110,15 +109,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
     SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
-  void UnsecureWindow() async {
-    await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
-    print("Disabled Secure flags");
-  }
-
   @override
   void dispose() {
     shakeController.dispose();
-    UnsecureWindow();
     super.dispose();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
@@ -461,16 +454,31 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   ),
                                 ),
                               ),
-                              placeholder: (context, url) => Stack(
+                              progressIndicatorBuilder:
+                                  (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
                                   SizedBox.expand(child: Text("")),
                                   Container(
                                     child: Center(
-                                      child: Loader(),
+                                      child: CircularProgressIndicator(
+                                          valueColor: AlwaysStoppedAnimation(
+                                            Color(0xFFE57697),
+                                          ),
+                                          value: downloadProgress.progress),
                                     ),
                                   ),
                                 ],
                               ),
+                              // placeholder: (context, url) => Stack(
+                              //   children: <Widget>[
+                              //     SizedBox.expand(child: Text("")),
+                              //     Container(
+                              //       child: Center(
+                              //         child: Loader(),
+                              //       ),
+                              //     ),
+                              //   ],
+                              // ),
                               errorWidget: (context, url, error) => Container(
                                 child: Center(
                                   child: Icon(
@@ -890,16 +898,32 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       ),
                                     ),
                                   ),
-                                  placeholder: (context, url) => Stack(
+                                  progressIndicatorBuilder:
+                                      (context, url, downloadProgress) => Stack(
                                     children: <Widget>[
                                       SizedBox.expand(child: Text("")),
                                       Container(
                                         child: Center(
-                                          child: Loader(),
+                                          child: CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation(
+                                                Color(0xFFE57697),
+                                              ),
+                                              value: downloadProgress.progress),
                                         ),
                                       ),
                                     ],
                                   ),
+                                  // placeholder: (context, url) => Stack(
+                                  //   children: <Widget>[
+                                  //     SizedBox.expand(child: Text("")),
+                                  //     Container(
+                                  //       child: Center(
+                                  //         child: Loader(),
+                                  //       ),
+                                  //     ),
+                                  //   ],
+                                  // ),
                                   errorWidget: (context, url, error) =>
                                       Container(
                                     child: Center(
@@ -1357,16 +1381,34 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           ),
                                         ),
                                       ),
-                                      placeholder: (context, url) => Stack(
+                                      progressIndicatorBuilder:
+                                          (context, url, downloadProgress) =>
+                                              Stack(
                                         children: <Widget>[
                                           SizedBox.expand(child: Text("")),
                                           Container(
                                             child: Center(
-                                              child: Loader(),
+                                              child: CircularProgressIndicator(
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation(
+                                                    Color(0xFFE57697),
+                                                  ),
+                                                  value: downloadProgress
+                                                      .progress),
                                             ),
                                           ),
                                         ],
                                       ),
+                                      // placeholder: (context, url) => Stack(
+                                      //   children: <Widget>[
+                                      //     SizedBox.expand(child: Text("")),
+                                      //     Container(
+                                      //       child: Center(
+                                      //         child: Loader(),
+                                      //       ),
+                                      //     ),
+                                      //   ],
+                                      // ),
                                       errorWidget: (context, url, error) =>
                                           Container(
                                         child: Center(
