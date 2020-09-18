@@ -21,6 +21,7 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:screenshot/screenshot.dart';
 import 'dart:io';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:Prism/main.dart' as main;
 
 class ShareWallpaperViewScreen extends StatefulWidget {
   final List arguments;
@@ -151,21 +152,23 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                 onPanelOpened: () {
                   if (panelClosed) {
                     print('Screenshot Starting');
-                    screenshotController
-                        .capture(
-                      pixelRatio: 3,
-                      delay: Duration(milliseconds: 10),
-                    )
-                        .then((File image) async {
-                      setState(() {
-                        _imageFile = image;
-                        screenshotTaken = true;
-                        panelClosed = false;
-                      });
-                      print('Screenshot Taken');
-                    }).catchError((onError) {
-                      print(onError);
-                    });
+                    main.prefs.get('optimisedWallpapers') ?? true
+                        ? screenshotController
+                            .capture(
+                            pixelRatio: 3,
+                            delay: Duration(milliseconds: 10),
+                          )
+                            .then((File image) async {
+                            setState(() {
+                              _imageFile = image;
+                              screenshotTaken = true;
+                              panelClosed = false;
+                            });
+                            print('Screenshot Taken');
+                          }).catchError((onError) {
+                            print(onError);
+                          })
+                        : print("Wallpaper Optimisation is disabled!");
                   }
                 },
                 onPanelClosed: () {
@@ -575,21 +578,23 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                     onPanelOpened: () {
                       if (panelClosed) {
                         print('Screenshot Starting');
-                        screenshotController
-                            .capture(
-                          pixelRatio: 3,
-                          delay: Duration(milliseconds: 10),
-                        )
-                            .then((File image) async {
-                          setState(() {
-                            _imageFile = image;
-                            screenshotTaken = true;
-                            panelClosed = false;
-                          });
-                          print('Screenshot Taken');
-                        }).catchError((onError) {
-                          print(onError);
-                        });
+                        main.prefs.get('optimisedWallpapers') ?? true
+                            ? screenshotController
+                                .capture(
+                                pixelRatio: 3,
+                                delay: Duration(milliseconds: 10),
+                              )
+                                .then((File image) async {
+                                setState(() {
+                                  _imageFile = image;
+                                  screenshotTaken = true;
+                                  panelClosed = false;
+                                });
+                                print('Screenshot Taken');
+                              }).catchError((onError) {
+                                print(onError);
+                              })
+                            : print("Wallpaper Optimisation is disabled!");
                       }
                     },
                     onPanelClosed: () {
@@ -1004,21 +1009,23 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         onPanelOpened: () {
                           if (panelClosed) {
                             print('Screenshot Starting');
-                            screenshotController
-                                .capture(
-                              pixelRatio: 3,
-                              delay: Duration(milliseconds: 10),
-                            )
-                                .then((File image) async {
-                              setState(() {
-                                _imageFile = image;
-                                screenshotTaken = true;
-                                panelClosed = false;
-                              });
-                              print('Screenshot Taken');
-                            }).catchError((onError) {
-                              print(onError);
-                            });
+                            main.prefs.get('optimisedWallpapers') ?? true
+                                ? screenshotController
+                                    .capture(
+                                    pixelRatio: 3,
+                                    delay: Duration(milliseconds: 10),
+                                  )
+                                    .then((File image) async {
+                                    setState(() {
+                                      _imageFile = image;
+                                      screenshotTaken = true;
+                                      panelClosed = false;
+                                    });
+                                    print('Screenshot Taken');
+                                  }).catchError((onError) {
+                                    print(onError);
+                                  })
+                                : print("Wallpaper Optimisation is disabled!");
                           }
                         },
                         onPanelClosed: () {

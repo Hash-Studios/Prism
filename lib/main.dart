@@ -29,6 +29,7 @@ Box prefs;
 Directory dir;
 var darkMode;
 var hqThumbs;
+var optimisedWallpapers;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
@@ -55,6 +56,11 @@ void main() {
       prefs.put('darkMode', true);
     else
       prefs.put('darkMode', false);
+    optimisedWallpapers = prefs.get('optimisedWallpapers') ?? true;
+    if (optimisedWallpapers)
+      prefs.put('optimisedWallpapers', true);
+    else
+      prefs.put('optimisedWallpapers', false);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
         .then((value) => runZoned<Future<void>>(() {
               runApp(

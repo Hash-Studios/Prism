@@ -93,6 +93,33 @@ class GeneralList extends StatelessWidget {
             //     onChanged: (bool value) async {
             //       Provider.of<ThumbModel>(context, listen: false).toggleThumb();
             //     }),
+
+            SwitchListTile(
+                activeColor: Color(0xFFE57697),
+                secondary: Icon(
+                  JamIcons.dashboard,
+                ),
+                value: main.prefs.get('optimisedWallpapers') ?? true,
+                title: Text(
+                  "Wallpaper Optimisation",
+                  style: TextStyle(
+                      color: Theme.of(context).accentColor,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Proxima Nova"),
+                ),
+                subtitle: main.prefs.get('optimisedWallpapers') ?? true
+                    ? Text(
+                        "Disabling this might lead to High Internet Usage",
+                        style: TextStyle(fontSize: 12),
+                      )
+                    : Text(
+                        "Enable this to optimise Wallpapers according to your device",
+                        style: TextStyle(fontSize: 12),
+                      ),
+                onChanged: (bool value) async {
+                  main.prefs.put('optimisedWallpapers', value);
+                }),
+
             ListTile(
               onTap: () {
                 main.RestartWidget.restartApp(context);
