@@ -212,7 +212,10 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
           break;
         case RewardedVideoAdEvent.failedToLoad:
           toasts.error("Failed to load ad");
-          Navigator.pop(context);
+          if (this.mounted) {
+            Navigator.pop(context);
+            widget.rewardFunc();
+          }
           break;
         case RewardedVideoAdEvent.leftApplication:
           break;
