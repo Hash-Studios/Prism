@@ -49,7 +49,6 @@ dependencies:
   hive: ^1.4.1+1
   hive_flutter: ^0.3.0+1
   path_provider: ^1.6.11
-  flutter_windowmanager: ^0.0.2
   purchases_flutter: ^1.2.1
   firebase_remote_config: ^0.3.1+1
   data_connection_checker: ^0.3.4
