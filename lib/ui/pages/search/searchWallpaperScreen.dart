@@ -4,7 +4,6 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
@@ -14,7 +13,6 @@ import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
@@ -102,16 +100,10 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     _updatePaletteGenerator();
   }
 
-  void UnsecureWindow() async {
-    await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
-    print("Disabled Secure flags");
-  }
-
   @override
   void dispose() {
     super.dispose();
     shakeController.dispose();
-    UnsecureWindow();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
