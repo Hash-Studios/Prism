@@ -32,6 +32,40 @@ void createRecord(
   if (main.prefs.get('premium') == true) {
     toasts.codeSend("Succesfully uploaded");
   } else {
-    toasts.codeSend("Your post is submitted, and is under review.");
+    toasts.codeSend("Your wall is submitted, and is under review.");
   }
+}
+
+void createSetup(
+    String id,
+    String imageURL,
+    String wallpaperProvider,
+    String wallpaperThumb,
+    String wallpaperUrl,
+    String iconName,
+    String iconURL,
+    String widgetName,
+    String widgetURL,
+    String setupName,
+    String setupDesc,
+    bool review) async {
+  await firestore.collection("setups").add({
+    'by': main.prefs.get('name'),
+    'email': main.prefs.get('email'),
+    'userPhoto': main.prefs.get('googleimage'),
+    'id': id,
+    'image': imageURL,
+    'wallpaper_provider': wallpaperProvider,
+    'wallpaper_thumb': wallpaperThumb,
+    'wallpaper_url': wallpaperUrl,
+    'icon': iconName,
+    'icon_url': iconURL,
+    'widget': widgetName,
+    'widget_url': widgetURL,
+    'name': setupName,
+    'desc': setupDesc,
+    'review': review,
+    'createdAt': DateTime.now(),
+  });
+  toasts.codeSend("Your setup is submitted, and is under review.");
 }

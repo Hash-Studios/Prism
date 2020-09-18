@@ -6,7 +6,12 @@ class SetupProvider extends ChangeNotifier {
   List setups;
   Future<List> getDataBase() async {
     this.setups = [];
-    await databaseReference.collection("setups").getDocuments().then((value) {
+    await databaseReference
+        .collection("setups")
+        .orderBy("createdAt")
+        .where("review", isEqualTo: true)
+        .getDocuments()
+        .then((value) {
       value.documents.forEach((f) => this.setups.add(f.data));
       print(this.setups);
     }).catchError((e) {
