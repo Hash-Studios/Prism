@@ -20,6 +20,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/main.dart' as main;
 
 class SearchWallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -141,20 +142,22 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                     setState(() {
                       panelClosed = false;
                     });
-                    screenshotController
-                        .capture(
-                      pixelRatio: 3,
-                      delay: Duration(milliseconds: 10),
-                    )
-                        .then((File image) async {
-                      setState(() {
-                        _imageFile = image;
-                        screenshotTaken = true;
-                      });
-                      print('Screenshot Taken');
-                    }).catchError((onError) {
-                      print(onError);
-                    });
+                    main.prefs.get('optimisedWallpapers') ?? true
+                        ? screenshotController
+                            .capture(
+                            pixelRatio: 3,
+                            delay: Duration(milliseconds: 10),
+                          )
+                            .then((File image) async {
+                            setState(() {
+                              _imageFile = image;
+                              screenshotTaken = true;
+                            });
+                            print('Screenshot Taken');
+                          }).catchError((onError) {
+                            print(onError);
+                          })
+                        : print("Wallpaper Optimisation is disabled!");
                   }
                 },
                 onPanelClosed: () {
@@ -545,20 +548,22 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                     setState(() {
                       panelClosed = false;
                     });
-                    screenshotController
-                        .capture(
-                      pixelRatio: 3,
-                      delay: Duration(milliseconds: 10),
-                    )
-                        .then((File image) async {
-                      setState(() {
-                        _imageFile = image;
-                        screenshotTaken = true;
-                      });
-                      print('Screenshot Taken');
-                    }).catchError((onError) {
-                      print(onError);
-                    });
+                    main.prefs.get('optimisedWallpapers') ?? true
+                        ? screenshotController
+                            .capture(
+                            pixelRatio: 3,
+                            delay: Duration(milliseconds: 10),
+                          )
+                            .then((File image) async {
+                            setState(() {
+                              _imageFile = image;
+                              screenshotTaken = true;
+                            });
+                            print('Screenshot Taken');
+                          }).catchError((onError) {
+                            print(onError);
+                          })
+                        : print("Wallpaper Optimisation is disabled!");
                   }
                 },
                 onPanelClosed: () {
