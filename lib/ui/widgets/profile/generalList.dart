@@ -9,7 +9,14 @@ import 'package:Prism/theme/themeModel.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
-class GeneralList extends StatelessWidget {
+class GeneralList extends StatefulWidget {
+  @override
+  _GeneralListState createState() => _GeneralListState();
+}
+
+class _GeneralListState extends State<GeneralList> {
+  bool optWall = main.prefs.get('optimisedWallpapers') ?? true;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -99,7 +106,7 @@ class GeneralList extends StatelessWidget {
                 secondary: Icon(
                   JamIcons.dashboard,
                 ),
-                value: main.prefs.get('optimisedWallpapers') ?? true,
+                value: optWall,
                 title: Text(
                   "Wallpaper Optimisation",
                   style: TextStyle(
@@ -107,7 +114,7 @@ class GeneralList extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
-                subtitle: main.prefs.get('optimisedWallpapers') ?? true
+                subtitle: optWall
                     ? Text(
                         "Disabling this might lead to High Internet Usage",
                         style: TextStyle(fontSize: 12),
@@ -117,6 +124,9 @@ class GeneralList extends StatelessWidget {
                         style: TextStyle(fontSize: 12),
                       ),
                 onChanged: (bool value) async {
+                  setState(() {
+                    optWall = value;
+                  });
                   main.prefs.put('optimisedWallpapers', value);
                 }),
 
