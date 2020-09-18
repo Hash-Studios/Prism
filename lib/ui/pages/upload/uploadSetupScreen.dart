@@ -1,17 +1,12 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as Path;
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
-import 'package:github/github.dart';
-import 'package:image/image.dart' as Img;
-import 'package:Prism/gitkey.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
