@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -21,8 +21,14 @@ class ClockOverlay extends StatefulWidget {
 class _ClockOverlayState extends State<ClockOverlay> {
   @override
   Widget build(BuildContext context) {
-    var date = DateTime.now().toString();
-    var hour = DateTime.now().hour.toString();
+    var day = DateFormat('EEEE').format(DateTime.now());
+    var month = DateFormat('MMMM').format(DateTime.now());
+    var dayNo = DateFormat('d').format(DateTime.now());
+    var suffix = dayNo[dayNo.length - 1] == 1
+        ? "ˢᵗ"
+        : dayNo[dayNo.length - 1] == 2
+            ? "ⁿᵈ"
+            : dayNo[dayNo.length - 1] == 3 ? "ʳᵈ" : "ᵗʰ";
     return Material(
       child: Stack(
         children: <Widget>[
@@ -53,18 +59,43 @@ class _ClockOverlayState extends State<ClockOverlay> {
                   ),
                 ),
           SizedBox(
-            height: MediaQuery.of(context).size.height / 2,
+            height: MediaQuery.of(context).size.height / 3,
             width: MediaQuery.of(context).size.width,
             child: Center(
-              child: Text(
-                hour + date.substring(13, 16),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: "Roboto",
-                  fontSize: 80,
-                  fontWeight: FontWeight.w400,
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    // hour + date.substring(13, 16),
+                    "$day,",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: widget.accent.computeLuminance() > 0.5
+                          ? Colors.black
+                          : Colors.white,
+                      fontFamily: "Roboto",
+                      fontSize: 25,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 5,
+                  ),
+                  Text(
+                    // hour + date.substring(13, 16),
+                    "$month $dayNo$suffix | 27°C",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: widget.accent.computeLuminance() > 0.5
+                          ? Colors.black
+                          : Colors.white,
+                      fontFamily: "Roboto",
+                      fontSize: 25,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -85,15 +116,15 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     width: MediaQuery.of(context).size.width * 0.14,
                   ),
                   Image.asset(
+                    "assets/images/prism.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
+                  ),
+                  Image.asset(
                     "assets/images/playstore.png",
                     width: MediaQuery.of(context).size.width * 0.14,
                   ),
                   Image.asset(
                     "assets/images/chrome.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
-                  ),
-                  Image.asset(
-                    "assets/images/camera.png",
                     width: MediaQuery.of(context).size.width * 0.14,
                   ),
                 ],

@@ -129,21 +129,24 @@ class _CollectionsGridState extends State<CollectionsGrid>
                             //             [CData.collections[CData.collectionNames.toList()[index]].length - 1]
                             //         ["wallpaper_url"]
                             //     :
-                            CData.collections[CData.collectionNames.toList()[index]][
-                                CData.collections[CData.collectionNames.toList()[index]].length %
+                            CData.collections[CData.collectionNames
+                                .toList()[index]
+                                .toString()][(CData
+                                                .collections[CData.collectionNames
+                                                    .toList()[index]
+                                                    .toString()]
+                                                .length %
                                             2 ==
                                         1
-                                    ? ((CData
-                                                .collections[CData.collectionNames
-                                                    .toList()[index]]
-                                                .length -
+                                    ? ((CData.collections[CData.collectionNames.toList()[index]].length -
                                             1) /
                                         2)
                                     : (CData
                                             .collections[CData.collectionNames
                                                 .toList()[index]]
                                             .length /
-                                        2)]["wallpaper_thumb"],
+                                        2))
+                                .round()]["wallpaper_thumb"],
                           ),
                           fit: BoxFit.cover)),
               child: Center(
@@ -152,18 +155,34 @@ class _CollectionsGridState extends State<CollectionsGrid>
                   color: Colors.black.withOpacity(0.4),
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      CData.collectionNames
-                          .toList()[index]
-                          .toString()
-                          .toUpperCase(),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      style: Theme.of(context).textTheme.headline2.copyWith(
-                          fontSize: 20,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
-                    ),
+                    child: CData.collectionNames.toList().length != 0
+                        ? Text(
+                            CData.collectionNames
+                                .toList()[index]
+                                .toString()
+                                .toUpperCase(),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headline2
+                                .copyWith(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                          )
+                        : Text(
+                            "LOADING",
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headline2
+                                .copyWith(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
               ),
