@@ -272,18 +272,18 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Center(
-                          child: main.prefs.get('premium') == true
-                              ? "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. Your photo will be visible in the profile/community section."
-                              : Text(
-                                  "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.6),
-                                  ),
-                                ),
+                          child: Text(
+                            main.prefs.get('premium') == true
+                                ? "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. Your photo will be visible in the profile/community section."
+                                : "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(context)
+                                  .accentColor
+                                  .withOpacity(0.6),
+                            ),
+                          ),
                         ),
                       ),
                     ),
