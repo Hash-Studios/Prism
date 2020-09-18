@@ -164,17 +164,40 @@ class _SetupPageState extends State<SetupPage> {
                                           ),
                                         ),
                                       ),
-                                      placeholder: (context, url) => Container(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.712,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.72,
-                                        child: Center(
-                                          child: Loader(),
+                                      progressIndicatorBuilder:
+                                          (context, url, downloadProgress) =>
+                                              Center(
+                                        child: Container(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.712,
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.72,
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                                valueColor:
+                                                    AlwaysStoppedAnimation(
+                                                  Color(0xFFE57697),
+                                                ),
+                                                value:
+                                                    downloadProgress.progress),
+                                          ),
                                         ),
                                       ),
+                                      // placeholder: (context, url) => Container(
+                                      //   width:
+                                      //       MediaQuery.of(context).size.width *
+                                      //           0.712,
+                                      //   height:
+                                      //       MediaQuery.of(context).size.height *
+                                      //           0.72,
+                                      //   child: Center(
+                                      //     child: Loader(),
+                                      //   ),
+                                      // ),
                                       errorWidget: (context, url, error) =>
                                           Container(
                                         child: Center(
@@ -256,20 +279,44 @@ class _SetupPageState extends State<SetupPage> {
                                               ),
                                             ),
                                           ),
-                                          placeholder: (context, url) =>
-                                              Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.712,
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.72,
-                                            child: Center(
-                                              child: Loader(),
+                                          progressIndicatorBuilder: (context,
+                                                  url, downloadProgress) =>
+                                              Center(
+                                            child: Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.712,
+                                              height: MediaQuery.of(context)
+                                                      .size
+                                                      .height *
+                                                  0.72,
+                                              child: Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        valueColor:
+                                                            AlwaysStoppedAnimation(
+                                                          Color(0xFFE57697),
+                                                        ),
+                                                        value: downloadProgress
+                                                            .progress),
+                                              ),
                                             ),
                                           ),
+                                          // placeholder: (context, url) =>
+                                          //     Container(
+                                          //   width: MediaQuery.of(context)
+                                          //           .size
+                                          //           .width *
+                                          //       0.712,
+                                          //   height: MediaQuery.of(context)
+                                          //           .size
+                                          //           .height *
+                                          //       0.72,
+                                          //   child: Center(
+                                          //     child: Loader(),
+                                          //   ),
+                                          // ),
                                           errorWidget: (context, url, error) =>
                                               Container(
                                             child: Center(

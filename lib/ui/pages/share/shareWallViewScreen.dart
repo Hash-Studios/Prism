@@ -461,16 +461,31 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   ),
                                 ),
                               ),
-                              placeholder: (context, url) => Stack(
+                              progressIndicatorBuilder:
+                                  (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
                                   SizedBox.expand(child: Text("")),
                                   Container(
                                     child: Center(
-                                      child: Loader(),
+                                      child: CircularProgressIndicator(
+                                          valueColor: AlwaysStoppedAnimation(
+                                            Color(0xFFE57697),
+                                          ),
+                                          value: downloadProgress.progress),
                                     ),
                                   ),
                                 ],
                               ),
+                              // placeholder: (context, url) => Stack(
+                              //   children: <Widget>[
+                              //     SizedBox.expand(child: Text("")),
+                              //     Container(
+                              //       child: Center(
+                              //         child: Loader(),
+                              //       ),
+                              //     ),
+                              //   ],
+                              // ),
                               errorWidget: (context, url, error) => Container(
                                 child: Center(
                                   child: Icon(
@@ -890,16 +905,32 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       ),
                                     ),
                                   ),
-                                  placeholder: (context, url) => Stack(
+                                  progressIndicatorBuilder:
+                                      (context, url, downloadProgress) => Stack(
                                     children: <Widget>[
                                       SizedBox.expand(child: Text("")),
                                       Container(
                                         child: Center(
-                                          child: Loader(),
+                                          child: CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation(
+                                                Color(0xFFE57697),
+                                              ),
+                                              value: downloadProgress.progress),
                                         ),
                                       ),
                                     ],
                                   ),
+                                  // placeholder: (context, url) => Stack(
+                                  //   children: <Widget>[
+                                  //     SizedBox.expand(child: Text("")),
+                                  //     Container(
+                                  //       child: Center(
+                                  //         child: Loader(),
+                                  //       ),
+                                  //     ),
+                                  //   ],
+                                  // ),
                                   errorWidget: (context, url, error) =>
                                       Container(
                                     child: Center(
@@ -1357,16 +1388,34 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           ),
                                         ),
                                       ),
-                                      placeholder: (context, url) => Stack(
+                                      progressIndicatorBuilder:
+                                          (context, url, downloadProgress) =>
+                                              Stack(
                                         children: <Widget>[
                                           SizedBox.expand(child: Text("")),
                                           Container(
                                             child: Center(
-                                              child: Loader(),
+                                              child: CircularProgressIndicator(
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation(
+                                                    Color(0xFFE57697),
+                                                  ),
+                                                  value: downloadProgress
+                                                      .progress),
                                             ),
                                           ),
                                         ],
                                       ),
+                                      // placeholder: (context, url) => Stack(
+                                      //   children: <Widget>[
+                                      //     SizedBox.expand(child: Text("")),
+                                      //     Container(
+                                      //       child: Center(
+                                      //         child: Loader(),
+                                      //       ),
+                                      //     ),
+                                      //   ],
+                                      // ),
                                       errorWidget: (context, url, error) =>
                                           Container(
                                         child: Center(
