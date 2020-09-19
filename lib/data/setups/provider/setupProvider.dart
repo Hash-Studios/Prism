@@ -8,7 +8,7 @@ class SetupProvider extends ChangeNotifier {
     this.setups = [];
     await databaseReference
         .collection("setups")
-        .orderBy("createdAt")
+        .orderBy("created_at", descending: true)
         .where("review", isEqualTo: true)
         .getDocuments()
         .then((value) {
