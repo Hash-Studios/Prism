@@ -22,3 +22,11 @@ var topTitleText = [
 
 AutoScrollController categoryController =
     AutoScrollController(axis: Axis.horizontal);
+
+var premiumCollections = [
+  "space",
+  "abstract",
+  "flat",
+  "mesh gradients",
+  "fluids",
+];
