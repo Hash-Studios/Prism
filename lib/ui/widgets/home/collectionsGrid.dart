@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
@@ -162,7 +163,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: Offset(5, 5),
-                                    color: Colors.black54)
+                                    color: Provider.of<ThemeModel>(context)
+                                                .currentTheme ==
+                                            kLightTheme
+                                        ? Colors.black12
+                                        : Colors.black54)
                               ]),
                           height:
                               (MediaQuery.of(context).size.width / 2) / 0.6225 -
@@ -188,7 +193,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   .headline2
                                   .copyWith(
                                       fontSize: 16,
-                                      color: Colors.white,
+                                      color: Provider.of<ThemeModel>(context)
+                                                  .currentTheme ==
+                                              kLightTheme
+                                          ? Colors.black
+                                          : Colors.white,
                                       fontWeight: FontWeight.bold),
                             )
                           : Text(
@@ -200,7 +209,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   .headline2
                                   .copyWith(
                                       fontSize: 16,
-                                      color: Colors.white,
+                                      color: Provider.of<ThemeModel>(context)
+                                                  .currentTheme ==
+                                              kLightTheme
+                                          ? Colors.black
+                                          : Colors.white,
                                       fontWeight: FontWeight.bold),
                             ),
                     ),
@@ -216,7 +229,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: Offset(5, 5),
-                                    color: Colors.black54)
+                                    color: Provider.of<ThemeModel>(context)
+                                                .currentTheme ==
+                                            kLightTheme
+                                        ? Colors.black26
+                                        : Colors.black54)
                               ]),
                           height:
                               (MediaQuery.of(context).size.width / 2) / 0.6225 -
@@ -276,7 +293,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: Offset(5, 5),
-                                    color: Colors.black54)
+                                    color: Provider.of<ThemeModel>(context)
+                                                .currentTheme ==
+                                            kLightTheme
+                                        ? Colors.black26
+                                        : Colors.black54)
                               ]),
                           height:
                               (MediaQuery.of(context).size.width / 2) / 0.6225 -

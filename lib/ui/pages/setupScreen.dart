@@ -2,6 +2,8 @@ import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
@@ -91,15 +93,15 @@ class _SetupPageState extends State<SetupPage> {
             height: MediaQuery.of(context).size.height * 0.3,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFE57697), Colors.transparent],
+                colors: [Color(0xFFE57697), Theme.of(context).primaryColor],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 stops: [0, 1],
               ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
+              // borderRadius: BorderRadius.only(
+              //   bottomLeft: Radius.circular(20),
+              //   bottomRight: Radius.circular(20),
+              // ),
             ),
             child: Align(
               alignment: Alignment.topLeft,
@@ -236,20 +238,46 @@ class _SetupPageState extends State<SetupPage> {
                                                 0.72,
                                             decoration: BoxDecoration(
                                               boxShadow: pageNumber == index
-                                                  ? [
-                                                      BoxShadow(
-                                                        color: Colors.black
-                                                            .withOpacity(.7),
-                                                        blurRadius: 38,
-                                                        offset: Offset(0, 19),
-                                                      ),
-                                                      BoxShadow(
-                                                        color: Colors.black
-                                                            .withOpacity(.6),
-                                                        blurRadius: 12,
-                                                        offset: Offset(0, 15),
-                                                      )
-                                                    ]
+                                                  ? Provider.of<ThemeModel>(
+                                                                  context)
+                                                              .currentTheme ==
+                                                          kLightTheme
+                                                      ? [
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .15),
+                                                            blurRadius: 38,
+                                                            offset:
+                                                                Offset(0, 19),
+                                                          ),
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .10),
+                                                            blurRadius: 12,
+                                                            offset:
+                                                                Offset(0, 15),
+                                                          )
+                                                        ]
+                                                      : [
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .7),
+                                                            blurRadius: 38,
+                                                            offset:
+                                                                Offset(0, 19),
+                                                          ),
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .6),
+                                                            blurRadius: 12,
+                                                            offset:
+                                                                Offset(0, 15),
+                                                          )
+                                                        ]
                                                   : [],
                                               borderRadius:
                                                   BorderRadius.circular(10),
@@ -319,20 +347,38 @@ class _SetupPageState extends State<SetupPage> {
                                               0.72,
                                           decoration: BoxDecoration(
                                             boxShadow: pageNumber == index
-                                                ? [
-                                                    BoxShadow(
-                                                      color: Colors.black
-                                                          .withOpacity(.7),
-                                                      blurRadius: 38,
-                                                      offset: Offset(0, 19),
-                                                    ),
-                                                    BoxShadow(
-                                                      color: Colors.black
-                                                          .withOpacity(.6),
-                                                      blurRadius: 12,
-                                                      offset: Offset(0, 15),
-                                                    )
-                                                  ]
+                                                ? Provider.of<ThemeModel>(
+                                                                context)
+                                                            .currentTheme ==
+                                                        kLightTheme
+                                                    ? [
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(.15),
+                                                          blurRadius: 38,
+                                                          offset: Offset(0, 19),
+                                                        ),
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(.10),
+                                                          blurRadius: 12,
+                                                          offset: Offset(0, 15),
+                                                        )
+                                                      ]
+                                                    : [
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(.7),
+                                                          blurRadius: 38,
+                                                          offset: Offset(0, 19),
+                                                        ),
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(.6),
+                                                          blurRadius: 12,
+                                                          offset: Offset(0, 15),
+                                                        )
+                                                      ]
                                                 : [],
                                             borderRadius:
                                                 BorderRadius.circular(10),
@@ -388,24 +434,50 @@ class _SetupPageState extends State<SetupPage> {
                                                     0.72,
                                                 decoration: BoxDecoration(
                                                   boxShadow: pageNumber == index
-                                                      ? [
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .7),
-                                                            blurRadius: 38,
-                                                            offset:
-                                                                Offset(0, 19),
-                                                          ),
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .6),
-                                                            blurRadius: 12,
-                                                            offset:
-                                                                Offset(0, 15),
-                                                          )
-                                                        ]
+                                                      ? Provider.of<ThemeModel>(
+                                                                      context)
+                                                                  .currentTheme ==
+                                                              kLightTheme
+                                                          ? [
+                                                              BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .15),
+                                                                blurRadius: 38,
+                                                                offset: Offset(
+                                                                    0, 19),
+                                                              ),
+                                                              BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .10),
+                                                                blurRadius: 12,
+                                                                offset: Offset(
+                                                                    0, 15),
+                                                              )
+                                                            ]
+                                                          : [
+                                                              BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .7),
+                                                                blurRadius: 38,
+                                                                offset: Offset(
+                                                                    0, 19),
+                                                              ),
+                                                              BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .6),
+                                                                blurRadius: 12,
+                                                                offset: Offset(
+                                                                    0, 15),
+                                                              )
+                                                            ]
                                                       : [],
                                                   borderRadius:
                                                       BorderRadius.circular(10),
