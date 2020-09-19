@@ -206,7 +206,7 @@ class _SetupPageState extends State<SetupPage> {
                                     0
                                 ? Loader()
                                 : AnimatedContainer(
-                                    duration: Duration(milliseconds: 300),
+                                    duration: Duration(milliseconds: 200),
                                     padding: EdgeInsets.only(
                                       top: pageNumber == index + 1 ||
                                               pageNumber == index - 1
@@ -295,7 +295,7 @@ class _SetupPageState extends State<SetupPage> {
                                   )
                             : (index == 5)
                                 ? AnimatedContainer(
-                                    duration: Duration(milliseconds: 300),
+                                    duration: Duration(milliseconds: 200),
                                     padding: EdgeInsets.only(
                                       top: pageNumber == index + 1 ||
                                               pageNumber == index - 1
@@ -352,7 +352,7 @@ class _SetupPageState extends State<SetupPage> {
                                         0
                                     ? Loader()
                                     : AnimatedContainer(
-                                        duration: Duration(milliseconds: 300),
+                                        duration: Duration(milliseconds: 200),
                                         padding: EdgeInsets.only(
                                           top: pageNumber == index + 1 ||
                                                   pageNumber == index - 1
@@ -466,7 +466,7 @@ class _SetupPageState extends State<SetupPage> {
                   onTap: () {
                     widget.controller.animateToPage(
                         widget.controller.page.toInt() - 1,
-                        duration: Duration(milliseconds: 300),
+                        duration: Duration(milliseconds: 200),
                         curve: Curves.fastOutSlowIn);
                     HapticFeedback.vibrate();
                   },
@@ -486,7 +486,7 @@ class _SetupPageState extends State<SetupPage> {
                       onTap: () {
                         widget.controller.animateToPage(
                             widget.controller.page.toInt() + 1,
-                            duration: Duration(milliseconds: 300),
+                            duration: Duration(milliseconds: 200),
                             curve: Curves.fastOutSlowIn);
                         HapticFeedback.vibrate();
                       },
@@ -501,7 +501,7 @@ class _SetupPageState extends State<SetupPage> {
                       onTap: () {
                         widget.controller.animateToPage(
                             widget.controller.page.toInt() + 1,
-                            duration: Duration(milliseconds: 300),
+                            duration: Duration(milliseconds: 200),
                             curve: Curves.fastOutSlowIn);
                         HapticFeedback.vibrate();
                       },
