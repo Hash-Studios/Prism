@@ -44,6 +44,11 @@ class SplashWidget extends StatelessWidget {
         });
         await remoteConfig.fetch(expiration: const Duration(hours: 6));
         await remoteConfig.activateFetched();
+        var premiumC = remoteConfig.getString('premiumCollections');
+        premiumC = premiumC.replaceAll('"', '');
+        premiumC = premiumC.replaceAll("[", "");
+        premiumC = premiumC.replaceAll(",]", "");
+        globals.premiumCollections = premiumC.split(",");
         var text = remoteConfig.getString('topTitleText');
         text = text.replaceAll('"', '');
         text = text.replaceAll("[", "");
