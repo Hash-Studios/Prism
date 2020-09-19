@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
@@ -21,6 +24,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
   Animation<Color> animation;
   bool isLoggedin;
   var refreshKey = GlobalKey<RefreshIndicatorState>();
+  var r = Random();
 
   @override
   void initState() {
@@ -132,9 +136,9 @@ class _CollectionsGridState extends State<CollectionsGrid>
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent:
                 MediaQuery.of(context).orientation == Orientation.portrait
-                    ? 20000
-                    : 20000,
-            childAspectRatio: 1 / 0.6625,
+                    ? 300
+                    : 250,
+            childAspectRatio: 0.6225,
             mainAxisSpacing: 8,
             crossAxisSpacing: 8),
         itemBuilder: (context, index) {
@@ -145,50 +149,32 @@ class _CollectionsGridState extends State<CollectionsGrid>
                           ? "none"
                           : CData.collectionNames.toList()[index]) ==
                   -1,
-              child: Container(
-                decoration: CData.collectionNames.length == 0
-                    ? BoxDecoration(
-                        color: animation.value,
-                        borderRadius: BorderRadius.circular(20),
-                      )
-                    : BoxDecoration(
-                        color: animation.value,
-                        borderRadius: BorderRadius.circular(20),
-                        image: DecorationImage(
-                            image: CachedNetworkImageProvider(
-                              // Provider.of<ThumbModel>(context, listen: false).thumbType ==
-                              //         ThumbType.High
-                              //     ? CData.collections[CData.collectionNames.toList()[index]]
-                              //             [CData.collections[CData.collectionNames.toList()[index]].length - 1]
-                              //         ["wallpaper_url"]
-                              //     :
-                              CData.collections[CData.collectionNames
-                                  .toList()[index]
-                                  .toString()][(CData
-                                                  .collections[CData
-                                                      .collectionNames
-                                                      .toList()[index]
-                                                      .toString()]
-                                                  .length %
-                                              2 ==
-                                          1
-                                      ? ((CData
-                                                  .collections[CData
-                                                      .collectionNames
-                                                      .toList()[index]]
-                                                  .length -
-                                              1) /
-                                          2)
-                                      : (CData.collections[CData.collectionNames.toList()[index]].length / 2))
-                                  .round()]["wallpaper_thumb"],
-                            ),
-                            fit: BoxFit.cover)),
-                child: Center(
-                  child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    color: Colors.black.withOpacity(0.4),
+              child: Stack(
+                children: <Widget>[
+                  Positioned(
+                      top: 40,
+                      left: 40,
+                      child: Container(
+                          decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                    blurRadius: 20,
+                                    offset: Offset(5, 5),
+                                    color: Colors.black54)
+                              ]),
+                          height:
+                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
+                                  63.5,
+                          width: MediaQuery.of(context).size.width / 2 - 59)),
+                  Align(
+                    alignment: Alignment.bottomCenter,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.only(
+                        bottom: 25,
+                        left: 25,
+                      ),
                       child: CData.collectionNames.toList().length != 0
                           ? Text(
                               CData.collectionNames
@@ -201,7 +187,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   .textTheme
                                   .headline2
                                   .copyWith(
-                                      fontSize: 20,
+                                      fontSize: 16,
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold),
                             )
@@ -213,13 +199,113 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   .textTheme
                                   .headline2
                                   .copyWith(
-                                      fontSize: 20,
+                                      fontSize: 16,
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold),
                             ),
                     ),
                   ),
-                ),
+                  Positioned(
+                      top: 20,
+                      left: 20,
+                      child: Container(
+                          decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                    blurRadius: 20,
+                                    offset: Offset(5, 5),
+                                    color: Colors.black54)
+                              ]),
+                          height:
+                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
+                                  108.5,
+                          width: MediaQuery.of(context).size.width / 2 - 59)),
+                  Positioned(
+                      top: 20,
+                      left: 20,
+                      child: Container(
+                          decoration: CData.collectionNames.length == 0
+                              ? BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                )
+                              : CData
+                                          .collections[CData.collectionNames
+                                              .toList()[index]
+                                              .toString()]
+                                          .length ==
+                                      1
+                                  ? BoxDecoration(
+                                      color: animation.value,
+                                      borderRadius: BorderRadius.circular(20),
+                                      image: DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                            CData.collections[CData
+                                                    .collectionNames
+                                                    .toList()[index]
+                                                    .toString()][0]
+                                                ["wallpaper_thumb"],
+                                          ),
+                                          fit: BoxFit.cover))
+                                  : BoxDecoration(
+                                      color: animation.value,
+                                      borderRadius: BorderRadius.circular(20),
+                                      image: DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                            CData.collections[CData
+                                                    .collectionNames
+                                                    .toList()[index]
+                                                    .toString()][1]
+                                                ["wallpaper_thumb"],
+                                          ),
+                                          fit: BoxFit.cover)),
+                          height:
+                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
+                                  108.5,
+                          width: MediaQuery.of(context).size.width / 2 - 59)),
+                  Positioned(
+                      top: 0,
+                      left: 0,
+                      child: Container(
+                          decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                    blurRadius: 20,
+                                    offset: Offset(5, 5),
+                                    color: Colors.black54)
+                              ]),
+                          height:
+                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
+                                  108.5,
+                          width: MediaQuery.of(context).size.width / 2 - 59)),
+                  Positioned(
+                      top: 0,
+                      left: 0,
+                      child: Container(
+                          decoration: CData.collectionNames.length == 0
+                              ? BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                )
+                              : BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                        CData.collections[CData.collectionNames
+                                            .toList()[index]
+                                            .toString()][0]["wallpaper_thumb"],
+                                      ),
+                                      fit: BoxFit.cover)),
+                          height:
+                              (MediaQuery.of(context).size.width / 2) / 0.6225 -
+                                  108.5,
+                          width: MediaQuery.of(context).size.width / 2 - 59)),
+                ],
               ),
             ),
             onTap: () {
@@ -279,22 +365,22 @@ class PremiumBanner extends StatelessWidget {
     return comparator
         ? child
         : Stack(
-            alignment: Alignment.topRight,
             children: <Widget>[
               child,
-              Container(
-                margin: EdgeInsets.all(4),
-                height: 20,
-                decoration: BoxDecoration(
-                    color: Color(0xFFE57697),
-                    borderRadius: BorderRadius.circular(500)),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
-                  child: Text(
-                    "PREMIUM",
-                    style: TextStyle(
-                      fontSize: 14,
+              Positioned(
+                top: (MediaQuery.of(context).size.width / 2) / 0.6225 - 142,
+                left: MediaQuery.of(context).size.width / 2 - 102.5,
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Color(0xFFFFB800),
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20))),
+                  padding: EdgeInsets.all(0),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                    child: Icon(
+                      JamIcons.star_f,
                       color: Colors.white,
                     ),
                   ),
