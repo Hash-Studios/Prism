@@ -140,8 +140,10 @@ class _CollectionsGridState extends State<CollectionsGrid>
         itemBuilder: (context, index) {
           return GestureDetector(
             child: PremiumBanner(
-              comparator: globals.premiumCollections
-                      .indexOf(CData.collectionNames.toList()[index]) ==
+              comparator: globals.premiumCollections.indexOf(
+                      CData.collectionNames.length == 0
+                          ? "none"
+                          : CData.collectionNames.toList()[index]) ==
                   -1,
               child: Container(
                 decoration: CData.collectionNames.length == 0

@@ -1,7 +1,6 @@
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
