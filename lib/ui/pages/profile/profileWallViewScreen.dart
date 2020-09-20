@@ -122,23 +122,41 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
             onPanelOpened: () {
               if (panelClosed) {
                 print('Screenshot Starting');
-                main.prefs.get('optimisedWallpapers') ?? true
-                    ? screenshotController
-                        .capture(
-                        pixelRatio: 3,
-                        delay: Duration(milliseconds: 10),
-                      )
-                        .then((File image) async {
-                        setState(() {
-                          _imageFile = image;
-                          screenshotTaken = true;
-                          panelClosed = false;
-                        });
-                        print('Screenshot Taken');
-                      }).catchError((onError) {
-                        print(onError);
-                      })
-                    : print("Wallpaper Optimisation is disabled!");
+                if (colorChanged) {
+                  screenshotController
+                      .capture(
+                    pixelRatio: 3,
+                    delay: Duration(milliseconds: 10),
+                  )
+                      .then((File image) async {
+                    setState(() {
+                      _imageFile = image;
+                      screenshotTaken = true;
+                      panelClosed = false;
+                    });
+                    print('Screenshot Taken');
+                  }).catchError((onError) {
+                    print(onError);
+                  });
+                } else {
+                  main.prefs.get('optimisedWallpapers') ?? true
+                      ? screenshotController
+                          .capture(
+                          pixelRatio: 3,
+                          delay: Duration(milliseconds: 10),
+                        )
+                          .then((File image) async {
+                          setState(() {
+                            _imageFile = image;
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          print('Screenshot Taken');
+                        }).catchError((onError) {
+                          print(onError);
+                        })
+                      : print("Wallpaper Optimisation is disabled!");
+                }
               }
             },
             onPanelClosed: () {
