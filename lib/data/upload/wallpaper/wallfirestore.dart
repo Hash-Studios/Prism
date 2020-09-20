@@ -65,7 +65,7 @@ void createSetup(
     'name': setupName,
     'desc': setupDesc,
     'review': review,
-    'createdAt': DateTime.now(),
+    'created_at': DateTime.now(),
   });
   toasts.codeSend("Your setup is submitted, and is under review.");
 }
