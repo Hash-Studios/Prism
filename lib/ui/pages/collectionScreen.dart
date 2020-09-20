@@ -1,7 +1,7 @@
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collectionsGrid.dart';
-import 'package:Prism/ui/widgets/home/loadingCardsCollection.dart';
 import 'package:flutter/material.dart';
 
 class CollectionScreen extends StatefulWidget {
@@ -34,9 +34,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
-              return new LoadingCardsCollection();
+              return Center(child: new Loader());
             case ConnectionState.none:
-              return new LoadingCardsCollection();
+              return Center(child: new Loader());
             default:
               if (snapshot.hasError)
                 return RefreshIndicator(

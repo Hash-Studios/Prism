@@ -1,7 +1,6 @@
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
@@ -123,23 +122,41 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
             onPanelOpened: () {
               if (panelClosed) {
                 print('Screenshot Starting');
-                main.prefs.get('optimisedWallpapers') ?? true
-                    ? screenshotController
-                        .capture(
-                        pixelRatio: 3,
-                        delay: Duration(milliseconds: 10),
-                      )
-                        .then((File image) async {
-                        setState(() {
-                          _imageFile = image;
-                          screenshotTaken = true;
-                          panelClosed = false;
-                        });
-                        print('Screenshot Taken');
-                      }).catchError((onError) {
-                        print(onError);
-                      })
-                    : print("Wallpaper Optimisation is disabled!");
+                if (colorChanged) {
+                  screenshotController
+                      .capture(
+                    pixelRatio: 3,
+                    delay: Duration(milliseconds: 10),
+                  )
+                      .then((File image) async {
+                    setState(() {
+                      _imageFile = image;
+                      screenshotTaken = true;
+                      panelClosed = false;
+                    });
+                    print('Screenshot Taken');
+                  }).catchError((onError) {
+                    print(onError);
+                  });
+                } else {
+                  main.prefs.get('optimisedWallpapers') ?? true
+                      ? screenshotController
+                          .capture(
+                          pixelRatio: 3,
+                          delay: Duration(milliseconds: 10),
+                        )
+                          .then((File image) async {
+                          setState(() {
+                            _imageFile = image;
+                            screenshotTaken = true;
+                            panelClosed = false;
+                          });
+                          print('Screenshot Taken');
+                        }).catchError((onError) {
+                          print(onError);
+                        })
+                      : print("Wallpaper Optimisation is disabled!");
+                }
               }
             },
             onPanelClosed: () {
