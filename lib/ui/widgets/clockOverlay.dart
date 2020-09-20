@@ -71,9 +71,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     "$day,",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: widget.accent.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
+                      color: widget.accent == null
+                          ? Theme.of(context).accentColor
+                          : widget.accent.computeLuminance() > 0.5
+                              ? Colors.black
+                              : Colors.white,
                       fontFamily: "Roboto",
                       fontSize: 25,
                       fontWeight: FontWeight.w300,
@@ -87,9 +89,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     "$month $dayNo$suffix | 27°C",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: widget.accent.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
+                      color: widget.accent == null
+                          ? Theme.of(context).accentColor
+                          : widget.accent.computeLuminance() > 0.5
+                              ? Colors.black
+                              : Colors.white,
                       fontFamily: "Roboto",
                       fontSize: 25,
                       fontWeight: FontWeight.w500,
@@ -115,9 +119,12 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     "assets/images/messages.png",
                     width: MediaQuery.of(context).size.width * 0.14,
                   ),
-                  Image.asset(
-                    "assets/images/prism.png",
-                    width: MediaQuery.of(context).size.width * 0.14,
+                  Padding(
+                    padding: const EdgeInsets.only(left: 1.0),
+                    child: Image.asset(
+                      "assets/images/prism.png",
+                      width: MediaQuery.of(context).size.width * 0.14,
+                    ),
                   ),
                   Image.asset(
                     "assets/images/playstore.png",
