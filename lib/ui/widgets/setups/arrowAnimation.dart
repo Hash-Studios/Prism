@@ -20,7 +20,7 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
     _controller = AnimationController(
       vsync: this,
       duration: Duration(
-        milliseconds: 1000,
+        milliseconds: 600,
       ),
     )..addListener(() {
         if (mounted) setState(() {});
