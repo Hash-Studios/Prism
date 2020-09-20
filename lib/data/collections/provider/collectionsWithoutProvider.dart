@@ -25,7 +25,7 @@ Future<Map> getCollections() async {
       await databaseReference
           .collection("walls")
           .where('review', isEqualTo: true)
-          .orderBy("collections", descending: true)
+          .orderBy("createdAt", descending: true)
           .getDocuments()
           .then((value) {
         wallpapersForCollections = [];
@@ -35,7 +35,7 @@ Future<Map> getCollections() async {
         value.documents.forEach((f) {
           var map = f.data;
           map['createdAt'] = map['createdAt'].toString();
-          wallpapersForCollections.add(map);
+          if (map['collections'] != null) wallpapersForCollections.add(map);
         });
         print("Data added to list");
         for (var wall in wallpapersForCollections) {

@@ -537,7 +537,9 @@ class UploadBottomPanel extends StatefulWidget {
 
 class _UploadBottomPanelState extends State<UploadBottomPanel> {
   File _wallpaper;
+  File _setup;
   final picker = ImagePicker();
+  final picker2 = ImagePicker();
   @override
   void initState() {
     super.initState();
@@ -555,10 +557,23 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     }
   }
 
+  Future getSetup() async {
+    final pickedFile = await picker2.getImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _setup = File(pickedFile.path);
+      });
+      Navigator.pop(context);
+      Future.delayed(Duration(seconds: 0)).then((value) =>
+          Navigator.pushNamed(context, UploadSetupRoute, arguments: [_setup]));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width * 0.85;
     return Container(
-      height: MediaQuery.of(context).size.height / 1.4,
+      height: MediaQuery.of(context).size.height / 1.5,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         borderRadius: BorderRadius.only(
@@ -583,7 +598,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
           ),
           Spacer(),
           Text(
-            "Upload a Wallpaper",
+            "Upload",
             style: Theme.of(context).textTheme.headline2,
           ),
           Spacer(),
@@ -602,16 +617,14 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                         await getImage();
                       },
                       child: Container(
-                        width: MediaQuery.of(context).size.width / 2 - 20,
-                        height: MediaQuery.of(context).size.width / 2 / 0.6625,
+                        width: width / 2 - 20,
+                        height: width / 2 / 0.6625,
                         child: Stack(
                           alignment: Alignment.center,
                           children: <Widget>[
                             Container(
-                              width: MediaQuery.of(context).size.width / 2 - 14,
-                              height: MediaQuery.of(context).size.width /
-                                  2 /
-                                  0.6625,
+                              width: width / 2 - 14,
+                              height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
                                 color: Color(0xFFE57697).withOpacity(0.2),
                                 border: Border.all(
@@ -623,7 +636,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Opacity(
                                     opacity: 1,
                                     child: Image.asset(
-                                      'assets/images/wallpaper2.jpg',
+                                      'assets/images/wallpaper.jpg',
                                       fit: BoxFit.cover,
                                     )),
                               ),
@@ -663,6 +676,97 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                   )
                 ],
               ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GestureDetector(
+                      onTap: () async {
+                        await getSetup();
+                      },
+                      child: Container(
+                        width: width / 2 - 20,
+                        height: width / 2 / 0.6625,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: <Widget>[
+                            Container(
+                              width: width / 2 - 14,
+                              height: width / 2 / 0.6625,
+                              decoration: BoxDecoration(
+                                color: Color(0xFFE57697).withOpacity(0.2),
+                                border: Border.all(
+                                    color: Color(0xFFE57697), width: 3),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Opacity(
+                                    opacity: 1,
+                                    child: Image.asset(
+                                      'assets/images/setup.jpg',
+                                      fit: BoxFit.cover,
+                                    )),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 60.0),
+                              child: Align(
+                                alignment: Alignment.topCenter,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: Color(0xFFE57697), width: 1),
+                                      color: Color(0xFFE57697).withOpacity(0.2),
+                                      shape: BoxShape.circle),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Icon(
+                                      JamIcons.plus,
+                                      color: Color(0xFFE57697),
+                                      size: 40,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: <Widget>[
+                      Text(
+                        "Setups",
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFFE57697),
+                            fontWeight: FontWeight.bold),
+                      ),
+                      Container(
+                        margin: EdgeInsets.only(left: 3),
+                        decoration: BoxDecoration(
+                            color: Color(0xFFE57697),
+                            borderRadius: BorderRadius.circular(500)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 1.0, horizontal: 4),
+                          child: Text(
+                            "BETA",
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  )
+                ],
+              ),
             ],
           ),
           Spacer(),
@@ -671,7 +775,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             child: Container(
               width: MediaQuery.of(context).size.width * 0.8,
               child: Text(
-                "Now you can upload your wallpapers, and zip bada boom, in a matter of seconds, they will be live and everyone across the globe can view them.",
+                "Now you can upload your wallpapers & setups, and zip bada boom, in a matter of seconds, they will be live and everyone across the globe can view them.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,

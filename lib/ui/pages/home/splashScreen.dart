@@ -41,9 +41,15 @@ class SplashWidget extends StatelessWidget {
               "Prism Premium is here, for the personalisaton lords!^*^Setups are here! Change the way of personalisation.^*^Favourites moved to profile.",
           'topTitleText':
               '["TOP-RATED","BEST OF COMMUNITY","FAN-FAVOURITE","TRENDING",]',
+          'premiumCollections': '["space","landscapes","mesh gradients",]'
         });
         await remoteConfig.fetch(expiration: const Duration(hours: 6));
         await remoteConfig.activateFetched();
+        var premiumC = remoteConfig.getString('premiumCollections');
+        premiumC = premiumC.replaceAll('"', '');
+        premiumC = premiumC.replaceAll("[", "");
+        premiumC = premiumC.replaceAll(",]", "");
+        globals.premiumCollections = premiumC.split(",");
         var text = remoteConfig.getString('topTitleText');
         text = text.replaceAll('"', '');
         text = text.replaceAll("[", "");

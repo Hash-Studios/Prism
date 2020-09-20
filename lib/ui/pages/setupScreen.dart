@@ -2,9 +2,10 @@ import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-// import 'package:Prism/ui/widgets/popup/proPopUp.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +76,6 @@ class _SetupPageState extends State<SetupPage> {
   void showPremiumPopUp(Function func) {
     if (!main.prefs.get("premium")) {
       Navigator.pushNamed(context, PremiumRoute);
-      // premiumPopUp(context, func);
     } else {
       func();
     }
@@ -86,6 +86,68 @@ class _SetupPageState extends State<SetupPage> {
     return Stack(
       alignment: Alignment.topCenter,
       children: <Widget>[
+        Positioned(
+          top: 0,
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height * 0.3,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFE57697), Theme.of(context).primaryColor],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: [0, 1],
+              ),
+              // borderRadius: BorderRadius.only(
+              //   bottomLeft: Radius.circular(20),
+              //   bottomRight: Radius.circular(20),
+              // ),
+            ),
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Container(
+                width: MediaQuery.of(context).size.width - 25,
+                padding: EdgeInsets.only(left: 25, top: 25),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      main.prefs.get("premium")
+                          ? Provider.of<SetupProvider>(context, listen: false)
+                                      .setups
+                                      .length ==
+                                  0
+                              ? ""
+                              : Provider.of<SetupProvider>(context,
+                                      listen: false)
+                                  .setups[pageNumber]['name']
+                                  .toString()
+                                  .toUpperCase()
+                          : (pageNumber == 5)
+                              ? "BUY PREMIUM"
+                              : Provider.of<SetupProvider>(context,
+                                              listen: false)
+                                          .setups
+                                          .length ==
+                                      0
+                                  ? ""
+                                  : Provider.of<SetupProvider>(context,
+                                          listen: false)
+                                      .setups[pageNumber]['name']
+                                      .toString()
+                                      .toUpperCase(),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline1
+                          .copyWith(fontSize: 30),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
         Padding(
           padding:
               EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
@@ -105,69 +167,129 @@ class _SetupPageState extends State<SetupPage> {
                       .then((value) => setState(() {
                             pageNumber;
                           }));
-                  return SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height,
-                    child: PageView.builder(
-                      onPageChanged: (value) {
-                        setState(() {
-                          pageNumber = value;
+                  return GestureDetector(
+                    onTap: () {
+                      if (pageNumber == 5) {
+                        showPremiumPopUp(() {
+                          Navigator.pushNamed(context, SetupViewRoute,
+                              arguments: [pageNumber]);
                         });
-                      },
-                      controller: widget.controller,
-                      itemCount: main.prefs.get("premium")
-                          ? Provider.of<SetupProvider>(context, listen: false)
-                                      .setups
-                                      .length ==
-                                  0
-                              ? 1
-                              : Provider.of<SetupProvider>(context,
-                                      listen: false)
-                                  .setups
-                                  .length
-                          : 6,
-                      itemBuilder: (context, index) => main.prefs.get("premium")
-                          ? Provider.of<SetupProvider>(context, listen: false)
-                                      .setups
-                                      .length ==
-                                  0
-                              ? Loader()
-                              : Padding(
-                                  padding: EdgeInsets.only(
-                                      top: MediaQuery.of(context).size.height *
-                                          0.0299),
-                                  child: Align(
-                                    alignment: Alignment.topCenter,
-                                    child: CachedNetworkImage(
-                                      imageUrl: Provider.of<SetupProvider>(
-                                              context,
-                                              listen: false)
-                                          .setups[index]['image'],
-                                      imageBuilder: (context, imageProvider) =>
-                                          Hero(
-                                        tag: "CustomHerotag$index",
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.712,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.72,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            image: DecorationImage(
-                                                image: imageProvider,
-                                                fit: BoxFit.fill),
+                      } else {
+                        Navigator.pushNamed(context, SetupViewRoute,
+                            arguments: [pageNumber]);
+                      }
+                    },
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height * 0.9,
+                      child: PageView.builder(
+                        onPageChanged: (value) {
+                          setState(() {
+                            pageNumber = value;
+                          });
+                        },
+                        controller: widget.controller,
+                        itemCount: main.prefs.get("premium")
+                            ? Provider.of<SetupProvider>(context, listen: false)
+                                        .setups
+                                        .length ==
+                                    0
+                                ? 1
+                                : Provider.of<SetupProvider>(context,
+                                        listen: false)
+                                    .setups
+                                    .length
+                            : 6,
+                        itemBuilder: (context, index) => main.prefs
+                                .get("premium")
+                            ? Provider.of<SetupProvider>(context, listen: false)
+                                        .setups
+                                        .length ==
+                                    0
+                                ? Loader()
+                                : AnimatedContainer(
+                                    duration: Duration(milliseconds: 200),
+                                    padding: EdgeInsets.only(
+                                      top: pageNumber == index + 1 ||
+                                              pageNumber == index - 1
+                                          ? MediaQuery.of(context).size.height *
+                                              0.1
+                                          : MediaQuery.of(context).size.height *
+                                              0.0299,
+                                    ),
+                                    child: Align(
+                                      alignment: Alignment.topCenter,
+                                      child: CachedNetworkImage(
+                                        imageUrl: Provider.of<SetupProvider>(
+                                                context,
+                                                listen: false)
+                                            .setups[index]['image'],
+                                        imageBuilder:
+                                            (context, imageProvider) => Hero(
+                                          tag: "CustomHerotag$index",
+                                          child: Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.712,
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.72,
+                                            decoration: BoxDecoration(
+                                              boxShadow: pageNumber == index
+                                                  ? Provider.of<ThemeModel>(
+                                                                  context)
+                                                              .currentTheme ==
+                                                          kLightTheme
+                                                      ? [
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .15),
+                                                            blurRadius: 38,
+                                                            offset:
+                                                                Offset(0, 19),
+                                                          ),
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .10),
+                                                            blurRadius: 12,
+                                                            offset:
+                                                                Offset(0, 15),
+                                                          )
+                                                        ]
+                                                      : [
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .7),
+                                                            blurRadius: 38,
+                                                            offset:
+                                                                Offset(0, 19),
+                                                          ),
+                                                          BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .6),
+                                                            blurRadius: 12,
+                                                            offset:
+                                                                Offset(0, 15),
+                                                          )
+                                                        ]
+                                                  : [],
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              image: DecorationImage(
+                                                  image: imageProvider,
+                                                  fit: BoxFit.fill),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      progressIndicatorBuilder:
-                                          (context, url, downloadProgress) =>
-                                              Center(
-                                        child: Container(
+                                        progressIndicatorBuilder:
+                                            (context, url, downloadProgress) =>
+                                                Container(
                                           width: MediaQuery.of(context)
                                                   .size
                                                   .width *
@@ -186,103 +308,188 @@ class _SetupPageState extends State<SetupPage> {
                                                     downloadProgress.progress),
                                           ),
                                         ),
-                                      ),
-                                      // placeholder: (context, url) => Container(
-                                      //   width:
-                                      //       MediaQuery.of(context).size.width *
-                                      //           0.712,
-                                      //   height:
-                                      //       MediaQuery.of(context).size.height *
-                                      //           0.72,
-                                      //   child: Center(
-                                      //     child: Loader(),
-                                      //   ),
-                                      // ),
-                                      errorWidget: (context, url, error) =>
-                                          Container(
-                                        child: Center(
-                                          child: Icon(
-                                            JamIcons.close_circle_f,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                          : (index == 5)
-                              ? Padding(
-                                  padding: EdgeInsets.only(
-                                      top: MediaQuery.of(context).size.height *
-                                          0.0299),
-                                  child: Align(
-                                    alignment: Alignment.topCenter,
-                                    child: Hero(
-                                      tag: "CustomHerotag$index",
-                                      child: Container(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.712,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.72,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          image: DecorationImage(
-                                              image: AssetImage(
-                                                  'assets/images/Premium.png'),
-                                              fit: BoxFit.fill),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups
-                                          .length ==
-                                      0
-                                  ? Loader()
-                                  : Padding(
-                                      padding: EdgeInsets.only(
-                                          top: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.0299),
-                                      child: Align(
-                                        alignment: Alignment.topCenter,
-                                        child: CachedNetworkImage(
-                                          imageUrl: Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups[index]['image'],
-                                          imageBuilder:
-                                              (context, imageProvider) => Hero(
-                                            tag: "CustomHerotag$index",
-                                            child: Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.712,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.72,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                image: DecorationImage(
-                                                    image: imageProvider,
-                                                    fit: BoxFit.fill),
-                                              ),
+                                        errorWidget: (context, url, error) =>
+                                            Container(
+                                          child: Center(
+                                            child: Icon(
+                                              JamIcons.close_circle_f,
+                                              color:
+                                                  Theme.of(context).accentColor,
                                             ),
                                           ),
-                                          progressIndicatorBuilder: (context,
-                                                  url, downloadProgress) =>
-                                              Center(
-                                            child: Container(
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                            : (index == 5)
+                                ? AnimatedContainer(
+                                    duration: Duration(milliseconds: 200),
+                                    padding: EdgeInsets.only(
+                                      top: pageNumber == index + 1 ||
+                                              pageNumber == index - 1
+                                          ? MediaQuery.of(context).size.height *
+                                              0.1
+                                          : MediaQuery.of(context).size.height *
+                                              0.0299,
+                                    ),
+                                    child: Align(
+                                      alignment: Alignment.topCenter,
+                                      child: Hero(
+                                        tag: "CustomHerotag$index",
+                                        child: Container(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.712,
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.72,
+                                          decoration: BoxDecoration(
+                                            boxShadow: pageNumber == index
+                                                ? Provider.of<ThemeModel>(
+                                                                context)
+                                                            .currentTheme ==
+                                                        kLightTheme
+                                                    ? [
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(.15),
+                                                          blurRadius: 38,
+                                                          offset: Offset(0, 19),
+                                                        ),
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(.10),
+                                                          blurRadius: 12,
+                                                          offset: Offset(0, 15),
+                                                        )
+                                                      ]
+                                                    : [
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(.7),
+                                                          blurRadius: 38,
+                                                          offset: Offset(0, 19),
+                                                        ),
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(.6),
+                                                          blurRadius: 12,
+                                                          offset: Offset(0, 15),
+                                                        )
+                                                      ]
+                                                : [],
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            image: DecorationImage(
+                                                image: AssetImage(
+                                                    'assets/images/Premium.png'),
+                                                fit: BoxFit.fill),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Provider.of<SetupProvider>(context,
+                                                listen: false)
+                                            .setups
+                                            .length ==
+                                        0
+                                    ? Loader()
+                                    : AnimatedContainer(
+                                        duration: Duration(milliseconds: 200),
+                                        padding: EdgeInsets.only(
+                                          top: pageNumber == index + 1 ||
+                                                  pageNumber == index - 1
+                                              ? MediaQuery.of(context)
+                                                      .size
+                                                      .height *
+                                                  0.1
+                                              : MediaQuery.of(context)
+                                                      .size
+                                                      .height *
+                                                  0.0299,
+                                        ),
+                                        child: Align(
+                                          alignment: Alignment.topCenter,
+                                          child: CachedNetworkImage(
+                                            imageUrl:
+                                                Provider.of<SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]['image'],
+                                            imageBuilder:
+                                                (context, imageProvider) =>
+                                                    Hero(
+                                              tag: "CustomHerotag$index",
+                                              child: Container(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.712,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.72,
+                                                decoration: BoxDecoration(
+                                                  boxShadow: pageNumber == index
+                                                      ? Provider.of<ThemeModel>(
+                                                                      context)
+                                                                  .currentTheme ==
+                                                              kLightTheme
+                                                          ? [
+                                                              BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .15),
+                                                                blurRadius: 38,
+                                                                offset: Offset(
+                                                                    0, 19),
+                                                              ),
+                                                              BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .10),
+                                                                blurRadius: 12,
+                                                                offset: Offset(
+                                                                    0, 15),
+                                                              )
+                                                            ]
+                                                          : [
+                                                              BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .7),
+                                                                blurRadius: 38,
+                                                                offset: Offset(
+                                                                    0, 19),
+                                                              ),
+                                                              BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .6),
+                                                                blurRadius: 12,
+                                                                offset: Offset(
+                                                                    0, 15),
+                                                              )
+                                                            ]
+                                                      : [],
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                  image: DecorationImage(
+                                                      image: imageProvider,
+                                                      fit: BoxFit.fill),
+                                                ),
+                                              ),
+                                            ),
+                                            progressIndicatorBuilder: (context,
+                                                    url, downloadProgress) =>
+                                                Container(
                                               width: MediaQuery.of(context)
                                                       .size
                                                       .width *
@@ -302,152 +509,25 @@ class _SetupPageState extends State<SetupPage> {
                                                             .progress),
                                               ),
                                             ),
-                                          ),
-                                          // placeholder: (context, url) =>
-                                          //     Container(
-                                          //   width: MediaQuery.of(context)
-                                          //           .size
-                                          //           .width *
-                                          //       0.712,
-                                          //   height: MediaQuery.of(context)
-                                          //           .size
-                                          //           .height *
-                                          //       0.72,
-                                          //   child: Center(
-                                          //     child: Loader(),
-                                          //   ),
-                                          // ),
-                                          errorWidget: (context, url, error) =>
-                                              Container(
-                                            child: Center(
-                                              child: Icon(
-                                                JamIcons.close_circle_f,
-                                                color: Theme.of(context)
-                                                    .accentColor,
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    Container(
+                                              child: Center(
+                                                child: Icon(
+                                                  JamIcons.close_circle_f,
+                                                  color: Theme.of(context)
+                                                      .accentColor,
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
+                      ),
                     ),
                   );
                 }
               }),
-        ),
-        Positioned(
-          top: 0,
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height * 0.1,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-              color: Theme.of(context).hintColor,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  main.prefs.get("premium")
-                      ? Provider.of<SetupProvider>(context, listen: false)
-                                  .setups
-                                  .length ==
-                              0
-                          ? ""
-                          : Provider.of<SetupProvider>(context, listen: false)
-                              .setups[pageNumber]['name']
-                      : (pageNumber == 5)
-                          ? "Buy Premium"
-                          : Provider.of<SetupProvider>(context, listen: false)
-                                      .setups
-                                      .length ==
-                                  0
-                              ? ""
-                              : Provider.of<SetupProvider>(context,
-                                      listen: false)
-                                  .setups[pageNumber]['name'],
-                  style: Theme.of(context)
-                      .textTheme
-                      .headline1
-                      .copyWith(fontSize: 30),
-                ),
-                Container(
-                  width: MediaQuery.of(context).size.width * 0.75,
-                  child: Text(
-                    main.prefs.get("premium")
-                        ? Provider.of<SetupProvider>(context, listen: false)
-                                    .setups
-                                    .length ==
-                                0
-                            ? ""
-                            : Provider.of<SetupProvider>(context, listen: false)
-                                .setups[pageNumber]['desc']
-                        : (pageNumber == 5)
-                            ? "to view more setups."
-                            : Provider.of<SetupProvider>(context, listen: false)
-                                        .setups
-                                        .length ==
-                                    0
-                                ? ""
-                                : Provider.of<SetupProvider>(context,
-                                        listen: false)
-                                    .setups[pageNumber]['desc'],
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline4
-                        .copyWith(fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding:
-              EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
-          child: GestureDetector(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.87,
-              height: MediaQuery.of(context).size.height * 0.8,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                    image: Theme.of(context).accentColor == Color(0xFF2F2F2F)
-                        ? AssetImage('assets/images/Black.png')
-                        : AssetImage('assets/images/White.png'),
-                    fit: BoxFit.fill),
-              ),
-            ),
-            onPanUpdate: (details) {
-              if (details.delta.dx < -10) {
-                widget.controller.animateToPage(
-                    widget.controller.page.toInt() + 1,
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.fastOutSlowIn);
-                HapticFeedback.vibrate();
-              } else if (details.delta.dx > 10) {
-                widget.controller.animateToPage(
-                    widget.controller.page.toInt() - 1,
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.fastOutSlowIn);
-                HapticFeedback.vibrate();
-              }
-            },
-            onTap: () {
-              if (pageNumber == 5) {
-                showPremiumPopUp(() {
-                  main.RestartWidget.restartApp(context);
-                });
-              } else {
-                Navigator.pushNamed(context, SetupViewRoute,
-                    arguments: [pageNumber]);
-              }
-            },
-          ),
         ),
         pageNumber == 0
             ? Container()
@@ -458,7 +538,7 @@ class _SetupPageState extends State<SetupPage> {
                   onTap: () {
                     widget.controller.animateToPage(
                         widget.controller.page.toInt() - 1,
-                        duration: Duration(milliseconds: 300),
+                        duration: Duration(milliseconds: 200),
                         curve: Curves.fastOutSlowIn);
                     HapticFeedback.vibrate();
                   },
@@ -478,7 +558,7 @@ class _SetupPageState extends State<SetupPage> {
                       onTap: () {
                         widget.controller.animateToPage(
                             widget.controller.page.toInt() + 1,
-                            duration: Duration(milliseconds: 300),
+                            duration: Duration(milliseconds: 200),
                             curve: Curves.fastOutSlowIn);
                         HapticFeedback.vibrate();
                       },
@@ -493,7 +573,7 @@ class _SetupPageState extends State<SetupPage> {
                       onTap: () {
                         widget.controller.animateToPage(
                             widget.controller.page.toInt() + 1,
-                            duration: Duration(milliseconds: 300),
+                            duration: Duration(milliseconds: 200),
                             curve: Curves.fastOutSlowIn);
                         HapticFeedback.vibrate();
                       },

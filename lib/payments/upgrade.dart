@@ -220,7 +220,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Container(
                               width: MediaQuery.of(context).size.width * 0.8,
                               child: Text(
-                                "Get more exclusive Home Screen setups!",
+                                "Get more exclusive collections & setups!",
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline6
