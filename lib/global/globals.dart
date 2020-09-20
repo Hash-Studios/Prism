@@ -4,7 +4,7 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 
 var gAuth = GoogleAuth();
 var currentAppVersion = '2.5.6';
-var currentAppVersionCode = '17';
+var currentAppVersionCode = '18';
 var updateChecked = false;
 var updateAvailable = false;
 var versionInfo = {};

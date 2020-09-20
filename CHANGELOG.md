@@ -1,5 +1,16 @@
 ## Changelog
 
+### v2.5.6
+- Now Download wallpapers even if ads failed to load
+- Redesigned Collections' screen
+- Redesigned Setups' Browser
+- Added option to disable Wallpaper Optimisation
+- Now Upload Setups in-app
+- Redesigned Clock Overlay
+- Fixed Pexels API not working
+- Removed Secure Flags
+- Major bug fixes
+
 ### v2.5.5
 - Premium uploads get reviewed instantly now
 - Added collections, find similar wallpapers easily
