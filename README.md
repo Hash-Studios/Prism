@@ -65,7 +65,7 @@ Follow us there to stay notified. [https://twitter.com/PrismWallpapers](https://
 ## Features
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
-- Over 500+ exclusive wallpapers, making it the best selection ever
+- Over 600+ exclusive wallpapers, making it the best selection ever
 - Community wallpapers uploaded by users all-around the world
 - Homescreen setups - Unique and exclusive setups designed with the perfect combination of wallpapers, icon pack and widgets
 - Exclusive collections updated daily
@@ -95,36 +95,16 @@ Follow us there to stay notified. [https://twitter.com/PrismWallpapers](https://
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-### v2.5.5
-- Premium uploads get reviewed instantly now
-- Added collections, find similar wallpapers easily
-- Update popup replaced with update notification
-- Update app tutorial
-- Bumped up the targetSDK, compileSDK to 29
+### v2.5.6
+- Now Download wallpapers even if ads failed to load
+- Redesigned Collections' screen
+- Redesigned Setups' Browser
+- Added option to disable Wallpaper Optimisation
+- Now Upload Setups in-app
+- Redesigned Clock Overlay
+- Fixed Pexels API not working
+- Removed Secure Flags
 - Major bug fixes
-
-### v2.5.4
-- Updated password authentication in GitHub API to Personal access token based
-- Added wallpaper editing options before uploading
-- Improved overall caching, leading to low internet usage
-- Major bug fixes
-
-### v2.5.3
-- Added set wallpaper Action Dialog
-- Fixed set wallpaper intent
-- Added long press to crop and tap to set
-- Added notifications subscription
-- Added all-new notifications center
-- Minor bug fixes
-
-### v2.5.2
-- Added carousel widget in home screen
-- Added rewarded video ads for wallpaper downloads
-- Now download wallpapers, without sign-in
-- Variants can now also be downloaded by watching an ad
-- Added all-new notifications center
-- Minor bug fixes
-
 
 ## Demo
 
@@ -209,7 +189,6 @@ The following packages are needed for the development of this application.
 - `hive: ^1.4.1+1` for caaching data
 - `hive_flutter: ^0.3.0+1` for caching data
 - `path_provider: ^1.6.11` for getting Application storage directory path
-- `flutter_windowmanager: ^0.0.2` for adding security flags
 - `purchases_flutter: ^1.2.1` for RevenueCat support
 - `firebase_remote_config: ^0.3.1+1` for manipulating the app remotely
 - `data_connection_checker: ^0.3.4` for checking Internet connection
