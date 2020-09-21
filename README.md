@@ -89,7 +89,7 @@ Follow us there to stay notified. [https://twitter.com/PrismWallpapers](https://
 - Minimal design with smooth transitions and animations
 - Clear Cache, Downloads and Favourites with one-tap
 - Optimized storage using minimal packages
-- Application size under 14 MB
+- Application size under 13 MB
 - Adaptive UI (changes color based on wallpaper)
 
 ## Changelog
