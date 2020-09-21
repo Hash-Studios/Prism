@@ -6,7 +6,7 @@
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
 ![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-10K+-green.svg)
-![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.1-blue.svg)
+![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-3.8-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
@@ -20,9 +20,9 @@ Prism offers an exclusive collection of wallpapers that are beautifully hand-cra
 
 Prism relies on its Community and [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/) APIs as its source of beautiful and large collection of Wallpapers. By utilizing their API, it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to make the smartphone customization experience, smooth and easy, yet giving the users amazing wallpapers, and features like downloading infinite (as much your storage allows) wallpapers or sharing the ones they like with others.
 
-Now users can upload wallpapers, which will be shown in the Community section. They can also view the wallpapers they uploaded in the Profile section. We generally take upto 24 hours for reviewing every wallpaper, but premium users get their wallpapers reviewed instantly.
+Now users can upload wallpapers & setups, which will be shown in the Community section. They can also view the wallpapers they uploaded in the Profile section and the setups in the setups section. We generally take upto 24 hours for reviewing every wallpaper/setup, but premium users get their wallpapers reviewed instantly.
 
-Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated every day. It also features categories like Abstract, Nature, 4K, Art, Landscape, Minimal, Space, Neon, etc. if you are into these. Then it allows one to find wallpapers based on colors, i.e. you can find wallpapers with a color that matches your icons or home screen setup. Not even that, it also shows you a palette of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
+Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated every day. It also features categories like Abstract, Nature, 4K, Art, Landscape, Minimal, Space, Neon, etc. if you are into these. It also offers predefined exclusive collections made by us like, Mesh Gradients, Fluids, Space and more. Then it allows one to find wallpapers based on colors, i.e. you can find wallpapers with a color that matches your icons or home screen setup. Not even that, it also shows you a palette of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
 
 Main features like finding, downloading and setting up wallpapers don't require Google Sign In, while features like Favourites require you to sign up using Google. This signup is facilitated by Google Firebase, so it is secure and we only get your name, email, and profile photo for identification purposes. The app also has Dark Mode, if you want to save your phone's battery while getting in love with those wallpapers. The app also allows users to share wallpapers with others by giving them a unique link for every wallpaper, using Firebase Dynamic Links so that anyone can directly view the wallpaper.
 
@@ -34,7 +34,8 @@ You get access to Variants (Set up to 5 color variants of each wallpaper!) and S
 Your uploads are also reviewed instantly, rather than the 24 hours time constraint in the free version.
 You also get a PRO badge in front of your profile, plus you directly support the development of this forever ad-free app.
 
-- The ability to view setups (only 5 are present in the free version)
+- Get exclusive setups (ultra-premium look)
+- Get exclusive collections
 - The ability to set variants of wallpapers
 - Get PRO badge in front of your profile
 - Get uploads reviewed instantly
@@ -68,7 +69,7 @@ Follow us there to stay notified. [https://twitter.com/PrismWallpapers](https://
 - Over 600+ exclusive wallpapers, making it the best selection ever
 - Community wallpapers uploaded by users all-around the world
 - Homescreen setups - Unique and exclusive setups designed with the perfect combination of wallpapers, icon pack and widgets
-- Exclusive collections updated daily
+- Exclusive collections updated daily with premium wallpapers
 - Each wallpaper comes with 5 color variants
 - Dark Mode supported
 - Optional Sign-in
@@ -99,7 +100,7 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 - Now Download wallpapers even if ads failed to load
 - Redesigned Collections' screen
 - Redesigned Setups' Browser
-- Added option to disable Wallpaper Optimisation
+- Added option to disable Wallpaper Optimisation (Save walls in max resolution)
 - Now Upload Setups in-app
 - Redesigned Clock Overlay
 - Fixed Pexels API not working
@@ -122,9 +123,9 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 | :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------:  |
 |  Upload Popup    |    Edit Wallpaper       |  Uploading Wallpaper    | Uploader's Profile   |     Scroll to Top Button       |
 
-| ![](demo/70.jpg) | ![](demo/69.jpg) | ![](demo/87.jpg)| ![](demo/72.jpg) | ![](demo/71.jpg) |
+| ![](demo/70.jpg) | ![](demo/69.jpg) | ![](demo/87.jpg)| ![](demo/72.jpg) | ![](demo/90.jpg) |
 | :-------------: | :-------------: | :-------------: | :-------------:  | :-------------:  |
-|     Categories     |     Collections    | Collection (Shapes)  |    Notifications     |     Textures       |
+|     Categories     |     Collections    | Collection (Shapes)  |    Notifications     |     Setup Upload       |
 
 | ![](demo/63.jpg) | ![](demo/89.jpg) | ![](demo/37.jpg)       | ![](demo/38.jpg)  | ![](demo/67.jpg)|
 | :-------------:  | :-------------:  | :-------------:       | :-------------:  | :-------------: |
@@ -197,6 +198,7 @@ The following packages are needed for the development of this application.
 - `image_editor: ^0.7.1` for editing wallpapers during upload
 - `extended_image: ^0.9.0` for cropping wallpapers before uploading
 - `device_info: ^0.4.2+7` for getting device info for bug reports
+- `firebase_storage: ^3.1.5` for storing setups
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
 
