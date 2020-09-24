@@ -1,5 +1,5 @@
-import 'package:Prism/ui/widgets/home/loading.dart';
-import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:flutter/material.dart';
 
 class WallpaperLoader extends StatefulWidget {
@@ -15,9 +15,6 @@ class _WallpaperLoaderState extends State<WallpaperLoader> {
 
   @override
   void initState() {
-    // Data.prismWalls = [];
-    // Data.subPrismWalls = [];
-    // Data.pageGetDataP = 1;
     _future = widget.future;
     super.initState();
   }
@@ -36,7 +33,6 @@ class _WallpaperLoaderState extends State<WallpaperLoader> {
           print("snapshot none, waiting");
           return LoadingCards();
         } else {
-          // print("snapshot done");
           return WallpaperGrid(
             provider: widget.provider,
           );

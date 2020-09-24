@@ -1,7 +1,7 @@
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/ui/widgets/home/collectionsGrid.dart';
+import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:flutter/material.dart';
 
 class CollectionScreen extends StatefulWidget {

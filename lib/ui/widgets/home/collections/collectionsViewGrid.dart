@@ -1,7 +1,6 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-// import 'package:Prism/theme/thumbModel.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -128,11 +127,6 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                         borderRadius: BorderRadius.circular(20),
                         image: DecorationImage(
                             image: CachedNetworkImageProvider(
-                                // Provider.of<ThumbModel>(context, listen: false)
-                                //             .thumbType ==
-                                //         ThumbType.High
-                                //     ? widget.arguments[index]["wallpaper_url"]
-                                //     :
                                 widget.arguments[index]["wallpaper_thumb"]),
                             fit: BoxFit.cover)),
                   ),

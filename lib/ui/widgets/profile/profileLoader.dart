@@ -1,4 +1,4 @@
-import 'package:Prism/ui/widgets/home/loading.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/profile/profileGrid.dart';
 import 'package:flutter/material.dart';
 
@@ -34,7 +34,6 @@ class _ProfileLoaderState extends State<ProfileLoader> {
             print("snapshot none, waiting");
             return LoadingCards();
           } else {
-            // print("snapshot done");
             return ProfileGrid();
           }
         },

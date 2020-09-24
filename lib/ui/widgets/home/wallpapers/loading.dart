@@ -1,5 +1,5 @@
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

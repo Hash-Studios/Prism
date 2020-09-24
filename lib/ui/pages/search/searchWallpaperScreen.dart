@@ -4,8 +4,8 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as WData;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/clockOverlay.dart';
-import 'package:Prism/ui/widgets/home/colorBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
+import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -87,7 +87,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
 
   @override
   void initState() {
-    // print("Wallpaper Screen");
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
@@ -110,7 +109,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
 
   @override
   Widget build(BuildContext context) {
-    // try {
     final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
         .chain(CurveTween(curve: Curves.easeOutCubic))
         .animate(shakeController)
@@ -454,16 +452,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   ),
                                 ],
                               ),
-                              // placeholder: (context, url) => Stack(
-                              //   children: <Widget>[
-                              //     SizedBox.expand(child: Text("")),
-                              //     Container(
-                              //       child: Center(
-                              //         child: Loader(),
-                              //       ),
-                              //     ),
-                              //   ],
-                              // ),
                               errorWidget: (context, url, error) => Container(
                                 child: Center(
                                   child: Icon(
@@ -911,16 +899,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   ),
                                 ],
                               ),
-                              // placeholder: (context, url) => Stack(
-                              //   children: <Widget>[
-                              //     SizedBox.expand(child: Text("")),
-                              //     Container(
-                              //       child: Center(
-                              //         child: Loader(),
-                              //       ),
-                              //     ),
-                              //   ],
-                              // ),
                               errorWidget: (context, url, error) => Container(
                                 child: Center(
                                   child: Icon(
@@ -1019,14 +997,5 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
               ),
             ),
     );
-    // } catch (e) {
-    //   print(e.toString());
-    //   String route = currentRoute;
-    // currentRoute = previousRoute;
-    // previousRoute = route;
-    // print(currentRoute);
-    // Navigator.pop(context);
-    //   return Container();
-    // }
   }
 }

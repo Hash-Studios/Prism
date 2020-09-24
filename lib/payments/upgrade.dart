@@ -43,7 +43,6 @@ Future<void> checkPremium() async {
   PurchaserInfo purchaserInfo;
   try {
     purchaserInfo = await Purchases.getPurchaserInfo();
-    // print(purchaserInfo.toString());
     if (purchaserInfo.entitlements.all['prism_premium'] != null) {
       appData.isPro = purchaserInfo.entitlements.all['prism_premium'].isActive;
     } else {

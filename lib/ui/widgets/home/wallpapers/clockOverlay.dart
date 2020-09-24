@@ -67,7 +67,6 @@ class _ClockOverlayState extends State<ClockOverlay> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   Text(
-                    // hour + date.substring(13, 16),
                     "$day,",
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -85,7 +84,6 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     height: 5,
                   ),
                   Text(
-                    // hour + date.substring(13, 16),
                     "$month $dayNo$suffix | 27°C",
                     textAlign: TextAlign.center,
                     style: TextStyle(

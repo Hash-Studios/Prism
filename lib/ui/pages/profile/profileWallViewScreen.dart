@@ -1,8 +1,8 @@
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/clockOverlay.dart';
-import 'package:Prism/ui/widgets/home/colorBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
+import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -103,7 +103,6 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
 
   @override
   Widget build(BuildContext context) {
-    // try {
     final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
         .chain(CurveTween(curve: Curves.easeOutCubic))
         .animate(shakeController)
@@ -433,16 +432,6 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                               ),
                             ],
                           ),
-                          // placeholder: (context, url) => Stack(
-                          //   children: <Widget>[
-                          //     SizedBox.expand(child: Text("")),
-                          //     Container(
-                          //       child: Center(
-                          //         child: Loader(),
-                          //       ),
-                          //     ),
-                          //   ],
-                          // ),
                           errorWidget: (context, url, error) => Container(
                             child: Center(
                               child: Icon(

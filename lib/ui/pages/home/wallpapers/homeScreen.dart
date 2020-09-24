@@ -1,9 +1,9 @@
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/ui/widgets/home/pexelsGrid.dart';
-import 'package:Prism/ui/widgets/home/wallhavenGrid.dart';
-import 'package:Prism/ui/widgets/home/wallpaperGrid.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/pexelsGrid.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/wallhavenGrid.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -70,20 +70,16 @@ class _HomeScreenState extends State<HomeScreen> {
     f.requestNotificationPermissions();
     f.configure(
       onMessage: (Map<String, dynamic> message) async {
-        // print("onMessage: $message");
         writeNotifications(message);
-        // _showItemDialog(message);
       },
       onBackgroundMessage: myBackgroundMessageHandler,
       onLaunch: (Map<String, dynamic> message) async {
         print("onLaunch: $message");
         writeNotifications(message);
-        // _navigateToItemDetail(message);
       },
       onResume: (Map<String, dynamic> message) async {
         print("onResume: $message");
         writeNotifications(message);
-        // _navigateToItemDetail(message);
       },
     );
 
@@ -95,7 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }).then((value) {});
     }).catchError((onError) {
       print(onError.toString());
-      // Navigator.pop(context);
     });
   }
 

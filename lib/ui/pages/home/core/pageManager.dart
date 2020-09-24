@@ -1,12 +1,12 @@
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/globals.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/pages/collectionScreen.dart';
-import 'package:Prism/ui/pages/home/homeScreen.dart';
+import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
-import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/home/categoriesBar.dart';
-import 'package:Prism/ui/widgets/offlineBanner.dart';
+import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
+import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
+import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';

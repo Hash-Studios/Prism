@@ -51,7 +51,6 @@ class _GoogleButtonState extends State<GoogleButton> {
           shape: StadiumBorder(),
           onPressed: () {
             gAuth.signInWithGoogle().whenComplete(() async {}).catchError((e) {
-              // toasts.error(e.toString());
               setState(() {
                 isError = true;
               });

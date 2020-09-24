@@ -1,9 +1,8 @@
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-// import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/home/loading.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -22,7 +21,6 @@ class _ProfileGridState extends State<ProfileGrid>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
-  // String userId = '';
   var refreshProfileKey = GlobalKey<RefreshIndicatorState>();
 
   @override
@@ -91,7 +89,6 @@ class _ProfileGridState extends State<ProfileGrid>
 
   @override
   Widget build(BuildContext context) {
-    // print(Provider.of<ProfileWallProvider>(context, listen: false).profileWalls);
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
@@ -141,9 +138,6 @@ class _ProfileGridState extends State<ProfileGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      // print(Provider.of<ProfileWallProvider>(context, listen: false)
-                      //     .profileWalls[index]);
-                      // print(index);
                       return FocusedMenuHolder(
                         provider: "ProfileWall",
                         index: index,
@@ -154,15 +148,6 @@ class _ProfileGridState extends State<ProfileGrid>
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      // Provider.of<ThumbModel>(context,
-                                      //                 listen: false)
-                                      //             .thumbType ==
-                                      //         ThumbType.High
-                                      //     ? Provider.of<ProfileWallProvider>(
-                                      //                 context)
-                                      //             .profileWalls[index]
-                                      //         ["wallpaper_url"]
-                                      //     :
                                       Provider.of<ProfileWallProvider>(context)
                                               .profileWalls[index]
                                           ["wallpaper_thumb"],

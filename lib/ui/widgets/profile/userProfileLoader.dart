@@ -1,4 +1,4 @@
-import 'package:Prism/ui/widgets/home/loading.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/profile/userProfileGrid.dart';
 import 'package:flutter/material.dart';
 
@@ -35,7 +35,6 @@ class _UserProfileLoaderState extends State<UserProfileLoader> {
             print("snapshot none, waiting");
             return LoadingCards();
           } else {
-            // print("snapshot done");
             return UserProfileGrid(
               email: widget.email,
             );

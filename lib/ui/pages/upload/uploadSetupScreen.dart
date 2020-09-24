@@ -105,7 +105,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     print(navStack);
-    // deleteFile();
     return true;
   }
 

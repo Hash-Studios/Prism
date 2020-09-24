@@ -1,8 +1,8 @@
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/home/colorLoader.dart';
-import 'package:Prism/ui/widgets/home/headingChipBar.dart';
+import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/colorLoader.dart';
+import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 

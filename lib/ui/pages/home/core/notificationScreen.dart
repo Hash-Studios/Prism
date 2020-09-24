@@ -5,7 +5,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/ui/pages/home/homeScreen.dart' as home;
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 
@@ -189,7 +189,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       child:
                           NotificationCard(notification: notifications[index]),
                       key: UniqueKey(),
-                      // direction: DismissDirection.endToStart,
                     );
                   },
                 )

@@ -99,7 +99,6 @@ class FavouriteProvider extends ChangeNotifier {
         "photographer": prism["by"].toString()
       });
     }
-    // await getDataBase();
   }
 
   Future favCheck(String id, String provider, WallPaper wallhaven,

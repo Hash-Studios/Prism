@@ -1,9 +1,8 @@
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-// import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/home/loading.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -24,7 +23,6 @@ class _UserProfileGridState extends State<UserProfileGrid>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
-  // String userId = '';
   var refreshProfileKey = GlobalKey<RefreshIndicatorState>();
 
   @override
@@ -93,7 +91,6 @@ class _UserProfileGridState extends State<UserProfileGrid>
 
   @override
   Widget build(BuildContext context) {
-    // print(UserData.profileWalls);
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
@@ -136,9 +133,6 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      // print(UserData
-                      //     .profileWalls[index]);
-                      // print(index);
                       return FocusedMenuHolder(
                         provider: "UserProfileWall",
                         index: index,
@@ -149,13 +143,6 @@ class _UserProfileGridState extends State<UserProfileGrid>
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      // Provider.of<ThumbModel>(context,
-                                      //                 listen: false)
-                                      //             .thumbType ==
-                                      //         ThumbType.High
-                                      //     ? UserData.userProfileWalls[index]
-                                      //         ["wallpaper_url"]
-                                      //     :
                                       UserData.userProfileWalls[index]
                                           ["wallpaper_thumb"],
                                     ),
