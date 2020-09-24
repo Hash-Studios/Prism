@@ -1,6 +1,6 @@
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
-import 'package:Prism/ui/widgets/home/colorGrid.dart';
-import 'package:Prism/ui/widgets/home/loading.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/colorGrid.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:flutter/material.dart';
 
 class ColorLoader extends StatefulWidget {
@@ -35,7 +35,6 @@ class _ColorLoaderState extends State<ColorLoader> {
           print("snapshot none, waiting");
           return LoadingCards();
         } else {
-          // print("snapshot done");
           return ColorGrid(
             provider: widget.provider,
           );

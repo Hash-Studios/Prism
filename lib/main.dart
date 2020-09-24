@@ -10,7 +10,7 @@ import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/pages/home/splashScreen.dart';
+import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/material.dart';
@@ -36,8 +36,6 @@ void main() {
   FlutterError.onError = Crashlytics.instance.recordFlutterError;
   getApplicationDocumentsDirectory().then((dir) async {
     Hive.init(dir.path);
-    // var box = await Hive.openBox('wallpapers');
-    // box.deleteFromDisk();
     await Hive.openBox('wallpapers');
     await Hive.openBox('favourites');
     await Hive.openBox('collections');
@@ -86,10 +84,6 @@ void main() {
                             darkMode ? kDarkTheme : kLightTheme,
                             darkMode ? ThemeType.Dark : ThemeType.Light),
                       ),
-                      // ChangeNotifierProvider<ThumbModel>(
-                      //   create: (context) => ThumbModel(
-                      //       hqThumbs ? ThumbType.High : ThumbType.Low),
-                      // )
                     ],
                     child: MyApp(),
                   ),

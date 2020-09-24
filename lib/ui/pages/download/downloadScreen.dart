@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/widgets/home/headingChipBar.dart';
+import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';

@@ -8,8 +8,8 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/ui/widgets/clockOverlay.dart';
-import 'package:Prism/ui/widgets/home/colorBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
+import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -58,9 +58,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
     });
     try {
       image = new CachedNetworkImageProvider(thumb);
-    } catch (e) {
-      // toasts.error(e.toString());
-    }
+    } catch (e) {}
     paletteGenerator = await PaletteGenerator.fromImageProvider(image,
         maximumColorCount: 20, timeout: Duration(seconds: 120));
     setState(() {
@@ -487,16 +485,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   ),
                                 ],
                               ),
-                              // placeholder: (context, url) => Stack(
-                              //   children: <Widget>[
-                              //     SizedBox.expand(child: Text("")),
-                              //     Container(
-                              //       child: Center(
-                              //         child: Loader(),
-                              //       ),
-                              //     ),
-                              //   ],
-                              // ),
                               errorWidget: (context, url, error) => Container(
                                 child: Center(
                                   child: Icon(
@@ -950,16 +938,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       ),
                                     ],
                                   ),
-                                  // placeholder: (context, url) => Stack(
-                                  //   children: <Widget>[
-                                  //     SizedBox.expand(child: Text("")),
-                                  //     Container(
-                                  //       child: Center(
-                                  //         child: Loader(),
-                                  //       ),
-                                  //     ),
-                                  //   ],
-                                  // ),
                                   errorWidget: (context, url, error) =>
                                       Container(
                                     child: Center(
@@ -1454,16 +1432,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           ),
                                         ],
                                       ),
-                                      // placeholder: (context, url) => Stack(
-                                      //   children: <Widget>[
-                                      //     SizedBox.expand(child: Text("")),
-                                      //     Container(
-                                      //       child: Center(
-                                      //         child: Loader(),
-                                      //       ),
-                                      //     ),
-                                      //   ],
-                                      // ),
                                       errorWidget: (context, url, error) =>
                                           Container(
                                         child: Center(

@@ -5,9 +5,9 @@ import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/widgets/home/bottomNavBar.dart';
-import 'package:Prism/ui/widgets/home/loading.dart';
-import 'package:Prism/ui/widgets/searchGrid.dart';
+import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/ui/widgets/search/searchGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -313,7 +313,6 @@ class _SearchLoaderState extends State<SearchLoader> {
           print("snapshot none, waiting");
           return LoadingCards();
         } else {
-          // print("snapshot done");
           return SearchGrid(
             query: widget.query,
             selectedProvider: widget.selectedProvider,

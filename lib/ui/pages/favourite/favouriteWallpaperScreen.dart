@@ -1,8 +1,8 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/clockOverlay.dart';
-import 'package:Prism/ui/widgets/home/colorBar.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
+import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -103,7 +103,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
 
   @override
   Widget build(BuildContext context) {
-    // try {
     final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 48.0)
         .chain(CurveTween(curve: Curves.easeOutCubic))
         .animate(shakeController)
@@ -783,22 +782,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   ),
                                 ],
                               ),
-                              // placeholder: (context, url) => Stack(
-                              //   children: <Widget>[
-                              //     SizedBox.expand(child: Text("")),
-                              //     Container(
-                              //       child: Center(
-                              //         child:CircularProgressIndicator(
-                              //                   valueColor:
-                              //                       AlwaysStoppedAnimation(
-                              //                     Color(0xFFE57697),
-                              //                   ),
-                              //                   value:
-                              //                       downloadProgress.progress),
-                              //       ),
-                              //     ),
-                              //   ],
-                              // ),
                               errorWidget: (context, url, error) => Container(
                                 child: Center(
                                   child: Icon(
@@ -1361,17 +1344,6 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                         value: downloadProgress.progress),
                                   ),
                                 ),
-                                // placeholder: (context, url) => Container(
-                                //   child: Center(
-                                //     child: CircularProgressIndicator(
-                                //                 valueColor:
-                                //                     AlwaysStoppedAnimation(
-                                //                   Color(0xFFE57697),
-                                //                 ),
-                                //                 value:
-                                //                     downloadProgress.progress),
-                                //   ),
-                                // ),
                                 errorWidget: (context, url, error) => Container(
                                   child: Center(
                                     child: Icon(

@@ -1,6 +1,5 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-// import 'package:Prism/theme/thumbModel.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -79,28 +78,6 @@ class _GeneralListState extends State<GeneralList> {
                   await Hive.openBox('collections');
                   toasts.codeSend("Cleared cache!");
                 }),
-            // SwitchListTile(
-            //     activeColor: Color(0xFFE57697),
-            //     secondary: Icon(
-            //       JamIcons.dashboard,
-            //     ),
-            //     value: Provider.of<ThumbModel>(context).thumbType ==
-            //         ThumbType.High,
-            //     title: Text(
-            //       "High Quality Thumbnails",
-            //       style: TextStyle(
-            //           color: Theme.of(context).accentColor,
-            //           fontWeight: FontWeight.w500,
-            //           fontFamily: "Proxima Nova"),
-            //     ),
-            //     subtitle: Text(
-            //       "Disable this to reduce Internet consumption",
-            //       style: TextStyle(fontSize: 12),
-            //     ),
-            //     onChanged: (bool value) async {
-            //       Provider.of<ThumbModel>(context, listen: false).toggleThumb();
-            //     }),
-
             SwitchListTile(
                 activeColor: Color(0xFFE57697),
                 secondary: Icon(
@@ -129,7 +106,6 @@ class _GeneralListState extends State<GeneralList> {
                   });
                   main.prefs.put('optimisedWallpapers', value);
                 }),
-
             ListTile(
               onTap: () {
                 main.RestartWidget.restartApp(context);

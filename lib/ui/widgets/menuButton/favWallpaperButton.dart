@@ -52,13 +52,6 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
           onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels,
               widget.prism);
         }
-        // if (widget.provider == "Liked") {
-        //   String route = currentRoute;
-        // currentRoute = previousRoute;
-        // previousRoute = route;
-        // print(currentRoute);
-        // Navigator.pop(context);
-        // }
       },
       child: Stack(
         children: [

@@ -1,14 +1,14 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'package:Prism/ui/pages/collectionViewScreen.dart';
+import 'package:Prism/ui/pages/home/collections/collectionViewScreen.dart';
 import 'package:Prism/ui/pages/download/downloadScreen.dart';
 import 'package:Prism/ui/pages/download/downloadWallpaperViewScreen.dart';
 import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
-import 'package:Prism/ui/pages/home/pageManager.dart';
-import 'package:Prism/ui/pages/home/splashScreen.dart';
-import 'package:Prism/ui/pages/home/wallpaperScreen.dart';
-import 'package:Prism/ui/pages/photographerProfile.dart';
+import 'package:Prism/ui/pages/home/core/pageManager.dart';
+import 'package:Prism/ui/pages/home/core/splashScreen.dart';
+import 'package:Prism/ui/pages/home/wallpapers/wallpaperScreen.dart';
+import 'package:Prism/ui/pages/profile/photographerProfile.dart';
 import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
 import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
@@ -20,7 +20,7 @@ import 'package:Prism/ui/pages/setupScreen.dart';
 import 'package:Prism/ui/pages/setupViewScreen.dart';
 import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
-import 'package:Prism/ui/pages/notificationScreen.dart';
+import 'package:Prism/ui/pages/home/core/notificationScreen.dart';
 import 'package:Prism/ui/pages/upload/editWallScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadSetupScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
@@ -42,12 +42,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: SearchRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => SearchScreen());
-    // case FavRoute:
-    //   navStack.add("Favourites");
-    //   print(navStack);
-    //   analytics.setCurrentScreen(screenName: FavRoute);
-    //   return PageRouteBuilder(
-    //       pageBuilder: (context, animation1, animation2) => FavouriteScreen());
     case HomeRoute:
       navStack.add("Home");
       print(navStack);

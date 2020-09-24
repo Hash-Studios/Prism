@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/pages/home/pageManager.dart';
+import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flare_splash_screen/flare_splash_screen.dart';

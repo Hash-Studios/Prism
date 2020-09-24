@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/home/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -204,7 +204,6 @@ class _BottomNavBarState extends State<BottomNavBar>
       child: Material(
         color: Colors.transparent,
         child: Row(
-          // key: globals.keyBottomBar,
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -219,21 +218,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                     Container(
                       height: navStack.last == "Home" ? 9 : 0,
                     ),
-                    Icon(JamIcons.home_f,
-                        color:
-                            //  currentRoute == "Home"
-                            //     ? Color(0xFFE57697)
-                            //     :
-                            Theme.of(context).accentColor),
+                    Icon(JamIcons.home_f, color: Theme.of(context).accentColor),
                     Container(
-                      // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Home"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
-                      // curve: Curves.fastOutSlowIn,
                       margin: navStack.last == "Home"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
@@ -256,15 +248,12 @@ class _BottomNavBarState extends State<BottomNavBar>
                             return true;
                           }
                         });
-                  // .pushNamedAndRemoveUntil(HomeRoute, (route) => false);
-                  // navStack.last == "Home" ? print("") : navStack = ["Home"];
                 },
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                // key: globals.keySearchButton,
                 padding: EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -273,21 +262,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                     Container(
                       height: navStack.last == "Search" ? 9 : 0,
                     ),
-                    Icon(JamIcons.search,
-                        color:
-                            // navStack.last == "Search"
-                            //     ? Color(0xFFE57697)
-                            //     :
-                            Theme.of(context).accentColor),
+                    Icon(JamIcons.search, color: Theme.of(context).accentColor),
                     Container(
-                      // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Search"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
-                      // curve: Curves.fastOutSlowIn,
                       margin: navStack.last == "Search"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
@@ -314,7 +296,6 @@ class _BottomNavBarState extends State<BottomNavBar>
                     color: Color(0xFFE57697),
                     borderRadius: BorderRadius.circular(500)),
                 child: IconButton(
-                  // key: globals.keyFavButton,
                   padding: EdgeInsets.all(0),
                   icon: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -323,21 +304,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                       Container(
                         height: navStack.last == "Add" ? 9 : 0,
                       ),
-                      Icon(JamIcons.plus,
-                          color:
-                              //  navStack.last == "Favourites"
-                              //     ? Color(0xFFE57697)
-                              //     :
-                              Theme.of(context).accentColor),
+                      Icon(JamIcons.plus, color: Theme.of(context).accentColor),
                       Container(
-                        // duration: Duration(milliseconds: 3000),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(500),
                           color: navStack.last == "Add"
                               ? Color(0xFFE57697)
                               : Theme.of(context).accentColor,
                         ),
-                        // curve: Curves.fastOutSlowIn,
                         margin: navStack.last == "Add"
                             ? EdgeInsets.all(3)
                             : EdgeInsets.all(0),
@@ -355,64 +329,11 @@ class _BottomNavBarState extends State<BottomNavBar>
                         context: context,
                         builder: (context) => UploadBottomPanel(),
                       );
-                      //   navStack.last == "Add"
-                      //       ? print("Currently on Add")
-                      //       : navStack.last == "Home"
-                      //           ? Navigator.of(context).pushNamed(FavRoute)
-                      //           : Navigator.of(context).pushNamed(FavRoute);
                     });
                   },
                 ),
               ),
             ),
-            // Padding(
-            //   padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
-            //   child: IconButton(
-            //     // key: globals.keyFavButton,
-            //     padding: EdgeInsets.all(0),
-            //     icon: Column(
-            //       mainAxisAlignment: MainAxisAlignment.center,
-            //       mainAxisSize: MainAxisSize.min,
-            //       children: <Widget>[
-            //         Container(
-            //           height: navStack.last == "Favourites" ? 9 : 0,
-            //         ),
-            //         Icon(JamIcons.heart_f,
-            //             color:
-            //                 //  navStack.last == "Favourites"
-            //                 //     ? Color(0xFFE57697)
-            //                 //     :
-            //                 Theme.of(context).accentColor),
-            //         Container(
-            //           // duration: Duration(milliseconds: 3000),
-            //           decoration: BoxDecoration(
-            //             borderRadius: BorderRadius.circular(500),
-            //             color: navStack.last == "Favourites"
-            //                 ? Color(0xFFE57697)
-            //                 : Theme.of(context).accentColor,
-            //           ),
-            //           // curve: Curves.fastOutSlowIn,
-            //           margin: navStack.last == "Favourites"
-            //               ? EdgeInsets.all(3)
-            //               : EdgeInsets.all(0),
-            //           width: navStack.last == "Favourites"
-            //               ? _paddingAnimation.value
-            //               : 0,
-            //           height: navStack.last == "Favourites" ? 3 : 0,
-            //         )
-            //       ],
-            //     ),
-            //     onPressed: () {
-            //       showGooglePopUp(() {
-            //         navStack.last == "Favourites"
-            //             ? print("Currently on Favourites")
-            //             : navStack.last == "Home"
-            //                 ? Navigator.of(context).pushNamed(FavRoute)
-            //                 : Navigator.of(context).pushNamed(FavRoute);
-            //       });
-            //     },
-            //   ),
-            // ),
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
@@ -425,20 +346,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                       height: navStack.last == "Setups" ? 9 : 0,
                     ),
                     Icon(JamIcons.instant_picture_f,
-                        color:
-                            //  navStack.last == "Favourites"
-                            //     ? Color(0xFFE57697)
-                            //     :
-                            Theme.of(context).accentColor),
+                        color: Theme.of(context).accentColor),
                     Container(
-                      // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Setups"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
-                      // curve: Curves.fastOutSlowIn,
                       margin: navStack.last == "Setups"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),
@@ -460,18 +375,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                 },
               ),
             ),
-            // Padding(
-            //   padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
-            //   child: IconButton(
-            //     icon: Icon(JamIcons.instant_picture_f,
-            //         color: Theme.of(context).accentColor),
-            //     onPressed: () {},
-            //   ),
-            // ),
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
               child: IconButton(
-                // key: globals.keyProfileButton,
                 padding: EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -483,23 +389,17 @@ class _BottomNavBarState extends State<BottomNavBar>
                     Container(
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(500),
-                          color:
-                              //  navStack.last == "Profile"
-                              //     ? Color(0xFFE57697)
-                              //     :
-                              Theme.of(context).accentColor),
+                          color: Theme.of(context).accentColor),
                       child: Icon(JamIcons.user_circle,
                           color: Theme.of(context).primaryColor),
                     ),
                     Container(
-                      // duration: Duration(milliseconds: 3000),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Profile"
                             ? Color(0xFFE57697)
                             : Theme.of(context).accentColor,
                       ),
-                      // curve: Curves.fastOutSlowIn,
                       margin: navStack.last == "Profile"
                           ? EdgeInsets.all(3)
                           : EdgeInsets.all(0),

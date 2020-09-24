@@ -64,20 +64,6 @@ Future<List> getPrismWalls() async {
   return subPrismWalls;
 }
 
-// Future<List> getPrismWalls() async {
-//   prismWalls = [];
-//   subPrismWalls = [];
-//   await databaseReference.collection("walls").getDocuments().then((value) {
-//     value.documents.forEach((f) {
-//       f.reference.updateData(<String, dynamic>{"createdAt": DateTime.now()});
-//     });
-//   }).catchError((e) {
-//     print(e.toString());
-//     print("data done with error");
-//   });
-//   return subPrismWalls;
-// }
-
 List seeMorePrism() {
   int len = prismWalls.length;
   double pages = len / 24;

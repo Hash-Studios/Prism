@@ -430,22 +430,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                             ),
                           ],
                         ),
-                        // placeholder: (context, url) => Stack(
-                        //   children: <Widget>[
-                        //     SizedBox.expand(child: Text("")),
-                        //     Container(
-                        //       child: Center(
-                        //         child: CircularProgressIndicator(
-                        //                                 valueColor:
-                        //                                     AlwaysStoppedAnimation(
-                        //                                   Color(0xFFE57697),
-                        //                                 ),
-                        //                                 value: downloadProgress
-                        //                                     .progress),
-                        //       ),
-                        //     ),
-                        //   ],
-                        // ),
                         errorWidget: (context, url, error) => Container(
                           child: Center(
                             child: Icon(

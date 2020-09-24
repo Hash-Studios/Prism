@@ -1,9 +1,8 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-// import 'package:Prism/theme/thumbModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/home/loading.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -22,7 +21,6 @@ class _FavouriteGridState extends State<FavouriteGrid>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
-  // String userId = '';
   var refreshFavKey = GlobalKey<RefreshIndicatorState>();
 
   @override
@@ -91,7 +89,6 @@ class _FavouriteGridState extends State<FavouriteGrid>
 
   @override
   Widget build(BuildContext context) {
-    // print(Provider.of<FavouriteProvider>(context, listen: false).liked);
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshFavKey,
@@ -139,9 +136,6 @@ class _FavouriteGridState extends State<FavouriteGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      // print(Provider.of<FavouriteProvider>(context, listen: false)
-                      //     .liked[index]);
-                      // print(index);
                       return FocusedMenuHolder(
                         provider: "Liked",
                         index: index,
@@ -152,14 +146,6 @@ class _FavouriteGridState extends State<FavouriteGrid>
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      // Provider.of<ThumbModel>(context,
-                                      //                 listen: false)
-                                      //             .thumbType ==
-                                      //         ThumbType.High
-                                      //     ? Provider.of<FavouriteProvider>(
-                                      //             context)
-                                      //         .liked[index]["url"]
-                                      //     :
                                       Provider.of<FavouriteProvider>(context)
                                           .liked[index]["thumb"],
                                     ),

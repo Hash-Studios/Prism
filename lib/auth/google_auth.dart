@@ -19,7 +19,6 @@ class GoogleAuth {
   bool isLoading = false;
 
   Future<String> signInWithGoogle() async {
-    // try {
     isLoading = true;
     prefs = await Hive.openBox('prefs');
     final GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();

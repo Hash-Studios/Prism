@@ -107,7 +107,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     imageBytesThumb = await compute<File, List<int>>(_resizeImage, image);
 
     uploadFile();
-    // print(image.toString());
   }
 
   Future deleteFile() async {

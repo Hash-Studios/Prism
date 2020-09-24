@@ -1,15 +1,15 @@
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/pages/home/homeScreen.dart';
-import 'package:Prism/ui/pages/home/splashScreen.dart';
-import 'package:Prism/ui/widgets/home/tutorials.dart';
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
+import 'package:Prism/ui/pages/home/core/splashScreen.dart';
+import 'package:Prism/ui/widgets/home/core/tutorials.dart';
 import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:Prism/ui/widgets/popup/tutorialCompletePopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/ui/pages/home/pageManager.dart' as PM;
+import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:tutorial_coach_mark/target_focus.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
@@ -220,13 +220,11 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 setState(() {
                   noNotification = true;
                 });
-                // showUpdate(context);
                 Navigator.pushNamed(context, NotificationsRoute);
               },
             ),
           ),
           SizedBox(
-            // key: globals.keyCategoriesBar,
             width: MediaQuery.of(context).size.width * 0.7,
             height: 100,
             child: ListView.builder(
