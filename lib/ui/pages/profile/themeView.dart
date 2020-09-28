@@ -30,7 +30,7 @@ class _ThemeViewState extends State<ThemeView> {
       Provider.of<ThemeModel>(context, listen: false).toggleTheme();
     }
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -50,7 +50,7 @@ class _ThemeViewState extends State<ThemeView> {
                   Provider.of<ThemeModel>(context, listen: false).toggleTheme();
                 }
                 navStack.removeLast();
-                print(navStack);
+                debugPrint(navStack);
                 Navigator.pop(context);
               }),
           actions: <Widget>[
@@ -187,7 +187,7 @@ class _ThemeViewState extends State<ThemeView> {
                         : analytics.logEvent(
                             name: 'theme_changed',
                             parameters: {'type': 'dark'});
-                print("Theme Changed");
+                debugPrint("Theme Changed");
               },
             ),
           ],

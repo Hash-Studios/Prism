@@ -179,7 +179,7 @@ class _BottomNavBarState extends State<BottomNavBar>
   }
 
   void showGooglePopUp(Function func) {
-    print(isLoggedin);
+    debugPrint(isLoggedin);
     if (!isLoggedin) {
       googleSignInPopUp(context, func);
     } else {
@@ -237,14 +237,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   navStack.last == "Home"
-                      ? print("Currently on Home")
+                      ? debugPrint("Currently on Home")
                       : Navigator.of(context).popUntil((route) {
                           if (navStack.last != "Home") {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack);
                             return false;
                           } else {
-                            print(navStack);
+                            debugPrint(navStack);
                             return true;
                           }
                         });
@@ -282,7 +282,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   navStack.last == "Search"
-                      ? print("Currently on Search")
+                      ? debugPrint("Currently on Search")
                       : navStack.last == "Home"
                           ? Navigator.of(context).pushNamed(SearchRoute)
                           : Navigator.of(context).pushNamed(SearchRoute);
@@ -367,7 +367,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                 onPressed: () {
                   showGooglePopUp(() {
                     navStack.last == "Setups"
-                        ? print("Currently on Setups")
+                        ? debugPrint("Currently on Setups")
                         : navStack.last == "Home"
                             ? Navigator.of(context).pushNamed(SetupRoute)
                             : Navigator.of(context).pushNamed(SetupRoute);
@@ -412,7 +412,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   navStack.last == "Profile"
-                      ? print("Currently on Profile")
+                      ? debugPrint("Currently on Profile")
                       : navStack.last == "Home"
                           ? Navigator.of(context).pushNamed(ProfileRoute)
                           : Navigator.of(context).pushNamed(ProfileRoute);

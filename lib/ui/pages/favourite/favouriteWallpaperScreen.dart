@@ -29,7 +29,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -130,42 +130,43 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   if (panelClosed) {
-                    print('Screenshot Starting');
+                    debugPrint('Screenshot Starting');
                     if (colorChanged) {
                       screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
-                          )
-                            .then((File image) async {
-                            setState(() {
-                              _imageFile = image;
-                              screenshotTaken = true;
-                              panelClosed = false;
-                            });
-                            print('Screenshot Taken');
-                          }).catchError((onError) {
-                            print(onError);
-                          });
+                          .capture(
+                        pixelRatio: 3,
+                        delay: Duration(milliseconds: 10),
+                      )
+                          .then((File image) async {
+                        setState(() {
+                          _imageFile = image;
+                          screenshotTaken = true;
+                          panelClosed = false;
+                        });
+                        debugPrint('Screenshot Taken');
+                      }).catchError((onError) {
+                        debugPrint(onError);
+                      });
                     } else {
-                    main.prefs.get('optimisedWallpapers') ?? true
-                        ? screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
-                          )
-                            .then((File image) async {
-                            setState(() {
-                              _imageFile = image;
-                              screenshotTaken = true;
-                              panelClosed = false;
-                            });
-                            print('Screenshot Taken');
-                          }).catchError((onError) {
-                            print(onError);
-                          })
-                        : print("Wallpaper Optimisation is disabled!");
-                  }}
+                      main.prefs.get('optimisedWallpapers') ?? true
+                          ? screenshotController
+                              .capture(
+                              pixelRatio: 3,
+                              delay: Duration(milliseconds: 10),
+                            )
+                              .then((File image) async {
+                              setState(() {
+                                _imageFile = image;
+                                screenshotTaken = true;
+                                panelClosed = false;
+                              });
+                              debugPrint('Screenshot Taken');
+                            }).catchError((onError) {
+                              debugPrint(onError);
+                            })
+                          : debugPrint("Wallpaper Optimisation is disabled!");
+                    }
+                  }
                 },
                 onPanelClosed: () {
                   setState(() {
@@ -740,7 +741,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0)
-                            print('${offsetAnimation.value + 8.0}');
+                            debugPrint('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
                               imageUrl: Provider.of<FavouriteProvider>(context,
@@ -810,7 +811,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : print("");
+                              !isLoading ? updateAccent() : debugPrint("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -822,7 +823,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack);
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -889,42 +890,43 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   if (panelClosed) {
-                    print('Screenshot Starting');
+                    debugPrint('Screenshot Starting');
                     if (colorChanged) {
                       screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
-                          )
-                            .then((File image) async {
-                            setState(() {
-                              _imageFile = image;
-                              screenshotTaken = true;
-                              panelClosed = false;
-                            });
-                            print('Screenshot Taken');
-                          }).catchError((onError) {
-                            print(onError);
-                          });
+                          .capture(
+                        pixelRatio: 3,
+                        delay: Duration(milliseconds: 10),
+                      )
+                          .then((File image) async {
+                        setState(() {
+                          _imageFile = image;
+                          screenshotTaken = true;
+                          panelClosed = false;
+                        });
+                        debugPrint('Screenshot Taken');
+                      }).catchError((onError) {
+                        debugPrint(onError);
+                      });
                     } else {
-                    main.prefs.get('optimisedWallpapers') ?? true
-                        ? screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
-                          )
-                            .then((File image) async {
-                            setState(() {
-                              _imageFile = image;
-                              screenshotTaken = true;
-                              panelClosed = false;
-                            });
-                            print('Screenshot Taken');
-                          }).catchError((onError) {
-                            print(onError);
-                          })
-                        : print("Wallpaper Optimisation is disabled!");
-                  }}
+                      main.prefs.get('optimisedWallpapers') ?? true
+                          ? screenshotController
+                              .capture(
+                              pixelRatio: 3,
+                              delay: Duration(milliseconds: 10),
+                            )
+                              .then((File image) async {
+                              setState(() {
+                                _imageFile = image;
+                                screenshotTaken = true;
+                                panelClosed = false;
+                              });
+                              debugPrint('Screenshot Taken');
+                            }).catchError((onError) {
+                              debugPrint(onError);
+                            })
+                          : debugPrint("Wallpaper Optimisation is disabled!");
+                    }
+                  }
                 },
                 onPanelClosed: () {
                   setState(() {
@@ -1259,7 +1261,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0)
-                            print('${offsetAnimation.value + 8.0}');
+                            debugPrint('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
                               imageUrl:
@@ -1373,7 +1375,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : print("");
+                              !isLoading ? updateAccent() : debugPrint("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -1385,7 +1387,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack);
                             Navigator.pop(context);
                           },
                           color: isLoading

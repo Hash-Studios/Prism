@@ -18,7 +18,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -67,7 +67,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                 animation: offsetAnimation,
                 builder: (buildContext, child) {
                   if (offsetAnimation.value < 0.0)
-                    print('${offsetAnimation.value + 8.0}');
+                    debugPrint('${offsetAnimation.value + 8.0}');
                   return GestureDetector(
                     child: Container(
                       margin: EdgeInsets.symmetric(
@@ -108,7 +108,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                 child: IconButton(
                   onPressed: () {
                     navStack.removeLast();
-                    print(navStack);
+                    debugPrint(navStack);
                     Navigator.pop(context);
                   },
                   color: Theme.of(context).accentColor,

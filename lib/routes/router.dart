@@ -16,8 +16,8 @@ import 'package:Prism/ui/pages/profile/themeView.dart';
 import 'package:Prism/ui/pages/profile/userProfileWallViewScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/pages/search/searchWallpaperScreen.dart';
-import 'package:Prism/ui/pages/setupScreen.dart';
-import 'package:Prism/ui/pages/setupViewScreen.dart';
+import 'package:Prism/ui/pages/setup/setupScreen.dart';
+import 'package:Prism/ui/pages/setup/setupViewScreen.dart';
 import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/pages/home/core/notificationScreen.dart';
@@ -31,154 +31,160 @@ List<String> navStack = ["Home"];
 
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
-    case SplashRoute:
+    case splashRoute:
       navStack.add("Splash");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: SplashRoute);
-      return CupertinoPageRoute(builder: (context) => SplashWidget());
-    case SearchRoute:
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: splashRoute);
+      return CupertinoPageRoute(builder: (context) => const SplashWidget());
+    case searchRoute:
       navStack.add("Search");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: SearchRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: searchRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => SearchScreen());
-    case HomeRoute:
+    case homeRoute:
       navStack.add("Home");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: HomeRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: homeRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => PageManager());
-    case ProfileRoute:
+    case profileRoute:
       navStack.add("Profile");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: ProfileRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: profileRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => ProfileScreen());
-    case PhotographerProfileRoute:
+    case photographerProfileRoute:
       navStack.add("User Profile");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: PhotographerProfileRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: photographerProfileRoute);
       return CupertinoPageRoute(
-          builder: (context) => UserProfile(settings.arguments));
-    case DownloadRoute:
+          builder: (context) => UserProfile(settings.arguments as List));
+    case downloadRoute:
       navStack.add("Downloads");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: DownloadRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: downloadRoute);
       return CupertinoPageRoute(builder: (context) => DownloadScreen());
-    case PremiumRoute:
+    case premiumRoute:
       navStack.add("Buy Premium");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: PremiumRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: premiumRoute);
       return CupertinoPageRoute(builder: (context) => UpgradeScreen());
-    case NotificationsRoute:
+    case notificationsRoute:
       navStack.add("Notifications");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: NotificationsRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: notificationsRoute);
       return CupertinoPageRoute(builder: (context) => NotificationScreen());
-    case ColorRoute:
+    case colorRoute:
       navStack.add("Color");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: ColorRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: colorRoute);
       return CupertinoPageRoute(
-          builder: (context) => ColorScreen(arguments: settings.arguments));
-    case CollectionViewRoute:
+          builder: (context) =>
+              ColorScreen(arguments: settings.arguments as List));
+    case collectionViewRoute:
       navStack.add("CollectionsView");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: CollectionViewRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: collectionViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              CollectionViewScreen(arguments: settings.arguments));
-    case WallpaperRoute:
+              CollectionViewScreen(arguments: settings.arguments as List));
+    case wallpaperRoute:
       navStack.add("Wallpaper");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: WallpaperRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: wallpaperRoute);
       return CupertinoPageRoute(
-          builder: (context) => WallpaperScreen(arguments: settings.arguments));
-    case SearchWallpaperRoute:
+          builder: (context) =>
+              WallpaperScreen(arguments: settings.arguments as List));
+    case searchWallpaperRoute:
       navStack.add("Search Wallpaper");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: SearchWallpaperRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: searchWallpaperRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              SearchWallpaperScreen(arguments: settings.arguments));
-    case DownloadWallpaperRoute:
+              SearchWallpaperScreen(arguments: settings.arguments as List));
+    case downloadWallpaperRoute:
       navStack.add("DownloadedWallpaper");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: DownloadWallpaperRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: downloadWallpaperRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              DownloadWallpaperScreen(arguments: settings.arguments));
-    case ShareRoute:
+              DownloadWallpaperScreen(arguments: settings.arguments as List));
+    case shareRoute:
       navStack.add("SharedWallpaper");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: ShareRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: shareRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              ShareWallpaperViewScreen(arguments: settings.arguments));
-    case FavWallViewRoute:
+              ShareWallpaperViewScreen(arguments: settings.arguments as List));
+    case favWallViewRoute:
       navStack.add("FavouriteWallpaper");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: FavWallViewRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: favWallViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              FavWallpaperViewScreen(arguments: settings.arguments));
-    case SetupRoute:
+              FavWallpaperViewScreen(arguments: settings.arguments as List));
+    case setupRoute:
       navStack.add("Setups");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: SetupRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: setupRoute);
       return PageRouteBuilder(
           pageBuilder: (context, animation1, animation2) => SetupScreen());
-    case SetupViewRoute:
+    case setupViewRoute:
       navStack.add("SetupView");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: SetupViewRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: setupViewRoute);
       return MaterialPageRoute(
-          builder: (context) => SetupViewScreen(arguments: settings.arguments));
-    case ProfileWallViewRoute:
+          builder: (context) =>
+              SetupViewScreen(arguments: settings.arguments as List));
+    case profileWallViewRoute:
       navStack.add("ProfileWallpaper");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: ProfileWallViewRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: profileWallViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              ProfileWallViewScreen(arguments: settings.arguments));
-    case UserProfileWallViewRoute:
+              ProfileWallViewScreen(arguments: settings.arguments as List));
+    case userProfileWallViewRoute:
       navStack.add("User ProfileWallpaper");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: UserProfileWallViewRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: userProfileWallViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              UserProfileWallViewScreen(arguments: settings.arguments));
-    case ThemeViewRoute:
+              UserProfileWallViewScreen(arguments: settings.arguments as List));
+    case themeViewRoute:
       navStack.add("Themes");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: ThemeViewRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: themeViewRoute);
       return CupertinoPageRoute(
-          builder: (context) => ThemeView(arguments: settings.arguments));
-    case EditWallRoute:
+          builder: (context) =>
+              ThemeView(arguments: settings.arguments as List));
+    case editWallRoute:
       navStack.add("Edit Wallpaper");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: EditWallRoute);
-      return MaterialPageRoute(
-          builder: (context) => EditWallScreen(arguments: settings.arguments),
-          fullscreenDialog: true);
-    case UploadSetupRoute:
-      navStack.add("Upload Setup");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: UploadSetupRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: editWallRoute);
       return MaterialPageRoute(
           builder: (context) =>
-              UploadSetupScreen(arguments: settings.arguments),
+              EditWallScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
-    case UploadWallRoute:
-      navStack.add("Add");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: UploadWallRoute);
+    case uploadSetupRoute:
+      navStack.add("Upload Setup");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: uploadSetupRoute);
       return MaterialPageRoute(
-          builder: (context) => UploadWallScreen(arguments: settings.arguments),
+          builder: (context) =>
+              UploadSetupScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
+    case uploadWallRoute:
+      navStack.add("Add");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: uploadWallRoute);
+      return MaterialPageRoute(
+          builder: (context) =>
+              UploadWallScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     default:
       navStack.add("undefined");
-      print(navStack);
+      debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: "/undefined");
       return CupertinoPageRoute(
         builder: (context) => UndefinedScreen(

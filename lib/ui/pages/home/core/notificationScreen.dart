@@ -30,7 +30,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -47,7 +47,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             icon: Icon(JamIcons.close),
             onPressed: () {
               if (navStack.length > 1) navStack.removeLast();
-              print(navStack);
+              debugPrint(navStack);
               Navigator.pop(context);
             },
           ),

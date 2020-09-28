@@ -81,7 +81,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -262,7 +262,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
     option.outputFormat = const OutputFormat.jpeg(100);
 
-    print(const JsonEncoder.withIndent('  ').convert(option.toJson()));
+    debugPrint(const JsonEncoder.withIndent('  ').convert(option.toJson()));
 
     final DateTime start = DateTime.now();
     final Uint8List result = await ImageEditor.editImage(
@@ -270,13 +270,13 @@ class _EditWallScreenState extends State<EditWallScreen> {
       imageEditorOption: option,
     );
 
-    print('result.length = ${result.length}');
+    debugPrint('result.length = ${result.length}');
 
     final Duration diff = DateTime.now().difference(start);
     image.writeAsBytesSync(result);
-    print('image_editor time : $diff');
+    debugPrint('image_editor time : $diff');
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     Future.delayed(Duration(seconds: 0)).then((value) =>
         Navigator.pushReplacementNamed(context, UploadWallRoute,
             arguments: [image]));

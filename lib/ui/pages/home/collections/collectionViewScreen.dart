@@ -12,11 +12,11 @@ class CollectionViewScreen extends StatelessWidget {
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    print(arguments[1]);
+    debugPrint(arguments[1]);
     return WillPopScope(
       onWillPop: () async {
         if (navStack.length > 1) navStack.removeLast();
-        print(navStack);
+        debugPrint(navStack);
         return true;
       },
       child: Scaffold(

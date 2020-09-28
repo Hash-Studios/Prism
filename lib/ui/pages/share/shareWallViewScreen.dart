@@ -65,7 +65,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
       isLoading = false;
     });
     colors = paletteGenerator.colors.toList();
-    print(colors.toString());
+    debugPrint(colors.toString());
     if (paletteGenerator.colors.length > 5) {
       colors = colors.sublist(0, 5);
     }
@@ -117,7 +117,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -142,7 +142,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   if (panelClosed) {
-                    print('Screenshot Starting');
+                    debugPrint('Screenshot Starting');
                     if (colorChanged) {
                       screenshotController
                           .capture(
@@ -155,9 +155,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           screenshotTaken = true;
                           panelClosed = false;
                         });
-                        print('Screenshot Taken');
+                        debugPrint('Screenshot Taken');
                       }).catchError((onError) {
-                        print(onError);
+                        debugPrint(onError);
                       });
                     } else {
                       main.prefs.get('optimisedWallpapers') ?? true
@@ -172,11 +172,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 screenshotTaken = true;
                                 panelClosed = false;
                               });
-                              print('Screenshot Taken');
+                              debugPrint('Screenshot Taken');
                             }).catchError((onError) {
-                              print(onError);
+                              debugPrint(onError);
                             })
-                          : print("Wallpaper Optimisation is disabled!");
+                          : debugPrint("Wallpaper Optimisation is disabled!");
                     }
                   }
                 },
@@ -231,10 +231,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         if (snapshot.connectionState ==
                                 ConnectionState.waiting ||
                             snapshot.connectionState == ConnectionState.none) {
-                          print("snapshot none, waiting in share route");
+                          debugPrint("snapshot none, waiting in share route");
                           return Center(child: Loader());
                         } else {
-                          print("done");
+                          debugPrint("done");
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
@@ -445,7 +445,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0)
-                            print('${offsetAnimation.value + 8.0}');
+                            debugPrint('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
                               imageUrl: url,
@@ -513,7 +513,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : print("");
+                              !isLoading ? updateAccent() : debugPrint("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -525,7 +525,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack);
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -591,7 +591,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   body: SlidingUpPanel(
                     onPanelOpened: () {
                       if (panelClosed) {
-                        print('Screenshot Starting');
+                        debugPrint('Screenshot Starting');
                         if (colorChanged) {
                           screenshotController
                               .capture(
@@ -604,9 +604,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               screenshotTaken = true;
                               panelClosed = false;
                             });
-                            print('Screenshot Taken');
+                            debugPrint('Screenshot Taken');
                           }).catchError((onError) {
-                            print(onError);
+                            debugPrint(onError);
                           });
                         } else {
                           main.prefs.get('optimisedWallpapers') ?? true
@@ -621,11 +621,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     screenshotTaken = true;
                                     panelClosed = false;
                                   });
-                                  print('Screenshot Taken');
+                                  debugPrint('Screenshot Taken');
                                 }).catchError((onError) {
-                                  print(onError);
+                                  debugPrint(onError);
                                 })
-                              : print("Wallpaper Optimisation is disabled!");
+                              : debugPrint(
+                                  "Wallpaper Optimisation is disabled!");
                         }
                       }
                     },
@@ -681,10 +682,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     ConnectionState.waiting ||
                                 snapshot.connectionState ==
                                     ConnectionState.none) {
-                              print("snapshot none, waiting in share route");
+                              debugPrint(
+                                  "snapshot none, waiting in share route");
                               return Center(child: Loader());
                             } else {
-                              print("done");
+                              debugPrint("done");
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
@@ -895,7 +897,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             animation: offsetAnimation,
                             builder: (buildContext, child) {
                               if (offsetAnimation.value < 0.0)
-                                print('${offsetAnimation.value + 8.0}');
+                                debugPrint('${offsetAnimation.value + 8.0}');
                               return GestureDetector(
                                 child: CachedNetworkImage(
                                   imageUrl: url,
@@ -967,7 +969,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 },
                                 onTap: () {
                                   HapticFeedback.vibrate();
-                                  !isLoading ? updateAccent() : print("");
+                                  !isLoading ? updateAccent() : debugPrint("");
                                   shakeController.forward(from: 0.0);
                                 },
                               );
@@ -979,7 +981,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             child: IconButton(
                               onPressed: () {
                                 navStack.removeLast();
-                                print(navStack);
+                                debugPrint(navStack);
                                 Navigator.pop(context);
                               },
                               color: isLoading
@@ -1046,7 +1048,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                       body: SlidingUpPanel(
                         onPanelOpened: () {
                           if (panelClosed) {
-                            print('Screenshot Starting');
+                            debugPrint('Screenshot Starting');
                             if (colorChanged) {
                               screenshotController
                                   .capture(
@@ -1059,9 +1061,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   screenshotTaken = true;
                                   panelClosed = false;
                                 });
-                                print('Screenshot Taken');
+                                debugPrint('Screenshot Taken');
                               }).catchError((onError) {
-                                print(onError);
+                                debugPrint(onError);
                               });
                             } else {
                               main.prefs.get('optimisedWallpapers') ?? true
@@ -1076,11 +1078,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                         screenshotTaken = true;
                                         panelClosed = false;
                                       });
-                                      print('Screenshot Taken');
+                                      debugPrint('Screenshot Taken');
                                     }).catchError((onError) {
-                                      print(onError);
+                                      debugPrint(onError);
                                     })
-                                  : print(
+                                  : debugPrint(
                                       "Wallpaper Optimisation is disabled!");
                             }
                           }
@@ -1138,11 +1140,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           ConnectionState.waiting ||
                                       snapshot.connectionState ==
                                           ConnectionState.none) {
-                                    print(
+                                    debugPrint(
                                         "snapshot none, waiting in share route");
                                     return Center(child: Loader());
                                   } else {
-                                    print("done");
+                                    debugPrint("done");
                                     return Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -1387,7 +1389,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 animation: offsetAnimation,
                                 builder: (buildContext, child) {
                                   if (offsetAnimation.value < 0.0)
-                                    print('${offsetAnimation.value + 8.0}');
+                                    debugPrint(
+                                        '${offsetAnimation.value + 8.0}');
                                   return GestureDetector(
                                     child: CachedNetworkImage(
                                       imageUrl: url,
@@ -1462,7 +1465,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     },
                                     onTap: () {
                                       HapticFeedback.vibrate();
-                                      !isLoading ? updateAccent() : print("");
+                                      !isLoading
+                                          ? updateAccent()
+                                          : debugPrint("");
                                       shakeController.forward(from: 0.0);
                                     },
                                   );
@@ -1474,7 +1479,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 child: IconButton(
                                   onPressed: () {
                                     navStack.removeLast();
-                                    print(navStack);
+                                    debugPrint(navStack);
                                     Navigator.pop(context);
                                   },
                                   color: isLoading

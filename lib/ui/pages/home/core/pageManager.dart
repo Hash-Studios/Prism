@@ -27,9 +27,9 @@ class _PageManagerState extends State<PageManager> {
   void checkConnection() async {
     result = await DataConnectionChecker().hasConnection;
     if (result) {
-      print("Internet working as expected!");
+      debugPrint("Internet working as expected!");
     } else {
-      print("Not connected to Internet!");
+      debugPrint("Not connected to Internet!");
     }
     setState(() {});
   }
@@ -48,7 +48,7 @@ class _PageManagerState extends State<PageManager> {
     final Uri deepLink = data?.link;
 
     if (deepLink != null) {
-      print("opened while closed altogether via deep link");
+      debugPrint("opened while closed altogether via deep link");
       Future.delayed(Duration(seconds: 0))
           .then((value) => Navigator.pushNamed(context, ShareRoute, arguments: [
                 deepLink.queryParameters["id"],
@@ -56,7 +56,7 @@ class _PageManagerState extends State<PageManager> {
                 deepLink.queryParameters["url"],
                 deepLink.queryParameters["thumb"],
               ]));
-      print("opened while closed altogether via deep link2345");
+      debugPrint("opened while closed altogether via deep link2345");
     }
 
     FirebaseDynamicLinks.instance.onLink(
@@ -64,7 +64,7 @@ class _PageManagerState extends State<PageManager> {
       final Uri deepLink = dynamicLink?.link;
 
       if (deepLink != null) {
-        print("opened while bg via deep link1");
+        debugPrint("opened while bg via deep link1");
         Future.delayed(Duration(seconds: 0)).then(
             (value) => Navigator.pushNamed(context, ShareRoute, arguments: [
                   deepLink.queryParameters["id"],
@@ -72,11 +72,11 @@ class _PageManagerState extends State<PageManager> {
                   deepLink.queryParameters["url"],
                   deepLink.queryParameters["thumb"],
                 ]));
-        print("opened while bg via deep link2345");
+        debugPrint("opened while bg via deep link2345");
       }
     }, onError: (OnLinkErrorException e) async {
-      print('onLinkError');
-      print(e.message);
+      debugPrint('onLinkError');
+      debugPrint(e.message);
     });
   }
 
@@ -105,7 +105,7 @@ class _PageManagerState extends State<PageManager> {
               BottomBar(
                 child: PageView.builder(
                     onPageChanged: (index) {
-                      print("Index cat: " + index.toString());
+                      debugPrint("Index cat: " + index.toString());
                       setState(() {
                         page = index;
                       });
@@ -122,7 +122,7 @@ class _PageManagerState extends State<PageManager> {
                     controller: pageController,
                     itemCount: 2,
                     itemBuilder: (context, index) {
-                      print("Index : " + index.toString());
+                      debugPrint("Index : " + index.toString());
                       if (index == 0) {
                         return HomeScreen();
                       } else if (index == 1) {

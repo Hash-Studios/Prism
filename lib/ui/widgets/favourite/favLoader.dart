@@ -24,12 +24,12 @@ class _FavLoaderState extends State<FavLoader> {
       future: _future,
       builder: (ctx, snapshot) {
         if (snapshot == null) {
-          print("snapshot null");
+          debugPrint("snapshot null");
           return LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
-          print("snapshot none, waiting");
+          debugPrint("snapshot none, waiting");
           return LoadingCards();
         } else {
           return FavouriteGrid();

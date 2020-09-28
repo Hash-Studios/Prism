@@ -68,7 +68,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
     setState(() {
       id = tempid;
     });
-    print(id);
+    debugPrint(id);
   }
 
   Future processImage() async {
@@ -86,7 +86,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           FirebaseStorage.instance.ref().child('${Path.basename(image.path)}');
       StorageUploadTask uploadTask = storageReference.putFile(image);
       await uploadTask.onComplete;
-      print('File Uploaded');
+      debugPrint('File Uploaded');
       storageReference.getDownloadURL().then((fileURL) {
         setState(() {
           imageURL = fileURL;
@@ -94,17 +94,17 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
         });
       });
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
       Navigator.pop(context);
       navStack.removeLast();
-      print(navStack);
+      debugPrint(navStack);
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -298,7 +298,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                       toasts.error("Please fill all required fields!");
                     } else {
                       navStack.removeLast();
-                      print(navStack);
+                      debugPrint(navStack);
                       Navigator.pop(context);
                       analytics.logEvent(
                           name: 'upload_setup',

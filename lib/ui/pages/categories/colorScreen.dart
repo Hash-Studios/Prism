@@ -22,8 +22,8 @@ class ColorScreen extends StatelessWidget {
           navStack.removeLast();
           count++;
         }
-        print(navStack);
-        print(count);
+        debugPrint(navStack);
+        debugPrint(count);
         for (int i = 0; i < count; i++) {
           Navigator.pop(context);
         }
