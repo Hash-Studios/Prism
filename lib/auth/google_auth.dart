@@ -2,6 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -43,7 +44,7 @@ class GoogleAuth {
           .where('id', isEqualTo: user.uid)
           .getDocuments();
       final List<DocumentSnapshot> documents = result.documents;
-      if (documents.length == 0) {
+      if (documents.isEmpty) {
         Firestore.instance.collection('users').document(user.uid).setData({
           'name': user.displayName,
           'email': user.email,
@@ -79,7 +80,7 @@ class GoogleAuth {
     return 'signInWithGoogle succeeded: $user';
   }
 
-  void signOutGoogle() async {
+  Future<bool> signOutGoogle() async {
     await googleSignIn.signOut();
     Hive.openBox('prefs').then((value) {
       value.put('googlename', "");
@@ -92,12 +93,13 @@ class GoogleAuth {
       value.put('premium', false);
     });
     await Purchases.reset();
-    print("User Sign Out");
+    debugPrint("User Sign Out");
+    return true;
   }
 
   Future<bool> isSignedIn() async {
     googleSignIn.isSignedIn().then((value) {
-      print(value);
+      debugPrint(value.toString());
       return value;
     });
   }

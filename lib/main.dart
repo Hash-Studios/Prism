@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
@@ -26,9 +26,9 @@ import 'package:flutter/services.dart';
 
 Box prefs;
 Directory dir;
-var darkMode;
-var hqThumbs;
-var optimisedWallpapers;
+bool darkMode;
+bool hqThumbs;
+bool optimisedWallpapers;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
@@ -42,22 +42,25 @@ void main() {
     Hive.registerAdapter(NotifDataAdapter());
     await Hive.openBox<List>('notifications');
     prefs = await Hive.openBox('prefs');
-    print("Box Opened");
-    hqThumbs = prefs.get('hqThumbs') ?? false;
-    if (hqThumbs)
+    debugPrint("Box Opened");
+    hqThumbs = prefs.get('hqThumbs') == true ?? false;
+    if (hqThumbs) {
       prefs.put('hqThumbs', true);
-    else
+    } else {
       prefs.put('hqThumbs', false);
-    darkMode = prefs.get('darkMode') ?? true;
-    if (darkMode)
+    }
+    darkMode = prefs.get('darkMode') == true ?? true;
+    if (darkMode) {
       prefs.put('darkMode', true);
-    else
+    } else {
       prefs.put('darkMode', false);
-    optimisedWallpapers = prefs.get('optimisedWallpapers') ?? true;
-    if (optimisedWallpapers)
+    }
+    optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? true;
+    if (optimisedWallpapers) {
       prefs.put('optimisedWallpapers', true);
-    else
+    } else {
       prefs.put('optimisedWallpapers', false);
+    }
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
         .then((value) => runZoned<Future<void>>(() {
               runApp(
@@ -82,7 +85,7 @@ void main() {
                       ChangeNotifierProvider<ThemeModel>(
                         create: (context) => ThemeModel(
                             darkMode ? kDarkTheme : kLightTheme,
-                            darkMode ? ThemeType.Dark : ThemeType.Light),
+                            darkMode ? ThemeType.dark : ThemeType.light),
                       ),
                     ],
                     child: MyApp(),
@@ -99,11 +102,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  void getLoginStatus() async {
+  Future<bool> getLoginStatus() async {
     prefs = await Hive.openBox('prefs');
     globals.gAuth.googleSignIn.isSignedIn().then((value) {
       if (value) checkPremium();
       prefs.put("isLoggedin", value);
+      return value;
     });
   }
 
@@ -124,13 +128,13 @@ class _MyAppState extends State<MyApp> {
               )),
       theme: Provider.of<ThemeModel>(context).currentTheme,
       debugShowCheckedModeBanner: false,
-      home: SplashWidget(),
+      home: const SplashWidget(),
     );
   }
 }
 
 class RestartWidget extends StatefulWidget {
-  RestartWidget({this.child});
+  const RestartWidget({this.child});
 
   final Widget child;
 
@@ -152,11 +156,12 @@ class _RestartWidgetState extends State<RestartWidget> {
       key = UniqueKey();
     });
     Hive.openBox('prefs').then((prefs) {
-      darkMode = prefs.get('darkMode') ?? true;
-      if (darkMode)
+      darkMode = prefs.get('darkMode') == true ?? true;
+      if (darkMode) {
         prefs.put('darkMode', true);
-      else
+      } else {
         prefs.put('darkMode', false);
+      }
     });
   }
 

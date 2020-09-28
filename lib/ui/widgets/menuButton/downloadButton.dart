@@ -41,13 +41,13 @@ class _DownloadButtonState extends State<DownloadButton> {
             onDownload();
           } else {
             showDownloadPopup(context, () {
-              print("Download");
+              debugPrint("Download");
               onDownload();
             });
           }
         } else {
           showDownloadPopup(context, () {
-            print("Download");
+            debugPrint("Download");
             onDownload();
           });
         }
@@ -100,7 +100,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     setState(() {
       isLoading = true;
     });
-    print(widget.link);
+    debugPrint(widget.link);
     toasts.codeSend("Starting Download");
     GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
       analytics.logEvent(
@@ -150,7 +150,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
 
   void reward(int rewardAmount) {
     download_coins += rewardAmount;
-    print("Coins : " + download_coins.toString());
+    debugPrint("Coins : " + download_coins.toString());
   }
 
   @override
@@ -159,7 +159,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
         .initialize(appId: "ca-app-pub-4649644680694757~6175744196");
     videoAd.listener =
         (RewardedVideoAdEvent event, {String rewardType, int rewardAmount}) {
-      print("REWARDED VIDEO AD $event");
+      debugPrint("REWARDED VIDEO AD $event");
       switch (event) {
         case RewardedVideoAdEvent.loaded:
           setState(() {
@@ -283,9 +283,13 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
                   globals.loadingAd
                       ? toasts.error("Loading ads")
                       : videoAd.show();
-                  globals.loadingAd ? print("") : Navigator.of(context).pop();
+                  globals.loadingAd
+                      ? debugPrint("")
+                      : Navigator.of(context).pop();
                   setState(() {
-                    globals.loadingAd ? print("") : globals.loadingAd = true;
+                    globals.loadingAd
+                        ? debugPrint("")
+                        : globals.loadingAd = true;
                   });
                 },
                 child: !globals.loadingAd

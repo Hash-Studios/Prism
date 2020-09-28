@@ -5,3 +5,5 @@ analyzer:
     # unused_import: ignore
     # deprecated_member_use: ignore
     missing_return: ignore
+  exclude:
+    - lib/theme/jam_icons_icons.dart

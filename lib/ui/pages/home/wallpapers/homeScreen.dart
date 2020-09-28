@@ -50,8 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
-    print("Bye! Have a good day!");
+    debugPrint(navStack);
+    debugPrint("Bye! Have a good day!");
     return true;
   }
 
@@ -74,23 +74,23 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       onBackgroundMessage: myBackgroundMessageHandler,
       onLaunch: (Map<String, dynamic> message) async {
-        print("onLaunch: $message");
+        debugPrint("onLaunch: $message");
         writeNotifications(message);
       },
       onResume: (Map<String, dynamic> message) async {
-        print("onResume: $message");
+        debugPrint("onResume: $message");
         writeNotifications(message);
       },
     );
 
     f.getToken().then((value) {
-      print(value);
+      debugPrint(value);
       Firestore.instance.collection('tokens').document(value).setData({
         "devtoken": value.toString(),
         "createdAt": DateTime.now().toIso8601String()
       }).then((value) {});
     }).catchError((onError) {
-      print(onError.toString());
+      debugPrint(onError.toString());
     });
   }
 

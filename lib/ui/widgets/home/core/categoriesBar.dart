@@ -56,9 +56,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
         textSkip: textSkip,
         paddingFocus: 1,
         opacityShadow: 0.9, finish: () {
-      print("finish");
+      debugPrint("finish");
     }, clickTarget: (target) {
-      print(target.identify);
+      debugPrint(target.identify);
       if (target.identify == "Target 3") {
         setState(() {
           textSkip = "FINISH";
@@ -69,7 +69,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
             .then((value) => showTutorialComplete(context));
       }
     }, clickSkip: () {
-      print("skip");
+      debugPrint("skip");
     })
       ..show();
   }
@@ -113,10 +113,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
   //Check for update if available
   String currentAppVersion = globals.currentAppVersion;
   Future<void> _checkUpdate() async {
-    print("checking for update");
+    debugPrint("checking for update");
     try {
-      print("Current App Version :" + currentAppVersion);
-      print("Latest Version :" +
+      debugPrint("Current App Version :" + currentAppVersion);
+      debugPrint("Latest Version :" +
           remoteConfig.getString("currentVersion").toString());
       setState(() {
         if (currentAppVersion !=
@@ -169,10 +169,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
               );
               Scaffold.of(context).showSnackBar(snackBar);
             } else {
-              print("Updated is alreday alerted!");
+              debugPrint("Updated is alreday alerted!");
             }
           } else {
-            print("No update");
+            debugPrint("No update");
           }
         } else {
           setState(() {
@@ -181,7 +181,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
         }
       });
     } catch (e) {
-      print("Error while checking for updates! :" + e.toString());
+      debugPrint("Error while checking for updates! :" + e.toString());
     }
     setState(() {
       globals.updateChecked = true;
@@ -319,7 +319,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 initialValue:
                     Provider.of<CategorySupplier>(context).selectedChoice,
                 onCanceled: () {
-                  print('You have not chossed anything');
+                  debugPrint('You have not chossed anything');
                 },
                 tooltip: 'Categories',
                 onSelected: (choice) {

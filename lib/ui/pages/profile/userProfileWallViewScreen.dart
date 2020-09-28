@@ -29,7 +29,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -120,7 +120,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
           body: SlidingUpPanel(
             onPanelOpened: () {
               if (panelClosed) {
-                print('Screenshot Starting');
+                debugPrint('Screenshot Starting');
                 if (colorChanged) {
                   screenshotController
                       .capture(
@@ -133,9 +133,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                       screenshotTaken = true;
                       panelClosed = false;
                     });
-                    print('Screenshot Taken');
+                    debugPrint('Screenshot Taken');
                   }).catchError((onError) {
-                    print(onError);
+                    debugPrint(onError);
                   });
                 } else {
                   main.prefs.get('optimisedWallpapers') ?? true
@@ -150,11 +150,11 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                             screenshotTaken = true;
                             panelClosed = false;
                           });
-                          print('Screenshot Taken');
+                          debugPrint('Screenshot Taken');
                         }).catchError((onError) {
-                          print(onError);
+                          debugPrint(onError);
                         })
-                      : print("Wallpaper Optimisation is disabled!");
+                      : debugPrint("Wallpaper Optimisation is disabled!");
                 }
               }
             },
@@ -377,7 +377,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     animation: offsetAnimation,
                     builder: (buildContext, child) {
                       if (offsetAnimation.value < 0.0)
-                        print('${offsetAnimation.value + 8.0}');
+                        debugPrint('${offsetAnimation.value + 8.0}');
                       return GestureDetector(
                         child: CachedNetworkImage(
                           imageUrl: UserData.userProfileWalls[index]
@@ -444,7 +444,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                         },
                         onTap: () {
                           HapticFeedback.vibrate();
-                          !isLoading ? updateAccent() : print("");
+                          !isLoading ? updateAccent() : debugPrint("");
                           shakeController.forward(from: 0.0);
                         },
                       );
@@ -456,7 +456,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     child: IconButton(
                       onPressed: () {
                         navStack.removeLast();
-                        print(navStack);
+                        debugPrint(navStack);
                         Navigator.pop(context);
                       },
                       color: isLoading

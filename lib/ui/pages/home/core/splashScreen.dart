@@ -67,7 +67,7 @@ class SplashWidget extends StatelessWidget {
           cList.add(element.split('"name": "')[1].split('",')[0].toString());
           categories[tempVar.indexOf(element)] = json.decode(element + "}");
         });
-        print(cList);
+        debugPrint(cList);
       },
     );
   }

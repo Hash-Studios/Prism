@@ -74,7 +74,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     setState(() {
       id = tempid;
     });
-    print(id);
+    debugPrint(id);
   }
 
   static Future<List<int>> _resizeImage(File file) async {
@@ -90,8 +90,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     var imgList = image.readAsBytesSync();
     var decodedImage = await decodeImageFromList(imgList);
 
-    print(decodedImage.width);
-    print(decodedImage.height);
+    debugPrint(decodedImage.width);
+    debugPrint(decodedImage.height);
 
     var res =
         decodedImage.width.toString() + "x" + decodedImage.height.toString();
@@ -115,7 +115,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         wallpaperPath, wallpaperPath, wallpaperSha, "master");
     await github.repositories.deleteFile(RepositorySlug(gitUserName, repoName),
         thumbPath, thumbPath, thumbSha, "master");
-    print("Files deleted");
+    debugPrint("Files deleted");
   }
 
   Future uploadFile() async {
@@ -151,22 +151,22 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 thumbPath = value.content.path;
                 thumbSha = value.content.sha;
               }));
-      print('File Uploaded');
+      debugPrint('File Uploaded');
       setState(() {
         isUploading = false;
       });
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
       Navigator.pop(context);
       navStack.removeLast();
-      print(navStack);
+      debugPrint(navStack);
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     deleteFile();
     return true;
   }
@@ -305,7 +305,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             onPressed: !isProcessing && !isUploading
                 ? () async {
                     navStack.removeLast();
-                    print(navStack);
+                    debugPrint(navStack);
                     Navigator.pop(context);
                     analytics.logEvent(
                         name: 'upload_wallpaper',

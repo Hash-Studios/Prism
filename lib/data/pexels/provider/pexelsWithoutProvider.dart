@@ -1,9 +1,9 @@
 import 'dart:convert';
-
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 List<WallPaperP> wallsP = [];
@@ -20,42 +20,42 @@ List<Map<String, int>> pageNumbersP = categories
 
 Future<List<WallPaperP>> categoryDataFetcherP(
     String categoryName, String mode) async {
-  int index = pageNumbersP.indexOf(pageNumbersP
+  final int index = pageNumbersP.indexOf(pageNumbersP
       .firstWhere((element) => element.keys.toList()[0] == categoryName));
   if (mode == "r") {
     wallsP = [];
     pageNumbersP[index] = {categoryName: 1};
   } else {
-    int origPageNumber = pageNumbersP[index][categoryName];
+    final int origPageNumber = pageNumbersP[index][categoryName];
     pageNumbersP[index] = {categoryName: origPageNumber + 1};
   }
   if (navStack.last == "Home") {
-    print(
+    debugPrint(
         "https://api.pexels.com/v1/search?query=${categoryName}&per_page=80&page=${pageNumbersP[index][categoryName]}");
     http.get(
         "https://api.pexels.com/v1/search?query=${categoryName}&per_page=80&page=${pageNumbersP[index][categoryName]}",
         headers: {"Authorization": pexelApiKey}).then(
       (http.Response response) {
-        var resp = json.decode(response.body);
-        for (int i = 0; i < resp["photos"].length; i++) {
+        final resp = json.decode(response.body);
+        for (int i = 0; i < (resp["photos"].length as int); i++) {
           wallsP.add(
             WallPaperP(
                 id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
+                url: resp["photos"][i]["url"].toString(),
                 width: resp["photos"][i]["width"].toString(),
                 height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
+                photographer: resp["photos"][i]["photographer"].toString(),
+                src: resp["photos"][i]["src"] as Map,
+                current_page: resp["page"] as int),
           );
         }
-        pageNumbersP[index][categoryName] = resp["page"] + 1;
-        print("data done");
+        pageNumbersP[index][categoryName] = (resp["page"] as int) + 1;
+        debugPrint("data done");
         return wallsP;
       },
     );
   } else {
-    print("Refresh Blocked");
+    debugPrint("Refresh Blocked");
   }
 }
 
@@ -72,44 +72,43 @@ Future<List<WallPaperP>> getDataP(String mode) async {
         "https://api.pexels.com/v1/curated?per_page=24&page=${pageGetDataP}",
         headers: {"Authorization": pexelApiKey}).then(
       (http.Response response) {
-        var resp = json.decode(response.body);
-        for (int i = 0; i < resp["photos"].length; i++) {
+        final resp = json.decode(response.body);
+        for (int i = 0; i < (resp["photos"].length as int); i++) {
           wallsP.add(
             WallPaperP(
                 id: resp["photos"][i]["id"].toString(),
-                url: resp["photos"][i]["url"],
+                url: resp["photos"][i]["url"].toString(),
                 width: resp["photos"][i]["width"].toString(),
                 height: resp["photos"][i]["height"].toString(),
-                photographer: resp["photos"][i]["photographer"],
-                src: resp["photos"][i]["src"],
-                current_page: resp["page"]),
+                photographer: resp["photos"][i]["photographer"].toString(),
+                src: resp["photos"][i]["src"] as Map,
+                current_page: resp["page"] as int),
           );
         }
-        pageGetDataP = resp["page"] + 1;
-        print("data done");
+        pageGetDataP = (resp["page"] as int) + 1;
+        debugPrint("data done");
         return wallsP;
       },
     );
   } else {
-    print("Refresh Blocked");
+    debugPrint("Refresh Blocked");
   }
 }
 
 Future<WallPaperP> getWallbyIDP(String id) async {
-  print("https://api.pexels.com/v1/photos/$id");
+  debugPrint("https://api.pexels.com/v1/photos/$id");
   wall = null;
   http.get("https://api.pexels.com/v1/photos/$id",
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
-      var resp = json.decode(response.body);
-      wall = WallPaperP(
+      final resp = json.decode(response.body);
+      return wall = WallPaperP(
           id: resp["id"].toString(),
           url: resp["url"].toString(),
           width: resp["width"].toString(),
           height: resp["height"].toString(),
           photographer: resp["photographer"].toString(),
-          src: resp["category"]);
-      return wall;
+          src: resp["category"] as Map);
     },
   );
 }
@@ -118,21 +117,21 @@ Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
   http.get("https://api.pexels.com/v1/search?query=$query&per_page=80&page=1",
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
-      var resp = json.decode(response.body);
-      for (int i = 0; i < resp["photos"].length; i++) {
+      final resp = json.decode(response.body);
+      for (int i = 0; i < (resp["photos"].length as int); i++) {
         wallsPS.add(
           WallPaperP(
               id: resp["photos"][i]["id"].toString(),
-              url: resp["photos"][i]["url"],
+              url: resp["photos"][i]["url"].toString(),
               width: resp["photos"][i]["width"].toString(),
               height: resp["photos"][i]["height"].toString(),
-              photographer: resp["photos"][i]["photographer"],
-              src: resp["photos"][i]["src"],
-              current_page: resp["page"]),
+              photographer: resp["photos"][i]["photographer"].toString(),
+              src: resp["photos"][i]["src"] as Map,
+              current_page: resp["page"] as int),
         );
       }
-      pageGetQueryP = resp["page"] + 1;
-      print("data done");
+      pageGetQueryP = (resp["page"] as int) + 1;
+      debugPrint("data done");
       return wallsPS;
     },
   );
@@ -144,72 +143,73 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       var resp = json.decode(response.body);
-      for (int i = 0; i < resp["photos"].length; i++) {
+      for (int i = 0; i < (resp["photos"].length as int); i++) {
         wallsPS.add(
           WallPaperP(
               id: resp["photos"][i]["id"].toString(),
-              url: resp["photos"][i]["url"],
+              url: resp["photos"][i]["url"].toString(),
               width: resp["photos"][i]["width"].toString(),
               height: resp["photos"][i]["height"].toString(),
-              photographer: resp["photos"][i]["photographer"],
-              src: resp["photos"][i]["src"],
-              current_page: resp["page"]),
+              photographer: resp["photos"][i]["photographer"].toString(),
+              src: resp["photos"][i]["src"] as Map,
+              current_page: resp["page"] as int),
         );
       }
-      pageGetQueryP = resp["page"] + 1;
-      print("data done");
+      pageGetQueryP = (resp["page"] as int) + 1;
+      debugPrint("data done");
       return wallsPS;
     },
   );
 }
 
 Future<List<WallPaperP>> getWallsPbyColor(String query) async {
-  print("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1");
+  debugPrint(
+      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=1");
   http.get("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1",
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       var resp = json.decode(response.body);
-      for (int i = 0; i < resp["photos"].length; i++) {
+      for (int i = 0; i < (resp["photos"].length as int); i++) {
         wallsC.add(
           WallPaperP(
               id: resp["photos"][i]["id"].toString(),
-              url: resp["photos"][i]["url"],
+              url: resp["photos"][i]["url"].toString(),
               width: resp["photos"][i]["width"].toString(),
               height: resp["photos"][i]["height"].toString(),
-              photographer: resp["photos"][i]["photographer"],
-              src: resp["photos"][i]["src"],
-              current_page: resp["page"]),
+              photographer: resp["photos"][i]["photographer"].toString(),
+              src: resp["photos"][i]["src"] as Map,
+              current_page: resp["page"] as int),
         );
       }
-      pageColorsP = resp["page"] + 1;
-      print("data done");
+      pageColorsP = (resp["page"] as int) + 1;
+      debugPrint("data done");
       return wallsC;
     },
   );
 }
 
 Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
-  print(
+  debugPrint(
       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}");
   http.get(
       "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}",
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
       var resp = json.decode(response.body);
-      for (int i = 0; i < resp["photos"].length; i++) {
+      for (int i = 0; i < (resp["photos"].length as int); i++) {
         wallsC.add(
           WallPaperP(
               id: resp["photos"][i]["id"].toString(),
-              url: resp["photos"][i]["url"],
+              url: resp["photos"][i]["url"].toString(),
               width: resp["photos"][i]["width"].toString(),
               height: resp["photos"][i]["height"].toString(),
-              photographer: resp["photos"][i]["photographer"],
-              src: resp["photos"][i]["src"],
-              current_page: resp["page"]),
+              photographer: resp["photos"][i]["photographer"].toString(),
+              src: resp["photos"][i]["src"] as Map,
+              current_page: resp["page"] as int),
         );
       }
-      pageColorsP = resp["page"] + 1;
-      print("data done");
+      pageColorsP = (resp["page"] as int) + 1;
+      debugPrint("data done");
       return wallsC;
     },
   );

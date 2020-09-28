@@ -90,7 +90,7 @@ class FocusedMenuDetails extends StatelessWidget {
         : MediaQuery.of(context).orientation == Orientation.portrait
             ? size.width * 0.05
             : size.width * 0.02;
-    print(provider);
+    debugPrint(provider);
     try {
       return Scaffold(
         backgroundColor: Colors.transparent,
@@ -2033,7 +2033,7 @@ class FocusedMenuDetails extends StatelessWidget {
         ),
       );
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
       Navigator.pop(context);
       return Container();
     }

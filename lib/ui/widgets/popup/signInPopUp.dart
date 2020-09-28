@@ -228,7 +228,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   Navigator.pop(context);
                   func();
                 }).catchError((e) {
-                  print(e);
+                  debugPrint(e);
                   Navigator.pop(context);
                   main.prefs.put("isLoggedin", false);
                   toasts.error("Something went wrong, please try again!");
