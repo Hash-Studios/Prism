@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:image_downloader/image_downloader.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
@@ -93,16 +94,12 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   void onDownload() async {
-    var status = await Permission.storage.status;
-    if (!status.isGranted) {
-      await Permission.storage.request();
-    }
     setState(() {
       isLoading = true;
     });
     print(widget.link);
     toasts.codeSend("Starting Download");
-    GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
+    await ImageDownloader.downloadImage(widget.link).then((value) {
       analytics.logEvent(
           name: 'download_wallpaper', parameters: {'link': widget.link});
       toasts.codeSend("Image Downloaded in Pictures/Prism!");
