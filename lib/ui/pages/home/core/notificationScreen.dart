@@ -18,19 +18,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
   List notifications;
   @override
   void initState() {
-    Box<List> box = Hive.box('notifications');
+    final Box<List> box = Hive.box('notifications');
     if (box.get('notifications') == [] || box.get('notifications') == null) {
       notifications = [];
     } else {
       notifications = box.get('notifications');
     }
-    notifications = new List.from(notifications.reversed);
+    notifications = List.from(notifications.reversed);
     super.initState();
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -42,12 +42,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: Text("Notifications"),
+          title: const Text("Notifications"),
           leading: IconButton(
             icon: Icon(JamIcons.close),
             onPressed: () {
               if (navStack.length > 1) navStack.removeLast();
-              debugPrint(navStack);
+              debugPrint(navStack.toString());
               Navigator.pop(context);
             },
           ),
@@ -57,7 +57,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ? Icon(JamIcons.bell)
                     : Icon(JamIcons.bell_off),
                 onPressed: () {
-                  Dialog notificationsPopUp = Dialog(
+                  final Dialog notificationsPopUp = Dialog(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
                     child: Container(
@@ -87,15 +87,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ),
                             ],
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 25,
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: <Widget>[
                               FlatButton(
-                                shape: StadiumBorder(),
-                                color: Color(0xFFE57697),
+                                shape: const StadiumBorder(),
+                                color: const Color(0xFFE57697),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
@@ -108,8 +108,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 ),
                               ),
                               FlatButton(
-                                shape: StadiumBorder(),
-                                color: Color(0xFFE57697),
+                                shape: const StadiumBorder(),
+                                color: const Color(0xFFE57697),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                   if (main.prefs.get("Subscriber") == false) {
@@ -135,7 +135,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ),
                             ],
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 15,
                           ),
                         ],
@@ -150,7 +150,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ],
         ),
         body: Container(
-          child: notifications.length > 0
+          child: notifications.isNotEmpty
               ? ListView.builder(
                   itemCount: notifications.length,
                   itemBuilder: (BuildContext context, int index) {
@@ -159,7 +159,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         setState(() {
                           notifications.removeAt(index);
                         });
-                        Box<List> box = Hive.box('notifications');
+                        final Box<List> box = Hive.box('notifications');
                         box.put('notifications', notifications);
                       },
                       dismissThresholds: {
@@ -167,6 +167,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         DismissDirection.endToStart: 0.5
                       },
                       secondaryBackground: Container(
+                        color: Colors.red,
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Padding(
@@ -174,9 +175,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             child: Icon(JamIcons.trash),
                           ),
                         ),
-                        color: Colors.red,
                       ),
                       background: Container(
+                        color: Colors.red,
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Padding(
@@ -184,15 +185,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             child: Icon(JamIcons.trash),
                           ),
                         ),
-                        color: Colors.red,
                       ),
-                      child:
-                          NotificationCard(notification: notifications[index]),
                       key: UniqueKey(),
+                      child: NotificationCard(
+                          notification: notifications[index] as NotifData),
                     );
                   },
                 )
-              : Center(child: Text('No new notifications')),
+              : const Center(child: Text('No new notifications')),
         ),
       ),
     );
@@ -202,7 +202,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 class NotificationCard extends StatelessWidget {
   final NotifData notification;
 
-  NotificationCard({this.notification});
+  const NotificationCard({this.notification});
 
   @override
   Widget build(BuildContext context) {
@@ -229,6 +229,16 @@ class NotificationCard extends StatelessWidget {
             ),
             children: <Widget>[
               InkWell(
+                onTap: () {
+                  if (notification.url == "") {
+                    if (notification.pageName != null) {
+                      Navigator.pushNamed(context, notification.pageName,
+                          arguments: notification.arguments);
+                    }
+                  } else {
+                    launch(notification.url);
+                  }
+                },
                 child: Ink(
                   child: CachedNetworkImage(
                     imageUrl: notification.imageUrl ??
@@ -236,15 +246,6 @@ class NotificationCard extends StatelessWidget {
                     fit: BoxFit.cover,
                   ),
                 ),
-                onTap: () {
-                  if (notification.url == "") {
-                    if (notification.pageName != null)
-                      Navigator.pushNamed(context, notification.pageName,
-                          arguments: notification.arguments);
-                  } else {
-                    launch(notification.url);
-                  }
-                },
               )
             ],
           )

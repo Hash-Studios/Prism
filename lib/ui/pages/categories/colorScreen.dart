@@ -1,4 +1,4 @@
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/colorLoader.dart';
@@ -8,7 +8,7 @@ import 'package:flutter/rendering.dart';
 
 class ColorScreen extends StatelessWidget {
   final List arguments;
-  ColorScreen({
+  const ColorScreen({
     Key key,
     @required this.arguments,
   }) : super(key: key);
@@ -22,8 +22,8 @@ class ColorScreen extends StatelessWidget {
           navStack.removeLast();
           count++;
         }
-        debugPrint(navStack);
-        debugPrint(count);
+        debugPrint(navStack.toString());
+        debugPrint(count.toString());
         for (int i = 0; i < count; i++) {
           Navigator.pop(context);
         }
@@ -32,14 +32,14 @@ class ColorScreen extends StatelessWidget {
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: PreferredSize(
+            preferredSize: Size(double.infinity, 55),
             child: HeadingChipBar(
               current: "Colors",
             ),
-            preferredSize: Size(double.infinity, 55),
           ),
           body: BottomBar(
             child: ColorLoader(
-              future: PData.getWallsPbyColor("color: ${arguments[0]}"),
+              future: pdata.getWallsPbyColor("color: ${arguments[0]}"),
               provider: "Colors - color: ${arguments[0]}",
             ),
           )),
