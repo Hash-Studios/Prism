@@ -5,7 +5,7 @@ import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:flutter/material.dart';
 
 class CollectionScreen extends StatefulWidget {
-  CollectionScreen({
+  const CollectionScreen({
     Key key,
   }) : super(key: key);
 
@@ -16,7 +16,7 @@ class CollectionScreen extends StatefulWidget {
 class _CollectionScreenState extends State<CollectionScreen> {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -29,16 +29,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: new FutureBuilder<Map>(
+      child: FutureBuilder<Map>(
         future: getCollections(), // async work
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
-              return Center(child: new Loader());
+              return Center(child: Loader());
             case ConnectionState.none:
-              return Center(child: new Loader());
+              return Center(child: Loader());
             default:
-              if (snapshot.hasError)
+              if (snapshot.hasError) {
                 return RefreshIndicator(
                     onRefresh: () async {
                       getCollections();
@@ -46,14 +46,13 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.max,
-                      children: <Widget>[
+                      children: const <Widget>[
                         Spacer(),
-                        Center(
-                            child: new Text("Can't connect to the Servers!")),
+                        Center(child: Text("Can't connect to the Servers!")),
                         Spacer(),
                       ],
                     ));
-              else {
+              } else {
                 return CollectionsGrid();
               }
           }

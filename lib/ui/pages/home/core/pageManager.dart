@@ -24,14 +24,17 @@ class _PageManagerState extends State<PageManager> {
   int page = 0;
   bool result = true;
 
-  void checkConnection() async {
+  Future<bool> checkConnection() async {
     result = await DataConnectionChecker().hasConnection;
     if (result) {
       debugPrint("Internet working as expected!");
+      setState(() {});
+      return true;
     } else {
       debugPrint("Not connected to Internet!");
+      setState(() {});
+      return false;
     }
-    setState(() {});
   }
 
   @override
@@ -42,15 +45,15 @@ class _PageManagerState extends State<PageManager> {
     super.initState();
   }
 
-  void initDynamicLinks(BuildContext context) async {
+  Future<bool> initDynamicLinks(BuildContext context) async {
     final PendingDynamicLinkData data =
         await FirebaseDynamicLinks.instance.getInitialLink();
     final Uri deepLink = data?.link;
 
     if (deepLink != null) {
       debugPrint("opened while closed altogether via deep link");
-      Future.delayed(Duration(seconds: 0))
-          .then((value) => Navigator.pushNamed(context, ShareRoute, arguments: [
+      Future.delayed(const Duration(seconds: 0))
+          .then((value) => Navigator.pushNamed(context, shareRoute, arguments: [
                 deepLink.queryParameters["id"],
                 deepLink.queryParameters["provider"],
                 deepLink.queryParameters["url"],
@@ -65,8 +68,8 @@ class _PageManagerState extends State<PageManager> {
 
       if (deepLink != null) {
         debugPrint("opened while bg via deep link1");
-        Future.delayed(Duration(seconds: 0)).then(
-            (value) => Navigator.pushNamed(context, ShareRoute, arguments: [
+        Future.delayed(const Duration(seconds: 0)).then(
+            (value) => Navigator.pushNamed(context, shareRoute, arguments: [
                   deepLink.queryParameters["id"],
                   deepLink.queryParameters["provider"],
                   deepLink.queryParameters["url"],
@@ -78,6 +81,7 @@ class _PageManagerState extends State<PageManager> {
       debugPrint('onLinkError');
       debugPrint(e.message);
     });
+    return true;
   }
 
   @override
@@ -95,17 +99,17 @@ class _PageManagerState extends State<PageManager> {
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: PreferredSize(
+            preferredSize: const Size(double.infinity, 55),
             child: CategoriesBar(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height),
-            preferredSize: Size(double.infinity, 55),
           ),
           body: Stack(
             children: <Widget>[
               BottomBar(
                 child: PageView.builder(
                     onPageChanged: (index) {
-                      debugPrint("Index cat: " + index.toString());
+                      debugPrint("Index cat: ${index.toString()}");
                       setState(() {
                         page = index;
                       });
@@ -122,16 +126,16 @@ class _PageManagerState extends State<PageManager> {
                     controller: pageController,
                     itemCount: 2,
                     itemBuilder: (context, index) {
-                      debugPrint("Index : " + index.toString());
+                      debugPrint("Index : ${index.toString()}");
                       if (index == 0) {
                         return HomeScreen();
                       } else if (index == 1) {
-                        return CollectionScreen();
+                        return const CollectionScreen();
                       }
-                      return UndefinedScreen();
+                      return const UndefinedScreen();
                     }),
               ),
-              !result ? ConnectivityWidget() : Container(),
+              if (!result) ConnectivityWidget() else Container(),
             ],
           )),
     );

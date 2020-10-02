@@ -28,8 +28,8 @@ class SplashWidget extends StatelessWidget {
               : 'Dark',
       backgroundColor:
           Provider.of<ThemeModel>(context).currentTheme == kLightTheme
-              ? Color(0xFFFFFFFF)
-              : Color(0xFF181818),
+              ? const Color(0xFFFFFFFF)
+              : const Color(0xFF181818),
       until: () async {
         remoteConfig = await RemoteConfig.instance;
         await remoteConfig
@@ -56,7 +56,7 @@ class SplashWidget extends StatelessWidget {
         text = text.replaceAll(",]", "");
         globals.topTitleText = text.split(",");
         globals.topTitleText.shuffle();
-        var cList = [];
+        final cList = [];
         var tempVar = remoteConfig
             .getString('categories')
             .replaceAll('[', "")
@@ -67,7 +67,7 @@ class SplashWidget extends StatelessWidget {
           cList.add(element.split('"name": "')[1].split('",')[0].toString());
           categories[tempVar.indexOf(element)] = json.decode(element + "}");
         });
-        debugPrint(cList);
+        debugPrint(cList.toString());
       },
     );
   }

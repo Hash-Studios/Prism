@@ -13,22 +13,20 @@ import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
-final FirebaseMessaging f = new FirebaseMessaging();
+final FirebaseMessaging f = FirebaseMessaging();
 
 void writeNotifications(Map<String, dynamic> message) {
-  Box<List> box = Hive.box('notifications');
+  final Box<List> box = Hive.box('notifications');
   var notifications = box.get('notifications');
-  if (notifications == null) {
-    notifications = [];
-  }
+  notifications ??= [];
   notifications.add(NotifData(
-      title: message['notification']['title'] ?? "Notification",
-      desc: message['notification']['body'] ?? "",
-      imageUrl: message['data']['imageUrl'] ??
+      title: message['notification']['title'] as String ?? "Notification",
+      desc: message['notification']['body'] as String ?? "",
+      imageUrl: message['data']['imageUrl'] as String ??
           "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
-      pageName: message['data']['pageName'],
-      arguments: message['data']['arguments'] ?? [],
-      url: message['data']['url'] ?? ""));
+      pageName: message['data']['pageName'] as String,
+      arguments: message['data']['arguments'] as List ?? [],
+      url: message['data']['url'] as String ?? ""));
   box.put('notifications', notifications);
 }
 
@@ -37,7 +35,7 @@ Future<dynamic> myBackgroundMessageHandler(Map<String, dynamic> message) {
 }
 
 class HomeScreen extends StatefulWidget {
-  HomeScreen({
+  const HomeScreen({
     Key key,
   }) : super(key: key);
 
@@ -50,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     debugPrint("Bye! Have a good day!");
     return true;
   }
@@ -61,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     isNew = true;
     _updateToken();
-    _future = Future.delayed(Duration(seconds: 0)).then((value) =>
+    _future = Future.delayed(const Duration(seconds: 0)).then((value) =>
         Provider.of<CategorySupplier>(context, listen: false)
             .wallpaperFutureRefresh);
   }
@@ -95,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void showChangelogCheck(BuildContext context) {
-    var newDevice = main.prefs.get("newDevice");
+    final newDevice = main.prefs.get("newDevice");
     if (newDevice == null) {
       showChangelog(context, () {
         setState(() {
@@ -112,36 +110,36 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: new FutureBuilder<List>(
+      child: FutureBuilder<List>(
         future: _future, // async work
         builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
-              return Center(child: new Loader());
+              return Center(child: Loader());
             case ConnectionState.none:
-              return Center(child: new Loader());
+              return Center(child: Loader());
             default:
-              if (snapshot.hasError)
+              if (snapshot.hasError) {
                 return RefreshIndicator(
                     onRefresh: () async {
+                      // ignore: unnecessary_statements
                       _future;
                     },
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.max,
-                      children: <Widget>[
+                      children: const <Widget>[
                         Spacer(),
-                        Center(
-                            child: new Text("Can't connect to the Servers!")),
+                        Center(child: Text("Can't connect to the Servers!")),
                         Spacer(),
                       ],
                     ));
-              else {
+              } else {
                 if (Provider.of<CategorySupplier>(context)
                         .selectedChoice
                         .provider ==
                     "WallHaven") {
-                  return new WallHavenGrid(
+                  return WallHavenGrid(
                       provider: Provider.of<CategorySupplier>(context)
                           .selectedChoice
                           .provider);
@@ -149,12 +147,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         .selectedChoice
                         .provider ==
                     "Pexels") {
-                  return new PexelsGrid(
+                  return PexelsGrid(
                       provider: Provider.of<CategorySupplier>(context)
                           .selectedChoice
                           .provider);
                 } else {
-                  return new WallpaperGrid(
+                  return WallpaperGrid(
                       provider: Provider.of<CategorySupplier>(context)
                           .selectedChoice
                           .provider);

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -14,12 +15,11 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'dart:io';
 import 'package:Prism/main.dart' as main;
 
 class FavWallpaperViewScreen extends StatefulWidget {
   final List arguments;
-  FavWallpaperViewScreen({this.arguments});
+  const FavWallpaperViewScreen({this.arguments});
 
   @override
   _FavWallpaperViewScreenState createState() => _FavWallpaperViewScreenState();
@@ -29,7 +29,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -54,7 +54,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new CachedNetworkImageProvider(thumb),
+      CachedNetworkImageProvider(thumb),
       maximumColorCount: 20,
     );
     setState(() {
@@ -71,7 +71,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
 
   void updateAccent() {
     if (colors.contains(accent)) {
-      var index = colors.indexOf(accent);
+      final index = colors.indexOf(accent);
       setState(() {
         accent = colors[(index + 1) % 5];
       });
@@ -85,8 +85,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0];
-    thumb = widget.arguments[1];
+    index = widget.arguments[0] as int;
+    thumb = widget.arguments[1] as String;
     isLoading = true;
     _updatePaletteGenerator();
     super.initState();
@@ -135,7 +135,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       screenshotController
                           .capture(
                         pixelRatio: 3,
-                        delay: Duration(milliseconds: 10),
+                        delay: const Duration(milliseconds: 10),
                       )
                           .then((File image) async {
                         setState(() {
@@ -145,14 +145,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         });
                         debugPrint('Screenshot Taken');
                       }).catchError((onError) {
-                        debugPrint(onError);
+                        debugPrint(onError as String);
                       });
                     } else {
-                      main.prefs.get('optimisedWallpapers') ?? true
+                      main.prefs.get('optimisedWallpapers') == true ?? true
                           ? screenshotController
                               .capture(
                               pixelRatio: 3,
-                              delay: Duration(milliseconds: 10),
+                              delay: const Duration(milliseconds: 10),
                             )
                               .then((File image) async {
                               setState(() {
@@ -162,7 +162,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               });
                               debugPrint('Screenshot Taken');
                             }).catchError((onError) {
-                              debugPrint(onError);
+                              debugPrint(onError as String);
                             })
                           : debugPrint("Wallpaper Optimisation is disabled!");
                     }
@@ -175,13 +175,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                 },
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-                boxShadow: [],
+                boxShadow: const [],
                 collapsed: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
@@ -200,13 +200,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.54,
-                color: Color(0xFF2F2F2F),
+                color: const Color(0xFF2F2F2F),
                 maxHeight: MediaQuery.of(context).size.height * .46,
                 controller: panelController,
                 panel: Container(
                   height: MediaQuery.of(context).size.height * .42,
                   width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
