@@ -32,4 +32,4 @@ const String ThemeViewRoute = '/themes';
 const String PremiumRoute = '/buyPremium';
 const String PhotographerProfileRoute = '/phprofile';
 const String NotificationsRoute = '/notifications';
-const String CollectionViewRoute = 'collectionsview';
+const String CollectionViewRoute = '/collectionsview';
