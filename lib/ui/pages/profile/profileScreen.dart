@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/favourite/favLoader.dart';
@@ -90,6 +91,23 @@ class _ProfileChildState extends State<ProfileChild> {
                     headerSliverBuilder: (context, innerBoxIsScrolled) =>
                         <Widget>[
                       SliverAppBar(
+                        actions: main.prefs.get("name") == null &&
+                                main.prefs.get("email") == null &&
+                                main.prefs.get("googleimage") == null
+                            ? []
+                            : [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: IconButton(
+                                      icon: Icon(JamIcons.share_alt),
+                                      onPressed: () {
+                                        createUserDynamicLink(
+                                            main.prefs.get("name"),
+                                            main.prefs.get("email"),
+                                            main.prefs.get("googleimage"));
+                                      }),
+                                )
+                              ],
                         backgroundColor: Color(0xFFE57697),
                         automaticallyImplyLeading: false,
                         pinned: false,

@@ -22,6 +22,7 @@ class PageManager extends StatefulWidget {
 
 class _PageManagerState extends State<PageManager> {
   int page = 0;
+  int linkOpened = 0;
   bool result = true;
 
   void checkConnection() async {
@@ -47,15 +48,26 @@ class _PageManagerState extends State<PageManager> {
         await FirebaseDynamicLinks.instance.getInitialLink();
     final Uri deepLink = data?.link;
 
-    if (deepLink != null) {
+    if (deepLink != null && linkOpened == 0) {
       print("opened while closed altogether via deep link");
-      Future.delayed(Duration(seconds: 0))
-          .then((value) => Navigator.pushNamed(context, ShareRoute, arguments: [
-                deepLink.queryParameters["id"],
-                deepLink.queryParameters["provider"],
-                deepLink.queryParameters["url"],
-                deepLink.queryParameters["thumb"],
-              ]));
+      if (deepLink.pathSegments[0] == "share") {
+        Future.delayed(Duration(seconds: 0)).then(
+            (value) => Navigator.pushNamed(context, ShareRoute, arguments: [
+                  deepLink.queryParameters["id"],
+                  deepLink.queryParameters["provider"],
+                  deepLink.queryParameters["url"],
+                  deepLink.queryParameters["thumb"],
+                ]));
+        linkOpened = 1;
+      } else if (deepLink.pathSegments[0] == "user") {
+        Future.delayed(Duration(seconds: 0)).then((value) =>
+            Navigator.pushNamed(context, PhotographerProfileRoute, arguments: [
+              deepLink.queryParameters["name"],
+              deepLink.queryParameters["email"],
+              deepLink.queryParameters["userPhoto"],
+            ]));
+        linkOpened = 1;
+      } else {}
       print("opened while closed altogether via deep link2345");
     }
 
@@ -65,13 +77,24 @@ class _PageManagerState extends State<PageManager> {
 
       if (deepLink != null) {
         print("opened while bg via deep link1");
-        Future.delayed(Duration(seconds: 0)).then(
-            (value) => Navigator.pushNamed(context, ShareRoute, arguments: [
-                  deepLink.queryParameters["id"],
-                  deepLink.queryParameters["provider"],
-                  deepLink.queryParameters["url"],
-                  deepLink.queryParameters["thumb"],
-                ]));
+        if (deepLink.pathSegments[0] == "share") {
+          Future.delayed(Duration(seconds: 0)).then(
+              (value) => Navigator.pushNamed(context, ShareRoute, arguments: [
+                    deepLink.queryParameters["id"],
+                    deepLink.queryParameters["provider"],
+                    deepLink.queryParameters["url"],
+                    deepLink.queryParameters["thumb"],
+                  ]));
+        } else if (deepLink.pathSegments[0] == "user") {
+          Future.delayed(Duration(seconds: 0)).then((value) =>
+              Navigator.pushNamed(context, PhotographerProfileRoute,
+                  arguments: [
+                    deepLink.queryParameters["name"],
+                    deepLink.queryParameters["email"],
+                    deepLink.queryParameters["userPhoto"],
+                  ]));
+        } else {}
+
         print("opened while bg via deep link2345");
       }
     }, onError: (OnLinkErrorException e) async {
