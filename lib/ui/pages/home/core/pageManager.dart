@@ -1,4 +1,3 @@
-import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/globals.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -11,6 +10,7 @@ import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
@@ -38,10 +38,12 @@ class _PageManagerState extends State<PageManager> {
 
   @override
   void initState() {
+    super.initState();
+    SystemChrome.setEnabledSystemUIOverlays(
+        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     Provider.of<TabProvider>(context, listen: false)
         .updateSelectedTab("Wallpapers");
     checkConnection();
-    super.initState();
   }
 
   void initDynamicLinks(BuildContext context) async {
@@ -119,7 +121,7 @@ class _PageManagerState extends State<PageManager> {
 
   @override
   Widget build(BuildContext context) {
-    initDynamicLinks(context);
+    Future.delayed(Duration(seconds: 1), () => initDynamicLinks(context));
     return WillPopScope(
       onWillPop: () async {
         if (page != 0) {
