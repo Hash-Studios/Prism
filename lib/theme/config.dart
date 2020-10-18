@@ -1,3 +1,4 @@
+import 'package:Prism/main.dart' as main;
 import 'package:flutter/material.dart';
 
 class App {
@@ -42,7 +43,7 @@ class Colors {
   Color _mainDarkColor = Color(0xFF181818);
   Color _secondDarkColor = Color(0xFF2F2F2F);
   Color _accentDarkColor = Color(0xFFF0F0F0);
-  Color _mainAccentColor = Color(0xFFE57697);
+  Color _mainAccentColor = Color(main.prefs.get("mainAccentColor"));
 
   Color mainColor(double opacity) {
     return this._mainColor.withOpacity(opacity);
