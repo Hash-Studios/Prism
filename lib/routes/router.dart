@@ -18,6 +18,7 @@ import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/pages/search/searchWallpaperScreen.dart';
 import 'package:Prism/ui/pages/setup/setupScreen.dart';
 import 'package:Prism/ui/pages/setup/setupViewScreen.dart';
+import 'package:Prism/ui/pages/setup/shareSetupViewScreen.dart';
 import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/pages/home/core/notificationScreen.dart';
@@ -115,6 +116,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               ShareWallpaperViewScreen(arguments: settings.arguments));
+    case ShareSetupViewRoute:
+      navStack.add("SharedSetup");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: ShareSetupViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              ShareSetupViewScreen(arguments: settings.arguments));
     case FavWallViewRoute:
       navStack.add("FavouriteWallpaper");
       print(navStack);
