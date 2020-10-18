@@ -13,6 +13,7 @@ import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:firebase_analytics/observer.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
@@ -34,6 +35,7 @@ void main() {
   InAppPurchaseConnection.enablePendingPurchases();
   Crashlytics.instance.enableInDevMode = false;
   FlutterError.onError = Crashlytics.instance.recordFlutterError;
+  GestureBinding.instance.resamplingEnabled = true;
   getApplicationDocumentsDirectory().then((dir) async {
     Hive.init(dir.path);
     await Hive.openBox('wallpapers');

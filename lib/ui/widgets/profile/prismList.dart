@@ -28,6 +28,24 @@ class PrismList extends StatelessWidget {
         ),
         ListTile(
             leading: Icon(
+              JamIcons.paper_plane,
+            ),
+            title: new Text(
+              "Prism on Telegram",
+              style: TextStyle(
+                  color: Theme.of(context).accentColor,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: Text(
+              "Discuss with community.",
+              style: TextStyle(fontSize: 12),
+            ),
+            onTap: () {
+              launch("https://t.me/PrismWallpapers");
+            }),
+        ListTile(
+            leading: Icon(
               JamIcons.info,
             ),
             title: new Text(
