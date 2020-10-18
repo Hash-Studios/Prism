@@ -5,6 +5,7 @@ import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
+import 'package:Prism/theme/config.dart' as config;
 
 class UserProfile extends StatefulWidget {
   final List arguments;
@@ -41,7 +42,7 @@ class _UserProfileState extends State<UserProfile> {
           body: NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
               SliverAppBar(
-                backgroundColor: Color(0xFFE57697),
+                backgroundColor: config.Colors().mainAccentColor(1),
                 automaticallyImplyLeading: true,
                 pinned: true,
                 expandedHeight: 260.0,
@@ -50,7 +51,7 @@ class _UserProfileState extends State<UserProfile> {
                     fit: StackFit.expand,
                     children: [
                       Container(
-                        color: Color(0xFFE57697),
+                        color: config.Colors().mainAccentColor(1),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 25.0),

@@ -471,7 +471,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                           child: CircularProgressIndicator(
                                               valueColor:
                                                   AlwaysStoppedAnimation(
-                                                Color(0xFFE57697),
+                                                config.Colors()
+                                                    .mainAccentColor(1),
                                               ),
                                               value: downloadProgress.progress),
                                         ),

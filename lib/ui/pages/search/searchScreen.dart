@@ -11,6 +11,7 @@ import 'package:Prism/ui/widgets/search/searchGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -84,7 +85,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 borderRadius: BorderRadius.circular(500),
                                 color: Theme.of(context).hintColor),
                             child: TextField(
-                              cursorColor: Color(0xFFE57697),
+                              cursorColor: config.Colors().mainAccentColor(1),
                               style: Theme.of(context)
                                   .textTheme
                                   .headline5

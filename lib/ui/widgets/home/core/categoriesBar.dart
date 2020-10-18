@@ -16,6 +16,7 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class CategoriesBar extends StatefulWidget {
   final width;
@@ -52,7 +53,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
   void showTutorial() {
     TutorialCoachMark(context,
         targets: targets,
-        colorShadow: Color(0xFFE57697),
+        colorShadow: config.Colors().mainAccentColor(1),
         textSkip: textSkip,
         paddingFocus: 1,
         opacityShadow: 0.9, finish: () {
@@ -161,7 +162,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                     ' Available!'),
                 action: SnackBarAction(
                   label: 'VIEW',
-                  textColor: Color(0xFFE57697),
+                  textColor: config.Colors().mainAccentColor(1),
                   onPressed: () {
                     Navigator.pushNamed(context, NotificationsRoute);
                   },
@@ -212,7 +213,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                         child: Icon(
                           Icons.brightness_1,
                           size: 9.0,
-                          color: Color(0xFFE57697),
+                          color: config.Colors().mainAccentColor(1),
                         ),
                       )
                     ]),

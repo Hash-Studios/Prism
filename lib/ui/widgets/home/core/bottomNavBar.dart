@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:image_picker/image_picker.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class BottomBar extends StatefulWidget {
   final Widget child;
@@ -223,7 +224,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Home"
-                            ? Color(0xFFE57697)
+                            ? config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Home"
@@ -267,7 +268,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Search"
-                            ? Color(0xFFE57697)
+                            ? config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Search"
@@ -293,7 +294,7 @@ class _BottomNavBarState extends State<BottomNavBar>
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: Container(
                 decoration: BoxDecoration(
-                    color: Color(0xFFE57697),
+                    color: config.Colors().mainAccentColor(1),
                     borderRadius: BorderRadius.circular(500)),
                 child: IconButton(
                   padding: EdgeInsets.all(0),
@@ -309,7 +310,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(500),
                           color: navStack.last == "Add"
-                              ? Color(0xFFE57697)
+                              ? config.Colors().mainAccentColor(1)
                               : Theme.of(context).accentColor,
                         ),
                         margin: navStack.last == "Add"
@@ -351,7 +352,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Setups"
-                            ? Color(0xFFE57697)
+                            ? config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Setups"
@@ -397,7 +398,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Profile"
-                            ? Color(0xFFE57697)
+                            ? config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Profile"
@@ -526,9 +527,12 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: Color(0xFFE57697).withOpacity(0.2),
+                                color: config.Colors()
+                                    .mainAccentColor(1)
+                                    .withOpacity(0.2),
                                 border: Border.all(
-                                    color: Color(0xFFE57697), width: 3),
+                                    color: config.Colors().mainAccentColor(1),
+                                    width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: ClipRRect(
@@ -548,14 +552,18 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: Color(0xFFE57697), width: 1),
-                                      color: Color(0xFFE57697).withOpacity(0.2),
+                                          color: config.Colors()
+                                              .mainAccentColor(1),
+                                          width: 1),
+                                      color: config.Colors()
+                                          .mainAccentColor(1)
+                                          .withOpacity(0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Icon(
                                       JamIcons.plus,
-                                      color: Color(0xFFE57697),
+                                      color: config.Colors().mainAccentColor(1),
                                       size: 40,
                                     ),
                                   ),
@@ -571,7 +579,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     "Wallpapers",
                     style: TextStyle(
                         fontSize: 16,
-                        color: Color(0xFFE57697),
+                        color: config.Colors().mainAccentColor(1),
                         fontWeight: FontWeight.bold),
                   )
                 ],
@@ -596,9 +604,12 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: Color(0xFFE57697).withOpacity(0.2),
+                                color: config.Colors()
+                                    .mainAccentColor(1)
+                                    .withOpacity(0.2),
                                 border: Border.all(
-                                    color: Color(0xFFE57697), width: 3),
+                                    color: config.Colors().mainAccentColor(1),
+                                    width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: ClipRRect(
@@ -618,14 +629,18 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: Color(0xFFE57697), width: 1),
-                                      color: Color(0xFFE57697).withOpacity(0.2),
+                                          color: config.Colors()
+                                              .mainAccentColor(1),
+                                          width: 1),
+                                      color: config.Colors()
+                                          .mainAccentColor(1)
+                                          .withOpacity(0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Icon(
                                       JamIcons.plus,
-                                      color: Color(0xFFE57697),
+                                      color: config.Colors().mainAccentColor(1),
                                       size: 40,
                                     ),
                                   ),
@@ -643,13 +658,13 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                         "Setups",
                         style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFFE57697),
+                            color: config.Colors().mainAccentColor(1),
                             fontWeight: FontWeight.bold),
                       ),
                       Container(
                         margin: EdgeInsets.only(left: 3),
                         decoration: BoxDecoration(
-                            color: Color(0xFFE57697),
+                            color: config.Colors().mainAccentColor(1),
                             borderRadius: BorderRadius.circular(500)),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(

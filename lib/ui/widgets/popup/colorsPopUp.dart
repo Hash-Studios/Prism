@@ -3,6 +3,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 final databaseReference = Firestore.instance;
 List<Color> colors = [
@@ -120,7 +121,7 @@ Color showColors(BuildContext context) {
           ),
           FlatButton(
             shape: StadiumBorder(),
-            color: Color(0xFFE57697),
+            color: config.Colors().mainAccentColor(1),
             onPressed: () {
               Navigator.of(context).pop();
             },

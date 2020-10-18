@@ -42,6 +42,7 @@ class Colors {
   Color _mainDarkColor = Color(0xFF181818);
   Color _secondDarkColor = Color(0xFF2F2F2F);
   Color _accentDarkColor = Color(0xFFF0F0F0);
+  Color _mainAccentColor = Color(0xFFE57697);
 
   Color mainColor(double opacity) {
     return this._mainColor.withOpacity(opacity);
@@ -65,5 +66,9 @@ class Colors {
 
   Color accentDarkColor(double opacity) {
     return this._accentDarkColor.withOpacity(opacity);
+  }
+
+  Color mainAccentColor(double opacity) {
+    return this._mainAccentColor.withOpacity(opacity);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 void showTutorialComplete(BuildContext context) {
   Dialog tutPopUp = Dialog(
@@ -80,7 +81,7 @@ void showTutorialComplete(BuildContext context) {
             children: <Widget>[
               FlatButton(
                 shape: StadiumBorder(),
-                color: Color(0xFFE57697),
+                color: config.Colors().mainAccentColor(1),
                 onPressed: () {
                   Navigator.of(context).pop();
                   showChangelog(context, () {});

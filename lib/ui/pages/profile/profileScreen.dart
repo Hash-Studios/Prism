@@ -19,6 +19,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -108,7 +109,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                       }),
                                 )
                               ],
-                        backgroundColor: Color(0xFFE57697),
+                        backgroundColor: config.Colors().mainAccentColor(1),
                         automaticallyImplyLeading: false,
                         pinned: false,
                         expandedHeight: 260.0,
@@ -117,7 +118,7 @@ class _ProfileChildState extends State<ProfileChild> {
                             fit: StackFit.expand,
                             children: [
                               Container(
-                                color: Color(0xFFE57697),
+                                color: config.Colors().mainAccentColor(1),
                               ),
                               Padding(
                                 padding: const EdgeInsets.only(top: 25.0),
@@ -280,7 +281,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         ),
                       ),
                       SliverAppBar(
-                        backgroundColor: Color(0xFFE57697),
+                        backgroundColor: config.Colors().mainAccentColor(1),
                         automaticallyImplyLeading: false,
                         pinned: true,
                         titleSpacing: 0,
@@ -356,7 +357,7 @@ class _ProfileChildState extends State<ProfileChild> {
                 body:
                     CustomScrollView(controller: controller, slivers: <Widget>[
                   SliverAppBar(
-                    backgroundColor: Color(0xFFE57697),
+                    backgroundColor: config.Colors().mainAccentColor(1),
                     automaticallyImplyLeading: false,
                     pinned: false,
                     expandedHeight: 280.0,
@@ -367,7 +368,7 @@ class _ProfileChildState extends State<ProfileChild> {
                           Stack(
                             children: <Widget>[
                               Container(
-                                color: Color(0xFFE57697),
+                                color: config.Colors().mainAccentColor(1),
                               ),
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),

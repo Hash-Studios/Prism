@@ -7,6 +7,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/themeModel.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class GeneralList extends StatefulWidget {
   @override
@@ -79,7 +80,7 @@ class _GeneralListState extends State<GeneralList> {
                   toasts.codeSend("Cleared cache!");
                 }),
             SwitchListTile(
-                activeColor: Color(0xFFE57697),
+                activeColor: config.Colors().mainAccentColor(1),
                 secondary: Icon(
                   JamIcons.dashboard,
                 ),
