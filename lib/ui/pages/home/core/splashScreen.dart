@@ -9,6 +9,7 @@ import 'package:Prism/theme/theme.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/theme/config.dart' as config;
 
 RemoteConfig remoteConfig;
 
@@ -73,8 +74,8 @@ class SplashWidget extends StatelessWidget {
               : 'Dark',
       backgroundColor:
           Provider.of<ThemeModel>(context).currentTheme == kLightTheme
-              ? Color(0xFFFFFFFF)
-              : Color(0xFF181818),
+              ? config.Colors().mainColor(1)
+              : config.Colors().mainDarkColor(1),
       until: rcInit,
     );
   }
