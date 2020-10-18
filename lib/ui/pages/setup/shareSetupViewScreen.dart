@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class ShareSetupViewScreen extends StatefulWidget {
   final List arguments;
@@ -107,7 +108,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20),
                           ),
-                          color: Color(0xFF2F2F2F)),
+                          color: config.Colors().secondDarkColor(1)),
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height / 20,
@@ -121,7 +122,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                     minHeight: MediaQuery.of(context).size.height / 20,
                     parallaxEnabled: true,
                     parallaxOffset: 0.54,
-                    color: Color(0xFF2F2F2F),
+                    color: config.Colors().secondDarkColor(1),
                     maxHeight: MediaQuery.of(context).size.height * .46,
                     controller: panelController,
                     panel: Container(
@@ -132,7 +133,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
-                        color: Color(0xFF2F2F2F),
+                        color: config.Colors().secondDarkColor(1),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

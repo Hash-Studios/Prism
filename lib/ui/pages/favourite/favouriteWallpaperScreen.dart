@@ -16,6 +16,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'dart:io';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 
 class FavWallpaperViewScreen extends StatefulWidget {
   final List arguments;
@@ -133,39 +134,40 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     print('Screenshot Starting');
                     if (colorChanged) {
                       screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
-                          )
-                            .then((File image) async {
-                            setState(() {
-                              _imageFile = image;
-                              screenshotTaken = true;
-                              panelClosed = false;
-                            });
-                            print('Screenshot Taken');
-                          }).catchError((onError) {
-                            print(onError);
-                          });
+                          .capture(
+                        pixelRatio: 3,
+                        delay: Duration(milliseconds: 10),
+                      )
+                          .then((File image) async {
+                        setState(() {
+                          _imageFile = image;
+                          screenshotTaken = true;
+                          panelClosed = false;
+                        });
+                        print('Screenshot Taken');
+                      }).catchError((onError) {
+                        print(onError);
+                      });
                     } else {
-                    main.prefs.get('optimisedWallpapers') ?? true
-                        ? screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
-                          )
-                            .then((File image) async {
-                            setState(() {
-                              _imageFile = image;
-                              screenshotTaken = true;
-                              panelClosed = false;
-                            });
-                            print('Screenshot Taken');
-                          }).catchError((onError) {
-                            print(onError);
-                          })
-                        : print("Wallpaper Optimisation is disabled!");
-                  }}
+                      main.prefs.get('optimisedWallpapers') ?? true
+                          ? screenshotController
+                              .capture(
+                              pixelRatio: 3,
+                              delay: Duration(milliseconds: 10),
+                            )
+                              .then((File image) async {
+                              setState(() {
+                                _imageFile = image;
+                                screenshotTaken = true;
+                                panelClosed = false;
+                              });
+                              print('Screenshot Taken');
+                            }).catchError((onError) {
+                              print(onError);
+                            })
+                          : print("Wallpaper Optimisation is disabled!");
+                    }
+                  }
                 },
                 onPanelClosed: () {
                   setState(() {
@@ -185,7 +187,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
-                      color: Color(0xFF2F2F2F)),
+                      color: config.Colors().secondDarkColor(1)),
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
@@ -199,7 +201,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.54,
-                color: Color(0xFF2F2F2F),
+                color: config.Colors().secondDarkColor(1),
                 maxHeight: MediaQuery.of(context).size.height * .46,
                 controller: panelController,
                 panel: Container(
@@ -210,7 +212,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    color: Color(0xFF2F2F2F),
+                    color: config.Colors().secondDarkColor(1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -892,39 +894,40 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     print('Screenshot Starting');
                     if (colorChanged) {
                       screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
-                          )
-                            .then((File image) async {
-                            setState(() {
-                              _imageFile = image;
-                              screenshotTaken = true;
-                              panelClosed = false;
-                            });
-                            print('Screenshot Taken');
-                          }).catchError((onError) {
-                            print(onError);
-                          });
+                          .capture(
+                        pixelRatio: 3,
+                        delay: Duration(milliseconds: 10),
+                      )
+                          .then((File image) async {
+                        setState(() {
+                          _imageFile = image;
+                          screenshotTaken = true;
+                          panelClosed = false;
+                        });
+                        print('Screenshot Taken');
+                      }).catchError((onError) {
+                        print(onError);
+                      });
                     } else {
-                    main.prefs.get('optimisedWallpapers') ?? true
-                        ? screenshotController
-                            .capture(
-                            pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
-                          )
-                            .then((File image) async {
-                            setState(() {
-                              _imageFile = image;
-                              screenshotTaken = true;
-                              panelClosed = false;
-                            });
-                            print('Screenshot Taken');
-                          }).catchError((onError) {
-                            print(onError);
-                          })
-                        : print("Wallpaper Optimisation is disabled!");
-                  }}
+                      main.prefs.get('optimisedWallpapers') ?? true
+                          ? screenshotController
+                              .capture(
+                              pixelRatio: 3,
+                              delay: Duration(milliseconds: 10),
+                            )
+                              .then((File image) async {
+                              setState(() {
+                                _imageFile = image;
+                                screenshotTaken = true;
+                                panelClosed = false;
+                              });
+                              print('Screenshot Taken');
+                            }).catchError((onError) {
+                              print(onError);
+                            })
+                          : print("Wallpaper Optimisation is disabled!");
+                    }
+                  }
                 },
                 onPanelClosed: () {
                   setState(() {
@@ -944,7 +947,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
-                      color: Color(0xFF2F2F2F)),
+                      color: config.Colors().secondDarkColor(1)),
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
@@ -958,7 +961,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.54,
-                color: Color(0xFF2F2F2F),
+                color: config.Colors().secondDarkColor(1),
                 maxHeight: MediaQuery.of(context).size.height * .46,
                 controller: panelController,
                 panel: Container(
@@ -969,7 +972,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    color: Color(0xFF2F2F2F),
+                    color: config.Colors().secondDarkColor(1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

@@ -16,6 +16,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class FocusedMenuDetails extends StatefulWidget {
   final String provider;
@@ -168,7 +169,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                           width: widget.childSize.width,
                           height: widget.childSize.height * 6 / 10,
                           decoration: BoxDecoration(
-                            color: Color(0xFF2F2F2F),
+                            color: config.Colors().secondDarkColor(1),
                             borderRadius:
                                 const BorderRadius.all(Radius.circular(20.0)),
                           ),
@@ -293,7 +294,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                   child: GestureDetector(
                                     child: Container(
                                       decoration: BoxDecoration(
-                                          color: Color(0xFF2F2F2F),
+                                          color: config.Colors()
+                                              .secondDarkColor(1),
                                           borderRadius: BorderRadius.only(
                                               topLeft: Radius.circular(20),
                                               bottomRight:
@@ -339,7 +341,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               width: widget.childSize.width,
                               height: widget.childSize.height * 6 / 10,
                               decoration: BoxDecoration(
-                                color: Color(0xFF2F2F2F),
+                                color: config.Colors().secondDarkColor(1),
                                 borderRadius: const BorderRadius.all(
                                     Radius.circular(20.0)),
                               ),
@@ -452,7 +454,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       child: GestureDetector(
                                         child: Container(
                                           decoration: BoxDecoration(
-                                              color: Color(0xFF2F2F2F),
+                                              color: config.Colors()
+                                                  .secondDarkColor(1),
                                               borderRadius: BorderRadius.only(
                                                   topLeft: Radius.circular(20),
                                                   bottomRight:
@@ -498,7 +501,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                   width: widget.childSize.width,
                                   height: widget.childSize.height * 6 / 10,
                                   decoration: BoxDecoration(
-                                    color: Color(0xFF2F2F2F),
+                                    color: config.Colors().secondDarkColor(1),
                                     borderRadius: const BorderRadius.all(
                                         Radius.circular(20.0)),
                                   ),
@@ -607,7 +610,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           child: GestureDetector(
                                             child: Container(
                                               decoration: BoxDecoration(
-                                                  color: Color(0xFF2F2F2F),
+                                                  color: config.Colors()
+                                                      .secondDarkColor(1),
                                                   borderRadius:
                                                       BorderRadius.only(
                                                           topLeft:
@@ -657,7 +661,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       width: widget.childSize.width,
                                       height: widget.childSize.height * 6 / 10,
                                       decoration: BoxDecoration(
-                                        color: Color(0xFF2F2F2F),
+                                        color:
+                                            config.Colors().secondDarkColor(1),
                                         borderRadius: const BorderRadius.all(
                                             Radius.circular(20.0)),
                                       ),
@@ -767,7 +772,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               child: GestureDetector(
                                                 child: Container(
                                                   decoration: BoxDecoration(
-                                                      color: Color(0xFF2F2F2F),
+                                                      color: config.Colors()
+                                                          .secondDarkColor(1),
                                                       borderRadius:
                                                           BorderRadius.only(
                                                               topLeft: Radius
@@ -819,7 +825,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           height:
                                               widget.childSize.height * 6 / 10,
                                           decoration: BoxDecoration(
-                                            color: Color(0xFF2F2F2F),
+                                            color: config.Colors()
+                                                .secondDarkColor(1),
                                             borderRadius:
                                                 const BorderRadius.all(
                                                     Radius.circular(20.0)),
@@ -944,8 +951,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   child: GestureDetector(
                                                     child: Container(
                                                       decoration: BoxDecoration(
-                                                          color:
-                                                              Color(0xFF2F2F2F),
+                                                          color: config.Colors()
+                                                              .secondDarkColor(
+                                                                  1),
                                                           borderRadius:
                                                               BorderRadius.only(
                                                                   topLeft: Radius
@@ -1010,7 +1018,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           6 /
                                                           8,
                                                   decoration: BoxDecoration(
-                                                    color: Color(0xFF2F2F2F),
+                                                    color: config.Colors()
+                                                        .secondDarkColor(1),
                                                     borderRadius:
                                                         const BorderRadius.all(
                                                             Radius.circular(
@@ -1235,8 +1244,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           6 /
                                                           8,
                                                       decoration: BoxDecoration(
-                                                        color:
-                                                            Color(0xFF2F2F2F),
+                                                        color: config.Colors()
+                                                            .secondDarkColor(1),
                                                         borderRadius:
                                                             const BorderRadius
                                                                     .all(
@@ -1792,7 +1801,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   6 /
                                                   8,
                                               decoration: BoxDecoration(
-                                                color: Color(0xFF2F2F2F),
+                                                color: config.Colors()
+                                                    .secondDarkColor(1),
                                                 borderRadius:
                                                     const BorderRadius.all(
                                                         Radius.circular(20.0)),

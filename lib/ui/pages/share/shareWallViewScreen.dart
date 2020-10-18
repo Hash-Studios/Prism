@@ -21,6 +21,7 @@ import 'package:screenshot/screenshot.dart';
 import 'dart:io';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 
 class ShareWallpaperViewScreen extends StatefulWidget {
   final List arguments;
@@ -198,7 +199,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
-                      color: Color(0xFF2F2F2F)),
+                      color: config.Colors().secondDarkColor(1)),
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
@@ -212,7 +213,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.54,
-                color: Color(0xFF2F2F2F),
+                color: config.Colors().secondDarkColor(1),
                 maxHeight: MediaQuery.of(context).size.height * .46,
                 controller: panelController,
                 panel: Container(
@@ -223,7 +224,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    color: Color(0xFF2F2F2F),
+                    color: config.Colors().secondDarkColor(1),
                   ),
                   child: FutureBuilder<WallPaper>(
                       future: future,
@@ -647,7 +648,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20),
                           ),
-                          color: Color(0xFF2F2F2F)),
+                          color: config.Colors().secondDarkColor(1)),
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height / 20,
@@ -661,7 +662,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                     minHeight: MediaQuery.of(context).size.height / 20,
                     parallaxEnabled: true,
                     parallaxOffset: 0.54,
-                    color: Color(0xFF2F2F2F),
+                    color: config.Colors().secondDarkColor(1),
                     maxHeight: MediaQuery.of(context).size.height * .46,
                     controller: panelController,
                     panel: Container(
@@ -672,7 +673,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
-                        color: Color(0xFF2F2F2F),
+                        color: config.Colors().secondDarkColor(1),
                       ),
                       child: FutureBuilder<Map>(
                           future: future,
@@ -1103,7 +1104,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 topLeft: Radius.circular(20),
                                 topRight: Radius.circular(20),
                               ),
-                              color: Color(0xFF2F2F2F)),
+                              color: config.Colors().secondDarkColor(1)),
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width,
                             height: MediaQuery.of(context).size.height / 20,
@@ -1117,7 +1118,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         minHeight: MediaQuery.of(context).size.height / 20,
                         parallaxEnabled: true,
                         parallaxOffset: 0.54,
-                        color: Color(0xFF2F2F2F),
+                        color: config.Colors().secondDarkColor(1),
                         maxHeight: MediaQuery.of(context).size.height * .46,
                         controller: panelController,
                         panel: Container(
@@ -1128,7 +1129,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 topLeft: Radius.circular(20),
                                 topRight: Radius.circular(20),
                               ),
-                              color: Color(0xFF2F2F2F),
+                              color: config.Colors().secondDarkColor(1),
                             ),
                             child: FutureBuilder<WallPaperP>(
                                 future: future,

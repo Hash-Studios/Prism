@@ -1,6 +1,7 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/focussedMenu/searchFocusedMenuDetails.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class SearchFocusedMenuHolder extends StatefulWidget {
   final String selectedProvider;
@@ -46,7 +47,7 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
           child: GestureDetector(
             child: Container(
               decoration: BoxDecoration(
-                  color: Color(0xFF2F2F2F),
+                  color: config.Colors().secondDarkColor(1),
                   borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
                       bottomRight: Radius.circular(20))),

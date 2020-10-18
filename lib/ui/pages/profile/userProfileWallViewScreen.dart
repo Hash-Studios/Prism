@@ -15,6 +15,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'dart:io';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 
 class UserProfileWallViewScreen extends StatefulWidget {
   final List arguments;
@@ -176,7 +177,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
-                  color: Color(0xFF2F2F2F)),
+                  color: config.Colors().secondDarkColor(1)),
               child: SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height / 20,
@@ -190,7 +191,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
             minHeight: MediaQuery.of(context).size.height / 20,
             parallaxEnabled: true,
             parallaxOffset: 0.54,
-            color: Color(0xFF2F2F2F),
+            color: config.Colors().secondDarkColor(1),
             maxHeight: MediaQuery.of(context).size.height * .46,
             controller: panelController,
             panel: Container(
@@ -201,7 +202,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-                color: Color(0xFF2F2F2F),
+                color: config.Colors().secondDarkColor(1),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
