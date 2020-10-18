@@ -17,7 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class FocusedMenuDetails extends StatelessWidget {
+class FocusedMenuDetails extends StatefulWidget {
   final String provider;
   final Offset childOffset;
   final Size childSize;
@@ -35,39 +35,59 @@ class FocusedMenuDetails extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
+  _FocusedMenuDetailsState createState() => _FocusedMenuDetailsState();
+}
 
-    final maxMenuWidth = size.width * 0.63;
-    final menuHeight = size.height * 0.14;
-    final leftOffset = (childOffset.dx + maxMenuWidth) < size.width
+class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
+  Size size;
+  var maxMenuWidth;
+  var menuHeight;
+  var leftOffset;
+  var topOffset;
+  var fabHeartTopOffset;
+  var fabWallLeftOffset;
+  var fabWallTopOffset;
+  var fabHeartLeftOffset;
+  @override
+  void initState() {
+    size = MediaQuery.of(context).size;
+    maxMenuWidth = size.width * 0.63;
+    menuHeight = size.height * 0.14;
+    leftOffset = (widget.childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? childOffset.dx + childSize.width + size.width * 0.015
-            : childOffset.dx + childSize.width + size.width * 0.01
+            ? widget.childOffset.dx +
+                widget.childSize.width +
+                size.width * 0.015
+            : widget.childOffset.dx + widget.childSize.width + size.width * 0.01
         : MediaQuery.of(context).orientation == Orientation.portrait
-            ? (childOffset.dx - maxMenuWidth + childSize.width)
-            : (childOffset.dx -
+            ? (widget.childOffset.dx - maxMenuWidth + widget.childSize.width)
+            : (widget.childOffset.dx -
                 maxMenuWidth +
-                childSize.width +
+                widget.childSize.width +
                 size.width * 0.3);
-    final topOffset =
-        (childOffset.dy + menuHeight + childSize.height) < size.height
-            ? MediaQuery.of(context).orientation == Orientation.portrait
-                ? childOffset.dy + childSize.height + size.width * 0.015
-                : childOffset.dy + childSize.height + size.width * 0.015
-            : MediaQuery.of(context).orientation == Orientation.portrait
-                ? childOffset.dy - menuHeight + size.width * 0.125
-                : childOffset.dy - menuHeight;
+    topOffset = (widget.childOffset.dy + menuHeight + widget.childSize.height) <
+            size.height
+        ? MediaQuery.of(context).orientation == Orientation.portrait
+            ? widget.childOffset.dy +
+                widget.childSize.height +
+                size.width * 0.015
+            : widget.childOffset.dy +
+                widget.childSize.height +
+                size.width * 0.015
+        : MediaQuery.of(context).orientation == Orientation.portrait
+            ? widget.childOffset.dy - menuHeight + size.width * 0.125
+            : widget.childOffset.dy - menuHeight;
 
-    final fabHeartTopOffset =
-        (childOffset.dy + menuHeight + childSize.height) < size.height
+    fabHeartTopOffset =
+        (widget.childOffset.dy + menuHeight + widget.childSize.height) <
+                size.height
             ? MediaQuery.of(context).orientation == Orientation.portrait
                 ? size.width * 0.175
                 : size.width * 0.1
             : MediaQuery.of(context).orientation == Orientation.portrait
                 ? -size.width * 0.175
                 : -size.width * 0.1;
-    final fabWallLeftOffset = (childOffset.dx + maxMenuWidth) < size.width
+    fabWallLeftOffset = (widget.childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
             ? -size.width * 0.175
             : -size.width * 0.1
@@ -75,22 +95,28 @@ class FocusedMenuDetails extends StatelessWidget {
             ? size.width * 0.175
             : size.width * 0.1;
 
-    final fabWallTopOffset =
-        (childOffset.dy + menuHeight + childSize.height) < size.height
+    fabWallTopOffset =
+        (widget.childOffset.dy + menuHeight + widget.childSize.height) <
+                size.height
             ? MediaQuery.of(context).orientation == Orientation.portrait
                 ? size.width * 0.05
                 : size.width * 0.02
             : MediaQuery.of(context).orientation == Orientation.portrait
                 ? -size.width * 0.05
                 : -size.width * 0.02;
-    final fabHeartLeftOffset = (childOffset.dx + maxMenuWidth) < size.width
+    fabHeartLeftOffset = (widget.childOffset.dx + maxMenuWidth) < size.width
         ? MediaQuery.of(context).orientation == Orientation.portrait
             ? -size.width * 0.05
             : -size.width * 0.02
         : MediaQuery.of(context).orientation == Orientation.portrait
             ? size.width * 0.05
             : size.width * 0.02;
-    print(provider);
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print(widget.provider);
     try {
       return Scaffold(
         backgroundColor: Colors.transparent,
@@ -102,19 +128,16 @@ class FocusedMenuDetails extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                   },
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
-                    child: Container(
-                      color: Provider.of<ThemeModel>(context, listen: false)
-                                  .returnTheme() ==
-                              ThemeType.Dark
-                          ? Colors.black.withOpacity(0.75)
-                          : Colors.white.withOpacity(0.75),
-                    ),
+                  child: Container(
+                    color: Provider.of<ThemeModel>(context, listen: false)
+                                .returnTheme() ==
+                            ThemeType.Dark
+                        ? Colors.black.withOpacity(0.75)
+                        : Colors.white.withOpacity(0.75),
                   )),
               Positioned(
-                  top: childOffset.dy,
-                  left: childOffset.dx,
+                  top: widget.childOffset.dy,
+                  left: widget.childOffset.dx,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.pop(context);
@@ -122,14 +145,15 @@ class FocusedMenuDetails extends StatelessWidget {
                     child: AbsorbPointer(
                         absorbing: true,
                         child: Container(
-                            width: childSize.width,
-                            height: childSize.height,
-                            child: child)),
+                            width: widget.childSize.width,
+                            height: widget.childSize.height,
+                            child: widget.child)),
                   )),
-              provider == "WallHaven"
+              widget.provider == "WallHaven"
                   ? Positioned(
-                      top: childOffset.dy + childSize.height * 4 / 10,
-                      left: childOffset.dx,
+                      top: widget.childOffset.dy +
+                          widget.childSize.height * 4 / 10,
+                      left: widget.childOffset.dx,
                       child: TweenAnimationBuilder(
                         duration: Duration(milliseconds: 150),
                         builder: (BuildContext context, value, Widget child) {
@@ -141,8 +165,8 @@ class FocusedMenuDetails extends StatelessWidget {
                         },
                         tween: Tween(begin: 0.0, end: 1.0),
                         child: Container(
-                          width: childSize.width,
-                          height: childSize.height * 6 / 10,
+                          width: widget.childSize.width,
+                          height: widget.childSize.height * 6 / 10,
                           decoration: BoxDecoration(
                             color: Color(0xFF2F2F2F),
                             borderRadius:
@@ -169,9 +193,11 @@ class FocusedMenuDetails extends StatelessWidget {
                                               14, 11, 14, 11),
                                           avatar: Icon(
                                             JamIcons.ordered_list,
-                                            color: HexColor(WData.walls[index]
+                                            color: HexColor(WData
+                                                            .walls[widget.index]
                                                             .colors[WData
-                                                                .walls[index]
+                                                                .walls[widget
+                                                                    .index]
                                                                 .colors
                                                                 .length -
                                                             1])
@@ -182,14 +208,17 @@ class FocusedMenuDetails extends StatelessWidget {
                                             size: 20,
                                           ),
                                           backgroundColor: HexColor(WData
-                                                  .walls[index].colors[
-                                              WData.walls[index].colors.length -
-                                                  1]),
+                                              .walls[widget.index].colors[WData
+                                                  .walls[widget.index]
+                                                  .colors
+                                                  .length -
+                                              1]),
                                           label: Text(
-                                            WData.walls[index].category
+                                            WData.walls[widget.index].category
                                                     .toString()[0]
                                                     .toUpperCase() +
-                                                WData.walls[index].category
+                                                WData.walls[widget.index]
+                                                    .category
                                                     .toString()
                                                     .substring(1),
                                             style: Theme.of(context)
@@ -197,10 +226,11 @@ class FocusedMenuDetails extends StatelessWidget {
                                                 .headline4
                                                 .copyWith(
                                                   color: HexColor(WData
-                                                                  .walls[index]
+                                                                  .walls[widget
+                                                                      .index]
                                                                   .colors[WData
-                                                                      .walls[
-                                                                          index]
+                                                                      .walls[widget
+                                                                          .index]
                                                                       .colors
                                                                       .length -
                                                                   1])
@@ -215,7 +245,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),
                                         child: Text(
-                                          WData.walls[index].id
+                                          WData.walls[widget.index].id
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context)
@@ -232,7 +262,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                           ),
                                           SizedBox(width: 10),
                                           Text(
-                                            "Views: ${WData.walls[index].views.toString()}",
+                                            "Views: ${WData.walls[widget.index].views.toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -248,7 +278,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                           ),
                                           SizedBox(width: 10),
                                           Text(
-                                            "${WData.walls[index].resolution.toString()}",
+                                            "${WData.walls[widget.index].resolution.toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -289,10 +319,11 @@ class FocusedMenuDetails extends StatelessWidget {
                         ),
                       ),
                     )
-                  : provider == "Prism"
+                  : widget.provider == "Prism"
                       ? Positioned(
-                          top: childOffset.dy + childSize.height * 4 / 10,
-                          left: childOffset.dx,
+                          top: widget.childOffset.dy +
+                              widget.childSize.height * 4 / 10,
+                          left: widget.childOffset.dx,
                           child: TweenAnimationBuilder(
                             duration: Duration(milliseconds: 150),
                             builder:
@@ -305,8 +336,8 @@ class FocusedMenuDetails extends StatelessWidget {
                             },
                             tween: Tween(begin: 0.0, end: 1.0),
                             child: Container(
-                              width: childSize.width,
-                              height: childSize.height * 6 / 10,
+                              width: widget.childSize.width,
+                              height: widget.childSize.height * 6 / 10,
                               decoration: BoxDecoration(
                                 color: Color(0xFF2F2F2F),
                                 borderRadius: const BorderRadius.all(
@@ -334,18 +365,19 @@ class FocusedMenuDetails extends StatelessWidget {
                                                 backgroundImage:
                                                     CachedNetworkImageProvider(
                                                         Data.subPrismWalls[
-                                                                index]
+                                                                widget.index]
                                                             ["userPhoto"]),
                                               ),
                                               backgroundColor: Colors.black,
                                               labelPadding: EdgeInsets.fromLTRB(
                                                   7, 3, 7, 3),
                                               label: Text(
-                                                Data.subPrismWalls[index]["by"]
+                                                Data.subPrismWalls[widget.index]
+                                                            ["by"]
                                                         .toString()[0]
                                                         .toUpperCase() +
-                                                    Data.subPrismWalls[index]
-                                                            ["by"]
+                                                    Data.subPrismWalls[
+                                                            widget.index]["by"]
                                                         .toString()
                                                         .substring(1),
                                                 style: Theme.of(context)
@@ -359,19 +391,20 @@ class FocusedMenuDetails extends StatelessWidget {
                                                 Navigator.pushNamed(context,
                                                     PhotographerProfileRoute,
                                                     arguments: [
-                                                      Data.subPrismWalls[index]
-                                                          ["by"],
-                                                      Data.subPrismWalls[index]
-                                                          ["email"],
-                                                      Data.subPrismWalls[index]
-                                                          ["userPhoto"]
+                                                      Data.subPrismWalls[
+                                                          widget.index]["by"],
+                                                      Data.subPrismWalls[widget
+                                                          .index]["email"],
+                                                      Data.subPrismWalls[widget
+                                                          .index]["userPhoto"]
                                                     ]);
                                               }),
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(
                                                 0, 5, 0, 10),
                                             child: Text(
-                                              Data.subPrismWalls[index]["id"]
+                                              Data.subPrismWalls[widget.index]
+                                                      ["id"]
                                                   .toString()
                                                   .toUpperCase(),
                                               style: Theme.of(context)
@@ -388,7 +421,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                               ),
                                               SizedBox(width: 10),
                                               Text(
-                                                "${Data.subPrismWalls[index]["size"].toString()}",
+                                                "${Data.subPrismWalls[widget.index]["size"].toString()}",
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
@@ -404,7 +437,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                               ),
                                               SizedBox(width: 10),
                                               Text(
-                                                "${Data.subPrismWalls[index]["resolution"].toString()}",
+                                                "${Data.subPrismWalls[widget.index]["resolution"].toString()}",
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
@@ -445,10 +478,11 @@ class FocusedMenuDetails extends StatelessWidget {
                             ),
                           ),
                         )
-                      : provider == "ProfileWall"
+                      : widget.provider == "ProfileWall"
                           ? Positioned(
-                              top: childOffset.dy + childSize.height * 4 / 10,
-                              left: childOffset.dx,
+                              top: widget.childOffset.dy +
+                                  widget.childSize.height * 4 / 10,
+                              left: widget.childOffset.dx,
                               child: TweenAnimationBuilder(
                                 duration: Duration(milliseconds: 150),
                                 builder: (BuildContext context, value,
@@ -461,8 +495,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                 },
                                 tween: Tween(begin: 0.0, end: 1.0),
                                 child: Container(
-                                  width: childSize.width,
-                                  height: childSize.height * 6 / 10,
+                                  width: widget.childSize.width,
+                                  height: widget.childSize.height * 6 / 10,
                                   decoration: BoxDecoration(
                                     color: Color(0xFF2F2F2F),
                                     borderRadius: const BorderRadius.all(
@@ -497,15 +531,15 @@ class FocusedMenuDetails extends StatelessWidget {
                                                     Provider.of<ProfileWallProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .profileWalls[index]
-                                                                ["by"]
+                                                            .profileWalls[widget
+                                                                .index]["by"]
                                                             .toString()[0]
                                                             .toUpperCase() +
                                                         Provider.of<ProfileWallProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .profileWalls[index]
-                                                                ["by"]
+                                                            .profileWalls[widget
+                                                                .index]["by"]
                                                             .toString()
                                                             .substring(1),
                                                     style: Theme.of(context)
@@ -524,7 +558,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   Provider.of<ProfileWallProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileWalls[index]["id"]
+                                                      .profileWalls[
+                                                          widget.index]["id"]
                                                       .toString()
                                                       .toUpperCase(),
                                                   style: Theme.of(context)
@@ -541,7 +576,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${Provider.of<ProfileWallProvider>(context, listen: false).profileWalls[index]["size"].toString()}",
+                                                    "${Provider.of<ProfileWallProvider>(context, listen: false).profileWalls[widget.index]["size"].toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -557,7 +592,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${Provider.of<ProfileWallProvider>(context, listen: false).profileWalls[index]["resolution"].toString()}",
+                                                    "${Provider.of<ProfileWallProvider>(context, listen: false).profileWalls[widget.index]["resolution"].toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -602,11 +637,11 @@ class FocusedMenuDetails extends StatelessWidget {
                                 ),
                               ),
                             )
-                          : provider == "UserProfileWall"
+                          : widget.provider == "UserProfileWall"
                               ? Positioned(
-                                  top: childOffset.dy +
-                                      childSize.height * 4 / 10,
-                                  left: childOffset.dx,
+                                  top: widget.childOffset.dy +
+                                      widget.childSize.height * 4 / 10,
+                                  left: widget.childOffset.dx,
                                   child: TweenAnimationBuilder(
                                     duration: Duration(milliseconds: 150),
                                     builder: (BuildContext context, value,
@@ -619,8 +654,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                     },
                                     tween: Tween(begin: 0.0, end: 1.0),
                                     child: Container(
-                                      width: childSize.width,
-                                      height: childSize.height * 6 / 10,
+                                      width: widget.childSize.width,
+                                      height: widget.childSize.height * 6 / 10,
                                       decoration: BoxDecoration(
                                         color: Color(0xFF2F2F2F),
                                         borderRadius: const BorderRadius.all(
@@ -657,12 +692,16 @@ class FocusedMenuDetails extends StatelessWidget {
                                                           Colors.black,
                                                       label: Text(
                                                         UserData.userProfileWalls[
-                                                                    index]["by"]
+                                                                    widget
+                                                                        .index]
+                                                                    ["by"]
                                                                 .toString()[0]
                                                                 .toUpperCase() +
                                                             UserData
                                                                 .userProfileWalls[
-                                                                    index]["by"]
+                                                                    widget
+                                                                        .index]
+                                                                    ["by"]
                                                                 .toString()
                                                                 .substring(1),
                                                         style: Theme.of(context)
@@ -679,7 +718,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                                         .fromLTRB(0, 5, 0, 10),
                                                     child: Text(
                                                       UserData.userProfileWalls[
-                                                              index]["id"]
+                                                              widget.index]
+                                                              ["id"]
                                                           .toString()
                                                           .toUpperCase(),
                                                       style: Theme.of(context)
@@ -696,7 +736,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                       ),
                                                       SizedBox(width: 10),
                                                       Text(
-                                                        "${UserData.userProfileWalls[index]["size"].toString()}",
+                                                        "${UserData.userProfileWalls[widget.index]["size"].toString()}",
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyText2,
@@ -712,7 +752,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                       ),
                                                       SizedBox(width: 10),
                                                       Text(
-                                                        "${UserData.userProfileWalls[index]["resolution"].toString()}",
+                                                        "${UserData.userProfileWalls[widget.index]["resolution"].toString()}",
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyText2,
@@ -758,11 +798,11 @@ class FocusedMenuDetails extends StatelessWidget {
                                     ),
                                   ),
                                 )
-                              : provider == "Pexels"
+                              : widget.provider == "Pexels"
                                   ? Positioned(
-                                      top: childOffset.dy +
-                                          childSize.height * 4 / 10,
-                                      left: childOffset.dx,
+                                      top: widget.childOffset.dy +
+                                          widget.childSize.height * 4 / 10,
+                                      left: widget.childOffset.dx,
                                       child: TweenAnimationBuilder(
                                         duration: Duration(milliseconds: 200),
                                         builder: (BuildContext context, value,
@@ -775,8 +815,9 @@ class FocusedMenuDetails extends StatelessWidget {
                                         },
                                         tween: Tween(begin: 0.0, end: 1.0),
                                         child: Container(
-                                          width: childSize.width,
-                                          height: childSize.height * 6 / 10,
+                                          width: widget.childSize.width,
+                                          height:
+                                              widget.childSize.height * 6 / 10,
                                           decoration: BoxDecoration(
                                             color: Color(0xFF2F2F2F),
                                             borderRadius:
@@ -815,7 +856,9 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                   Colors.white,
                                                               size: 20),
                                                           label: Text(
-                                                            PData.wallsP[index]
+                                                            PData
+                                                                .wallsP[widget
+                                                                    .index]
                                                                 .photographer
                                                                 .toString(),
                                                             style: Theme.of(
@@ -829,7 +872,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                                           ),
                                                           onPressed: () {
                                                             launch(PData
-                                                                .wallsP[index]
+                                                                .wallsP[widget
+                                                                    .index]
                                                                 .url);
                                                           }),
                                                       Padding(
@@ -838,9 +882,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                     .fromLTRB(
                                                                 0, 5, 0, 10),
                                                         child: Text(
-                                                          PData.wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                                              ? PData.wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
-                                                                  PData.wallsP[index].url
+                                                          PData.wallsP[widget.index].url
                                                                       .toString()
                                                                       .replaceAll(
                                                                           "https://www.pexels.com/photo/", "")
@@ -848,11 +890,9 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                           "-", " ")
                                                                       .replaceAll(
                                                                           "/", "")
-                                                                      .substring(
-                                                                          1,
-                                                                          PData.wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
-                                                                              7)
-                                                              : PData.wallsP[index].url
+                                                                      .length >
+                                                                  8
+                                                              ? PData.wallsP[widget.index].url
                                                                       .toString()
                                                                       .replaceAll(
                                                                           "https://www.pexels.com/photo/", "")
@@ -862,12 +902,15 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                           "/",
                                                                           "")[0]
                                                                       .toUpperCase() +
-                                                                  PData.wallsP[index].url
+                                                                  PData.wallsP[widget.index].url
                                                                       .toString()
-                                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                                      .replaceAll("-", " ")
+                                                                      .replaceAll(
+                                                                          "https://www.pexels.com/photo/", "")
+                                                                      .replaceAll(
+                                                                          "-", " ")
                                                                       .replaceAll("/", "")
-                                                                      .substring(1),
+                                                                      .substring(1, PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length - 7)
+                                                              : PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
                                                           style:
                                                               Theme.of(context)
                                                                   .textTheme
@@ -884,7 +927,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                           ),
                                                           SizedBox(width: 5),
                                                           Text(
-                                                            "${PData.wallsP[index].width.toString()}x${PData.wallsP[index].height.toString()}",
+                                                            "${PData.wallsP[widget.index].width.toString()}x${PData.wallsP[widget.index].height.toString()}",
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
@@ -934,15 +977,18 @@ class FocusedMenuDetails extends StatelessWidget {
                                         ),
                                       ),
                                     )
-                                  : provider == "Liked"
+                                  : widget.provider == "Liked"
                                       ? Provider.of<FavouriteProvider>(context,
-                                                      listen: false)
-                                                  .liked[index]["provider"] ==
+                                                          listen: false)
+                                                      .liked[widget.index]
+                                                  ["provider"] ==
                                               "WallHaven"
                                           ? Positioned(
-                                              top: childOffset.dy +
-                                                  childSize.height * 2 / 8,
-                                              left: childOffset.dx,
+                                              top: widget.childOffset.dy +
+                                                  widget.childSize.height *
+                                                      2 /
+                                                      8,
+                                              left: widget.childOffset.dx,
                                               child: TweenAnimationBuilder(
                                                 duration:
                                                     Duration(milliseconds: 200),
@@ -958,9 +1004,11 @@ class FocusedMenuDetails extends StatelessWidget {
                                                 tween:
                                                     Tween(begin: 0.0, end: 1.0),
                                                 child: Container(
-                                                  width: childSize.width,
+                                                  width: widget.childSize.width,
                                                   height:
-                                                      childSize.height * 6 / 8,
+                                                      widget.childSize.height *
+                                                          6 /
+                                                          8,
                                                   decoration: BoxDecoration(
                                                     color: Color(0xFF2F2F2F),
                                                     borderRadius:
@@ -1013,14 +1061,14 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                           .black,
                                                                   label: Text(
                                                                     Provider.of<FavouriteProvider>(context, listen: false)
-                                                                            .liked[index][
+                                                                            .liked[widget.index][
                                                                                 "category"]
                                                                             .toString()[
                                                                                 0]
                                                                             .toUpperCase() +
                                                                         Provider.of<FavouriteProvider>(context,
                                                                                 listen: false)
-                                                                            .liked[index]["category"]
+                                                                            .liked[widget.index]["category"]
                                                                             .toString()
                                                                             .substring(1),
                                                                     style: Theme.of(
@@ -1048,7 +1096,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                           listen:
                                                                               false)
                                                                       .liked[
-                                                                          index]
+                                                                          widget
+                                                                              .index]
                                                                           ["id"]
                                                                       .toString()
                                                                       .toUpperCase(),
@@ -1071,7 +1120,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                       width:
                                                                           10),
                                                                   Text(
-                                                                    "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"].toString()}",
+                                                                    "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["views"].toString()}",
                                                                     style: Theme.of(
                                                                             context)
                                                                         .textTheme
@@ -1092,7 +1141,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                       width:
                                                                           10),
                                                                   Text(
-                                                                    "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString()}",
+                                                                    "${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["resolution"].toString()}",
                                                                     style: Theme.of(
                                                                             context)
                                                                         .textTheme
@@ -1153,13 +1202,15 @@ class FocusedMenuDetails extends StatelessWidget {
                                           : Provider.of<FavouriteProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]
+                                                          .liked[widget.index]
                                                       ["provider"] ==
                                                   "Prism"
                                               ? Positioned(
-                                                  top: childOffset.dy +
-                                                      childSize.height * 2 / 8,
-                                                  left: childOffset.dx,
+                                                  top: widget.childOffset.dy +
+                                                      widget.childSize.height *
+                                                          2 /
+                                                          8,
+                                                  left: widget.childOffset.dx,
                                                   child: TweenAnimationBuilder(
                                                     duration: Duration(
                                                         milliseconds: 200),
@@ -1177,8 +1228,10 @@ class FocusedMenuDetails extends StatelessWidget {
                                                     tween: Tween(
                                                         begin: 0.0, end: 1.0),
                                                     child: Container(
-                                                      width: childSize.width,
-                                                      height: childSize.height *
+                                                      width: widget
+                                                          .childSize.width,
+                                                      height: widget.childSize
+                                                              .height *
                                                           6 /
                                                           8,
                                                       decoration: BoxDecoration(
@@ -1238,8 +1291,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                               .black,
                                                                       label:
                                                                           Text(
-                                                                        Provider.of<FavouriteProvider>(context, listen: false).liked[index]["photographer"].toString()[0].toUpperCase() +
-                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[index]["photographer"].toString().substring(1),
+                                                                        Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["photographer"].toString()[0].toUpperCase() +
+                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["photographer"].toString().substring(1),
                                                                         style: Theme.of(context)
                                                                             .textTheme
                                                                             .headline4
@@ -1262,7 +1315,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                               listen:
                                                                                   false)
                                                                           .liked[
-                                                                              index]
+                                                                              widget.index]
                                                                               [
                                                                               "id"]
                                                                           .toString()
@@ -1287,7 +1340,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                           width:
                                                                               10),
                                                                       Text(
-                                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()}",
+                                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["size"].toString()}",
                                                                         style: Theme.of(context)
                                                                             .textTheme
                                                                             .bodyText2,
@@ -1308,7 +1361,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                           width:
                                                                               10),
                                                                       Text(
-                                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString()}",
+                                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["resolution"].toString()}",
                                                                         style: Theme.of(context)
                                                                             .textTheme
                                                                             .bodyText2,
@@ -1369,15 +1422,18 @@ class FocusedMenuDetails extends StatelessWidget {
                                               : Provider.of<FavouriteProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .liked[index]
+                                                              .liked[widget.index]
                                                           ["provider"] ==
                                                       "Pexels"
                                                   ? Positioned(
-                                                      top: childOffset.dy +
-                                                          childSize.height *
+                                                      top: widget
+                                                              .childOffset.dy +
+                                                          widget.childSize
+                                                                  .height *
                                                               1 /
                                                               2,
-                                                      left: childOffset.dx,
+                                                      left:
+                                                          widget.childOffset.dx,
                                                       child:
                                                           TweenAnimationBuilder(
                                                         duration: Duration(
@@ -1398,12 +1454,13 @@ class FocusedMenuDetails extends StatelessWidget {
                                                             begin: 0.0,
                                                             end: 1.0),
                                                         child: Container(
-                                                          width:
-                                                              childSize.width,
-                                                          height:
-                                                              childSize.height *
-                                                                  1 /
-                                                                  2,
+                                                          width: widget
+                                                              .childSize.width,
+                                                          height: widget
+                                                                  .childSize
+                                                                  .height *
+                                                              1 /
+                                                              2,
                                                           decoration:
                                                               BoxDecoration(
                                                             color: Color(
@@ -1459,7 +1516,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                                   20),
                                                                           label:
                                                                               Text(
-                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[index]["photographer"].toString(),
+                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["photographer"].toString(),
                                                                             style: Theme.of(context).textTheme.headline4.copyWith(
                                                                                   color: Colors.white,
                                                                                 ),
@@ -1478,7 +1535,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                           SizedBox(
                                                                               width: 5),
                                                                           Text(
-                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString(),
+                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["resolution"].toString(),
                                                                             style:
                                                                                 Theme.of(context).textTheme.headline6,
                                                                           ),
@@ -1534,11 +1591,14 @@ class FocusedMenuDetails extends StatelessWidget {
                                                       ),
                                                     )
                                                   : Positioned(
-                                                      top: childOffset.dy +
-                                                          childSize.height *
+                                                      top: widget
+                                                              .childOffset.dy +
+                                                          widget.childSize
+                                                                  .height *
                                                               1 /
                                                               2,
-                                                      left: childOffset.dx,
+                                                      left:
+                                                          widget.childOffset.dx,
                                                       child:
                                                           TweenAnimationBuilder(
                                                         duration: Duration(
@@ -1559,12 +1619,13 @@ class FocusedMenuDetails extends StatelessWidget {
                                                             begin: 0.0,
                                                             end: 1.0),
                                                         child: Container(
-                                                          width:
-                                                              childSize.width,
-                                                          height:
-                                                              childSize.height *
-                                                                  1 /
-                                                                  2,
+                                                          width: widget
+                                                              .childSize.width,
+                                                          height: widget
+                                                                  .childSize
+                                                                  .height *
+                                                              1 /
+                                                              2,
                                                           decoration:
                                                               BoxDecoration(
                                                             color: Color(
@@ -1616,7 +1677,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                               width: 5),
                                                                           Text(
                                                                             "Likes: " +
-                                                                                Provider.of<FavouriteProvider>(context, listen: false).liked[index]["fav"].toString(),
+                                                                                Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["fav"].toString(),
                                                                             style:
                                                                                 Theme.of(context).textTheme.headline6,
                                                                           ),
@@ -1635,7 +1696,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                               width: 5),
                                                                           Text(
                                                                             "Views: " +
-                                                                                Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"].toString(),
+                                                                                Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["views"].toString(),
                                                                             style:
                                                                                 Theme.of(context).textTheme.headline6,
                                                                           ),
@@ -1653,7 +1714,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                           SizedBox(
                                                                               width: 5),
                                                                           Text(
-                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"].toString(),
+                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["resolution"].toString(),
                                                                             style:
                                                                                 Theme.of(context).textTheme.headline6,
                                                                           ),
@@ -1709,9 +1770,9 @@ class FocusedMenuDetails extends StatelessWidget {
                                                       ),
                                                     )
                                       : Positioned(
-                                          top: childOffset.dy +
-                                              childSize.height * 2 / 8,
-                                          left: childOffset.dx,
+                                          top: widget.childOffset.dy +
+                                              widget.childSize.height * 2 / 8,
+                                          left: widget.childOffset.dx,
                                           child: TweenAnimationBuilder(
                                             duration:
                                                 Duration(milliseconds: 200),
@@ -1726,8 +1787,10 @@ class FocusedMenuDetails extends StatelessWidget {
                                             },
                                             tween: Tween(begin: 0.0, end: 1.0),
                                             child: Container(
-                                              width: childSize.width,
-                                              height: childSize.height * 6 / 8,
+                                              width: widget.childSize.width,
+                                              height: widget.childSize.height *
+                                                  6 /
+                                                  8,
                                               decoration: BoxDecoration(
                                                 color: Color(0xFF2F2F2F),
                                                 borderRadius:
@@ -1772,8 +1835,8 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                   size: 20),
                                                               label: Text(
                                                                 PData
-                                                                    .wallsC[
-                                                                        index]
+                                                                    .wallsC[widget
+                                                                        .index]
                                                                     .photographer
                                                                     .toString(),
                                                                 style: Theme.of(
@@ -1795,7 +1858,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                     0,
                                                                     10),
                                                             child: Text(
-                                                              PData.wallsC[index].url
+                                                              PData.wallsC[widget.index].url
                                                                           .toString()
                                                                           .replaceAll(
                                                                               "https://www.pexels.com/photo/", "")
@@ -1805,23 +1868,23 @@ class FocusedMenuDetails extends StatelessWidget {
                                                                               "/", "")
                                                                           .length >
                                                                       8
-                                                                  ? PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
-                                                                      PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(
-                                                                          1,
-                                                                          PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
-                                                                              7)
-                                                                  : PData.wallsC[index].url
+                                                                  ? PData.wallsC[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
+                                                                      PData.wallsC[widget.index].url
                                                                           .toString()
                                                                           .replaceAll(
                                                                               "https://www.pexels.com/photo/", "")
                                                                           .replaceAll(
-                                                                              "-",
-                                                                              " ")
-                                                                          .replaceAll("/", "")[
-                                                                              0]
-                                                                          .toUpperCase() +
+                                                                              "-", " ")
+                                                                          .replaceAll(
+                                                                              "/",
+                                                                              "")
+                                                                          .substring(
+                                                                              1,
+                                                                              PData.wallsC[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                                                  7)
+                                                                  : PData.wallsC[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
                                                                       PData
-                                                                          .wallsC[index]
+                                                                          .wallsC[widget.index]
                                                                           .url
                                                                           .toString()
                                                                           .replaceAll("https://www.pexels.com/photo/", "")
@@ -1846,7 +1909,7 @@ class FocusedMenuDetails extends StatelessWidget {
                                                               SizedBox(
                                                                   width: 5),
                                                               Text(
-                                                                "${PData.wallsC[index].width.toString()}x${PData.wallsC[index].height.toString()}",
+                                                                "${PData.wallsC[widget.index].width.toString()}x${PData.wallsC[widget.index].height.toString()}",
                                                                 style: Theme.of(
                                                                         context)
                                                                     .textTheme
@@ -1902,97 +1965,104 @@ class FocusedMenuDetails extends StatelessWidget {
                 left: leftOffset,
                 child: SetWallpaperButton(
                   colorChanged: false,
-                  url: provider == "WallHaven"
-                      ? WData.walls[index].path.toString()
-                      : provider == "Prism"
-                          ? Data.subPrismWalls[index]["wallpaper_url"]
+                  url: widget.provider == "WallHaven"
+                      ? WData.walls[widget.index].path.toString()
+                      : widget.provider == "Prism"
+                          ? Data.subPrismWalls[widget.index]["wallpaper_url"]
                               .toString()
-                          : provider == "ProfileWall"
+                          : widget.provider == "ProfileWall"
                               ? Provider.of<ProfileWallProvider>(context,
                                       listen: false)
-                                  .profileWalls[index]["wallpaper_url"]
+                                  .profileWalls[widget.index]["wallpaper_url"]
                                   .toString()
-                              : provider == "UserProfileWall"
-                                  ? UserData.userProfileWalls[index]
+                              : widget.provider == "UserProfileWall"
+                                  ? UserData.userProfileWalls[widget.index]
                                           ["wallpaper_url"]
                                       .toString()
-                                  : provider == "Pexels"
-                                      ? PData.wallsP[index].src["original"]
+                                  : widget.provider == "Pexels"
+                                      ? PData
+                                          .wallsP[widget.index].src["original"]
                                           .toString()
-                                      : provider == "Liked"
+                                      : widget.provider == "Liked"
                                           ? Provider.of<FavouriteProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["url"]
+                                              .liked[widget.index]["url"]
                                               .toString()
-                                          : PData.wallsC[index].src["original"]
+                                          : PData.wallsC[widget.index]
+                                              .src["original"]
                                               .toString(),
                 ),
               ),
               Positioned(
                 top: topOffset - fabHeartTopOffset,
                 left: leftOffset - fabHeartLeftOffset,
-                child: provider == "WallHaven"
+                child: widget.provider == "WallHaven"
                     ? FavouriteWallpaperButton(
-                        id: WData.walls[index].id.toString(),
+                        id: WData.walls[widget.index].id.toString(),
                         provider: "WallHaven",
-                        wallhaven: WData.walls[index],
+                        wallhaven: WData.walls[widget.index],
                         trash: false,
                       )
-                    : provider == "Prism"
+                    : widget.provider == "Prism"
                         ? FavouriteWallpaperButton(
-                            id: Data.subPrismWalls[index]["id"].toString(),
+                            id: Data.subPrismWalls[widget.index]["id"]
+                                .toString(),
                             provider: "Prism",
-                            prism: Data.subPrismWalls[index],
+                            prism: Data.subPrismWalls[widget.index],
                             trash: false,
                           )
-                        : provider == "ProfileWall"
+                        : widget.provider == "ProfileWall"
                             ? FavouriteWallpaperButton(
                                 id: Provider.of<ProfileWallProvider>(context,
                                         listen: false)
-                                    .profileWalls[index]["id"]
+                                    .profileWalls[widget.index]["id"]
                                     .toString(),
                                 provider: "Prism",
                                 prism: Provider.of<ProfileWallProvider>(context,
                                         listen: false)
-                                    .profileWalls[index],
+                                    .profileWalls[widget.index],
                                 trash: false,
                               )
-                            : provider == "UserProfileWall"
+                            : widget.provider == "UserProfileWall"
                                 ? FavouriteWallpaperButton(
-                                    id: UserData.userProfileWalls[index]["id"]
+                                    id: UserData.userProfileWalls[widget.index]
+                                            ["id"]
                                         .toString(),
                                     provider: "Prism",
-                                    prism: UserData.userProfileWalls[index],
+                                    prism:
+                                        UserData.userProfileWalls[widget.index],
                                     trash: false,
                                   )
-                                : provider == "Pexels"
+                                : widget.provider == "Pexels"
                                     ? FavouriteWallpaperButton(
-                                        id: PData.wallsP[index].id.toString(),
+                                        id: PData.wallsP[widget.index].id
+                                            .toString(),
                                         provider: "Pexels",
-                                        pexels: PData.wallsP[index],
+                                        pexels: PData.wallsP[widget.index],
                                         trash: false,
                                       )
-                                    : provider == "Liked"
+                                    : widget.provider == "Liked"
                                         ? FavouriteWallpaperButton(
                                             id: Provider.of<FavouriteProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["id"]
+                                                .liked[widget.index]["id"]
                                                 .toString(),
                                             provider:
                                                 Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["provider"]
+                                                    .liked[widget.index]
+                                                        ["provider"]
                                                     .toString(),
                                             trash: true,
                                           )
                                         : FavouriteWallpaperButton(
-                                            id: PData.wallsC[index].id
+                                            id: PData.wallsC[widget.index].id
                                                 .toString(),
                                             provider: "Pexels",
-                                            pexels: PData.wallsC[index],
+                                            pexels: PData.wallsC[widget.index],
                                             trash: false,
                                           ),
               ),
@@ -2001,30 +2071,32 @@ class FocusedMenuDetails extends StatelessWidget {
                 left: leftOffset + fabWallLeftOffset,
                 child: DownloadButton(
                   colorChanged: false,
-                  link: provider == "WallHaven"
-                      ? WData.walls[index].path.toString()
-                      : provider == "Prism"
-                          ? Data.subPrismWalls[index]["wallpaper_url"]
+                  link: widget.provider == "WallHaven"
+                      ? WData.walls[widget.index].path.toString()
+                      : widget.provider == "Prism"
+                          ? Data.subPrismWalls[widget.index]["wallpaper_url"]
                               .toString()
-                          : provider == "ProfileWall"
+                          : widget.provider == "ProfileWall"
                               ? Provider.of<ProfileWallProvider>(context,
                                       listen: false)
-                                  .profileWalls[index]["wallpaper_url"]
+                                  .profileWalls[widget.index]["wallpaper_url"]
                                   .toString()
-                              : provider == "UserProfileWall"
-                                  ? UserData.userProfileWalls[index]
+                              : widget.provider == "UserProfileWall"
+                                  ? UserData.userProfileWalls[widget.index]
                                           ["wallpaper_url"]
                                       .toString()
-                                  : provider == "Pexels"
-                                      ? PData.wallsP[index].src["original"]
+                                  : widget.provider == "Pexels"
+                                      ? PData
+                                          .wallsP[widget.index].src["original"]
                                           .toString()
-                                      : provider == "Liked"
+                                      : widget.provider == "Liked"
                                           ? Provider.of<FavouriteProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["url"]
+                                              .liked[widget.index]["url"]
                                               .toString()
-                                          : PData.wallsC[index].src["original"]
+                                          : PData.wallsC[widget.index]
+                                              .src["original"]
                                               .toString(),
                 ),
               ),
