@@ -14,31 +14,6 @@ class UserProfile extends StatefulWidget {
 }
 
 class _UserProfileState extends State<UserProfile> {
-  Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
-    return true;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-        body: UserProfileChild(arguments: widget.arguments),
-      ),
-    );
-  }
-}
-
-class UserProfileChild extends StatefulWidget {
-  final List arguments;
-  UserProfileChild({@required this.arguments});
-  @override
-  _UserProfileChildState createState() => _UserProfileChildState();
-}
-
-class _UserProfileChildState extends State<UserProfileChild> {
   String name;
   String email;
   String userPhoto;

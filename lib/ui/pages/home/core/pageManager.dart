@@ -1,3 +1,4 @@
+import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/globals.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -67,6 +68,13 @@ class _PageManagerState extends State<PageManager> {
               deepLink.queryParameters["userPhoto"],
             ]));
         linkOpened = 1;
+      } else if (deepLink.pathSegments[0] == "setup") {
+        Future.delayed(Duration(seconds: 0)).then((value) =>
+            Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
+              deepLink.queryParameters["name"],
+              deepLink.queryParameters["thumbUrl"],
+            ]));
+        linkOpened = 1;
       } else {}
       print("opened while closed altogether via deep link2345");
     }
@@ -93,6 +101,12 @@ class _PageManagerState extends State<PageManager> {
                     deepLink.queryParameters["email"],
                     deepLink.queryParameters["userPhoto"],
                   ]));
+        } else if (deepLink.pathSegments[0] == "setup") {
+          Future.delayed(Duration(seconds: 0)).then((value) =>
+              Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
+                deepLink.queryParameters["name"],
+                deepLink.queryParameters["thumbUrl"],
+              ]));
         } else {}
 
         print("opened while bg via deep link2345");

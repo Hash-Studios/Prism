@@ -1,5 +1,7 @@
 import 'package:Prism/data/setups/provider/setupProvider.dart';
+import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -195,41 +197,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                 ),
                               ],
                             ),
-                            SizedBox(height: 5),
-                            Row(
-                              children: [
-                                Icon(
-                                  JamIcons.user,
-                                  size: 20,
-                                  color: Colors.white70,
-                                ),
-                                SizedBox(width: 10),
-                                Text(
-                                  "${Provider.of<SetupProvider>(context, listen: false).setups[index]["by"].toString()}",
-                                  style: Theme.of(context).textTheme.bodyText2,
-                                ),
-                              ],
+                            SizedBox(
+                              height: 5,
                             ),
-                          ],
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: <Widget>[
                             Row(
                               children: [
-                                Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.32,
-                                  child: Text(
-                                    "${Provider.of<SetupProvider>(context, listen: false).setups[index]["widget"].toString()}",
-                                    textAlign: TextAlign.right,
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
-                                  ),
-                                ),
-                                SizedBox(width: 10),
                                 Provider.of<SetupProvider>(context,
                                                 listen: false)
                                             .setups[index]["widget"] ==
@@ -240,8 +212,58 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                         size: 20,
                                         color: Colors.white70,
                                       ),
+                                SizedBox(width: 10),
+                                Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.32,
+                                  child: Text(
+                                    "${Provider.of<SetupProvider>(context, listen: false).setups[index]["widget"].toString()}",
+                                    style:
+                                        Theme.of(context).textTheme.bodyText2,
+                                  ),
+                                ),
                               ],
                             ),
+                          ],
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: <Widget>[
+                            ActionChip(
+                                label: Text(
+                                  "${Provider.of<SetupProvider>(context, listen: false).setups[index]["by"].toString()}",
+                                  style: Theme.of(context).textTheme.bodyText2,
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 5, horizontal: 5),
+                                avatar: CircleAvatar(
+                                  backgroundImage: CachedNetworkImageProvider(
+                                      Provider.of<SetupProvider>(context,
+                                              listen: false)
+                                          .setups[index]["userPhoto"]),
+                                ),
+                                labelPadding: EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                onPressed: () {
+                                  SystemChrome.setEnabledSystemUIOverlays([
+                                    SystemUiOverlay.top,
+                                    SystemUiOverlay.bottom
+                                  ]);
+                                  Navigator.pushNamed(
+                                      context, PhotographerProfileRoute,
+                                      arguments: [
+                                        Provider.of<SetupProvider>(context,
+                                                listen: false)
+                                            .setups[index]["by"],
+                                        Provider.of<SetupProvider>(context,
+                                                listen: false)
+                                            .setups[index]["email"],
+                                        Provider.of<SetupProvider>(context,
+                                                listen: false)
+                                            .setups[index]["userPhoto"]
+                                      ]);
+                                }),
                             SizedBox(height: 5),
                             Row(
                               children: [
@@ -476,6 +498,30 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                             : Colors.white,
                     icon: Icon(
                       JamIcons.chevron_left,
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: IconButton(
+                    onPressed: () {
+                      createSetupDynamicLink(
+                          index.toString(),
+                          Provider.of<SetupProvider>(context, listen: false)
+                              .setups[index]["name"],
+                          Provider.of<SetupProvider>(context, listen: false)
+                              .setups[index]["image"]);
+                    },
+                    color: isLoading
+                        ? Theme.of(context).accentColor
+                        : colors[0].computeLuminance() > 0.5
+                            ? Colors.black
+                            : Colors.white,
+                    icon: Icon(
+                      JamIcons.share_alt,
                     ),
                   ),
                 ),
