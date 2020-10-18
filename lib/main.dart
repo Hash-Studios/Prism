@@ -24,6 +24,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/services.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 Box prefs;
 Directory dir;
@@ -61,7 +62,7 @@ void main() {
     else
       prefs.put('optimisedWallpapers', false);
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Color(0xFFE57697),
+      systemNavigationBarColor: config.Colors().mainAccentColor(1),
     ));
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
         .then((value) => runZoned<Future<void>>(() {
