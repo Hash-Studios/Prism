@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -95,7 +96,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             children: <Widget>[
                               FlatButton(
                                 shape: StadiumBorder(),
-                                color: Color(0xFFE57697),
+                                color: config.Colors().mainAccentColor(1),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
@@ -109,7 +110,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ),
                               FlatButton(
                                 shape: StadiumBorder(),
-                                color: Color(0xFFE57697),
+                                color: config.Colors().mainAccentColor(1),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                   if (main.prefs.get("Subscriber") == false) {

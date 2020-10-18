@@ -446,7 +446,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                     child: Center(
                                       child: CircularProgressIndicator(
                                           valueColor: AlwaysStoppedAnimation(
-                                            Color(0xFFE57697),
+                                            config.Colors().mainAccentColor(1),
                                           ),
                                           value: downloadProgress.progress),
                                     ),
@@ -893,7 +893,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                     child: Center(
                                       child: CircularProgressIndicator(
                                           valueColor: AlwaysStoppedAnimation(
-                                            Color(0xFFE57697),
+                                            config.Colors().mainAccentColor(1),
                                           ),
                                           value: downloadProgress.progress),
                                     ),

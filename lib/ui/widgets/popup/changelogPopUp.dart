@@ -1,6 +1,7 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 void showChangelog(BuildContext context, Function func) {
   final controller = ScrollController();
@@ -327,7 +328,7 @@ void showChangelog(BuildContext context, Function func) {
           ),
           FlatButton(
             shape: StadiumBorder(),
-            color: Color(0xFFE57697),
+            color: config.Colors().mainAccentColor(1),
             onPressed: () {
               Navigator.of(context).pop();
               func();
@@ -401,7 +402,7 @@ class Change extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color: Color(0xFFE57697),
+              color: config.Colors().mainAccentColor(1),
             ),
             SizedBox(
               width: 20,

@@ -15,6 +15,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 
 class UploadWallScreen extends StatefulWidget {
   final List arguments;
@@ -248,7 +249,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                           child: LinearProgressIndicator(
                             backgroundColor: Theme.of(context).hintColor,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFFE57697)),
+                                config.Colors().mainAccentColor(1)),
                           )))
                   : Container(),
               Spacer(),
@@ -294,7 +295,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         ),
         floatingActionButton: FloatingActionButton(
             backgroundColor: !isProcessing && !isUploading
-                ? Color(0xFFE57697)
+                ? config.Colors().mainAccentColor(1)
                 : Theme.of(context).hintColor,
             disabledElevation: 0,
             child: Icon(

@@ -311,7 +311,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   void showTutorial() {
     TutorialCoachMark(context,
         targets: targets,
-        colorShadow: Color(0xFFE57697),
+        colorShadow: config.Colors().mainAccentColor(1),
         textSkip: "SKIP",
         paddingFocus: 1,
         opacityShadow: 0.9, finish: () {
@@ -696,7 +696,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: Center(
                                       child: CircularProgressIndicator(
                                           valueColor: AlwaysStoppedAnimation(
-                                            Color(0xFFE57697),
+                                            config.Colors().mainAccentColor(1),
                                           ),
                                           value: downloadProgress.progress),
                                     ),
@@ -1128,7 +1128,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           child: CircularProgressIndicator(
                                               valueColor:
                                                   AlwaysStoppedAnimation(
-                                                Color(0xFFE57697),
+                                                config.Colors()
+                                                    .mainAccentColor(1),
                                               ),
                                               value: downloadProgress.progress),
                                         ),
@@ -1602,7 +1603,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               child: CircularProgressIndicator(
                                                   valueColor:
                                                       AlwaysStoppedAnimation(
-                                                    Color(0xFFE57697),
+                                                    config.Colors()
+                                                        .mainAccentColor(1),
                                                   ),
                                                   value: downloadProgress
                                                       .progress),
@@ -2554,7 +2556,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       CircularProgressIndicator(
                                                           valueColor:
                                                               AlwaysStoppedAnimation(
-                                                            Color(0xFFE57697),
+                                                            config
+                                                                .Colors().mainAccentColor(
+                                                                    1),
                                                           ),
                                                           value:
                                                               downloadProgress

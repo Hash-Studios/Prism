@@ -10,6 +10,7 @@ import 'package:gallery_saver/gallery_saver.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/theme/config.dart' as config;
 
 class DownloadButton extends StatefulWidget {
   final String link;
@@ -256,7 +257,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
             children: <Widget>[
               FlatButton(
                 shape: StadiumBorder(),
-                color: Color(0xFFE57697),
+                color: config.Colors().mainAccentColor(1),
                 onPressed: () {
                   if (!main.prefs.get("isLoggedin")) {
                     googleSignInPopUp(context, () {

@@ -479,7 +479,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     child: Center(
                                       child: CircularProgressIndicator(
                                           valueColor: AlwaysStoppedAnimation(
-                                            Color(0xFFE57697),
+                                            config.Colors().mainAccentColor(1),
                                           ),
                                           value: downloadProgress.progress),
                                     ),
@@ -932,7 +932,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           child: CircularProgressIndicator(
                                               valueColor:
                                                   AlwaysStoppedAnimation(
-                                                Color(0xFFE57697),
+                                                config.Colors()
+                                                    .mainAccentColor(1),
                                               ),
                                               value: downloadProgress.progress),
                                         ),
@@ -1425,7 +1426,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               child: CircularProgressIndicator(
                                                   valueColor:
                                                       AlwaysStoppedAnimation(
-                                                    Color(0xFFE57697),
+                                                    config.Colors()
+                                                        .mainAccentColor(1),
                                                   ),
                                                   value: downloadProgress
                                                       .progress),

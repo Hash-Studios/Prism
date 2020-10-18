@@ -4,6 +4,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class DownloadList extends StatelessWidget {
   @override
@@ -108,7 +109,7 @@ class DownloadList extends StatelessWidget {
                         'YES',
                         style: TextStyle(
                           fontSize: 16.0,
-                          color: Color(0xFFE57697),
+                          color: config.Colors().mainAccentColor(1),
                         ),
                       ),
                     ),
@@ -116,7 +117,7 @@ class DownloadList extends StatelessWidget {
                       padding: const EdgeInsets.only(right: 8.0),
                       child: FlatButton(
                         shape: StadiumBorder(),
-                        color: Color(0xFFE57697),
+                        color: config.Colors().mainAccentColor(1),
                         onPressed: () {
                           Navigator.of(context).pop();
                         },

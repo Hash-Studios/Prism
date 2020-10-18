@@ -5,6 +5,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:provider/provider.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class UserList extends StatelessWidget {
   @override
@@ -126,7 +127,7 @@ class UserList extends StatelessWidget {
                                   'YES',
                                   style: TextStyle(
                                     fontSize: 16.0,
-                                    color: Color(0xFFE57697),
+                                    color: config.Colors().mainAccentColor(1),
                                   ),
                                 ),
                               ),
@@ -134,7 +135,7 @@ class UserList extends StatelessWidget {
                                 padding: const EdgeInsets.only(right: 8.0),
                                 child: FlatButton(
                                   shape: StadiumBorder(),
-                                  color: Color(0xFFE57697),
+                                  color: config.Colors().mainAccentColor(1),
                                   onPressed: () {
                                     Navigator.of(context).pop();
                                   },
