@@ -60,6 +60,9 @@ void main() {
       prefs.put('optimisedWallpapers', true);
     else
       prefs.put('optimisedWallpapers', false);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      systemNavigationBarColor: Color(0xFFE57697),
+    ));
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
         .then((value) => runZoned<Future<void>>(() {
               runApp(
