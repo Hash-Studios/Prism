@@ -46,6 +46,9 @@ void main() {
     await Hive.openBox<List>('notifications');
     prefs = await Hive.openBox('prefs');
     print("Box Opened");
+    if (prefs.get("mainAccentColor") == null) {
+      prefs.put("mainAccentColor", 0xFFE57697);
+    }
     hqThumbs = prefs.get('hqThumbs') ?? false;
     if (hqThumbs)
       prefs.put('hqThumbs', true);
@@ -142,6 +145,9 @@ class RestartWidget extends StatefulWidget {
 
   static void restartApp(BuildContext context) {
     router.navStack = ["Home"];
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      systemNavigationBarColor: Color(prefs.get("mainAccentColor")),
+    ));
     observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>().restartApp();
   }

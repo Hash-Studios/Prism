@@ -1,5 +1,6 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -53,6 +54,29 @@ class _GeneralListState extends State<GeneralList> {
               subtitle: Text(
                 "Toggle app theme",
                 style: TextStyle(fontSize: 12),
+              ),
+            ),
+            ListTile(
+              onTap: () {
+                showAccentColors(context);
+              },
+              leading: Icon(JamIcons.brush),
+              title: Text(
+                "Theme Accent Color",
+                style: TextStyle(
+                    color: Theme.of(context).accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
+              ),
+              subtitle: Text(
+                "Change app accent color",
+                style: TextStyle(fontSize: 12),
+              ),
+              trailing: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircleAvatar(
+                  backgroundColor: Color(main.prefs.get("mainAccentColor")),
+                ),
               ),
             ),
             ListTile(
