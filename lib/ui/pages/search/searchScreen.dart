@@ -10,7 +10,6 @@ import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/search/searchGrid.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/theme/config.dart' as config;
