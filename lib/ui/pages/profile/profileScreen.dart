@@ -85,7 +85,7 @@ class _ProfileChildState extends State<ProfileChild> {
         onWillPop: onWillPop,
         child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
-            statusBarColor: main.prefs.get("mainAccentColor"),
+            statusBarColor: Color(main.prefs.get("mainAccentColor")),
           ),
           child: main.prefs.get("isLoggedin")
               ? DefaultTabController(

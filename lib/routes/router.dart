@@ -140,8 +140,24 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("SetupView");
       print(navStack);
       analytics.setCurrentScreen(screenName: SetupViewRoute);
-      return CupertinoPageRoute(
-          builder: (context) => SetupViewScreen(arguments: settings.arguments));
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            SetupViewScreen(
+          arguments: settings.arguments,
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          var begin = 0.0;
+          var end = 1.0;
+          var curve = Curves.easeOut;
+
+          var tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return ScaleTransition(
+            scale: animation.drive(tween),
+            child: child,
+          );
+        },
+      );
     case ProfileWallViewRoute:
       navStack.add("ProfileWallpaper");
       print(navStack);
