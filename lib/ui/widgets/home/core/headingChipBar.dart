@@ -19,7 +19,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
       elevation: 0,
       titleSpacing: 0,
       leading: IconButton(
-          icon: Icon(JamIcons.arrow_left),
+          icon: Icon(JamIcons.chevron_left),
           onPressed: () {
             Navigator.pop(context);
             if (navStack.length > 1) navStack.removeLast();
