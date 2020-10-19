@@ -37,9 +37,16 @@ class _DownloadButtonState extends State<DownloadButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        if (main.prefs.get("isLoggedin")) {
-          if (main.prefs.get("premium")) {
-            onDownload();
+        if (!isLoading) {
+          if (main.prefs.get("isLoggedin")) {
+            if (main.prefs.get("premium")) {
+              onDownload();
+            } else {
+              showDownloadPopup(context, () {
+                print("Download");
+                onDownload();
+              });
+            }
           } else {
             showDownloadPopup(context, () {
               print("Download");
@@ -47,10 +54,7 @@ class _DownloadButtonState extends State<DownloadButton> {
             });
           }
         } else {
-          showDownloadPopup(context, () {
-            print("Download");
-            onDownload();
-          });
+          toasts.error("Wait for download to complete!");
         }
       },
       child: Stack(
