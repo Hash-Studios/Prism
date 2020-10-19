@@ -48,7 +48,7 @@ class _SetupScreenState extends State<SetupScreen> {
       onWillPop: onWillPop,
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-          statusBarColor: main.prefs.get("mainAccentColor"),
+          statusBarColor: Color(main.prefs.get("mainAccentColor")),
         ),
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
