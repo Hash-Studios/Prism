@@ -1,3 +1,4 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -235,8 +236,16 @@ void showAccentColors(BuildContext context) {
                             "MaterialColor(primary value: Color(0xff", "")
                         .replaceAll("Color(", "")
                         .replaceAll(")", ""));
-                    print(accentColor.toString());
+                    var hexString = color
+                        .toString()
+                        .replaceAll(
+                            "MaterialColor(primary value: Color(0xff", "")
+                        .replaceAll("Color(0xff", "")
+                        .replaceAll(")", "");
                     main.prefs.put("mainAccentColor", accentColor);
+                    analytics.logEvent(
+                        name: "accent_changed",
+                        parameters: {'color': hexString});
                     main.RestartWidget.restartApp(context);
                   },
                 )
