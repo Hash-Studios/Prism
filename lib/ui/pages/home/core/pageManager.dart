@@ -226,48 +226,53 @@ class _PageManagerState extends State<PageManager> {
         }
         return false;
       },
-      child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          appBar: PreferredSize(
-            child: CategoriesBar(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height),
-            preferredSize: Size(double.infinity, 55),
-          ),
-          body: Stack(
-            children: <Widget>[
-              BottomBar(
-                child: PageView.builder(
-                    onPageChanged: (index) {
-                      print("Index cat: " + index.toString());
-                      setState(() {
-                        page = index;
-                      });
-                      categoryController.scrollToIndex(index,
-                          preferPosition: AutoScrollPosition.begin);
-                      if (index == 0) {
-                        Provider.of<TabProvider>(context, listen: false)
-                            .updateSelectedTab("Wallpapers");
-                      } else if (index == 1) {
-                        Provider.of<TabProvider>(context, listen: false)
-                            .updateSelectedTab("Collections");
-                      }
-                    },
-                    controller: pageController,
-                    itemCount: 2,
-                    itemBuilder: (context, index) {
-                      print("Index : " + index.toString());
-                      if (index == 0) {
-                        return HomeScreen();
-                      } else if (index == 1) {
-                        return CollectionScreen();
-                      }
-                      return UndefinedScreen();
-                    }),
-              ),
-              !result ? ConnectivityWidget() : Container(),
-            ],
-          )),
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          statusBarColor: Theme.of(context).primaryColor,
+        ),
+        child: Scaffold(
+            backgroundColor: Theme.of(context).primaryColor,
+            appBar: PreferredSize(
+              child: CategoriesBar(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height),
+              preferredSize: Size(double.infinity, 55),
+            ),
+            body: Stack(
+              children: <Widget>[
+                BottomBar(
+                  child: PageView.builder(
+                      onPageChanged: (index) {
+                        print("Index cat: " + index.toString());
+                        setState(() {
+                          page = index;
+                        });
+                        categoryController.scrollToIndex(index,
+                            preferPosition: AutoScrollPosition.begin);
+                        if (index == 0) {
+                          Provider.of<TabProvider>(context, listen: false)
+                              .updateSelectedTab("Wallpapers");
+                        } else if (index == 1) {
+                          Provider.of<TabProvider>(context, listen: false)
+                              .updateSelectedTab("Collections");
+                        }
+                      },
+                      controller: pageController,
+                      itemCount: 2,
+                      itemBuilder: (context, index) {
+                        print("Index : " + index.toString());
+                        if (index == 0) {
+                          return HomeScreen();
+                        } else if (index == 1) {
+                          return CollectionScreen();
+                        }
+                        return UndefinedScreen();
+                      }),
+                ),
+                !result ? ConnectivityWidget() : Container(),
+              ],
+            )),
+      ),
     );
   }
 }
