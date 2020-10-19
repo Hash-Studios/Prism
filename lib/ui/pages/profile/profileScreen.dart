@@ -291,7 +291,9 @@ class _ProfileChildState extends State<ProfileChild> {
                                         ],
                                       ),
                                       Spacer(flex: 1),
-                                      main.prefs.get("twitter") != ""
+                                      main.prefs.get("twitter") != "" &&
+                                              main.prefs.get("twitter") !=
+                                                  "https://www.twitter.com/"
                                           ? GestureDetector(
                                               onTap: () {
                                                 launch(main.prefs
@@ -329,7 +331,9 @@ class _ProfileChildState extends State<ProfileChild> {
                                               flex: 1,
                                             ),
                                       Spacer(flex: 1),
-                                      main.prefs.get("instagram") != ""
+                                      main.prefs.get("instagram") != "" &&
+                                              main.prefs.get("instagram") !=
+                                                  "https://www.instagram.com/"
                                           ? GestureDetector(
                                               onTap: () {
                                                 launch(main.prefs
