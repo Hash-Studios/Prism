@@ -11,21 +11,6 @@ class PremiumList extends StatelessWidget {
       children: <Widget>[
         main.prefs.get("premium") == true
             ? Container()
-            : Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Premium',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).accentColor,
-                    ),
-                  ),
-                ),
-              ),
-        main.prefs.get("premium") == true
-            ? Container()
             : ListTile(
                 onTap: () {
                   if (!main.prefs.get("isLoggedin")) {
