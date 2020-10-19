@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:io';
+import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/main.dart' as main;
 
 class DownloadScreen extends StatefulWidget {
   @override
@@ -142,11 +144,23 @@ class _DownloadScreenState extends State<DownloadScreen> {
                         child: Provider.of<ThemeModel>(context, listen: false)
                                     .returnTheme() ==
                                 ThemeType.Dark
-                            ? SvgPicture.asset(
-                                "assets/images/downloads dark.svg",
+                            ? SvgPicture.string(
+                                downloadsDark.replaceAll(
+                                    "E57697",
+                                    main.prefs
+                                        .get("mainAccentColor")
+                                        .toRadixString(16)
+                                        .toString()
+                                        .substring(2)),
                               )
-                            : SvgPicture.asset(
-                                "assets/images/downloads light.svg",
+                            : SvgPicture.string(
+                                downloadsLight.replaceAll(
+                                    "E57697",
+                                    main.prefs
+                                        .get("mainAccentColor")
+                                        .toRadixString(16)
+                                        .toString()
+                                        .substring(2)),
                               ),
                       ),
                       SizedBox(
