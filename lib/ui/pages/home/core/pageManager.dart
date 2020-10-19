@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/globals.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -8,11 +10,16 @@ import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
+import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:rate_my_app/rate_my_app.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 PageController pageController = PageController();
 
@@ -25,6 +32,15 @@ class _PageManagerState extends State<PageManager> {
   int page = 0;
   int linkOpened = 0;
   bool result = true;
+
+  RateMyApp rateMyApp = RateMyApp(
+    preferencesPrefix: 'rateMyApp_',
+    minDays: 0, //0
+    minLaunches: 5, //5
+    remindDays: 7, //7
+    remindLaunches: 10, //10
+    googlePlayIdentifier: 'com.hash.prism',
+  );
 
   void checkConnection() async {
     result = await DataConnectionChecker().hasConnection;
@@ -44,6 +60,84 @@ class _PageManagerState extends State<PageManager> {
     Provider.of<TabProvider>(context, listen: false)
         .updateSelectedTab("Wallpapers");
     checkConnection();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await rateMyApp.init();
+      if (mounted && rateMyApp.shouldOpenDialog) {
+        rateMyApp.showStarRateDialog(
+          context,
+          title: 'RATE PRISM',
+          message:
+              'You like Prism? Then please take a little bit of your time to leave a rating :',
+          actionsBuilder: (context, stars) {
+            return [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: FlatButton(
+                  shape: StadiumBorder(),
+                  color: config.Colors().mainAccentColor(1),
+                  onPressed: () async {
+                    print('Thanks for the ' +
+                        (stars == null ? '0' : stars.round().toString()) +
+                        ' star(s) !');
+                    if (stars <= 3) {
+                      if (Platform.isAndroid) {
+                        var androidInfo = await DeviceInfoPlugin().androidInfo;
+                        var release = androidInfo.version.release;
+                        var sdkInt = androidInfo.version.sdkInt;
+                        var manufacturer = androidInfo.manufacturer;
+                        var model = androidInfo.model;
+                        print(
+                            'Android $release (SDK $sdkInt), $manufacturer $model');
+                        launch(
+                            "mailto:hash.studios.inc@gmail.com?subject=%5BCUSTOMER%20FEEDBACK%5D&body=----x-x-x----%0D%0ADevice%20Info%20-%0D%0A%0D%0AAndroid%20Version%3A%20Android%20$release%0D%0ASDK%20Number%3A%20SDK%20$sdkInt%0D%0ADevice%20Manufacturer%3A%20$manufacturer%0D%0ADevice%20Model%3A%20$model%0D%0A----x-x-x----%0D%0A%0D%0AEnter%20your%20feedback%20below%20---");
+                      }
+                    } else {
+                      toasts.codeSend("Thank You for your Rating!");
+                      launch(
+                          "https://play.google.com/store/apps/details?id=com.hash.prism");
+                    }
+                    ;
+                    analytics.logEvent(
+                        name: "rating_given", parameters: {'rating': stars});
+                    await rateMyApp
+                        .callEvent(RateMyAppEventType.rateButtonPressed);
+                    Navigator.pop<RateMyAppDialogButton>(
+                        context, RateMyAppDialogButton.rate);
+                  },
+                  child: Text(
+                    'OK',
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ];
+          },
+          dialogStyle: DialogStyle(
+            dialogShape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            messageStyle: Theme.of(context)
+                .textTheme
+                .headline6
+                .copyWith(color: Theme.of(context).accentColor),
+            messagePadding: EdgeInsets.only(bottom: 20),
+            titleStyle: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                color: Theme.of(context).accentColor),
+          ),
+          ignoreNativeDialog: Platform.isAndroid,
+          starRatingOptions: StarRatingOptions(
+              initialRating: 5,
+              starsFillColor: config.Colors().mainAccentColor(1),
+              starsBorderColor: config.Colors().mainAccentColor(1)),
+          onDismissed: () =>
+              rateMyApp.callEvent(RateMyAppEventType.laterButtonPressed),
+        );
+      }
+    });
   }
 
   void initDynamicLinks(BuildContext context) async {
