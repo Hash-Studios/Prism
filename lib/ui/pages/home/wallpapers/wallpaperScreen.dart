@@ -987,7 +987,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 Data.subPrismWalls[index]
                                                     ["email"],
                                                 Data.subPrismWalls[index]
-                                                    ["userPhoto"]
+                                                    ["userPhoto"],
+                                                false
                                               ]);
                                         },
                                         padding: EdgeInsets.symmetric(
@@ -2084,8 +2085,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           CircularProgressIndicator(
                                                               valueColor:
                                                                   AlwaysStoppedAnimation(
-                                                                Color(
-                                                                    0xFFE57697),
+                                                                Color(main.prefs.get("mainAccentColor")),
                                                               ),
                                                               value:
                                                                   downloadProgress
@@ -2556,8 +2556,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       CircularProgressIndicator(
                                                           valueColor:
                                                               AlwaysStoppedAnimation(
-                                                            config
-                                                                .Colors().mainAccentColor(
+                                                            config.Colors()
+                                                                .mainAccentColor(
                                                                     1),
                                                           ),
                                                           value:

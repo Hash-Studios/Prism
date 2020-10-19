@@ -162,6 +162,7 @@ class _PageManagerState extends State<PageManager> {
               deepLink.queryParameters["name"],
               deepLink.queryParameters["email"],
               deepLink.queryParameters["userPhoto"],
+              deepLink.queryParameters["premium"] == "true" ? true : false,
             ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "setup") {
@@ -190,13 +191,13 @@ class _PageManagerState extends State<PageManager> {
                     deepLink.queryParameters["thumb"],
                   ]));
         } else if (deepLink.pathSegments[0] == "user") {
-          Future.delayed(Duration(seconds: 0)).then((value) =>
-              Navigator.pushNamed(context, PhotographerProfileRoute,
-                  arguments: [
-                    deepLink.queryParameters["name"],
-                    deepLink.queryParameters["email"],
-                    deepLink.queryParameters["userPhoto"],
-                  ]));
+          Future.delayed(Duration(seconds: 0)).then((value) => Navigator
+                  .pushNamed(context, PhotographerProfileRoute, arguments: [
+                deepLink.queryParameters["name"],
+                deepLink.queryParameters["email"],
+                deepLink.queryParameters["userPhoto"],
+                deepLink.queryParameters["premium"] == "true" ? true : false,
+              ]));
         } else if (deepLink.pathSegments[0] == "setup") {
           Future.delayed(Duration(seconds: 0)).then((value) =>
               Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [

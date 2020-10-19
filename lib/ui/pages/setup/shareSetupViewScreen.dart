@@ -287,7 +287,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                 arguments: [
                                                   SData.setup["by"],
                                                   SData.setup["email"],
-                                                  SData.setup["userPhoto"]
+                                                  SData.setup["userPhoto"],
+                                                  false
                                                 ]);
                                           }),
                                       SizedBox(height: 5),

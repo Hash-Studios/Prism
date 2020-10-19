@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/main.dart' as main;
 
 class UserProfile extends StatefulWidget {
   final List arguments;
@@ -18,12 +19,14 @@ class _UserProfileState extends State<UserProfile> {
   String name;
   String email;
   String userPhoto;
+  bool premium;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {
     name = widget.arguments[0];
     email = widget.arguments[1];
     userPhoto = widget.arguments[2];
+    premium = widget.arguments[3];
     super.initState();
   }
 
@@ -81,16 +84,59 @@ class _UserProfileState extends State<UserProfile> {
                                       ),
                                     ),
                               Spacer(flex: 2),
-                              name == null
-                                  ? Container()
-                                  : Text(
-                                      name,
-                                      style: TextStyle(
-                                          fontFamily: "Proxima Nova",
-                                          color: Colors.white,
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w700),
-                                    ),
+                              premium == false
+                                  ? name == null
+                                      ? Container()
+                                      : Text(
+                                          name,
+                                          style: TextStyle(
+                                              fontFamily: "Proxima Nova",
+                                              color: Colors.white,
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.w700),
+                                        )
+                                  : name == null
+                                      ? Container()
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Text(
+                                              name,
+                                              style: TextStyle(
+                                                  fontFamily: "Proxima Nova",
+                                                  color: Colors.white,
+                                                  fontSize: 32,
+                                                  fontWeight: FontWeight.w700),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 8.0),
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 3, horizontal: 5),
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            50),
+                                                    color: Color(0xFFFFFFFF)),
+                                                child: Text(
+                                                  "PRO",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          fontSize: 10,
+                                                          color: Color(
+                                                              main.prefs.get(
+                                                                  "mainAccentColor"))),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
                               Spacer(flex: 1),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
