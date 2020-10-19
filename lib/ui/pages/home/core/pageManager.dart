@@ -165,6 +165,8 @@ class _PageManagerState extends State<PageManager> {
               deepLink.queryParameters["email"],
               deepLink.queryParameters["userPhoto"],
               deepLink.queryParameters["premium"] == "true" ? true : false,
+              deepLink.queryParameters["twitter"],
+              deepLink.queryParameters["instagram"],
             ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "setup") {
@@ -207,6 +209,8 @@ class _PageManagerState extends State<PageManager> {
                 deepLink.queryParameters["email"],
                 deepLink.queryParameters["userPhoto"],
                 deepLink.queryParameters["premium"] == "true" ? true : false,
+                deepLink.queryParameters["twitter"],
+                deepLink.queryParameters["instagram"],
               ]));
         } else if (deepLink.pathSegments[0] == "setup") {
           Future.delayed(Duration(seconds: 0)).then((value) => main.prefs

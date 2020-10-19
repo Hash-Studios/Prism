@@ -35,8 +35,8 @@ void createDynamicLink(
   print(shortUrl);
 }
 
-void createUserDynamicLink(
-    String name, String email, String userPhoto, bool premium) async {
+void createUserDynamicLink(String name, String email, String userPhoto,
+    bool premium, String twitter, String instagram) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
           title: "$name - Prism Wallpapers",
@@ -46,7 +46,7 @@ void createUserDynamicLink(
           shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
       uriPrefix: 'https://prismwallpapers.page.link',
       link: Uri.parse(
-          'http://prism.hash.com/user?name=$name&email=$email&userPhoto=$userPhoto&premium=$premium'),
+          'http://prism.hash.com/user?name=$name&email=$email&userPhoto=$userPhoto&premium=$premium&twitter=$twitter&instagram=$instagram'),
       androidParameters: AndroidParameters(
         packageName: 'com.hash.prism',
         minimumVersion: 1,

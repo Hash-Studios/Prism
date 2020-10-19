@@ -404,7 +404,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           .index]["email"],
                                                       Data.subPrismWalls[widget
                                                           .index]["userPhoto"],
-                                                      false
+                                                      false,
+                                                      "",
+                                                      ""
                                                     ]);
                                               }),
                                           Padding(

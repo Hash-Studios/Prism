@@ -21,6 +21,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -82,326 +83,422 @@ class _ProfileChildState extends State<ProfileChild> {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
-      onWillPop: onWillPop,
-      child: main.prefs.get("isLoggedin")
-          ? DefaultTabController(
-              length: 3,
-              child: Scaffold(
-                backgroundColor: Theme.of(context).primaryColor,
-                body: NestedScrollView(
-                  controller: controller,
-                  headerSliverBuilder: (context, innerBoxIsScrolled) =>
-                      <Widget>[
-                    SliverAppBar(
-                      actions: main.prefs.get("name") == null &&
-                              main.prefs.get("email") == null &&
-                              main.prefs.get("googleimage") == null
-                          ? []
-                          : [
+        onWillPop: onWillPop,
+        child: main.prefs.get("isLoggedin")
+            ? DefaultTabController(
+                length: 3,
+                child: Scaffold(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  body: NestedScrollView(
+                    controller: controller,
+                    headerSliverBuilder: (context, innerBoxIsScrolled) =>
+                        <Widget>[
+                      SliverAppBar(
+                        actions: main.prefs.get("name") == null &&
+                                main.prefs.get("email") == null &&
+                                main.prefs.get("googleimage") == null
+                            ? []
+                            : [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: IconButton(
+                                      icon: Icon(JamIcons.share_alt),
+                                      onPressed: () {
+                                        createUserDynamicLink(
+                                            main.prefs.get("name"),
+                                            main.prefs.get("email"),
+                                            main.prefs.get("googleimage"),
+                                            main.prefs.get("premium"),
+                                            main.prefs.get("twitter") != ""
+                                                ? main.prefs
+                                                        .get("twitter")
+                                                        .toString()
+                                                        .split(
+                                                            "https://www.twitter.com/")[
+                                                    1]
+                                                : "",
+                                            main.prefs.get("instagram") != ""
+                                                ? main.prefs
+                                                    .get("instagram")
+                                                    .toString()
+                                                    .split(
+                                                        "https://www.instagram.com/")[1]
+                                                : "");
+                                      }),
+                                )
+                              ],
+                        backgroundColor: config.Colors().mainAccentColor(1),
+                        automaticallyImplyLeading: false,
+                        pinned: false,
+                        expandedHeight: 260.0,
+                        flexibleSpace: FlexibleSpaceBar(
+                          background: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Container(
+                                color: config.Colors().mainAccentColor(1),
+                              ),
                               Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: IconButton(
-                                    icon: Icon(JamIcons.share_alt),
-                                    onPressed: () {
-                                      createUserDynamicLink(
-                                          main.prefs.get("name"),
-                                          main.prefs.get("email"),
-                                          main.prefs.get("googleimage"),
-                                          main.prefs.get("premium"));
-                                    }),
-                              )
-                            ],
-                      backgroundColor: config.Colors().mainAccentColor(1),
-                      automaticallyImplyLeading: false,
-                      pinned: false,
-                      expandedHeight: 260.0,
-                      flexibleSpace: FlexibleSpaceBar(
-                        background: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Container(
-                              color: config.Colors().mainAccentColor(1),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 25.0),
-                              child: Container(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Spacer(flex: 5),
-                                    main.prefs.get("googleimage") == null
-                                        ? Container()
-                                        : Container(
-                                            decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(5000),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                      blurRadius: 16,
-                                                      offset: Offset(0, 4),
-                                                      color: Color(0xFF000000)
-                                                          .withOpacity(0.24))
-                                                ]),
-                                            child: CircleAvatar(
-                                              radius: 50,
-                                              backgroundImage: NetworkImage(main
-                                                  .prefs
-                                                  .get("googleimage")),
+                                padding: const EdgeInsets.only(top: 25.0),
+                                child: Container(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Spacer(flex: 5),
+                                      main.prefs.get("googleimage") == null
+                                          ? Container()
+                                          : Container(
+                                              decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          5000),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                        blurRadius: 16,
+                                                        offset: Offset(0, 4),
+                                                        color: Color(0xFF000000)
+                                                            .withOpacity(0.24))
+                                                  ]),
+                                              child: CircleAvatar(
+                                                radius: 50,
+                                                backgroundImage: NetworkImage(
+                                                    main.prefs
+                                                        .get("googleimage")),
+                                              ),
                                             ),
-                                          ),
-                                    Spacer(flex: 2),
-                                    main.prefs.get("name") == null
-                                        ? Container()
-                                        : !main.prefs.get('premium')
-                                            ? Text(
-                                                main.prefs.get("name"),
+                                      Spacer(flex: 2),
+                                      main.prefs.get("name") == null
+                                          ? Container()
+                                          : !main.prefs.get('premium')
+                                              ? Text(
+                                                  main.prefs.get("name"),
+                                                  style: TextStyle(
+                                                      fontFamily:
+                                                          "Proxima Nova",
+                                                      color: Colors.white,
+                                                      fontSize: 32,
+                                                      fontWeight:
+                                                          FontWeight.w700),
+                                                )
+                                              : Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: <Widget>[
+                                                    Text(
+                                                      main.prefs.get("name"),
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          color: Colors.white,
+                                                          fontSize: 32,
+                                                          fontWeight:
+                                                              FontWeight.w700),
+                                                    ),
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 8.0),
+                                                      child: Container(
+                                                        padding: EdgeInsets
+                                                            .symmetric(
+                                                                vertical: 3,
+                                                                horizontal: 5),
+                                                        decoration: BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        50),
+                                                            color: Color(
+                                                                0xFFFFFFFF)),
+                                                        child: Text(
+                                                          "PRO",
+                                                          style: Theme.of(
+                                                                  context)
+                                                              .textTheme
+                                                              .bodyText2
+                                                              .copyWith(
+                                                                  fontSize: 10,
+                                                                  color: Color(main
+                                                                      .prefs
+                                                                      .get(
+                                                                          "mainAccentColor"))),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                      Spacer(flex: 1),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: <Widget>[
+                                          Spacer(flex: 3),
+                                          Row(
+                                            children: <Widget>[
+                                              Text(
+                                                favCount.toString() + " ",
                                                 style: TextStyle(
                                                     fontFamily: "Proxima Nova",
-                                                    color: Colors.white,
-                                                    fontSize: 32,
+                                                    fontSize: 24,
+                                                    color: Colors.white70,
                                                     fontWeight:
-                                                        FontWeight.w700),
-                                              )
-                                            : Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: <Widget>[
-                                                  Text(
-                                                    main.prefs.get("name"),
-                                                    style: TextStyle(
-                                                        fontFamily:
-                                                            "Proxima Nova",
-                                                        color: Colors.white,
-                                                        fontSize: 32,
-                                                        fontWeight:
-                                                            FontWeight.w700),
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            left: 8.0),
-                                                    child: Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              vertical: 3,
-                                                              horizontal: 5),
-                                                      decoration: BoxDecoration(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(50),
-                                                          color: Color(
-                                                              0xFFFFFFFF)),
-                                                      child: Text(
-                                                        "PRO",
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyText2
-                                                            .copyWith(
-                                                                fontSize: 10,
-                                                                color: Color(main
-                                                                    .prefs
-                                                                    .get(
-                                                                        "mainAccentColor"))),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
+                                                        FontWeight.normal),
                                               ),
-                                    Spacer(flex: 1),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: <Widget>[
-                                        Spacer(flex: 3),
-                                        Row(
-                                          children: <Widget>[
-                                            Text(
-                                              favCount.toString() + " ",
-                                              style: TextStyle(
-                                                  fontFamily: "Proxima Nova",
-                                                  fontSize: 24,
-                                                  color: Colors.white70,
-                                                  fontWeight:
-                                                      FontWeight.normal),
-                                            ),
-                                            Icon(
-                                              JamIcons.heart_f,
-                                              color: Colors.white70,
-                                            ),
-                                          ],
-                                        ),
-                                        Spacer(flex: 1),
-                                        Row(
-                                          children: <Widget>[
-                                            FutureBuilder(
-                                                future: Provider.of<
-                                                            ProfileWallProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .getProfileWallsLength(),
-                                                builder: (context, snapshot) {
-                                                  return Text(
-                                                    snapshot.data == null
-                                                        ? profileCount
-                                                                .toString() +
-                                                            " "
-                                                        : snapshot.data
-                                                                .toString() +
-                                                            " ",
+                                              Icon(
+                                                JamIcons.heart_f,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
+                                          ),
+                                          Spacer(flex: 1),
+                                          Row(
+                                            children: <Widget>[
+                                              FutureBuilder(
+                                                  future: Provider.of<
+                                                              ProfileWallProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .getProfileWallsLength(),
+                                                  builder: (context, snapshot) {
+                                                    return Text(
+                                                      snapshot.data == null
+                                                          ? profileCount
+                                                                  .toString() +
+                                                              " "
+                                                          : snapshot.data
+                                                                  .toString() +
+                                                              " ",
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          fontSize: 24,
+                                                          color: Colors.white70,
+                                                          fontWeight: FontWeight
+                                                              .normal),
+                                                    );
+                                                  }),
+                                              Icon(
+                                                JamIcons.picture,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
+                                          ),
+                                          Spacer(flex: 3),
+                                        ],
+                                      ),
+                                      Spacer(flex: 1),
+                                      main.prefs.get("twitter") != ""
+                                          ? GestureDetector(
+                                              onTap: () {
+                                                launch(main.prefs
+                                                    .get("twitter")
+                                                    .toString());
+                                              },
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                // mainAxisAlignment:
+                                                //     MainAxisAlignment.start,
+                                                children: <Widget>[
+                                                  Icon(
+                                                    JamIcons.twitter,
+                                                    color: Colors.white70,
+                                                  ),
+                                                  Text(
+                                                    " " +
+                                                        main.prefs
+                                                            .get("twitter")
+                                                            .toString()
+                                                            .split(
+                                                                "https://www.twitter.com/")[1],
                                                     style: TextStyle(
                                                         fontFamily:
                                                             "Proxima Nova",
-                                                        fontSize: 24,
+                                                        fontSize: 20,
                                                         color: Colors.white70,
                                                         fontWeight:
                                                             FontWeight.normal),
-                                                  );
-                                                }),
-                                            Icon(
-                                              JamIcons.picture,
-                                              color: Colors.white70,
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          : Spacer(
+                                              flex: 1,
                                             ),
-                                          ],
-                                        ),
-                                        Spacer(flex: 3),
-                                      ],
-                                    ),
-                                    Spacer(flex: 4),
-                                  ],
+                                      Spacer(flex: 1),
+                                      main.prefs.get("instagram") != ""
+                                          ? GestureDetector(
+                                              onTap: () {
+                                                launch(main.prefs
+                                                    .get("instagram")
+                                                    .toString());
+                                              },
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                // mainAxisAlignment:
+                                                //     MainAxisAlignment.start,
+                                                children: <Widget>[
+                                                  Icon(
+                                                    JamIcons.instagram,
+                                                    color: Colors.white70,
+                                                  ),
+                                                  Text(
+                                                    " " +
+                                                        main.prefs
+                                                            .get("instagram")
+                                                            .toString()
+                                                            .split(
+                                                                "https://www.instagram.com/")[1],
+                                                    style: TextStyle(
+                                                        fontFamily:
+                                                            "Proxima Nova",
+                                                        fontSize: 20,
+                                                        color: Colors.white70,
+                                                        fontWeight:
+                                                            FontWeight.normal),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          : Spacer(
+                                              flex: 1,
+                                            ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SliverAppBar(
-                      backgroundColor: config.Colors().mainAccentColor(1),
-                      automaticallyImplyLeading: false,
-                      pinned: true,
-                      titleSpacing: 0,
-                      expandedHeight: main.prefs.get("isLoggedin") ? 50 : 0,
-                      title: SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: 57,
-                        child: Container(
-                          color: Theme.of(context).primaryColor,
-                          child: SizedBox.expand(
-                            child: TabBar(
-                                indicatorColor: Theme.of(context).accentColor,
-                                indicatorSize: TabBarIndicatorSize.label,
-                                unselectedLabelColor:
-                                    Color(0xFFFFFFFF).withOpacity(0.5),
-                                labelColor: Color(0xFFFFFFFF),
-                                tabs: [
-                                  Tab(
-                                    icon: Icon(
-                                      JamIcons.heart_f,
-                                      color: Theme.of(context).accentColor,
-                                    ),
-                                  ),
-                                  Tab(
-                                    icon: Icon(
-                                      JamIcons.picture,
-                                      color: Theme.of(context).accentColor,
-                                    ),
-                                  ),
-                                  Tab(
-                                    icon: Icon(
-                                      JamIcons.settings_alt,
-                                      color: Theme.of(context).accentColor,
-                                    ),
-                                  )
-                                ]),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                  body: TabBarView(children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20),
-                      child: FavLoader(
-                        future: Provider.of<FavouriteProvider>(context,
-                                listen: false)
-                            .getDataBase(),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20),
-                      child: ProfileLoader(
-                        future: Provider.of<ProfileWallProvider>(context,
-                                listen: false)
-                            .getProfileWalls(),
-                      ),
-                    ),
-                    ListView(children: <Widget>[
-                      PremiumList(),
-                      DownloadList(),
-                      GeneralList(),
-                      UserList(),
-                      PrismList(),
-                      StudioList(scrollController: controller),
-                    ])
-                  ]),
-                ),
-              ),
-            )
-          : Scaffold(
-              backgroundColor: Theme.of(context).primaryColor,
-              body: CustomScrollView(controller: controller, slivers: <Widget>[
-                SliverAppBar(
-                  backgroundColor: config.Colors().mainAccentColor(1),
-                  automaticallyImplyLeading: false,
-                  pinned: false,
-                  expandedHeight: 280.0,
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Stack(
-                          children: <Widget>[
-                            Container(
-                              color: config.Colors().mainAccentColor(1),
+                      SliverAppBar(
+                        backgroundColor: config.Colors().mainAccentColor(1),
+                        automaticallyImplyLeading: false,
+                        pinned: true,
+                        titleSpacing: 0,
+                        expandedHeight: main.prefs.get("isLoggedin") ? 50 : 0,
+                        title: SizedBox(
+                          width: MediaQuery.of(context).size.width,
+                          height: 57,
+                          child: Container(
+                            color: Theme.of(context).primaryColor,
+                            child: SizedBox.expand(
+                              child: TabBar(
+                                  indicatorColor: Theme.of(context).accentColor,
+                                  indicatorSize: TabBarIndicatorSize.label,
+                                  unselectedLabelColor:
+                                      Color(0xFFFFFFFF).withOpacity(0.5),
+                                  labelColor: Color(0xFFFFFFFF),
+                                  tabs: [
+                                    Tab(
+                                      icon: Icon(
+                                        JamIcons.heart_f,
+                                        color: Theme.of(context).accentColor,
+                                      ),
+                                    ),
+                                    Tab(
+                                      icon: Icon(
+                                        JamIcons.picture,
+                                        color: Theme.of(context).accentColor,
+                                      ),
+                                    ),
+                                    Tab(
+                                      icon: Icon(
+                                        JamIcons.settings_alt,
+                                        color: Theme.of(context).accentColor,
+                                      ),
+                                    )
+                                  ]),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
-                              child: Center(
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width / 2,
-                                  child: FlareActor(
-                                    "assets/animations/Text.flr",
-                                    isPaused: false,
-                                    alignment: Alignment.center,
-                                    animation: "Untitled",
+                          ),
+                        ),
+                      ),
+                    ],
+                    body: TabBarView(children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: FavLoader(
+                          future: Provider.of<FavouriteProvider>(context,
+                                  listen: false)
+                              .getDataBase(),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: ProfileLoader(
+                          future: Provider.of<ProfileWallProvider>(context,
+                                  listen: false)
+                              .getProfileWalls(),
+                        ),
+                      ),
+                      ListView(children: <Widget>[
+                        PremiumList(),
+                        DownloadList(),
+                        GeneralList(),
+                        UserList(),
+                        PrismList(),
+                        StudioList(scrollController: controller),
+                      ])
+                    ]),
+                  ),
+                ),
+              )
+            : Scaffold(
+                backgroundColor: Theme.of(context).primaryColor,
+                body:
+                    CustomScrollView(controller: controller, slivers: <Widget>[
+                  SliverAppBar(
+                    backgroundColor: config.Colors().mainAccentColor(1),
+                    automaticallyImplyLeading: false,
+                    pinned: false,
+                    expandedHeight: 280.0,
+                    flexibleSpace: FlexibleSpaceBar(
+                      background: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Stack(
+                            children: <Widget>[
+                              Container(
+                                color: config.Colors().mainAccentColor(1),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                                child: Center(
+                                  child: SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width / 2,
+                                    child: FlareActor(
+                                      "assets/animations/Text.flr",
+                                      isPaused: false,
+                                      alignment: Alignment.center,
+                                      animation: "Untitled",
+                                    ),
                                   ),
                                 ),
-                              ),
-                            )
-                          ],
-                        ),
-                      ],
+                              )
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                SliverList(
-                    delegate: SliverChildListDelegate([
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: PremiumList(),
-                  ),
-                  DownloadList(),
-                  GeneralList(),
-                  UserList(),
-                  PrismList(),
-                  StudioList(),
-                ]))
-              ]),
-            ),
-    );
+                  SliverList(
+                      delegate: SliverChildListDelegate([
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: PremiumList(),
+                    ),
+                    DownloadList(),
+                    GeneralList(),
+                    UserList(),
+                    PrismList(),
+                    StudioList(),
+                  ]))
+                ]),
+              ));
   }
 }

@@ -988,7 +988,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     ["email"],
                                                 Data.subPrismWalls[index]
                                                     ["userPhoto"],
-                                                false
+                                                false,"",""
                                               ]);
                                         },
                                         padding: EdgeInsets.symmetric(
