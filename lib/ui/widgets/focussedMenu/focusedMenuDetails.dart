@@ -23,7 +23,8 @@ class FocusedMenuDetails extends StatefulWidget {
   final Offset childOffset;
   final Size childSize;
   final int index;
-
+  final Size size;
+  final Orientation orientation;
   final Widget child;
 
   const FocusedMenuDetails({
@@ -33,6 +34,8 @@ class FocusedMenuDetails extends StatefulWidget {
     @required this.childSize,
     @required this.child,
     @required this.index,
+    @required this.size,
+    @required this.orientation,
   }) : super(key: key);
 
   @override
@@ -40,7 +43,6 @@ class FocusedMenuDetails extends StatefulWidget {
 }
 
 class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
-  Size size;
   var maxMenuWidth;
   var menuHeight;
   var leftOffset;
@@ -51,67 +53,66 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
   var fabHeartLeftOffset;
   @override
   void initState() {
-    size = MediaQuery.of(context).size;
-    maxMenuWidth = size.width * 0.63;
-    menuHeight = size.height * 0.14;
-    leftOffset = (widget.childOffset.dx + maxMenuWidth) < size.width
-        ? MediaQuery.of(context).orientation == Orientation.portrait
+    maxMenuWidth =widget.size.width * 0.63;
+    menuHeight =widget.size.height * 0.14;
+    leftOffset = (widget.childOffset.dx + maxMenuWidth) <widget.size.width
+        ? widget.orientation == Orientation.portrait
             ? widget.childOffset.dx +
                 widget.childSize.width +
-                size.width * 0.015
-            : widget.childOffset.dx + widget.childSize.width + size.width * 0.01
-        : MediaQuery.of(context).orientation == Orientation.portrait
+               widget.size.width * 0.015
+            : widget.childOffset.dx + widget.childSize.width +widget.size.width * 0.01
+        : widget.orientation == Orientation.portrait
             ? (widget.childOffset.dx - maxMenuWidth + widget.childSize.width)
             : (widget.childOffset.dx -
                 maxMenuWidth +
                 widget.childSize.width +
-                size.width * 0.3);
+               widget.size.width * 0.3);
     topOffset = (widget.childOffset.dy + menuHeight + widget.childSize.height) <
-            size.height
-        ? MediaQuery.of(context).orientation == Orientation.portrait
+           widget.size.height
+        ? widget.orientation == Orientation.portrait
             ? widget.childOffset.dy +
                 widget.childSize.height +
-                size.width * 0.015
+               widget.size.width * 0.015
             : widget.childOffset.dy +
                 widget.childSize.height +
-                size.width * 0.015
-        : MediaQuery.of(context).orientation == Orientation.portrait
-            ? widget.childOffset.dy - menuHeight + size.width * 0.125
+               widget.size.width * 0.015
+        : widget.orientation == Orientation.portrait
+            ? widget.childOffset.dy - menuHeight +widget.size.width * 0.125
             : widget.childOffset.dy - menuHeight;
 
     fabHeartTopOffset =
         (widget.childOffset.dy + menuHeight + widget.childSize.height) <
-                size.height
-            ? MediaQuery.of(context).orientation == Orientation.portrait
-                ? size.width * 0.175
-                : size.width * 0.1
-            : MediaQuery.of(context).orientation == Orientation.portrait
-                ? -size.width * 0.175
-                : -size.width * 0.1;
-    fabWallLeftOffset = (widget.childOffset.dx + maxMenuWidth) < size.width
-        ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? -size.width * 0.175
-            : -size.width * 0.1
-        : MediaQuery.of(context).orientation == Orientation.portrait
-            ? size.width * 0.175
-            : size.width * 0.1;
+               widget.size.height
+            ? widget.orientation == Orientation.portrait
+                ?widget.size.width * 0.175
+                :widget.size.width * 0.1
+            : widget.orientation == Orientation.portrait
+                ? -widget.size.width * 0.175
+                : -widget.size.width * 0.1;
+    fabWallLeftOffset = (widget.childOffset.dx + maxMenuWidth) <widget.size.width
+        ? widget.orientation == Orientation.portrait
+            ? -widget.size.width * 0.175
+            : -widget.size.width * 0.1
+        : widget.orientation == Orientation.portrait
+            ?widget.size.width * 0.175
+            :widget.size.width * 0.1;
 
     fabWallTopOffset =
         (widget.childOffset.dy + menuHeight + widget.childSize.height) <
-                size.height
-            ? MediaQuery.of(context).orientation == Orientation.portrait
-                ? size.width * 0.05
-                : size.width * 0.02
-            : MediaQuery.of(context).orientation == Orientation.portrait
-                ? -size.width * 0.05
-                : -size.width * 0.02;
-    fabHeartLeftOffset = (widget.childOffset.dx + maxMenuWidth) < size.width
-        ? MediaQuery.of(context).orientation == Orientation.portrait
-            ? -size.width * 0.05
-            : -size.width * 0.02
-        : MediaQuery.of(context).orientation == Orientation.portrait
-            ? size.width * 0.05
-            : size.width * 0.02;
+               widget.size.height
+            ? widget.orientation == Orientation.portrait
+                ?widget.size.width * 0.05
+                :widget.size.width * 0.02
+            : widget.orientation == Orientation.portrait
+                ? -widget.size.width * 0.05
+                : -widget.size.width * 0.02;
+    fabHeartLeftOffset = (widget.childOffset.dx + maxMenuWidth) <widget.size.width
+        ? widget.orientation == Orientation.portrait
+            ? -widget.size.width * 0.05
+            : -widget.size.width * 0.02
+        : widget.orientation == Orientation.portrait
+            ?widget.size.width * 0.05
+            :widget.size.width * 0.02;
     super.initState();
   }
 
