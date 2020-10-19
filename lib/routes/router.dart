@@ -140,7 +140,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("SetupView");
       print(navStack);
       analytics.setCurrentScreen(screenName: SetupViewRoute);
-      return MaterialPageRoute(
+      return CupertinoPageRoute(
           builder: (context) => SetupViewScreen(arguments: settings.arguments));
     case ProfileWallViewRoute:
       navStack.add("ProfileWallpaper");
@@ -166,14 +166,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Edit Wallpaper");
       print(navStack);
       analytics.setCurrentScreen(screenName: EditWallRoute);
-      return MaterialPageRoute(
+      return CupertinoPageRoute(
           builder: (context) => EditWallScreen(arguments: settings.arguments),
           fullscreenDialog: true);
     case UploadSetupRoute:
       navStack.add("Upload Setup");
       print(navStack);
       analytics.setCurrentScreen(screenName: UploadSetupRoute);
-      return MaterialPageRoute(
+      return CupertinoPageRoute(
           builder: (context) =>
               UploadSetupScreen(arguments: settings.arguments),
           fullscreenDialog: true);
@@ -181,7 +181,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Add");
       print(navStack);
       analytics.setCurrentScreen(screenName: UploadWallRoute);
-      return MaterialPageRoute(
+      return CupertinoPageRoute(
           builder: (context) => UploadWallScreen(arguments: settings.arguments),
           fullscreenDialog: true);
     default:
