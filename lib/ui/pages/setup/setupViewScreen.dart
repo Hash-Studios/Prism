@@ -263,7 +263,9 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
                                             .setups[index]["userPhoto"],
-                                        false
+                                        false,
+                                        "",
+                                        ""
                                       ]);
                                 }),
                             SizedBox(height: 5),

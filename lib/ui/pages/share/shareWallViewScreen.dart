@@ -787,7 +787,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                               Data.wall[
                                                                   "email"],
                                                               Data.wall[
-                                                                  "userPhoto"],false
+                                                                  "userPhoto"],
+                                                              false,
+                                                              "",
+                                                              ""
                                                             ]);
                                                       },
                                                 padding: EdgeInsets.symmetric(

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:Prism/main.dart' as main;
 
 final databaseReference = Firestore.instance;
 List userProfileWalls;
@@ -45,4 +46,20 @@ Future<int> getProfileWallsLength(String email) async {
     print("data done with error");
   });
   return len;
+}
+
+Future setUserTwitter(String twitter, String id) async {
+  await databaseReference
+      .collection("users")
+      .document(id)
+      .updateData({"twitter": twitter});
+  main.prefs.put("twitter", twitter);
+}
+
+Future setUserIG(String ig, String id) async {
+  await databaseReference
+      .collection("users")
+      .document(id)
+      .updateData({"instagram": ig});
+  main.prefs.put("instagram", ig);
 }

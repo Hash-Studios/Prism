@@ -1,4 +1,5 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
@@ -8,6 +9,8 @@ import 'package:provider/provider.dart';
 import 'package:Prism/theme/config.dart' as config;
 
 class UserList extends StatelessWidget {
+  TextEditingController _twitterController = TextEditingController();
+  TextEditingController _igController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
@@ -142,6 +145,242 @@ class UserList extends StatelessWidget {
                                   },
                                   child: Text(
                                     'NO',
+                                    style: TextStyle(
+                                      fontSize: 16.0,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                  ListTile(
+                      leading: Icon(
+                        JamIcons.twitter,
+                      ),
+                      title: new Text(
+                        "Connect your Twitter",
+                        style: TextStyle(
+                            color: Theme.of(context).accentColor,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: "Proxima Nova"),
+                      ),
+                      subtitle: Text(
+                        "Show your twitter account on your profile",
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      onTap: () async {
+                        showDialog(
+                          context: context,
+                          child: AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(20),
+                              ),
+                            ),
+                            content: Container(
+                              height: 100,
+                              width: 250,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Text(
+                                      "Enter your Twitter username",
+                                      style:
+                                          Theme.of(context).textTheme.headline4,
+                                    ),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(500),
+                                          color: Theme.of(context).hintColor),
+                                      child: TextField(
+                                        cursorColor:
+                                            config.Colors().mainAccentColor(1),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline5
+                                            .copyWith(
+                                                color: Theme.of(context)
+                                                    .accentColor),
+                                        controller: _twitterController,
+                                        decoration: InputDecoration(
+                                          contentPadding: EdgeInsets.only(
+                                              left: 30, top: 15),
+                                          border: InputBorder.none,
+                                          disabledBorder: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
+                                          hintText: "Ex - PrismWallpapers",
+                                          hintStyle: Theme.of(context)
+                                              .textTheme
+                                              .headline5
+                                              .copyWith(
+                                                  fontSize: 14,
+                                                  color: Theme.of(context)
+                                                      .accentColor),
+                                          suffixIcon: Icon(
+                                            JamIcons.twitter,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            actions: <Widget>[
+                              FlatButton(
+                                shape: StadiumBorder(),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text(
+                                  'CANCEL',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: config.Colors().mainAccentColor(1),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: FlatButton(
+                                  shape: StadiumBorder(),
+                                  color: config.Colors().mainAccentColor(1),
+                                  onPressed: () async {
+                                    Navigator.of(context).pop();
+                                    await setUserTwitter(
+                                        "https://www.twitter.com/${_twitterController.text}",
+                                        main.prefs.get("id"));
+                                    toasts.codeSend("Successfully linked!");
+                                  },
+                                  child: Text(
+                                    'SAVE',
+                                    style: TextStyle(
+                                      fontSize: 16.0,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                  ListTile(
+                      leading: Icon(
+                        JamIcons.instagram,
+                      ),
+                      title: new Text(
+                        "Connect your Instagram",
+                        style: TextStyle(
+                            color: Theme.of(context).accentColor,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: "Proxima Nova"),
+                      ),
+                      subtitle: Text(
+                        "Show your IG account on your profile",
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      onTap: () async {
+                        showDialog(
+                          context: context,
+                          child: AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(20),
+                              ),
+                            ),
+                            content: Container(
+                              height: 100,
+                              width: 250,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Text(
+                                      "Enter your Instagram username",
+                                      style:
+                                          Theme.of(context).textTheme.headline4,
+                                    ),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(500),
+                                          color: Theme.of(context).hintColor),
+                                      child: TextField(
+                                        cursorColor:
+                                            config.Colors().mainAccentColor(1),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline5
+                                            .copyWith(
+                                                color: Theme.of(context)
+                                                    .accentColor),
+                                        controller: _igController,
+                                        decoration: InputDecoration(
+                                          contentPadding: EdgeInsets.only(
+                                              left: 30, top: 15),
+                                          border: InputBorder.none,
+                                          disabledBorder: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
+                                          hintText: "Ex - PrismWallpapers",
+                                          hintStyle: Theme.of(context)
+                                              .textTheme
+                                              .headline5
+                                              .copyWith(
+                                                  fontSize: 14,
+                                                  color: Theme.of(context)
+                                                      .accentColor),
+                                          suffixIcon: Icon(
+                                            JamIcons.instagram,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            actions: <Widget>[
+                              FlatButton(
+                                shape: StadiumBorder(),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text(
+                                  'CANCEL',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: config.Colors().mainAccentColor(1),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: FlatButton(
+                                  shape: StadiumBorder(),
+                                  color: config.Colors().mainAccentColor(1),
+                                  onPressed: () async {
+                                    Navigator.of(context).pop();
+                                    await setUserIG(
+                                        "https://www.instagram.com/${_igController.text}",
+                                        main.prefs.get("id"));
+                                    toasts.codeSend("Successfully linked!");
+                                  },
+                                  child: Text(
+                                    'SAVE',
                                     style: TextStyle(
                                       fontSize: 16.0,
                                       color: Colors.white,

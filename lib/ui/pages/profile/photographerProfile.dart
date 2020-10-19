@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
+import 'package:url_launcher/url_launcher.dart';
 
 class UserProfile extends StatefulWidget {
   final List arguments;
@@ -20,6 +21,8 @@ class _UserProfileState extends State<UserProfile> {
   String email;
   String userPhoto;
   bool premium;
+  String twitter;
+  String instagram;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {
@@ -27,6 +30,8 @@ class _UserProfileState extends State<UserProfile> {
     email = widget.arguments[1];
     userPhoto = widget.arguments[2];
     premium = widget.arguments[3];
+    twitter = widget.arguments[4];
+    instagram = widget.arguments[5];
     super.initState();
   }
 
@@ -45,6 +50,22 @@ class _UserProfileState extends State<UserProfile> {
           body: NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
               SliverAppBar(
+                actions: [
+                  twitter != "" && twitter != null
+                      ? IconButton(
+                          icon: Icon(JamIcons.twitter),
+                          onPressed: () {
+                            launch("https://www.twitter.com/" + twitter);
+                          })
+                      : Container(),
+                  instagram != "" && instagram != null
+                      ? IconButton(
+                          icon: Icon(JamIcons.instagram),
+                          onPressed: () {
+                            launch("https://www.instagram.com/" + instagram);
+                          })
+                      : Container(),
+                ],
                 backgroundColor: config.Colors().mainAccentColor(1),
                 automaticallyImplyLeading: true,
                 pinned: true,
