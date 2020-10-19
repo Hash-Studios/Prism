@@ -10,21 +10,20 @@ import 'package:Prism/theme/config.dart' as config;
 class UserList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return ExpansionTile(
+      leading: Icon(JamIcons.user_circle),
+      title: new Text(
+        "User",
+        style: TextStyle(
+            color: Theme.of(context).accentColor,
+            fontWeight: FontWeight.w500,
+            fontFamily: "Proxima Nova"),
+      ),
+      subtitle: Text(
+        "Clear favorites or logout",
+        style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
+      ),
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'User',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).accentColor,
-              ),
-            ),
-          ),
-        ),
         main.prefs.get("isLoggedin") == false
             ? ListTile(
                 onTap: () {
