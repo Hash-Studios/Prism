@@ -9,6 +9,7 @@ import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,7 @@ import 'package:rate_my_app/rate_my_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/main.dart' as main;
 
 PageController pageController = PageController();
 
@@ -166,11 +168,19 @@ class _PageManagerState extends State<PageManager> {
             ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "setup") {
-        Future.delayed(Duration(seconds: 0)).then((value) =>
-            Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
-              deepLink.queryParameters["name"],
-              deepLink.queryParameters["thumbUrl"],
-            ]));
+        Future.delayed(Duration(seconds: 0))
+            .then((value) => main.prefs.get("isLoggedin")
+                ? Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
+                    deepLink.queryParameters["name"],
+                    deepLink.queryParameters["thumbUrl"],
+                  ])
+                : googleSignInPopUp(context, () {
+                    Navigator.pushNamed(context, ShareSetupViewRoute,
+                        arguments: [
+                          deepLink.queryParameters["name"],
+                          deepLink.queryParameters["thumbUrl"],
+                        ]);
+                  }));
         linkOpened = 1;
       } else {}
       print("opened while closed altogether via deep link2345");
@@ -199,11 +209,18 @@ class _PageManagerState extends State<PageManager> {
                 deepLink.queryParameters["premium"] == "true" ? true : false,
               ]));
         } else if (deepLink.pathSegments[0] == "setup") {
-          Future.delayed(Duration(seconds: 0)).then((value) =>
-              Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
-                deepLink.queryParameters["name"],
-                deepLink.queryParameters["thumbUrl"],
-              ]));
+          Future.delayed(Duration(seconds: 0)).then((value) => main.prefs
+                  .get("isLoggedin")
+              ? Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
+                  deepLink.queryParameters["name"],
+                  deepLink.queryParameters["thumbUrl"],
+                ])
+              : googleSignInPopUp(context, () {
+                  Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
+                    deepLink.queryParameters["name"],
+                    deepLink.queryParameters["thumbUrl"],
+                  ]);
+                }));
         } else {}
 
         print("opened while bg via deep link2345");
