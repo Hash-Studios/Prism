@@ -53,66 +53,70 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
   var fabHeartLeftOffset;
   @override
   void initState() {
-    maxMenuWidth =widget.size.width * 0.63;
-    menuHeight =widget.size.height * 0.14;
-    leftOffset = (widget.childOffset.dx + maxMenuWidth) <widget.size.width
+    maxMenuWidth = widget.size.width * 0.63;
+    menuHeight = widget.size.height * 0.14;
+    leftOffset = (widget.childOffset.dx + maxMenuWidth) < widget.size.width
         ? widget.orientation == Orientation.portrait
             ? widget.childOffset.dx +
                 widget.childSize.width +
-               widget.size.width * 0.015
-            : widget.childOffset.dx + widget.childSize.width +widget.size.width * 0.01
+                widget.size.width * 0.015
+            : widget.childOffset.dx +
+                widget.childSize.width +
+                widget.size.width * 0.01
         : widget.orientation == Orientation.portrait
             ? (widget.childOffset.dx - maxMenuWidth + widget.childSize.width)
             : (widget.childOffset.dx -
                 maxMenuWidth +
                 widget.childSize.width +
-               widget.size.width * 0.3);
+                widget.size.width * 0.3);
     topOffset = (widget.childOffset.dy + menuHeight + widget.childSize.height) <
-           widget.size.height
+            widget.size.height
         ? widget.orientation == Orientation.portrait
             ? widget.childOffset.dy +
                 widget.childSize.height +
-               widget.size.width * 0.015
+                widget.size.width * 0.015
             : widget.childOffset.dy +
                 widget.childSize.height +
-               widget.size.width * 0.015
+                widget.size.width * 0.015
         : widget.orientation == Orientation.portrait
-            ? widget.childOffset.dy - menuHeight +widget.size.width * 0.125
+            ? widget.childOffset.dy - menuHeight + widget.size.width * 0.125
             : widget.childOffset.dy - menuHeight;
 
     fabHeartTopOffset =
         (widget.childOffset.dy + menuHeight + widget.childSize.height) <
-               widget.size.height
+                widget.size.height
             ? widget.orientation == Orientation.portrait
-                ?widget.size.width * 0.175
-                :widget.size.width * 0.1
+                ? widget.size.width * 0.175
+                : widget.size.width * 0.1
             : widget.orientation == Orientation.portrait
                 ? -widget.size.width * 0.175
                 : -widget.size.width * 0.1;
-    fabWallLeftOffset = (widget.childOffset.dx + maxMenuWidth) <widget.size.width
-        ? widget.orientation == Orientation.portrait
-            ? -widget.size.width * 0.175
-            : -widget.size.width * 0.1
-        : widget.orientation == Orientation.portrait
-            ?widget.size.width * 0.175
-            :widget.size.width * 0.1;
+    fabWallLeftOffset =
+        (widget.childOffset.dx + maxMenuWidth) < widget.size.width
+            ? widget.orientation == Orientation.portrait
+                ? -widget.size.width * 0.175
+                : -widget.size.width * 0.1
+            : widget.orientation == Orientation.portrait
+                ? widget.size.width * 0.175
+                : widget.size.width * 0.1;
 
     fabWallTopOffset =
         (widget.childOffset.dy + menuHeight + widget.childSize.height) <
-               widget.size.height
+                widget.size.height
             ? widget.orientation == Orientation.portrait
-                ?widget.size.width * 0.05
-                :widget.size.width * 0.02
+                ? widget.size.width * 0.05
+                : widget.size.width * 0.02
             : widget.orientation == Orientation.portrait
                 ? -widget.size.width * 0.05
                 : -widget.size.width * 0.02;
-    fabHeartLeftOffset = (widget.childOffset.dx + maxMenuWidth) <widget.size.width
-        ? widget.orientation == Orientation.portrait
-            ? -widget.size.width * 0.05
-            : -widget.size.width * 0.02
-        : widget.orientation == Orientation.portrait
-            ?widget.size.width * 0.05
-            :widget.size.width * 0.02;
+    fabHeartLeftOffset =
+        (widget.childOffset.dx + maxMenuWidth) < widget.size.width
+            ? widget.orientation == Orientation.portrait
+                ? -widget.size.width * 0.05
+                : -widget.size.width * 0.02
+            : widget.orientation == Orientation.portrait
+                ? widget.size.width * 0.05
+                : widget.size.width * 0.02;
     super.initState();
   }
 
@@ -399,7 +403,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                       Data.subPrismWalls[widget
                                                           .index]["email"],
                                                       Data.subPrismWalls[widget
-                                                          .index]["userPhoto"]
+                                                          .index]["userPhoto"],
+                                                      false
                                                     ]);
                                               }),
                                           Padding(

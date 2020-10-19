@@ -105,7 +105,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                         createUserDynamicLink(
                                             main.prefs.get("name"),
                                             main.prefs.get("email"),
-                                            main.prefs.get("googleimage"));
+                                            main.prefs.get("googleimage"),
+                                            main.prefs.get("premium"));
                                       }),
                                 )
                               ],
@@ -204,8 +205,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               .bodyText2
                                                               .copyWith(
                                                                   fontSize: 10,
-                                                                  color: Color(
-                                                                      0xFFE57697)),
+                                                                  color: Color(main
+                                                                      .prefs
+                                                                      .get(
+                                                                          "mainAccentColor"))),
                                                         ),
                                                       ),
                                                     )
