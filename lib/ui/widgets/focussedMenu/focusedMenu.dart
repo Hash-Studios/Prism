@@ -78,6 +78,9 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
                                     childOffset: childOffset,
                                     childSize: childSize,
                                     index: widget.index,
+                                    size: MediaQuery.of(context).size,
+                                    orientation:
+                                        MediaQuery.of(context).orientation,
                                   ));
                             },
                             fullscreenDialog: true,
