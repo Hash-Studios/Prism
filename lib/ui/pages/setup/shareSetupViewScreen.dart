@@ -471,6 +471,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                     .accentColor,
                                                 size: 30,
                                               ),
+                                              SizedBox(
+                                                width: 4,
+                                              ),
                                               Text(
                                                 "Premium Required",
                                                 style: Theme.of(context)
