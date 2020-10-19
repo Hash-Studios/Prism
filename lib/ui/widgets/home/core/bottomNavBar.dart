@@ -8,6 +8,7 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:Prism/theme/config.dart' as config;
 
@@ -190,6 +191,8 @@ class _BottomNavBarState extends State<BottomNavBar>
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(statusBarColor: Colors.transparent));
     checkSignIn();
     return Container(
       decoration: BoxDecoration(
@@ -237,6 +240,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
+                  SystemChrome.setSystemUIOverlayStyle(
+                      SystemUiOverlayStyle(statusBarColor: Colors.transparent));
                   navStack.last == "Home"
                       ? print("Currently on Home")
                       : Navigator.of(context).popUntil((route) {
@@ -282,6 +287,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
+                  SystemChrome.setSystemUIOverlayStyle(
+                      SystemUiOverlayStyle(statusBarColor: Colors.transparent));
                   navStack.last == "Search"
                       ? print("Currently on Search")
                       : navStack.last == "Home"
@@ -367,6 +374,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   showGooglePopUp(() {
+                    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+                        statusBarColor:
+                            Color(main.prefs.get("mainAccentColor"))));
                     navStack.last == "Setups"
                         ? print("Currently on Setups")
                         : navStack.last == "Home"
@@ -412,6 +422,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
+                  SystemChrome.setSystemUIOverlayStyle(
+                      SystemUiOverlayStyle(statusBarColor: Colors.transparent));
                   navStack.last == "Profile"
                       ? print("Currently on Profile")
                       : navStack.last == "Home"

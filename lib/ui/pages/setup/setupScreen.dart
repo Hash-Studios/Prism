@@ -46,16 +46,11 @@ class _SetupScreenState extends State<SetupScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle(
-          statusBarColor: Color(main.prefs.get("mainAccentColor")),
-        ),
-        child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          body: BottomBar(
-            child: SafeArea(
-              child: SetupPage(future: future, controller: controller),
-            ),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).primaryColor,
+        body: BottomBar(
+          child: SafeArea(
+            child: SetupPage(future: future, controller: controller),
           ),
         ),
       ),

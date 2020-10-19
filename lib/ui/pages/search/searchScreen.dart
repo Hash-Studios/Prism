@@ -64,231 +64,223 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle(
-          statusBarColor: Theme.of(context).primaryColor,
-        ),
-        child: Scaffold(
-            backgroundColor: Theme.of(context).primaryColor,
-            appBar: AppBar(
-              excludeHeaderSemantics: false,
-              automaticallyImplyLeading: false,
-              elevation: 0,
-              titleSpacing: 0,
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.9,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Column(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(500),
-                                  color: Theme.of(context).hintColor),
-                              child: TextField(
-                                cursorColor: config.Colors().mainAccentColor(1),
-                                style: Theme.of(context)
+      child: Scaffold(
+          backgroundColor: Theme.of(context).primaryColor,
+          appBar: AppBar(
+            excludeHeaderSemantics: false,
+            automaticallyImplyLeading: false,
+            elevation: 0,
+            titleSpacing: 0,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 6.0),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(500),
+                                color: Theme.of(context).hintColor),
+                            child: TextField(
+                              cursorColor: config.Colors().mainAccentColor(1),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline5
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                              controller: searchController,
+                              decoration: InputDecoration(
+                                contentPadding:
+                                    EdgeInsets.only(left: 30, top: 15),
+                                border: InputBorder.none,
+                                disabledBorder: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                hintText: "Search",
+                                hintStyle: Theme.of(context)
                                     .textTheme
                                     .headline5
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
-                                controller: searchController,
-                                decoration: InputDecoration(
-                                  contentPadding:
-                                      EdgeInsets.only(left: 30, top: 15),
-                                  border: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  hintText: "Search",
-                                  hintStyle: Theme.of(context)
-                                      .textTheme
-                                      .headline5
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
-                                  suffixIcon: Icon(
-                                    JamIcons.search,
-                                    color: Theme.of(context).accentColor,
-                                  ),
+                                suffixIcon: Icon(
+                                  JamIcons.search,
+                                  color: Theme.of(context).accentColor,
                                 ),
-                                onSubmitted: (tex) {
-                                  setState(() {
-                                    isSubmitted = true;
-                                    if (selectedProvider == "WallHaven") {
-                                      WData.wallsS = [];
-                                      _future = WData.getWallsbyQuery(tex);
-                                    } else if (selectedProvider == "Pexels") {
-                                      PData.wallsPS = [];
-                                      _future = PData.getWallsPbyQuery(tex);
-                                    }
-                                  });
-                                },
                               ),
+                              onSubmitted: (tex) {
+                                setState(() {
+                                  isSubmitted = true;
+                                  if (selectedProvider == "WallHaven") {
+                                    WData.wallsS = [];
+                                    _future = WData.getWallsbyQuery(tex);
+                                  } else if (selectedProvider == "Pexels") {
+                                    PData.wallsPS = [];
+                                    _future = PData.getWallsPbyQuery(tex);
+                                  }
+                                });
+                              },
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.1,
-                    child: PopupMenuButton(
-                      icon: Icon(JamIcons.more_vertical),
-                      elevation: 4,
-                      initialValue: selectedProviders,
-                      onCanceled: () {
-                        print('You have not choosed anything');
-                      },
-                      tooltip: 'Providers',
-                      onSelected: (choice) {
-                        setState(() {
-                          selectedProviders = choice;
-                          selectedProvider = choice.title;
-                          if (searchController.text != "") {
-                            isSubmitted = true;
-                            if (choice.title == "WallHaven") {
-                              WData.wallsS = [];
-                              _future =
-                                  WData.getWallsbyQuery(searchController.text);
-                            } else if (choice.title == "Pexels") {
-                              PData.wallsPS = [];
-                              _future =
-                                  PData.getWallsPbyQuery(searchController.text);
-                            }
+                ),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.1,
+                  child: PopupMenuButton(
+                    icon: Icon(JamIcons.more_vertical),
+                    elevation: 4,
+                    initialValue: selectedProviders,
+                    onCanceled: () {
+                      print('You have not choosed anything');
+                    },
+                    tooltip: 'Providers',
+                    onSelected: (choice) {
+                      setState(() {
+                        selectedProviders = choice;
+                        selectedProvider = choice.title;
+                        if (searchController.text != "") {
+                          isSubmitted = true;
+                          if (choice.title == "WallHaven") {
+                            WData.wallsS = [];
+                            _future =
+                                WData.getWallsbyQuery(searchController.text);
+                          } else if (choice.title == "Pexels") {
+                            PData.wallsPS = [];
+                            _future =
+                                PData.getWallsPbyQuery(searchController.text);
                           }
-                        });
-                      },
-                      itemBuilder: (BuildContext context) {
-                        return providers.map((choice) {
-                          return PopupMenuItem(
-                            textStyle: Theme.of(context)
-                                .textTheme
-                                .headline4
-                                .copyWith(color: Theme.of(context).accentColor),
-                            value: choice,
-                            child: Row(
-                              children: <Widget>[
-                                Icon(choice.icon),
-                                SizedBox(width: 10),
-                                Text(choice.title),
-                              ],
-                            ),
-                          );
-                        }).toList();
-                      },
-                    ),
-                  )
-                ],
-              ),
-              bottom: PreferredSize(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    height: 53,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: tags.length,
-                      itemBuilder: (context, index) {
-                        return Align(
-                          alignment: Alignment.center,
-                          child: Stack(
+                        }
+                      });
+                    },
+                    itemBuilder: (BuildContext context) {
+                      return providers.map((choice) {
+                        return PopupMenuItem(
+                          textStyle: Theme.of(context)
+                              .textTheme
+                              .headline4
+                              .copyWith(color: Theme.of(context).accentColor),
+                          value: choice,
+                          child: Row(
                             children: <Widget>[
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
-                                child: ActionChip(
-                                    pressElevation: 5,
-                                    padding:
-                                        EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                    backgroundColor:
-                                        searchController.text.toLowerCase() ==
-                                                tags[index].toLowerCase()
-                                            ? Theme.of(context).accentColor
-                                            : Theme.of(context).hintColor,
-                                    label: Text(tags[index],
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline4
-                                            .copyWith(
-                                                color: searchController.text
-                                                            .toLowerCase() ==
-                                                        tags[index]
-                                                            .toLowerCase()
-                                                    ? Theme.of(context)
-                                                        .primaryColor
-                                                    : Theme.of(context)
-                                                        .accentColor)),
-                                    onPressed: () {
-                                      setState(() {
-                                        searchController.text = tags[index];
-                                        isSubmitted = true;
-                                        if (selectedProvider == "WallHaven") {
-                                          WData.wallsS = [];
-                                          _future = WData.getWallsbyQuery(
-                                              tags[index]);
-                                        } else if (selectedProvider ==
-                                            "Pexels") {
-                                          PData.wallsPS = [];
-                                          _future = PData.getWallsPbyQuery(
-                                              tags[index]);
-                                        }
-                                      });
-                                    }),
-                              ),
+                              Icon(choice.icon),
+                              SizedBox(width: 10),
+                              Text(choice.title),
                             ],
                           ),
                         );
-                      },
-                    ),
+                      }).toList();
+                    },
                   ),
-                  preferredSize: Size(double.infinity, 54)),
+                )
+              ],
             ),
-            body: BottomBar(
-              child: isSubmitted
-                  ? SearchLoader(
-                      future: _future,
-                      query: searchController.text,
-                      selectedProvider: selectedProvider,
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          child: Provider.of<ThemeModel>(context, listen: false)
-                                      .returnTheme() ==
-                                  ThemeType.Dark
-                              ? SvgPicture.string(
-                                  loaderDark.replaceAll(
-                                      "E57697",
-                                      main.prefs
-                                          .get("mainAccentColor")
-                                          .toRadixString(16)
-                                          .toString()
-                                          .substring(2)),
-                                )
-                              : SvgPicture.string(
-                                  loaderLight.replaceAll(
-                                      "E57697",
-                                      main.prefs
-                                          .get("mainAccentColor")
-                                          .toRadixString(16)
-                                          .toString()
-                                          .substring(2)),
-                                ),
+            bottom: PreferredSize(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: 53,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: tags.length,
+                    itemBuilder: (context, index) {
+                      return Align(
+                        alignment: Alignment.center,
+                        child: Stack(
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
+                              child: ActionChip(
+                                  pressElevation: 5,
+                                  padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                  backgroundColor:
+                                      searchController.text.toLowerCase() ==
+                                              tags[index].toLowerCase()
+                                          ? Theme.of(context).accentColor
+                                          : Theme.of(context).hintColor,
+                                  label: Text(tags[index],
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline4
+                                          .copyWith(
+                                              color: searchController.text
+                                                          .toLowerCase() ==
+                                                      tags[index].toLowerCase()
+                                                  ? Theme.of(context)
+                                                      .primaryColor
+                                                  : Theme.of(context)
+                                                      .accentColor)),
+                                  onPressed: () {
+                                    setState(() {
+                                      searchController.text = tags[index];
+                                      isSubmitted = true;
+                                      if (selectedProvider == "WallHaven") {
+                                        WData.wallsS = [];
+                                        _future =
+                                            WData.getWallsbyQuery(tags[index]);
+                                      } else if (selectedProvider == "Pexels") {
+                                        PData.wallsPS = [];
+                                        _future =
+                                            PData.getWallsPbyQuery(tags[index]);
+                                      }
+                                    });
+                                  }),
+                            ),
+                          ],
                         ),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          height: MediaQuery.of(context).size.height * 0.1,
-                        )
-                      ],
-                    ),
-            )),
-      ),
+                      );
+                    },
+                  ),
+                ),
+                preferredSize: Size(double.infinity, 54)),
+          ),
+          body: BottomBar(
+            child: isSubmitted
+                ? SearchLoader(
+                    future: _future,
+                    query: searchController.text,
+                    selectedProvider: selectedProvider,
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        child: Provider.of<ThemeModel>(context, listen: false)
+                                    .returnTheme() ==
+                                ThemeType.Dark
+                            ? SvgPicture.string(
+                                loaderDark.replaceAll(
+                                    "E57697",
+                                    main.prefs
+                                        .get("mainAccentColor")
+                                        .toRadixString(16)
+                                        .toString()
+                                        .substring(2)),
+                              )
+                            : SvgPicture.string(
+                                loaderLight.replaceAll(
+                                    "E57697",
+                                    main.prefs
+                                        .get("mainAccentColor")
+                                        .toRadixString(16)
+                                        .toString()
+                                        .substring(2)),
+                              ),
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height * 0.1,
+                      )
+                    ],
+                  ),
+          )),
     );
   }
 }
