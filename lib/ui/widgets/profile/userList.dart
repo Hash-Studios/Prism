@@ -20,7 +20,9 @@ class UserList extends StatelessWidget {
             fontFamily: "Proxima Nova"),
       ),
       subtitle: Text(
-        "Clear favorites or logout",
+        main.prefs.get("isLoggedin")
+            ? "Clear favorites or logout"
+            : "Login with Google",
         style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
       ),
       children: <Widget>[
