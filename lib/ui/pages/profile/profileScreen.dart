@@ -303,10 +303,13 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 // mainAxisAlignment:
                                                 //     MainAxisAlignment.start,
                                                 children: <Widget>[
-                                                  Icon(
-                                                    JamIcons.twitter,
-                                                    color: Colors.white70,
-                                                  ),
+                                                  main.prefs.get("twitter") !=
+                                                          ""
+                                                      ? Icon(
+                                                          JamIcons.twitter,
+                                                          color: Colors.white70,
+                                                        )
+                                                      : Container(),
                                                   Text(
                                                     " " +
                                                         main.prefs
@@ -341,10 +344,13 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 // mainAxisAlignment:
                                                 //     MainAxisAlignment.start,
                                                 children: <Widget>[
-                                                  Icon(
-                                                    JamIcons.instagram,
-                                                    color: Colors.white70,
-                                                  ),
+                                                  main.prefs.get("instagram") !=
+                                                          ""
+                                                      ? Icon(
+                                                          JamIcons.instagram,
+                                                          color: Colors.white70,
+                                                        )
+                                                      : Container(),
                                                   Text(
                                                     " " +
                                                         main.prefs
