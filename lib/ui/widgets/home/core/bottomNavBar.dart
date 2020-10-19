@@ -191,8 +191,6 @@ class _BottomNavBarState extends State<BottomNavBar>
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(statusBarColor: Colors.transparent));
     checkSignIn();
     return Container(
       decoration: BoxDecoration(
