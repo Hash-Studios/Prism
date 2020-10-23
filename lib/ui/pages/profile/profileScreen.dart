@@ -477,7 +477,7 @@ class _ProfileChildState extends State<ProfileChild> {
                     GeneralList(),
                     UserList(),
                     PrismList(),
-                    StudioList(),
+                    const StudioList(),
                   ]))
                 ]),
               ));
