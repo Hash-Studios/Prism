@@ -480,7 +480,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
         ),
       );
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
       Navigator.pop(context);
       return Container();
     }

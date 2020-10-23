@@ -34,7 +34,7 @@ class _ShareButtonState extends State<ShareButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        print("Share");
+        debugPrint("Share");
         onShare();
       },
       child: Stack(
@@ -96,7 +96,7 @@ class _ShareButtonState extends State<ShareButton> {
     final Uri shortUrl = shortDynamicLink.shortUrl;
     Clipboard.setData(ClipboardData(text: shortUrl.toString()));
     Share.share("🔥Check this out ➜ " + shortUrl.toString());
-    print(shortUrl);
+    debugPrint(shortUrl);
     analytics.logShare(
         contentType: 'wallpaperScreen', itemId: widget.id, method: 'link');
     setState(() {

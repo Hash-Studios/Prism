@@ -8,9 +8,9 @@ class App {
   double _heightPadding;
   double _widthPadding;
 
-  App(_context) {
+  App(BuildContext _context) {
     this._context = _context;
-    MediaQueryData _queryData = MediaQuery.of(this._context);
+    final MediaQueryData _queryData = MediaQuery.of(this._context);
     _height = _queryData.size.height / 100.0;
     _width = _queryData.size.width / 100.0;
     _heightPadding = _height -
@@ -46,27 +46,27 @@ class Colors {
   Color _mainAccentColor = Color(main.prefs.get("mainAccentColor"));
 
   Color mainColor(double opacity) {
-    return this._mainColor.withOpacity(opacity);
+    return _mainColor.withOpacity(opacity);
   }
 
   Color secondColor(double opacity) {
-    return this._secondColor.withOpacity(opacity);
+    return _secondColor.withOpacity(opacity);
   }
 
   Color accentColor(double opacity) {
-    return this._accentColor.withOpacity(opacity);
+    return _accentColor.withOpacity(opacity);
   }
 
   Color mainDarkColor(double opacity) {
-    return this._mainDarkColor.withOpacity(opacity);
+    return _mainDarkColor.withOpacity(opacity);
   }
 
   Color secondDarkColor(double opacity) {
-    return this._secondDarkColor.withOpacity(opacity);
+    return _secondDarkColor.withOpacity(opacity);
   }
 
   Color accentDarkColor(double opacity) {
-    return this._accentDarkColor.withOpacity(opacity);
+    return _accentDarkColor.withOpacity(opacity);
   }
 
   Color mainAccentColor(double opacity) {

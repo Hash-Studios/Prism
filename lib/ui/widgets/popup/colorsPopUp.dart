@@ -124,7 +124,7 @@ Color showColors(BuildContext context) {
                   ),
                   onTap: () {
                     currentColor = color;
-                    print(navStack);
+                    debugPrint(navStack);
                     Navigator.pop(context);
                     Navigator.pushNamed(
                       context,

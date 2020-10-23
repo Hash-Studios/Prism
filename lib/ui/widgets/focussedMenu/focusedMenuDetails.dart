@@ -2123,7 +2123,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
         ),
       );
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
       Navigator.pop(context);
       return Container();
     }

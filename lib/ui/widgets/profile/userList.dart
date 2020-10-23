@@ -57,7 +57,7 @@ class UserList extends StatelessWidget {
                       Navigator.pop(context);
                       main.RestartWidget.restartApp(context);
                     }).catchError((e) {
-                      print(e);
+                      debugPrint(e);
                       Navigator.pop(context);
                       main.prefs.put("isLoggedin", false);
                       toasts.error("Something went wrong, please try again!");

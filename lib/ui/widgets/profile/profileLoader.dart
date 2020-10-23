@@ -26,12 +26,12 @@ class _ProfileLoaderState extends State<ProfileLoader> {
         future: _future,
         builder: (ctx, snapshot) {
           if (snapshot == null) {
-            print("snapshot null");
+            debugPrint("snapshot null");
             return LoadingCards();
           }
           if (snapshot.connectionState == ConnectionState.waiting ||
               snapshot.connectionState == ConnectionState.none) {
-            print("snapshot none, waiting");
+            debugPrint("snapshot none, waiting");
             return LoadingCards();
           } else {
             return ProfileGrid();

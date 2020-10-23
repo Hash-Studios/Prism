@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -14,13 +15,12 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'dart:io';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 
 class FavWallpaperViewScreen extends StatefulWidget {
   final List arguments;
-  FavWallpaperViewScreen({this.arguments});
+  const FavWallpaperViewScreen({this.arguments});
 
   @override
   _FavWallpaperViewScreenState createState() => _FavWallpaperViewScreenState();
@@ -30,7 +30,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -55,7 +55,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new CachedNetworkImageProvider(thumb),
+      CachedNetworkImageProvider(thumb),
       maximumColorCount: 20,
     );
     setState(() {
@@ -72,7 +72,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
 
   void updateAccent() {
     if (colors.contains(accent)) {
-      var index = colors.indexOf(accent);
+      final index = colors.indexOf(accent);
       setState(() {
         accent = colors[(index + 1) % 5];
       });
@@ -86,8 +86,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0];
-    thumb = widget.arguments[1];
+    index = widget.arguments[0] as int;
+    thumb = widget.arguments[1] as String;
     isLoading = true;
     _updatePaletteGenerator();
     super.initState();
@@ -131,7 +131,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   if (panelClosed) {
-                    print('Screenshot Starting');
+                    debugPrint('Screenshot Starting');
                     if (colorChanged) {
                       screenshotController
                           .capture(
@@ -176,13 +176,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                 },
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-                boxShadow: [],
+                boxShadow: const [],
                 collapsed: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
@@ -207,7 +207,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                 panel: Container(
                   height: MediaQuery.of(context).size.height * .42,
                   width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
@@ -742,7 +742,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0)
-                            print('${offsetAnimation.value + 8.0}');
+                            debugPrint('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
                               imageUrl: Provider.of<FavouriteProvider>(context,
@@ -812,7 +812,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : print("");
+                              !isLoading ? updateAccent() : debugPrint("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -824,7 +824,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack);
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -891,7 +891,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   if (panelClosed) {
-                    print('Screenshot Starting');
+                    debugPrint('Screenshot Starting');
                     if (colorChanged) {
                       screenshotController
                           .capture(
@@ -1262,7 +1262,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0)
-                            print('${offsetAnimation.value + 8.0}');
+                            debugPrint('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
                               imageUrl:
@@ -1376,7 +1376,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : print("");
+                              !isLoading ? updateAccent() : debugPrint("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -1388,7 +1388,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack);
                             Navigator.pop(context);
                           },
                           color: isLoading

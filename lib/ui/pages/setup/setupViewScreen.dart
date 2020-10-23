@@ -25,7 +25,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -419,7 +419,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                   animation: offsetAnimation,
                   builder: (buildContext, child) {
                     if (offsetAnimation.value < 0.0)
-                      print('${offsetAnimation.value + 8.0}');
+                      debugPrint('${offsetAnimation.value + 8.0}');
                     return GestureDetector(
                       child: CachedNetworkImage(
                         imageUrl:
@@ -492,7 +492,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
-                      print(navStack);
+                      debugPrint(navStack);
                       Navigator.pop(context);
                     },
                     color: isLoading

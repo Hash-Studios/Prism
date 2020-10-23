@@ -6,29 +6,29 @@ import 'package:flutter/material.dart';
 
 class CollectionViewScreen extends StatelessWidget {
   final List arguments;
-  CollectionViewScreen({
+  const CollectionViewScreen({
     Key key,
     @required this.arguments,
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    print(arguments[1]);
+    debugPrint(arguments[1].toString());
     return WillPopScope(
       onWillPop: () async {
         if (navStack.length > 1) navStack.removeLast();
-        print(navStack);
+        debugPrint(navStack.toString());
         return true;
       },
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: PreferredSize(
-            child: HeadingChipBar(
-              current: arguments[0],
-            ),
             preferredSize: Size(double.infinity, 55),
+            child: HeadingChipBar(
+              current: arguments[0] as String,
+            ),
           ),
           body: BottomBar(
-            child: CollectionViewGrid(arguments: arguments[1]),
+            child: CollectionViewGrid(arguments: arguments[1] as List),
           )),
     );
   }

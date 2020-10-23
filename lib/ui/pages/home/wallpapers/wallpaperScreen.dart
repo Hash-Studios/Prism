@@ -1,8 +1,8 @@
 import 'dart:io';
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as WData;
+    as wdata;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -28,7 +28,7 @@ import 'package:Prism/theme/config.dart' as config;
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
-  WallpaperScreen({@required this.arguments});
+  const WallpaperScreen({@required this.arguments});
   @override
   _WallpaperScreenState createState() => _WallpaperScreenState();
 }
@@ -37,12 +37,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
   bool isNew;
-  List<TargetFocus> targets = List();
+  List<TargetFocus> targets = [];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String provider;
   int index;
@@ -64,7 +64,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new CachedNetworkImageProvider(link),
+      CachedNetworkImageProvider(link),
       maximumColorCount: 20,
     );
     setState(() {
@@ -81,7 +81,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
 
   void updateAccent() {
     if (colors.contains(accent)) {
-      var index = colors.indexOf(accent);
+      final index = colors.indexOf(accent);
       setState(() {
         accent = colors[(index + 1) % 5];
       });
@@ -94,62 +94,60 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   void initTargets() {
     targets.add(TargetFocus(
       identify: "Target 0",
-      targetPosition: TargetPosition(Size(0, 0), Offset(0, 0)),
+      targetPosition: TargetPosition(const Size(0, 0), const Offset(0, 0)),
       contents: [
         ContentTarget(
             align: AlignContent.bottom,
             child: SizedBox(
               height: globals.height,
-              child: Container(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      "Variants are here.",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontSize: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    "Variants are here.",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: RichText(
+                      text: TextSpan(
+                          text:
+                              "➜ Tap on the wallpaper to quickly cycle between ",
+                          style: TextStyle(color: Colors.white),
+                          children: [
+                            TextSpan(
+                              text: "color variants.",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const TextSpan(text: "\n\n"),
+                            const TextSpan(text: "➜ Press and hold to "),
+                            TextSpan(
+                              text: "reset ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const TextSpan(text: "the variant.\n\n"),
+                            const TextSpan(
+                                text:
+                                    "➜ To set variants of a wallpaper, you need to be a "),
+                            TextSpan(
+                              text: "premium ",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const TextSpan(text: "user."),
+                          ]),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10.0),
-                      child: RichText(
-                        text: TextSpan(
-                            text:
-                                "➜ Tap on the wallpaper to quickly cycle between ",
-                            style: TextStyle(color: Colors.white),
-                            children: [
-                              TextSpan(
-                                text: "color variants.",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              TextSpan(text: "\n\n"),
-                              TextSpan(text: "➜ Press and hold to "),
-                              TextSpan(
-                                text: "reset ",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              TextSpan(text: "the variant.\n\n"),
-                              TextSpan(
-                                  text:
-                                      "➜ To set variants of a wallpaper, you need to be a "),
-                              TextSpan(
-                                text: "premium ",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              TextSpan(text: "user."),
-                            ]),
-                      ),
-                    )
-                  ],
-                ),
+                  )
+                ],
               ),
             )),
       ],
@@ -162,45 +160,44 @@ class _WallpaperScreenState extends State<WallpaperScreen>
       contents: [
         ContentTarget(
             align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "This is the color palette.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  "This is the color palette.",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: RichText(
+                    text: TextSpan(
+                        text: "➜ Tap on any color to find wallpapers with ",
+                        style: TextStyle(color: Colors.white),
+                        children: [
+                          TextSpan(
+                            text: "similar color.",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const TextSpan(text: "\n\n"),
+                          const TextSpan(
+                              text: "➜ Press and hold any color to "),
+                          TextSpan(
+                            text: "copy ",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const TextSpan(text: "its color code.\n\n"),
+                        ]),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: RichText(
-                      text: TextSpan(
-                          text: "➜ Tap on any color to find wallpapers with ",
-                          style: TextStyle(color: Colors.white),
-                          children: [
-                            TextSpan(
-                              text: "similar color.",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: "\n\n"),
-                            TextSpan(text: "➜ Press and hold any color to "),
-                            TextSpan(
-                              text: "copy ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: "its color code.\n\n"),
-                          ]),
-                    ),
-                  )
-                ],
-              ),
+                )
+              ],
             )),
       ],
       shape: ShapeLightFocus.RRect,
@@ -212,37 +209,35 @@ class _WallpaperScreenState extends State<WallpaperScreen>
       contents: [
         ContentTarget(
             align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "This is the quick info section.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  "This is the quick info section.",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: RichText(
+                    text: TextSpan(
+                        text: "➜ Tap on user name to ",
+                        style: TextStyle(color: Colors.white),
+                        children: [
+                          TextSpan(
+                            text: "view more wallpapers",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const TextSpan(text: " from them.\n\n"),
+                        ]),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: RichText(
-                      text: TextSpan(
-                          text: "➜ Tap on user name to ",
-                          style: TextStyle(color: Colors.white),
-                          children: [
-                            TextSpan(
-                              text: "view more wallpapers",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: " from them.\n\n"),
-                          ]),
-                    ),
-                  )
-                ],
-              ),
+                )
+              ],
             )),
       ],
       shape: ShapeLightFocus.RRect,
@@ -254,54 +249,52 @@ class _WallpaperScreenState extends State<WallpaperScreen>
       contents: [
         ContentTarget(
             align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "This is the quick action section.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  "This is the quick action section.",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: RichText(
+                    text: TextSpan(
+                        text: "➜ Here you can ",
+                        style: TextStyle(color: Colors.white),
+                        children: [
+                          TextSpan(
+                            text: "download, apply, favourite",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const TextSpan(text: " and"),
+                          TextSpan(
+                            text: " share",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const TextSpan(text: " this wallpaper.\n\n"),
+                          const TextSpan(
+                              text:
+                                  "➜ Press and hold apply wallpaper button to "),
+                          TextSpan(
+                            text: "crop and apply ",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const TextSpan(text: "this wallpaper.\n\n"),
+                        ]),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: RichText(
-                      text: TextSpan(
-                          text: "➜ Here you can ",
-                          style: TextStyle(color: Colors.white),
-                          children: [
-                            TextSpan(
-                              text: "download, apply, favourite",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: " and"),
-                            TextSpan(
-                              text: " share",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: " this wallpaper.\n\n"),
-                            TextSpan(
-                                text:
-                                    "➜ Press and hold apply wallpaper button to "),
-                            TextSpan(
-                              text: "crop and apply ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(text: "this wallpaper.\n\n"),
-                          ]),
-                    ),
-                  )
-                ],
-              ),
+                )
+              ],
             )),
       ],
       shape: ShapeLightFocus.RRect,
@@ -315,19 +308,18 @@ class _WallpaperScreenState extends State<WallpaperScreen>
         textSkip: "SKIP",
         paddingFocus: 1,
         opacityShadow: 0.9, finish: () {
-      print("finish");
+      debugPrint("finish");
     }, clickTarget: (target) {
-      print(target.identify);
+      debugPrint(target.identify.toString());
     }, clickSkip: () {
-      print("skip");
-    })
-      ..show();
+      debugPrint("skip");
+    }).show();
   }
 
   void afterLayout(_) {
-    var newDevice2 = main.prefs.get("newDevice2");
+    final newDevice2 = main.prefs.get("newDevice2");
     if (newDevice2 == null || newDevice2 == true) {
-      Future.delayed(Duration(milliseconds: 100), showTutorial);
+      Future.delayed(const Duration(milliseconds: 100), showTutorial);
       panelController.open();
       main.prefs.put("newDevice2", false);
     } else {
@@ -343,13 +335,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     super.initState();
     initTargets();
     if (isNew) {
-      Future.delayed(Duration(seconds: 0)).then(
+      Future.delayed(const Duration(seconds: 0)).then(
           (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
     }
     SystemChrome.setEnabledSystemUIOverlays([]);
-    provider = widget.arguments[0];
-    index = widget.arguments[1];
-    link = widget.arguments[2];
+    provider = widget.arguments[0] as String;
+    index = widget.arguments[1] as int;
+    link = widget.arguments[2] as String;
     isLoading = true;
     _updatePaletteGenerator();
   }
@@ -383,7 +375,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   if (panelClosed) {
-                    print('Screenshot Starting');
+                    debugPrint('Screenshot Starting');
                     setState(() {
                       panelClosed = false;
                     });
@@ -391,34 +383,34 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       screenshotController
                           .capture(
                         pixelRatio: 3,
-                        delay: Duration(milliseconds: 10),
+                        delay: const Duration(milliseconds: 10),
                       )
                           .then((File image) async {
                         setState(() {
                           _imageFile = image;
                           screenshotTaken = true;
                         });
-                        print('Screenshot Taken');
+                        debugPrint('Screenshot Taken');
                       }).catchError((onError) {
-                        print(onError);
+                        debugPrint(onError as String);
                       });
                     } else {
-                      main.prefs.get('optimisedWallpapers') ?? true
+                      main.prefs.get('optimisedWallpapers') == true ?? true
                           ? screenshotController
                               .capture(
                               pixelRatio: 3,
-                              delay: Duration(milliseconds: 10),
+                              delay: const Duration(milliseconds: 10),
                             )
                               .then((File image) async {
                               setState(() {
                                 _imageFile = image;
                                 screenshotTaken = true;
                               });
-                              print('Screenshot Taken');
+                              debugPrint('Screenshot Taken');
                             }).catchError((onError) {
-                              print(onError);
+                              debugPrint(onError as String);
                             })
-                          : print("Wallpaper Optimisation is disabled!");
+                          : debugPrint("Wallpaper Optimisation is disabled!");
                     }
                   }
                 },
@@ -429,13 +421,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                 },
                 backdropEnabled: true,
                 backdropTapClosesPanel: true,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-                boxShadow: [],
+                boxShadow: const [],
                 collapsed: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
@@ -460,7 +452,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                 panel: Container(
                   height: MediaQuery.of(context).size.height * .46,
                   width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
@@ -496,7 +488,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding:
                                         const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                     child: Text(
-                                      WData.walls[index].id
+                                      wdata.walls[index].id
                                           .toString()
                                           .toUpperCase(),
                                       style:
@@ -510,16 +502,16 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         size: 20,
                                         color: Colors.white70,
                                       ),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Text(
-                                        "${WData.walls[index].views.toString()}",
+                                        wdata.walls[index].views.toString(),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Row(
                                     children: [
                                       Icon(
@@ -529,7 +521,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       ),
                                       SizedBox(width: 10),
                                       Text(
-                                        "${WData.walls[index].favourites.toString()}",
+                                        "${wdata.walls[index].favourites.toString()}",
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
@@ -546,7 +538,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       ),
                                       SizedBox(width: 10),
                                       Text(
-                                        "${double.parse(((double.parse(WData.walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                        "${double.parse(((double.parse(wdata.walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
@@ -566,10 +558,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: Row(
                                       children: [
                                         Text(
-                                          WData.walls[index].category
+                                          wdata.walls[index].category
                                                   .toString()[0]
                                                   .toUpperCase() +
-                                              WData.walls[index].category
+                                              wdata.walls[index].category
                                                   .toString()
                                                   .substring(1),
                                           style: Theme.of(context)
@@ -589,7 +581,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   Row(
                                     children: [
                                       Text(
-                                        "${WData.walls[index].resolution.toString()}",
+                                        "${wdata.walls[index].resolution.toString()}",
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
@@ -634,23 +626,23 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 colorChanged: colorChanged,
                                 link: screenshotTaken
                                     ? _imageFile.path
-                                    : WData.walls[index].path.toString()),
+                                    : wdata.walls[index].path.toString()),
                             SetWallpaperButton(
                                 colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
-                                    : WData.walls[index].path),
+                                    : wdata.walls[index].path),
                             FavouriteWallpaperButton(
-                              id: WData.walls[index].id.toString(),
+                              id: wdata.walls[index].id.toString(),
                               provider: "WallHaven",
-                              wallhaven: WData.walls[index],
+                              wallhaven: wdata.walls[index],
                               trash: false,
                             ),
                             ShareButton(
-                                id: WData.walls[index].id,
+                                id: wdata.walls[index].id,
                                 provider: provider,
-                                url: WData.walls[index].path,
-                                thumbUrl: WData.walls[index].thumbs["original"])
+                                url: wdata.walls[index].path,
+                                thumbUrl: wdata.walls[index].thumbs["original"])
                           ],
                         ),
                       ),
@@ -663,10 +655,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0)
-                            print('${offsetAnimation.value + 8.0}');
+                            debugPrint('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
-                              imageUrl: WData.walls[index].path,
+                              imageUrl: wdata.walls[index].path,
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
                                 controller: screenshotController,
@@ -731,7 +723,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : print("");
+                              !isLoading ? updateAccent() : debugPrint("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -743,7 +735,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack);
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -763,7 +755,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
-                            var link = WData.walls[index].path;
+                            var link = wdata.walls[index].path;
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
@@ -809,7 +801,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   body: SlidingUpPanel(
                     onPanelOpened: () {
                       if (panelClosed) {
-                        print('Screenshot Starting');
+                        debugPrint('Screenshot Starting');
                         setState(() {
                           panelClosed = false;
                         });
@@ -824,9 +816,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               _imageFile = image;
                               screenshotTaken = true;
                             });
-                            print('Screenshot Taken');
+                            debugPrint('Screenshot Taken');
                           }).catchError((onError) {
-                            print(onError);
+                            debugPrint(onError);
                           });
                         } else {
                           main.prefs.get('optimisedWallpapers') ?? true
@@ -840,11 +832,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     _imageFile = image;
                                     screenshotTaken = true;
                                   });
-                                  print('Screenshot Taken');
+                                  debugPrint('Screenshot Taken');
                                 }).catchError((onError) {
-                                  print(onError);
+                                  debugPrint(onError);
                                 })
-                              : print("Wallpaper Optimisation is disabled!");
+                              : debugPrint(
+                                  "Wallpaper Optimisation is disabled!");
                         }
                       }
                     },
@@ -924,7 +917,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),
                                         child: Text(
-                                          Data.subPrismWalls[index]["id"]
+                                          data.subPrismWalls[index]["id"]
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context)
@@ -942,7 +935,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ),
                                           SizedBox(width: 10),
                                           Text(
-                                            "${Data.subPrismWalls[index]["desc"].toString()}",
+                                            "${data.subPrismWalls[index]["desc"].toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -959,7 +952,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ),
                                           SizedBox(width: 10),
                                           Text(
-                                            "${Data.subPrismWalls[index]["size"].toString()}",
+                                            "${data.subPrismWalls[index]["size"].toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -983,8 +976,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           Navigator.pushNamed(
                                               context, PhotographerProfileRoute,
                                               arguments: [
-                                                Data.subPrismWalls[index]["by"],
-                                                Data.subPrismWalls[index]
+                                                data.subPrismWalls[index]["by"],
+                                                data.subPrismWalls[index]
                                                     ["email"],
                                                 Data.subPrismWalls[index]
                                                     ["userPhoto"],
@@ -996,13 +989,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         avatar: CircleAvatar(
                                           backgroundImage:
                                               CachedNetworkImageProvider(
-                                                  Data.subPrismWalls[index]
+                                                  data.subPrismWalls[index]
                                                       ["userPhoto"]),
                                         ),
                                         labelPadding:
                                             EdgeInsets.fromLTRB(7, 3, 7, 3),
                                         label: Text(
-                                            "${Data.subPrismWalls[index]["by"].toString()}",
+                                            "${data.subPrismWalls[index]["by"].toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2
@@ -1012,7 +1005,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       Row(
                                         children: [
                                           Text(
-                                            "${Data.subPrismWalls[index]["resolution"].toString()}",
+                                            "${data.subPrismWalls[index]["resolution"].toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -1057,28 +1050,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     colorChanged: colorChanged,
                                     link: screenshotTaken
                                         ? _imageFile.path
-                                        : Data.subPrismWalls[index]
+                                        : data.subPrismWalls[index]
                                                 ["wallpaper_url"]
                                             .toString()),
                                 SetWallpaperButton(
                                     colorChanged: colorChanged,
                                     url: screenshotTaken
                                         ? _imageFile.path
-                                        : Data.subPrismWalls[index]
+                                        : data.subPrismWalls[index]
                                             ["wallpaper_url"]),
                                 FavouriteWallpaperButton(
-                                  id: Data.subPrismWalls[index]["id"]
+                                  id: data.subPrismWalls[index]["id"]
                                       .toString(),
                                   provider: "Prism",
-                                  prism: Data.subPrismWalls[index],
+                                  prism: data.subPrismWalls[index],
                                   trash: false,
                                 ),
                                 ShareButton(
-                                    id: Data.subPrismWalls[index]["id"],
+                                    id: data.subPrismWalls[index]["id"],
                                     provider: provider,
-                                    url: Data.subPrismWalls[index]
+                                    url: data.subPrismWalls[index]
                                         ["wallpaper_url"],
-                                    thumbUrl: Data.subPrismWalls[index]
+                                    thumbUrl: data.subPrismWalls[index]
                                         ["wallpaper_thumb"])
                               ],
                             ),
@@ -1092,10 +1085,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             animation: offsetAnimation,
                             builder: (buildContext, child) {
                               if (offsetAnimation.value < 0.0)
-                                print('${offsetAnimation.value + 8.0}');
+                                debugPrint('${offsetAnimation.value + 8.0}');
                               return GestureDetector(
                                 child: CachedNetworkImage(
-                                  imageUrl: Data.subPrismWalls[index]
+                                  imageUrl: data.subPrismWalls[index]
                                       ["wallpaper_url"],
                                   imageBuilder: (context, imageProvider) =>
                                       Screenshot(
@@ -1166,7 +1159,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 },
                                 onTap: () {
                                   HapticFeedback.vibrate();
-                                  !isLoading ? updateAccent() : print("");
+                                  !isLoading ? updateAccent() : debugPrint("");
                                   shakeController.forward(from: 0.0);
                                 },
                               );
@@ -1178,7 +1171,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             child: IconButton(
                               onPressed: () {
                                 navStack.removeLast();
-                                print(navStack);
+                                debugPrint(navStack);
                                 Navigator.pop(context);
                               },
                               color: isLoading
@@ -1199,7 +1192,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             child: IconButton(
                               onPressed: () {
                                 var link =
-                                    Data.subPrismWalls[index]["wallpaper_url"];
+                                    data.subPrismWalls[index]["wallpaper_url"];
                                 Navigator.push(
                                     context,
                                     PageRouteBuilder(
@@ -1246,7 +1239,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       body: SlidingUpPanel(
                         onPanelOpened: () {
                           if (panelClosed) {
-                            print('Screenshot Starting');
+                            debugPrint('Screenshot Starting');
                             setState(() {
                               panelClosed = false;
                             });
@@ -1261,9 +1254,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   _imageFile = image;
                                   screenshotTaken = true;
                                 });
-                                print('Screenshot Taken');
+                                debugPrint('Screenshot Taken');
                               }).catchError((onError) {
-                                print(onError);
+                                debugPrint(onError);
                               });
                             } else {
                               main.prefs.get('optimisedWallpapers') ?? true
@@ -1277,11 +1270,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         _imageFile = image;
                                         screenshotTaken = true;
                                       });
-                                      print('Screenshot Taken');
+                                      debugPrint('Screenshot Taken');
                                     }).catchError((onError) {
-                                      print(onError);
+                                      debugPrint(onError);
                                     })
-                                  : print(
+                                  : debugPrint(
                                       "Wallpaper Optimisation is disabled!");
                             }
                           }
@@ -1362,7 +1355,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   .width *
                                               .8,
                                           child: Text(
-                                            PData.wallsP[index].url
+                                            pdata.wallsP[index].url
                                                         .toString()
                                                         .replaceAll(
                                                             "https://www.pexels.com/photo/", "")
@@ -1370,14 +1363,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         .replaceAll("/", "")
                                                         .length >
                                                     8
-                                                ? PData.wallsP[index].url
+                                                ? pdata.wallsP[index].url
                                                         .toString()
                                                         .replaceAll(
                                                             "https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")[0]
                                                         .toUpperCase() +
-                                                    PData.wallsP[index].url
+                                                    pdata.wallsP[index].url
                                                         .toString()
                                                         .replaceAll(
                                                             "https://www.pexels.com/photo/", "")
@@ -1385,16 +1378,16 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         .replaceAll("/", "")
                                                         .substring(
                                                             1,
-                                                            PData.wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                            pdata.wallsP[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
                                                                 7)
-                                                : PData.wallsP[index].url
+                                                : pdata.wallsP[index].url
                                                         .toString()
                                                         .replaceAll(
                                                             "https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")[0]
                                                         .toUpperCase() +
-                                                    PData.wallsP[index].url
+                                                    pdata.wallsP[index].url
                                                         .toString()
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
@@ -1424,7 +1417,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               GestureDetector(
                                                 onTap: () {
                                                   launch(
-                                                      PData.wallsP[index].url);
+                                                      pdata.wallsP[index].url);
                                                 },
                                                 child: Row(
                                                   children: [
@@ -1441,7 +1434,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                   .width *
                                                               .4,
                                                       child: Text(
-                                                        PData.wallsP[index]
+                                                        pdata.wallsP[index]
                                                             .photographer
                                                             .toString(),
                                                         textAlign:
@@ -1464,7 +1457,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${PData.wallsP[index].width.toString()}x${PData.wallsP[index].height.toString()}",
+                                                    "${pdata.wallsP[index].width.toString()}x${pdata.wallsP[index].height.toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -1483,7 +1476,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               Row(
                                                 children: [
                                                   Text(
-                                                    PData.wallsP[index].id
+                                                    pdata.wallsP[index].id
                                                         .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
@@ -1532,28 +1525,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         colorChanged: colorChanged,
                                         link: screenshotTaken
                                             ? _imageFile.path
-                                            : PData
+                                            : pdata
                                                 .wallsP[index].src["original"]
                                                 .toString()),
                                     SetWallpaperButton(
                                         colorChanged: colorChanged,
                                         url: screenshotTaken
                                             ? _imageFile.path
-                                            : PData
+                                            : pdata
                                                 .wallsP[index].src["original"]),
                                     FavouriteWallpaperButton(
-                                      id: PData.wallsP[index].id.toString(),
+                                      id: pdata.wallsP[index].id.toString(),
                                       provider: "Pexels",
-                                      pexels: PData.wallsP[index],
+                                      pexels: pdata.wallsP[index],
                                       trash: false,
                                     ),
                                     ShareButton(
-                                        id: PData.wallsP[index].id,
+                                        id: pdata.wallsP[index].id,
                                         provider: provider,
                                         url:
-                                            PData.wallsP[index].src["original"],
+                                            pdata.wallsP[index].src["original"],
                                         thumbUrl:
-                                            PData.wallsP[index].src["medium"])
+                                            pdata.wallsP[index].src["medium"])
                                   ],
                                 ),
                               ),
@@ -1566,11 +1559,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 animation: offsetAnimation,
                                 builder: (buildContext, child) {
                                   if (offsetAnimation.value < 0.0)
-                                    print('${offsetAnimation.value + 8.0}');
+                                    debugPrint(
+                                        '${offsetAnimation.value + 8.0}');
                                   return GestureDetector(
                                     child: CachedNetworkImage(
                                       imageUrl:
-                                          PData.wallsP[index].src["original"],
+                                          pdata.wallsP[index].src["original"],
                                       imageBuilder: (context, imageProvider) =>
                                           Screenshot(
                                         controller: screenshotController,
@@ -1643,7 +1637,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     },
                                     onTap: () {
                                       HapticFeedback.vibrate();
-                                      !isLoading ? updateAccent() : print("");
+                                      !isLoading
+                                          ? updateAccent()
+                                          : debugPrint("");
                                       shakeController.forward(from: 0.0);
                                     },
                                   );
@@ -1655,7 +1651,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 child: IconButton(
                                   onPressed: () {
                                     navStack.removeLast();
-                                    print(navStack);
+                                    debugPrint(navStack);
                                     Navigator.pop(context);
                                   },
                                   color: isLoading
@@ -1676,7 +1672,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 child: IconButton(
                                   onPressed: () {
                                     var link =
-                                        PData.wallsP[index].src["original"];
+                                        pdata.wallsP[index].src["original"];
                                     Navigator.push(
                                         context,
                                         PageRouteBuilder(
@@ -1724,7 +1720,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           body: SlidingUpPanel(
                             onPanelOpened: () {
                               if (panelClosed) {
-                                print('Screenshot Starting');
+                                debugPrint('Screenshot Starting');
                                 setState(() {
                                   panelClosed = false;
                                 });
@@ -1739,9 +1735,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       _imageFile = image;
                                       screenshotTaken = true;
                                     });
-                                    print('Screenshot Taken');
+                                    debugPrint('Screenshot Taken');
                                   }).catchError((onError) {
-                                    print(onError);
+                                    debugPrint(onError);
                                   });
                                 } else {
                                   main.prefs.get('optimisedWallpapers') ?? true
@@ -1755,11 +1751,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             _imageFile = image;
                                             screenshotTaken = true;
                                           });
-                                          print('Screenshot Taken');
+                                          debugPrint('Screenshot Taken');
                                         }).catchError((onError) {
-                                          print(onError);
+                                          debugPrint(onError);
                                         })
-                                      : print(
+                                      : debugPrint(
                                           "Wallpaper Optimisation is disabled!");
                                 }
                               }
@@ -1841,9 +1837,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       .width *
                                                   .8,
                                               child: Text(
-                                                PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                                    ? PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
-                                                        PData.wallsC[index].url
+                                                pdata.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                                    ? pdata.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
+                                                        pdata.wallsC[index].url
                                                             .toString()
                                                             .replaceAll(
                                                                 "https://www.pexels.com/photo/", "")
@@ -1852,9 +1848,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                             .replaceAll("/", "")
                                                             .substring(
                                                                 1,
-                                                                PData.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                                pdata.wallsC[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
                                                                     7)
-                                                    : PData.wallsC[index].url
+                                                    : pdata.wallsC[index].url
                                                             .toString()
                                                             .replaceAll(
                                                                 "https://www.pexels.com/photo/", "")
@@ -1863,7 +1859,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                             .replaceAll(
                                                                 "/", "")[0]
                                                             .toUpperCase() +
-                                                        PData.wallsC[index].url
+                                                        pdata.wallsC[index].url
                                                             .toString()
                                                             .replaceAll(
                                                                 "https://www.pexels.com/photo/",
@@ -1907,7 +1903,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                 .width *
                                                             .4,
                                                         child: Text(
-                                                          PData.wallsC[index]
+                                                          pdata.wallsC[index]
                                                               .photographer
                                                               .toString(),
                                                           textAlign:
@@ -1930,7 +1926,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       ),
                                                       SizedBox(width: 10),
                                                       Text(
-                                                        "${PData.wallsC[index].width.toString()}x${PData.wallsC[index].height.toString()}",
+                                                        "${pdata.wallsC[index].width.toString()}x${pdata.wallsC[index].height.toString()}",
                                                         style: Theme.of(context)
                                                             .textTheme
                                                             .bodyText2,
@@ -1949,7 +1945,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        PData.wallsC[index].id
+                                                        pdata.wallsC[index].id
                                                             .toString(),
                                                         style: Theme.of(context)
                                                             .textTheme
@@ -1998,7 +1994,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           colorChanged: colorChanged,
                                           link: screenshotTaken
                                               ? _imageFile.path
-                                              : PData
+                                              : pdata
                                                   .wallsC[index].src["original"]
                                                   .toString(),
                                         ),
@@ -2006,20 +2002,20 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             colorChanged: colorChanged,
                                             url: screenshotTaken
                                                 ? _imageFile.path
-                                                : PData.wallsC[index]
+                                                : pdata.wallsC[index]
                                                     .src["original"]),
                                         FavouriteWallpaperButton(
-                                          id: PData.wallsC[index].id.toString(),
+                                          id: pdata.wallsC[index].id.toString(),
                                           provider: "Pexels",
-                                          pexels: PData.wallsC[index],
+                                          pexels: pdata.wallsC[index],
                                           trash: false,
                                         ),
                                         ShareButton(
-                                            id: PData.wallsC[index].id,
+                                            id: pdata.wallsC[index].id,
                                             provider: "Pexels",
-                                            url: PData
+                                            url: pdata
                                                 .wallsC[index].src["original"],
-                                            thumbUrl: PData
+                                            thumbUrl: pdata
                                                 .wallsC[index].src["medium"])
                                       ],
                                     ),
@@ -2029,17 +2025,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             ),
                             body: Stack(
                               children: <Widget>[
-                                PData.wallsC == null
+                                pdata.wallsC == null
                                     ? Container()
                                     : AnimatedBuilder(
                                         animation: offsetAnimation,
                                         builder: (buildContext, child) {
                                           if (offsetAnimation.value < 0.0)
-                                            print(
+                                            debugPrint(
                                                 '${offsetAnimation.value + 8.0}');
                                           return GestureDetector(
                                             child: CachedNetworkImage(
-                                              imageUrl: PData.wallsC[index]
+                                              imageUrl: pdata.wallsC[index]
                                                   .src["original"],
                                               imageBuilder:
                                                   (context, imageProvider) =>
@@ -2129,7 +2125,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               HapticFeedback.vibrate();
                                               !isLoading
                                                   ? updateAccent()
-                                                  : print("");
+                                                  : debugPrint("");
                                               shakeController.forward(
                                                   from: 0.0);
                                             },
@@ -2142,7 +2138,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: IconButton(
                                       onPressed: () {
                                         navStack.removeLast();
-                                        print(navStack);
+                                        debugPrint(navStack);
                                         Navigator.pop(context);
                                       },
                                       color: isLoading
@@ -2163,7 +2159,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: IconButton(
                                       onPressed: () {
                                         var link =
-                                            PData.wallsC[index].src["original"];
+                                            pdata.wallsC[index].src["original"];
                                         Navigator.push(
                                             context,
                                             PageRouteBuilder(
@@ -2212,7 +2208,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           body: SlidingUpPanel(
                             onPanelOpened: () {
                               if (panelClosed) {
-                                print('Screenshot Starting');
+                                debugPrint('Screenshot Starting');
                                 setState(() {
                                   panelClosed = false;
                                 });
@@ -2227,9 +2223,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       _imageFile = image;
                                       screenshotTaken = true;
                                     });
-                                    print('Screenshot Taken');
+                                    debugPrint('Screenshot Taken');
                                   }).catchError((onError) {
-                                    print(onError);
+                                    debugPrint(onError);
                                   });
                                 } else {
                                   main.prefs.get('optimisedWallpapers') ?? true
@@ -2243,11 +2239,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             _imageFile = image;
                                             screenshotTaken = true;
                                           });
-                                          print('Screenshot Taken');
+                                          debugPrint('Screenshot Taken');
                                         }).catchError((onError) {
-                                          print(onError);
+                                          debugPrint(onError);
                                         })
-                                      : print(
+                                      : debugPrint(
                                           "Wallpaper Optimisation is disabled!");
                                 }
                               }
@@ -2332,7 +2328,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     const EdgeInsets.fromLTRB(
                                                         0, 5, 0, 10),
                                                 child: Text(
-                                                  WData.wallsS[index].id
+                                                  wdata.wallsS[index].id
                                                       .toString()
                                                       .toUpperCase(),
                                                   style: Theme.of(context)
@@ -2349,7 +2345,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${WData.wallsS[index].views.toString()}",
+                                                    "${wdata.wallsS[index].views.toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -2366,7 +2362,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${WData.wallsS[index].favourites.toString()}",
+                                                    "${wdata.wallsS[index].favourites.toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -2383,7 +2379,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ),
                                                   SizedBox(width: 10),
                                                   Text(
-                                                    "${double.parse(((double.parse(WData.wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                                    "${double.parse(((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -2406,11 +2402,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 child: Row(
                                                   children: [
                                                     Text(
-                                                      WData.wallsS[index]
+                                                      wdata.wallsS[index]
                                                               .category
                                                               .toString()[0]
                                                               .toUpperCase() +
-                                                          WData.wallsS[index]
+                                                          wdata.wallsS[index]
                                                               .category
                                                               .toString()
                                                               .substring(1),
@@ -2431,7 +2427,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               Row(
                                                 children: [
                                                   Text(
-                                                    "${WData.wallsS[index].resolution.toString()}",
+                                                    "${wdata.wallsS[index].resolution.toString()}",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -2482,25 +2478,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           colorChanged: colorChanged,
                                           link: screenshotTaken
                                               ? _imageFile.path
-                                              : WData.wallsS[index].path
+                                              : wdata.wallsS[index].path
                                                   .toString(),
                                         ),
                                         SetWallpaperButton(
                                             colorChanged: colorChanged,
                                             url: screenshotTaken
                                                 ? _imageFile.path
-                                                : WData.wallsS[index].path),
+                                                : wdata.wallsS[index].path),
                                         FavouriteWallpaperButton(
-                                          id: WData.wallsS[index].id.toString(),
+                                          id: wdata.wallsS[index].id.toString(),
                                           provider: "WallHaven",
-                                          wallhaven: WData.wallsS[index],
+                                          wallhaven: wdata.wallsS[index],
                                           trash: false,
                                         ),
                                         ShareButton(
-                                            id: WData.wallsS[index].id,
+                                            id: wdata.wallsS[index].id,
                                             provider: "WallHaven",
-                                            url: WData.wallsS[index].path,
-                                            thumbUrl: WData.wallsS[index]
+                                            url: wdata.wallsS[index].path,
+                                            thumbUrl: wdata.wallsS[index]
                                                 .thumbs["original"])
                                       ],
                                     ),
@@ -2514,10 +2510,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     animation: offsetAnimation,
                                     builder: (buildContext, child) {
                                       if (offsetAnimation.value < 0.0)
-                                        print('${offsetAnimation.value + 8.0}');
+                                        debugPrint(
+                                            '${offsetAnimation.value + 8.0}');
                                       return GestureDetector(
                                         child: CachedNetworkImage(
-                                          imageUrl: WData.wallsS[index].path,
+                                          imageUrl: wdata.wallsS[index].path,
                                           imageBuilder:
                                               (context, imageProvider) =>
                                                   Screenshot(
@@ -2600,7 +2597,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           HapticFeedback.vibrate();
                                           !isLoading
                                               ? updateAccent()
-                                              : print("");
+                                              : debugPrint("");
                                           shakeController.forward(from: 0.0);
                                         },
                                       );
@@ -2612,7 +2609,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: IconButton(
                                       onPressed: () {
                                         navStack.removeLast();
-                                        print(navStack);
+                                        debugPrint(navStack);
                                         Navigator.pop(context);
                                       },
                                       color: isLoading
@@ -2632,7 +2629,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding: const EdgeInsets.all(8.0),
                                     child: IconButton(
                                       onPressed: () {
-                                        var link = WData.wallsS[index].path;
+                                        var link = wdata.wallsS[index].path;
                                         Navigator.push(
                                             context,
                                             PageRouteBuilder(

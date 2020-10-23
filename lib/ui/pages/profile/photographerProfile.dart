@@ -37,7 +37,7 @@ class _UserProfileState extends State<UserProfile> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
