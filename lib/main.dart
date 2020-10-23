@@ -49,8 +49,8 @@ void main() {
     if (prefs.get("mainAccentColor") == null) {
       prefs.put("mainAccentColor", 0xFFE57697);
     }
-    hqThumbs = prefs.get('hqThumbs') ?? false;
-    if (hqThumbs)
+    hqThumbs = (prefs.get('hqThumbs') as bool) ?? false;
+    if (hqThumbs) {
       prefs.put('hqThumbs', true);
     } else {
       prefs.put('hqThumbs', false);
@@ -66,41 +66,42 @@ void main() {
       prefs.put('optimisedWallpapers', true);
     } else {
       prefs.put('optimisedWallpapers', false);
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: config.Colors().mainAccentColor(1),
-    ));
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-        .then((value) => runZoned<Future<void>>(() {
-              runApp(
-                RestartWidget(
-                  child: MultiProvider(
-                    providers: [
-                      ChangeNotifierProvider<TabProvider>(
-                        create: (context) => TabProvider(),
-                      ),
-                      ChangeNotifierProvider<FavouriteProvider>(
-                        create: (context) => FavouriteProvider(),
-                      ),
-                      ChangeNotifierProvider<CategorySupplier>(
-                        create: (context) => CategorySupplier(),
-                      ),
-                      ChangeNotifierProvider<SetupProvider>(
-                        create: (context) => SetupProvider(),
-                      ),
-                      ChangeNotifierProvider<ProfileWallProvider>(
-                        create: (context) => ProfileWallProvider(),
-                      ),
-                      ChangeNotifierProvider<ThemeModel>(
-                        create: (context) => ThemeModel(
-                            darkMode ? kDarkTheme : kLightTheme,
-                            darkMode ? ThemeType.dark : ThemeType.light),
-                      ),
-                    ],
-                    child: MyApp(),
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+        systemNavigationBarColor: config.Colors().mainAccentColor(1),
+      ));
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+          .then((value) => runZoned<Future<void>>(() {
+                runApp(
+                  RestartWidget(
+                    child: MultiProvider(
+                      providers: [
+                        ChangeNotifierProvider<TabProvider>(
+                          create: (context) => TabProvider(),
+                        ),
+                        ChangeNotifierProvider<FavouriteProvider>(
+                          create: (context) => FavouriteProvider(),
+                        ),
+                        ChangeNotifierProvider<CategorySupplier>(
+                          create: (context) => CategorySupplier(),
+                        ),
+                        ChangeNotifierProvider<SetupProvider>(
+                          create: (context) => SetupProvider(),
+                        ),
+                        ChangeNotifierProvider<ProfileWallProvider>(
+                          create: (context) => ProfileWallProvider(),
+                        ),
+                        ChangeNotifierProvider<ThemeModel>(
+                          create: (context) => ThemeModel(
+                              darkMode ? kDarkTheme : kLightTheme,
+                              darkMode ? ThemeType.dark : ThemeType.light),
+                        ),
+                      ],
+                      child: MyApp(),
+                    ),
                   ),
-                ),
-              );
-            }, onError: Crashlytics.instance.recordError));
+                );
+              }, onError: Crashlytics.instance.recordError));
+    }
   });
 }
 
@@ -149,7 +150,7 @@ class RestartWidget extends StatefulWidget {
   static void restartApp(BuildContext context) {
     router.navStack = ["Home"];
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Color(prefs.get("mainAccentColor")),
+      systemNavigationBarColor: Color(prefs.get("mainAccentColor") as int),
     ));
     observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>().restartApp();

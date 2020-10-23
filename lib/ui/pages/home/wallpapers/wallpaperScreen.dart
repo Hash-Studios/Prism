@@ -420,15 +420,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   });
                 },
                 backdropEnabled: true,
-                backdropTapClosesPanel: true,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
                 boxShadow: const [],
                 collapsed: Container(
-                  decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
@@ -452,8 +451,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                 panel: Container(
                   height: MediaQuery.of(context).size.height * .46,
                   width: MediaQuery.of(context).size.width,
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
@@ -642,7 +641,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 id: wdata.walls[index].id,
                                 provider: provider,
                                 url: wdata.walls[index].path,
-                                thumbUrl: wdata.walls[index].thumbs["original"])
+                                thumbUrl: wdata.walls[index].thumbs["original"]
+                                    .toString())
                           ],
                         ),
                       ),
@@ -735,7 +735,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            debugPrint(navStack);
+                            debugPrint(navStack.toString());
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -818,14 +818,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             });
                             debugPrint('Screenshot Taken');
                           }).catchError((onError) {
-                            debugPrint(onError);
+                            debugPrint(onError.toString());
                           });
                         } else {
-                          main.prefs.get('optimisedWallpapers') ?? true
+                          (main.prefs.get('optimisedWallpapers') ?? true) ==
+                                  true
                               ? screenshotController
                                   .capture(
                                   pixelRatio: 3,
-                                  delay: Duration(milliseconds: 10),
+                                  delay: const Duration(milliseconds: 10),
                                 )
                                   .then((File image) async {
                                   setState(() {
@@ -834,7 +835,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   });
                                   debugPrint('Screenshot Taken');
                                 }).catchError((onError) {
-                                  debugPrint(onError);
+                                  debugPrint(onError.toString());
                                 })
                               : debugPrint(
                                   "Wallpaper Optimisation is disabled!");
@@ -974,23 +975,26 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             SystemUiOverlay.bottom
                                           ]);
                                           Navigator.pushNamed(
-                                              context, PhotographerProfileRoute,
+                                              context, photographerProfileRoute,
                                               arguments: [
                                                 data.subPrismWalls[index]["by"],
                                                 data.subPrismWalls[index]
                                                     ["email"],
-                                                Data.subPrismWalls[index]
+                                                data.subPrismWalls[index]
                                                     ["userPhoto"],
-                                                false,"",""
+                                                false,
+                                                "",
+                                                ""
                                               ]);
                                         },
                                         padding: EdgeInsets.symmetric(
                                             vertical: 5, horizontal: 5),
                                         avatar: CircleAvatar(
                                           backgroundImage:
-                                              CachedNetworkImageProvider(
-                                                  data.subPrismWalls[index]
-                                                      ["userPhoto"]),
+                                              CachedNetworkImageProvider(data
+                                                  .subPrismWalls[index]
+                                                      ["userPhoto"]
+                                                  .toString()),
                                         ),
                                         labelPadding:
                                             EdgeInsets.fromLTRB(7, 3, 7, 3),
@@ -1058,21 +1062,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     url: screenshotTaken
                                         ? _imageFile.path
                                         : data.subPrismWalls[index]
-                                            ["wallpaper_url"]),
+                                                ["wallpaper_url"]
+                                            .toString()),
                                 FavouriteWallpaperButton(
                                   id: data.subPrismWalls[index]["id"]
                                       .toString(),
                                   provider: "Prism",
-                                  prism: data.subPrismWalls[index],
+                                  prism: data.subPrismWalls[index] as Map,
                                   trash: false,
                                 ),
                                 ShareButton(
-                                    id: data.subPrismWalls[index]["id"],
+                                    id: data.subPrismWalls[index]["id"]
+                                        .toString(),
                                     provider: provider,
                                     url: data.subPrismWalls[index]
-                                        ["wallpaper_url"],
+                                            ["wallpaper_url"]
+                                        .toString(),
                                     thumbUrl: data.subPrismWalls[index]
-                                        ["wallpaper_thumb"])
+                                            ["wallpaper_thumb"]
+                                        .toString())
                               ],
                             ),
                           ),
@@ -1084,12 +1092,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         AnimatedBuilder(
                             animation: offsetAnimation,
                             builder: (buildContext, child) {
-                              if (offsetAnimation.value < 0.0)
+                              if (offsetAnimation.value < 0.0) {
                                 debugPrint('${offsetAnimation.value + 8.0}');
+                              }
                               return GestureDetector(
                                 child: CachedNetworkImage(
                                   imageUrl: data.subPrismWalls[index]
-                                      ["wallpaper_url"],
+                                          ["wallpaper_url"]
+                                      .toString(),
                                   imageBuilder: (context, imageProvider) =>
                                       Screenshot(
                                     controller: screenshotController,
@@ -1171,7 +1181,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             child: IconButton(
                               onPressed: () {
                                 navStack.removeLast();
-                                debugPrint(navStack);
+                                debugPrint(navStack.toString());
                                 Navigator.pop(context);
                               },
                               color: isLoading
@@ -1197,7 +1207,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     context,
                                     PageRouteBuilder(
                                         transitionDuration:
-                                            Duration(milliseconds: 300),
+                                            const Duration(milliseconds: 300),
                                         pageBuilder: (context, animation,
                                             secondaryAnimation) {
                                           animation =
@@ -1208,7 +1218,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               child: ClockOverlay(
                                                 colorChanged: colorChanged,
                                                 accent: accent,
-                                                link: link,
+                                                link: link.toString(),
                                                 file: false,
                                               ));
                                         },
@@ -1259,7 +1269,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 debugPrint(onError);
                               });
                             } else {
-                              main.prefs.get('optimisedWallpapers') ?? true
+                              (main.prefs.get('optimisedWallpapers') ?? true) ==
+                                      true
                                   ? screenshotController
                                       .capture(
                                       pixelRatio: 3,
@@ -2081,7 +2092,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           CircularProgressIndicator(
                                                               valueColor:
                                                                   AlwaysStoppedAnimation(
-                                                                Color(main.prefs.get("mainAccentColor")),
+                                                                Color(main.prefs
+                                                                    .get(
+                                                                        "mainAccentColor")),
                                                               ),
                                                               value:
                                                                   downloadProgress

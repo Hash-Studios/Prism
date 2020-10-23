@@ -117,15 +117,15 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: shareRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              ShareWallpaperViewScreen(arguments: settings.arguments));
-    case ShareSetupViewRoute:
+              ShareWallpaperViewScreen(arguments: settings.arguments as List));
+    case shareSetupViewRoute:
       navStack.add("SharedSetup");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: ShareSetupViewRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: shareSetupViewRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              ShareSetupViewScreen(arguments: settings.arguments));
-    case FavWallViewRoute:
+              ShareSetupViewScreen(arguments: settings.arguments as List));
+    case favWallViewRoute:
       navStack.add("FavouriteWallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: favWallViewRoute);
@@ -140,19 +140,19 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           pageBuilder: (context, animation1, animation2) => SetupScreen());
     case setupViewRoute:
       navStack.add("SetupView");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: SetupViewRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: setupViewRoute);
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             SetupViewScreen(
-          arguments: settings.arguments,
+          arguments: settings.arguments as List,
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          var begin = 0.0;
-          var end = 1.0;
-          var curve = Curves.easeOut;
+          const begin = 0.0;
+          const end = 1.0;
+          const curve = Curves.easeOut;
 
-          var tween =
+          final tween =
               Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
           return ScaleTransition(
             scale: animation.drive(tween),
@@ -160,7 +160,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           );
         },
       );
-    case ProfileWallViewRoute:
+    case profileWallViewRoute:
       navStack.add("ProfileWallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: profileWallViewRoute);
@@ -183,25 +183,27 @@ Route<dynamic> generateRoute(RouteSettings settings) {
               ThemeView(arguments: settings.arguments as List));
     case editWallRoute:
       navStack.add("Edit Wallpaper");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: EditWallRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: editWallRoute);
       return CupertinoPageRoute(
-          builder: (context) => EditWallScreen(arguments: settings.arguments),
+          builder: (context) =>
+              EditWallScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     case uploadSetupRoute:
       navStack.add("Upload Setup");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: UploadSetupRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: uploadSetupRoute);
       return CupertinoPageRoute(
           builder: (context) =>
               UploadSetupScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     case uploadWallRoute:
       navStack.add("Add");
-      print(navStack);
-      analytics.setCurrentScreen(screenName: UploadWallRoute);
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: uploadWallRoute);
       return CupertinoPageRoute(
-          builder: (context) => UploadWallScreen(arguments: settings.arguments),
+          builder: (context) =>
+              UploadWallScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     default:
       navStack.add("undefined");
