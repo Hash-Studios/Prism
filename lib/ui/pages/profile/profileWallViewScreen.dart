@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -14,13 +15,12 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'dart:io';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 
 class ProfileWallViewScreen extends StatefulWidget {
   final List arguments;
-  ProfileWallViewScreen({this.arguments});
+  const ProfileWallViewScreen({this.arguments});
 
   @override
   _ProfileWallViewScreenState createState() => _ProfileWallViewScreenState();
@@ -55,7 +55,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new CachedNetworkImageProvider(thumb),
+      CachedNetworkImageProvider(thumb),
       maximumColorCount: 20,
     );
     setState(() {
@@ -72,7 +72,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
 
   void updateAccent() {
     if (colors.contains(accent)) {
-      var index = colors.indexOf(accent);
+      final index = colors.indexOf(accent);
       setState(() {
         accent = colors[(index + 1) % 5];
       });
@@ -86,8 +86,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0];
-    thumb = widget.arguments[1];
+    index = widget.arguments[0] as int;
+    thumb = widget.arguments[1].toString();
     isLoading = true;
     _updatePaletteGenerator();
     super.initState();
@@ -126,7 +126,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                   screenshotController
                       .capture(
                     pixelRatio: 3,
-                    delay: Duration(milliseconds: 10),
+                    delay: const Duration(milliseconds: 10),
                   )
                       .then((File image) async {
                     setState(() {
@@ -136,14 +136,14 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                     });
                     debugPrint('Screenshot Taken');
                   }).catchError((onError) {
-                    debugPrint(onError);
+                    debugPrint(onError.toString());
                   });
                 } else {
-                  main.prefs.get('optimisedWallpapers') ?? true
+                  main.prefs.get('optimisedWallpapers') as bool ?? true
                       ? screenshotController
                           .capture(
                           pixelRatio: 3,
-                          delay: Duration(milliseconds: 10),
+                          delay: const Duration(milliseconds: 10),
                         )
                           .then((File image) async {
                           setState(() {
@@ -153,7 +153,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                           });
                           debugPrint('Screenshot Taken');
                         }).catchError((onError) {
-                          debugPrint(onError);
+                          debugPrint(onError.toString());
                         })
                       : debugPrint("Wallpaper Optimisation is disabled!");
                 }
@@ -165,15 +165,14 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
               });
             },
             backdropEnabled: true,
-            backdropTapClosesPanel: true,
-            borderRadius: BorderRadius.only(
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
             ),
-            boxShadow: [],
+            boxShadow: const [],
             collapsed: Container(
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
@@ -181,7 +180,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
               child: SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height / 20,
-                child: Center(
+                child: const Center(
                     child: Icon(
                   JamIcons.chevron_up,
                   color: Colors.white,
@@ -198,7 +197,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
               height: MediaQuery.of(context).size.height * .42,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -207,9 +206,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Center(
+                  const Center(
                       child: Padding(
-                    padding: const EdgeInsets.all(10.0),
+                    padding: EdgeInsets.all(10.0),
                     child: Icon(
                       JamIcons.chevron_down,
                       color: Colors.white,
@@ -226,7 +225,6 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                         children: <Widget>[
                           Column(
                             mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               Padding(
@@ -242,46 +240,55 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                               ),
                               Row(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     JamIcons.camera,
                                     size: 20,
                                     color: Colors.white70,
                                   ),
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    "${Provider.of<ProfileWallProvider>(context, listen: false).profileWalls[index]["by"].toString()}",
+                                    Provider.of<ProfileWallProvider>(context,
+                                            listen: false)
+                                        .profileWalls[index]["by"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Row(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     JamIcons.arrow_circle_right,
                                     size: 20,
                                     color: Colors.white70,
                                   ),
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    "${Provider.of<ProfileWallProvider>(context, listen: false).profileWalls[index]["desc"].toString()}",
+                                    Provider.of<ProfileWallProvider>(context,
+                                            listen: false)
+                                        .profileWalls[index]["desc"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Row(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     JamIcons.save,
                                     size: 20,
                                     color: Colors.white70,
                                   ),
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    "${Provider.of<ProfileWallProvider>(context, listen: false).profileWalls[index]["size"].toString()}",
+                                    Provider.of<ProfileWallProvider>(context,
+                                            listen: false)
+                                        .profileWalls[index]["size"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
@@ -291,25 +298,27 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                           ),
                           Column(
                             mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: <Widget>[
                               Row(
                                 children: [
                                   Text(
-                                    "${Provider.of<ProfileWallProvider>(context, listen: false).profileWalls[index]["resolution"].toString()}",
+                                    Provider.of<ProfileWallProvider>(context,
+                                            listen: false)
+                                        .profileWalls[index]["resolution"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
-                                  SizedBox(width: 10),
-                                  Icon(
+                                  const SizedBox(width: 10),
+                                  const Icon(
                                     JamIcons.set_square,
                                     size: 20,
                                     color: Colors.white70,
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Row(
                                 children: [
                                   Text(
@@ -321,8 +330,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
-                                  SizedBox(width: 10),
-                                  Icon(
+                                  const SizedBox(width: 10),
+                                  const Icon(
                                     JamIcons.database,
                                     size: 20,
                                     color: Colors.white70,
@@ -346,7 +355,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                               ? _imageFile.path
                               : Provider.of<ProfileWallProvider>(context,
                                       listen: false)
-                                  .profileWalls[index]["wallpaper_url"],
+                                  .profileWalls[index]["wallpaper_url"]
+                                  .toString(),
                         ),
                         SetWallpaperButton(
                           colorChanged: colorChanged,
@@ -354,7 +364,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                               ? _imageFile.path
                               : Provider.of<ProfileWallProvider>(context,
                                       listen: false)
-                                  .profileWalls[index]["wallpaper_url"],
+                                  .profileWalls[index]["wallpaper_url"]
+                                  .toString(),
                         ),
                         FavouriteWallpaperButton(
                           id: Provider.of<ProfileWallProvider>(context,
@@ -370,17 +381,20 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                         ShareButton(
                             id: Provider.of<ProfileWallProvider>(context,
                                     listen: false)
-                                .profileWalls[index]["id"],
+                                .profileWalls[index]["id"]
+                                .toString(),
                             provider: Provider.of<ProfileWallProvider>(context,
                                     listen: false)
                                 .profileWalls[index]["wallpaper_provider"]
                                 .toString(),
                             url: Provider.of<ProfileWallProvider>(context,
                                     listen: false)
-                                .profileWalls[index]["wallpaper_url"],
+                                .profileWalls[index]["wallpaper_url"]
+                                .toString(),
                             thumbUrl: Provider.of<ProfileWallProvider>(context,
                                     listen: false)
-                                .profileWalls[index]["wallpaper_thumb"])
+                                .profileWalls[index]["wallpaper_thumb"]
+                                .toString())
                       ],
                     ),
                   ),
@@ -392,13 +406,33 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                 AnimatedBuilder(
                     animation: offsetAnimation,
                     builder: (buildContext, child) {
-                      if (offsetAnimation.value < 0.0)
+                      if (offsetAnimation.value < 0.0) {
                         debugPrint('${offsetAnimation.value + 8.0}');
+                      }
                       return GestureDetector(
+                        onPanUpdate: (details) {
+                          if (details.delta.dy < -10) {
+                            panelController.open();
+                            HapticFeedback.vibrate();
+                          }
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            colorChanged = false;
+                          });
+                          HapticFeedback.vibrate();
+                          shakeController.forward(from: 0.0);
+                        },
+                        onTap: () {
+                          HapticFeedback.vibrate();
+                          !isLoading ? updateAccent() : debugPrint("");
+                          shakeController.forward(from: 0.0);
+                        },
                         child: CachedNetworkImage(
                           imageUrl: Provider.of<ProfileWallProvider>(context,
                                   listen: false)
-                              .profileWalls[index]["wallpaper_url"],
+                              .profileWalls[index]["wallpaper_url"]
+                              .toString(),
                           imageBuilder: (context, imageProvider) => Screenshot(
                             controller: screenshotController,
                             child: Container(
@@ -421,49 +455,27 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                           progressIndicatorBuilder:
                               (context, url, downloadProgress) => Stack(
                             children: <Widget>[
-                              SizedBox.expand(child: Text("")),
-                              Container(
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation(
-                                        config.Colors().mainAccentColor(1),
-                                      ),
-                                      value: downloadProgress.progress),
-                                ),
+                              const SizedBox.expand(child: Text("")),
+                              Center(
+                                child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation(
+                                      config.Colors().mainAccentColor(1),
+                                    ),
+                                    value: downloadProgress.progress),
                               ),
                             ],
                           ),
-                          errorWidget: (context, url, error) => Container(
-                            child: Center(
-                              child: Icon(
-                                JamIcons.close_circle_f,
-                                color: isLoading
-                                    ? Theme.of(context).accentColor
-                                    : accent.computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white,
-                              ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Icon(
+                              JamIcons.close_circle_f,
+                              color: isLoading
+                                  ? Theme.of(context).accentColor
+                                  : accent.computeLuminance() > 0.5
+                                      ? Colors.black
+                                      : Colors.white,
                             ),
                           ),
                         ),
-                        onPanUpdate: (details) {
-                          if (details.delta.dy < -10) {
-                            panelController.open();
-                            HapticFeedback.vibrate();
-                          }
-                        },
-                        onLongPress: () {
-                          setState(() {
-                            colorChanged = false;
-                          });
-                          HapticFeedback.vibrate();
-                          shakeController.forward(from: 0.0);
-                        },
-                        onTap: () {
-                          HapticFeedback.vibrate();
-                          !isLoading ? updateAccent() : debugPrint("");
-                          shakeController.forward(from: 0.0);
-                        },
                       );
                     }),
                 Align(
@@ -481,7 +493,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                           : accent.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
-                      icon: Icon(
+                      icon: const Icon(
                         JamIcons.chevron_left,
                       ),
                     ),
@@ -493,13 +505,14 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                     padding: const EdgeInsets.all(8.0),
                     child: IconButton(
                       onPressed: () {
-                        var link = Provider.of<ProfileWallProvider>(context,
+                        final link = Provider.of<ProfileWallProvider>(context,
                                 listen: false)
                             .profileWalls[index]["wallpaper_url"];
                         Navigator.push(
                             context,
                             PageRouteBuilder(
-                                transitionDuration: Duration(milliseconds: 300),
+                                transitionDuration:
+                                    const Duration(milliseconds: 300),
                                 pageBuilder:
                                     (context, animation, secondaryAnimation) {
                                   animation = Tween(begin: 0.0, end: 1.0)
@@ -509,7 +522,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                       child: ClockOverlay(
                                         colorChanged: colorChanged,
                                         accent: accent,
-                                        link: link,
+                                        link: link.toString(),
                                         file: false,
                                       ));
                                 },
@@ -521,7 +534,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                           : accent.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
-                      icon: Icon(
+                      icon: const Icon(
                         JamIcons.clock,
                       ),
                     ),
