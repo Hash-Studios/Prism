@@ -25,20 +25,20 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
       vsync: this,
     );
     animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+            ThemeType.dark
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -69,7 +69,7 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
   }
 
   @override
-  dispose() {
+  void dispose() {
     _controller.dispose();
     super.dispose();
   }
@@ -79,12 +79,14 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
     ScrollController controller;
     try {
       controller = InheritedDataProvider.of(context).scrollController;
-    } catch (e) {}
+    } catch (e) {
+      debugPrint(e.toString());
+    }
 
     return controller != null
         ? GridView.builder(
             controller: controller,
-            padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
+            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
             itemCount: 11,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -105,7 +107,7 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
             },
           )
         : GridView.builder(
-            padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
+            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(

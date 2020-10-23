@@ -25,7 +25,7 @@ class BottomBar extends StatefulWidget {
 
 class _BottomBarState extends State<BottomBar>
     with SingleTickerProviderStateMixin {
-  ScrollController scrollBottomBarController = new ScrollController();
+  ScrollController scrollBottomBarController = ScrollController();
   AnimationController _controller;
   Animation<Offset> _offsetAnimation;
   bool isScrollingDown = false;
@@ -63,7 +63,7 @@ class _BottomBarState extends State<BottomBar>
     });
   }
 
-  void myScroll() async {
+  Future<void> myScroll() async {
     scrollBottomBarController.addListener(() {
       if (scrollBottomBarController.position.userScrollDirection ==
           ScrollDirection.reverse) {
@@ -108,7 +108,7 @@ class _BottomBarState extends State<BottomBar>
             child: BottomNavBar(),
           ),
         ),
-        isOnTop
+        isOnTop == true
             ? Container()
             : Positioned(
                 right: 10,
@@ -119,7 +119,7 @@ class _BottomBarState extends State<BottomBar>
                     scrollBottomBarController
                         .animateTo(
                             scrollBottomBarController.position.minScrollExtent,
-                            duration: Duration(milliseconds: 500),
+                            duration: const Duration(milliseconds: 500),
                             curve: Curves.easeIn)
                         .then((value) {
                       setState(() {
@@ -129,7 +129,7 @@ class _BottomBarState extends State<BottomBar>
                       showBottomBar();
                     });
                   },
-                  child: Icon(JamIcons.arrow_up),
+                  child: const Icon(JamIcons.arrow_up),
                 ),
               )
       ],
@@ -174,15 +174,15 @@ class _BottomNavBarState extends State<BottomNavBar>
     super.dispose();
   }
 
-  void checkSignIn() async {
+  Future<void> checkSignIn() async {
     setState(() {
-      isLoggedin = main.prefs.get("isLoggedin");
+      isLoggedin = main.prefs.get("isLoggedin") as bool;
     });
   }
 
   void showGooglePopUp(Function func) {
-    debugPrint(isLoggedin);
-    if (!isLoggedin) {
+    debugPrint(isLoggedin.toString());
+    if (isLoggedin == false) {
       googleSignInPopUp(context, func);
     } else {
       func();
@@ -197,9 +197,9 @@ class _BottomNavBarState extends State<BottomNavBar>
         color: Theme.of(context).primaryColor,
         boxShadow: [
           BoxShadow(
-              color: Color(0xFF000000).withOpacity(0.25),
+              color: const Color(0xFF000000).withOpacity(0.25),
               blurRadius: 4,
-              offset: Offset(0, 4)),
+              offset: const Offset(0, 4)),
         ],
         borderRadius: BorderRadius.circular(500),
       ),
@@ -212,7 +212,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
               child: IconButton(
-                padding: EdgeInsets.all(0),
+                padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -229,8 +229,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Home"
-                          ? EdgeInsets.all(3)
-                          : EdgeInsets.all(0),
+                          ? const EdgeInsets.all(3)
+                          : const EdgeInsets.all(0),
                       width:
                           navStack.last == "Home" ? _paddingAnimation.value : 0,
                       height: navStack.last == "Home" ? 3 : 0,
@@ -239,16 +239,17 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   SystemChrome.setSystemUIOverlayStyle(
-                      SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+                      const SystemUiOverlayStyle(
+                          statusBarColor: Colors.transparent));
                   navStack.last == "Home"
                       ? debugPrint("Currently on Home")
                       : Navigator.of(context).popUntil((route) {
                           if (navStack.last != "Home") {
                             navStack.removeLast();
-                            debugPrint(navStack);
+                            debugPrint(navStack.toString());
                             return false;
                           } else {
-                            debugPrint(navStack);
+                            debugPrint(navStack.toString());
                             return true;
                           }
                         });
@@ -258,7 +259,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                padding: EdgeInsets.all(0),
+                padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -275,8 +276,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Search"
-                          ? EdgeInsets.all(3)
-                          : EdgeInsets.all(0),
+                          ? const EdgeInsets.all(3)
+                          : const EdgeInsets.all(0),
                       width: navStack.last == "Search"
                           ? _paddingAnimation.value
                           : 0,
@@ -286,12 +287,13 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   SystemChrome.setSystemUIOverlayStyle(
-                      SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+                      const SystemUiOverlayStyle(
+                          statusBarColor: Colors.transparent));
                   navStack.last == "Search"
                       ? debugPrint("Currently on Search")
                       : navStack.last == "Home"
-                          ? Navigator.of(context).pushNamed(SearchRoute)
-                          : Navigator.of(context).pushNamed(SearchRoute);
+                          ? Navigator.of(context).pushNamed(searchRoute)
+                          : Navigator.of(context).pushNamed(searchRoute);
                 },
               ),
             ),
@@ -302,7 +304,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                     color: config.Colors().mainAccentColor(1),
                     borderRadius: BorderRadius.circular(500)),
                 child: IconButton(
-                  padding: EdgeInsets.all(0),
+                  padding: const EdgeInsets.all(0),
                   icon: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
@@ -319,8 +321,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                               : Theme.of(context).accentColor,
                         ),
                         margin: navStack.last == "Add"
-                            ? EdgeInsets.all(3)
-                            : EdgeInsets.all(0),
+                            ? const EdgeInsets.all(3)
+                            : const EdgeInsets.all(0),
                         width: navStack.last == "Add"
                             ? _paddingAnimation.value
                             : 0,
@@ -333,7 +335,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                       showModalBottomSheet(
                         isScrollControlled: true,
                         context: context,
-                        builder: (context) => UploadBottomPanel(),
+                        builder: (context) => const UploadBottomPanel(),
                       );
                     });
                   },
@@ -343,7 +345,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                padding: EdgeInsets.all(0),
+                padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -361,8 +363,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Setups"
-                          ? EdgeInsets.all(3)
-                          : EdgeInsets.all(0),
+                          ? const EdgeInsets.all(3)
+                          : const EdgeInsets.all(0),
                       width: navStack.last == "Setups"
                           ? _paddingAnimation.value
                           : 0,
@@ -374,12 +376,12 @@ class _BottomNavBarState extends State<BottomNavBar>
                   showGooglePopUp(() {
                     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
                         statusBarColor:
-                            Color(main.prefs.get("mainAccentColor"))));
+                            Color(main.prefs.get("mainAccentColor") as int)));
                     navStack.last == "Setups"
                         ? debugPrint("Currently on Setups")
                         : navStack.last == "Home"
-                            ? Navigator.of(context).pushNamed(SetupRoute)
-                            : Navigator.of(context).pushNamed(SetupRoute);
+                            ? Navigator.of(context).pushNamed(setupRoute)
+                            : Navigator.of(context).pushNamed(setupRoute);
                   });
                 },
               ),
@@ -387,7 +389,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
               child: IconButton(
-                padding: EdgeInsets.all(0),
+                padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -410,8 +412,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Profile"
-                          ? EdgeInsets.all(3)
-                          : EdgeInsets.all(0),
+                          ? const EdgeInsets.all(3)
+                          : const EdgeInsets.all(0),
                       width: navStack.last == "Profile"
                           ? _paddingAnimation.value
                           : 0,
@@ -421,12 +423,13 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   SystemChrome.setSystemUIOverlayStyle(
-                      SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+                      const SystemUiOverlayStyle(
+                          statusBarColor: Colors.transparent));
                   navStack.last == "Profile"
                       ? debugPrint("Currently on Profile")
                       : navStack.last == "Home"
-                          ? Navigator.of(context).pushNamed(ProfileRoute)
-                          : Navigator.of(context).pushNamed(ProfileRoute);
+                          ? Navigator.of(context).pushNamed(profileRoute)
+                          : Navigator.of(context).pushNamed(profileRoute);
                 },
               ),
             ),
@@ -463,8 +466,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
         _wallpaper = File(pickedFile.path);
       });
       Navigator.pop(context);
-      Future.delayed(Duration(seconds: 0)).then((value) =>
-          Navigator.pushNamed(context, EditWallRoute, arguments: [_wallpaper]));
+      Future.delayed(const Duration()).then((value) =>
+          Navigator.pushNamed(context, editWallRoute, arguments: [_wallpaper]));
     }
   }
 
@@ -475,8 +478,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
         _setup = File(pickedFile.path);
       });
       Navigator.pop(context);
-      Future.delayed(Duration(seconds: 0)).then((value) =>
-          Navigator.pushNamed(context, UploadSetupRoute, arguments: [_setup]));
+      Future.delayed(const Duration()).then((value) =>
+          Navigator.pushNamed(context, uploadSetupRoute, arguments: [_setup]));
     }
   }
 
@@ -487,7 +490,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       height: MediaQuery.of(context).size.height / 1.5,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -507,15 +510,14 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
               )
             ],
           ),
-          Spacer(),
+          const Spacer(),
           Text(
             "Upload",
             style: Theme.of(context).textTheme.headline2,
           ),
-          Spacer(),
+          const Spacer(),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.max,
             children: <Widget>[
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -562,9 +564,9 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: config.Colors()
-                                              .mainAccentColor(1),
-                                          width: 1),
+                                        color:
+                                            config.Colors().mainAccentColor(1),
+                                      ),
                                       color: config.Colors()
                                           .mainAccentColor(1)
                                           .withOpacity(0.2),
@@ -639,9 +641,9 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: config.Colors()
-                                              .mainAccentColor(1),
-                                          width: 1),
+                                        color:
+                                            config.Colors().mainAccentColor(1),
+                                      ),
                                       color: config.Colors()
                                           .mainAccentColor(1)
                                           .withOpacity(0.2),
@@ -672,12 +674,12 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                             fontWeight: FontWeight.bold),
                       ),
                       Container(
-                        margin: EdgeInsets.only(left: 3),
+                        margin: const EdgeInsets.only(left: 3),
                         decoration: BoxDecoration(
                             color: config.Colors().mainAccentColor(1),
                             borderRadius: BorderRadius.circular(500)),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
                               vertical: 1.0, horizontal: 4),
                           child: Text(
                             "BETA",
@@ -694,7 +696,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
               ),
             ],
           ),
-          Spacer(),
+          const Spacer(),
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
             child: Container(

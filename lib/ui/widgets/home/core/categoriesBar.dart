@@ -1,4 +1,5 @@
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
+import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
@@ -19,9 +20,9 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/config.dart' as config;
 
 class CategoriesBar extends StatefulWidget {
-  final width;
-  final height;
-  CategoriesBar({Key key, @required this.width, @required this.height})
+  final double width;
+  final double height;
+  const CategoriesBar({Key key, @required this.width, @required this.height})
       : super(key: key);
 
   @override
@@ -31,7 +32,7 @@ class CategoriesBar extends StatefulWidget {
 class _CategoriesBarState extends State<CategoriesBar> {
   bool isNew;
   bool noNotification = false;
-  List<TargetFocus> targets = List();
+  List<TargetFocus> targets = [];
   @override
   void initState() {
     isNew = true;
@@ -44,12 +45,12 @@ class _CategoriesBarState extends State<CategoriesBar> {
     }
     noNotification = checkNewNotification();
     if (isNew) {
-      Future.delayed(Duration(seconds: 0)).then(
+      Future.delayed(const Duration()).then(
           (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
     }
   }
 
-  var textSkip = "SKIP";
+  String textSkip = "SKIP";
   void showTutorial() {
     TutorialCoachMark(context,
         targets: targets,
@@ -59,14 +60,14 @@ class _CategoriesBarState extends State<CategoriesBar> {
         opacityShadow: 0.9, finish: () {
       debugPrint("finish");
     }, clickTarget: (target) {
-      debugPrint(target.identify);
+      debugPrint(target.identify.toString());
       if (target.identify == "Target 3") {
         setState(() {
           textSkip = "FINISH";
         });
       }
       if (target.identify == "Target 4") {
-        Future.delayed(Duration(milliseconds: 800))
+        Future.delayed(const Duration(milliseconds: 800))
             .then((value) => showTutorialComplete(context));
       }
     }, clickSkip: () {
@@ -76,9 +77,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   void afterLayout(_) {
-    var newDevice = main.prefs.get("newDevice");
+    final newDevice = main.prefs.get("newDevice");
     if (newDevice == null || newDevice == true) {
-      Future.delayed(Duration(milliseconds: 100), showTutorial);
+      Future.delayed(const Duration(milliseconds: 100), showTutorial);
       main.prefs.put("newDevice", false);
     } else {
       main.prefs.put("newDevice", false);
@@ -89,16 +90,14 @@ class _CategoriesBarState extends State<CategoriesBar> {
         key: ValueKey(index),
         controller: globals.categoryController,
         index: index,
-        child: child,
         highlightColor: Colors.black.withOpacity(0.1),
+        child: child,
       );
   bool checkNewNotification() {
-    Box<List> box = Hive.box('notifications');
+    final Box<List> box = Hive.box('notifications');
     var notifications = box.get('notifications');
-    if (notifications == null) {
-      notifications = [];
-    }
-    if (notifications.length == 0) {
+    notifications ??= [];
+    if (notifications.isEmpty) {
       setState(() {
         noNotification = true;
       });
@@ -116,9 +115,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
   Future<void> _checkUpdate() async {
     debugPrint("checking for update");
     try {
-      debugPrint("Current App Version :" + currentAppVersion);
-      debugPrint("Latest Version :" +
-          remoteConfig.getString("currentVersion").toString());
+      debugPrint("Current App Version :$currentAppVersion");
+      debugPrint("Latest Version :${remoteConfig.getString("currentVersion")}");
       setState(() {
         if (currentAppVersion !=
             remoteConfig.getString("currentVersion").toString()) {
@@ -130,8 +128,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
               "version_desc": remoteConfig.getString("versionDesc").toString(),
             };
           });
-          Box<List> box = Hive.box('notifications');
-          for (var i in box.get('notifications') ?? []) {
+          final Box<List> box = Hive.box('notifications');
+          for (final i in box.get('notifications') ?? []) {
             if (i.url ==
                 "https://play.google.com/store/apps/details?id=com.hash.prism") {
               globals.updateAlerted = true;
@@ -141,9 +139,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
             if (!globals.updateAlerted) {
               writeNotifications({
                 'notification': {
-                  'title': 'New version ' +
-                      globals.versionInfo["version_number"] +
-                      ' Available!',
+                  'title':
+                      'New version ${globals.versionInfo["version_number"]} Available!',
                   'body': 'Update now available on the Google Play Store.',
                 },
                 'data': {
@@ -153,18 +150,17 @@ class _CategoriesBarState extends State<CategoriesBar> {
                       "https://play.google.com/store/apps/details?id=com.hash.prism",
                 }
               });
-              Future.delayed(Duration(seconds: 0))
+              Future.delayed(const Duration())
                   .then((value) => noNotification = checkNewNotification());
               final snackBar = SnackBar(
                 behavior: SnackBarBehavior.floating,
-                content: Text('New version ' +
-                    globals.versionInfo["version_number"] +
-                    ' Available!'),
+                content: Text(
+                    'New version ${globals.versionInfo["version_number"]} Available!'),
                 action: SnackBarAction(
                   label: 'VIEW',
                   textColor: config.Colors().mainAccentColor(1),
                   onPressed: () {
-                    Navigator.pushNamed(context, NotificationsRoute);
+                    Navigator.pushNamed(context, notificationsRoute);
                   },
                 ),
               );
@@ -182,7 +178,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
         }
       });
     } catch (e) {
-      debugPrint("Error while checking for updates! :" + e.toString());
+      debugPrint("Error while checking for updates! :$e");
     }
     setState(() {
       globals.updateChecked = true;
@@ -192,7 +188,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      excludeHeaderSemantics: false,
       automaticallyImplyLeading: false,
       elevation: 0,
       titleSpacing: 0,
@@ -204,9 +199,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
             height: 100,
             child: IconButton(
               icon: noNotification
-                  ? Icon(JamIcons.bell)
+                  ? const Icon(JamIcons.bell)
                   : Stack(children: <Widget>[
-                      Icon(JamIcons.bell_f),
+                      const Icon(JamIcons.bell_f),
                       Positioned(
                         top: 0.0,
                         right: 0.0,
@@ -221,7 +216,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 setState(() {
                   noNotification = true;
                 });
-                Navigator.pushNamed(context, NotificationsRoute);
+                Navigator.pushNamed(context, notificationsRoute);
               },
             ),
           ),
@@ -236,19 +231,19 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 return _wrapScrollTag(
                   index: index,
                   child: Align(
-                    alignment: Alignment.center,
                     child: Stack(
                       children: <Widget>[
                         Padding(
                           padding: const EdgeInsets.all(5),
                           child: AnimatedCrossFade(
-                            duration: Duration(milliseconds: 300),
+                            duration: const Duration(milliseconds: 300),
                             firstCurve: Curves.easeIn,
                             secondCurve: Curves.easeIn,
                             secondChild: ActionChip(
                                 backgroundColor: Theme.of(context).hintColor,
                                 pressElevation: 5,
-                                padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                padding:
+                                    const EdgeInsets.fromLTRB(14, 11, 14, 11),
                                 label: Text(
                                     Provider.of<TabProvider>(context)
                                         .tabs[index],
@@ -260,12 +255,14 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                       .tabs[index]) {
                                     case "Wallpapers":
                                       PM.pageController.animateToPage(0,
-                                          duration: Duration(milliseconds: 200),
+                                          duration:
+                                              const Duration(milliseconds: 200),
                                           curve: Curves.easeInCubic);
                                       break;
                                     case "Collections":
                                       PM.pageController.animateToPage(1,
-                                          duration: Duration(milliseconds: 200),
+                                          duration:
+                                              const Duration(milliseconds: 200),
                                           curve: Curves.easeInCubic);
                                       break;
                                     default:
@@ -280,7 +277,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
                                     : CrossFadeState.showSecond,
                             firstChild: ActionChip(
                                 pressElevation: 5,
-                                padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                padding:
+                                    const EdgeInsets.fromLTRB(14, 11, 14, 11),
                                 backgroundColor: Theme.of(context).accentColor,
                                 label: Text(
                                     Provider.of<TabProvider>(context)
@@ -305,7 +303,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
             width: MediaQuery.of(context).size.width * 0.1,
             height: 100,
             child: IconButton(
-              icon: Icon(JamIcons.brush),
+              icon: const Icon(JamIcons.brush),
               onPressed: () {
                 showColors(context);
               },
@@ -315,7 +313,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
               width: MediaQuery.of(context).size.width * 0.1,
               height: 100,
               child: PopupMenuButton(
-                icon: Icon(JamIcons.more_vertical),
+                icon: const Icon(JamIcons.more_vertical),
                 elevation: 4,
                 initialValue:
                     Provider.of<CategorySupplier>(context).selectedChoice,
@@ -325,11 +323,11 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 tooltip: 'Categories',
                 onSelected: (choice) {
                   Provider.of<CategorySupplier>(context, listen: false)
-                      .changeSelectedChoice(choice);
+                      .changeSelectedChoice(choice as CategoryMenu);
                   Provider.of<CategorySupplier>(context, listen: false)
                       .changeWallpaperFuture(choice, "r");
                   PM.pageController.animateToPage(0,
-                      duration: Duration(milliseconds: 200),
+                      duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInCubic);
                 },
                 itemBuilder: (BuildContext context) {
@@ -342,9 +340,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
                       value: choice,
                       child: Row(
                         children: <Widget>[
-                          Icon(choice.icon),
-                          SizedBox(width: 10),
-                          Text(choice.name),
+                          Icon(choice.icon as IconData),
+                          const SizedBox(width: 10),
+                          Text(choice.name.toString()),
                         ],
                       ),
                     );
