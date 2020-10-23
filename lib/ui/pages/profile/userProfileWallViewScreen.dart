@@ -1,4 +1,5 @@
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
+import 'dart:io';
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as user_data;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
@@ -13,13 +14,12 @@ import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'dart:io';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 
 class UserProfileWallViewScreen extends StatefulWidget {
   final List arguments;
-  UserProfileWallViewScreen({this.arguments});
+  const UserProfileWallViewScreen({this.arguments});
 
   @override
   _UserProfileWallViewScreenState createState() =>
@@ -55,7 +55,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new CachedNetworkImageProvider(thumb),
+      CachedNetworkImageProvider(thumb),
       maximumColorCount: 20,
     );
     setState(() {
@@ -72,7 +72,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
 
   void updateAccent() {
     if (colors.contains(accent)) {
-      var index = colors.indexOf(accent);
+      final index = colors.indexOf(accent);
       setState(() {
         accent = colors[(index + 1) % 5];
       });
@@ -86,8 +86,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0];
-    thumb = widget.arguments[1];
+    index = widget.arguments[0] as int;
+    thumb = widget.arguments[1].toString();
     isLoading = true;
     _updatePaletteGenerator();
     super.initState();
@@ -126,7 +126,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                   screenshotController
                       .capture(
                     pixelRatio: 3,
-                    delay: Duration(milliseconds: 10),
+                    delay: const Duration(milliseconds: 10),
                   )
                       .then((File image) async {
                     setState(() {
@@ -136,14 +136,14 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     });
                     debugPrint('Screenshot Taken');
                   }).catchError((onError) {
-                    debugPrint(onError);
+                    debugPrint(onError.toString());
                   });
                 } else {
-                  main.prefs.get('optimisedWallpapers') ?? true
+                  main.prefs.get('optimisedWallpapers') as bool ?? true
                       ? screenshotController
                           .capture(
                           pixelRatio: 3,
-                          delay: Duration(milliseconds: 10),
+                          delay: const Duration(milliseconds: 10),
                         )
                           .then((File image) async {
                           setState(() {
@@ -153,7 +153,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           });
                           debugPrint('Screenshot Taken');
                         }).catchError((onError) {
-                          debugPrint(onError);
+                          debugPrint(onError.toString());
                         })
                       : debugPrint("Wallpaper Optimisation is disabled!");
                 }
@@ -165,15 +165,14 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
               });
             },
             backdropEnabled: true,
-            backdropTapClosesPanel: true,
-            borderRadius: BorderRadius.only(
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
             ),
-            boxShadow: [],
+            boxShadow: const [],
             collapsed: Container(
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
@@ -181,7 +180,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
               child: SizedBox(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height / 20,
-                child: Center(
+                child: const Center(
                     child: Icon(
                   JamIcons.chevron_up,
                   color: Colors.white,
@@ -198,7 +197,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
               height: MediaQuery.of(context).size.height * .42,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -207,9 +206,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Center(
+                  const Center(
                       child: Padding(
-                    padding: const EdgeInsets.all(10.0),
+                    padding: EdgeInsets.all(10.0),
                     child: Icon(
                       JamIcons.chevron_down,
                       color: Colors.white,
@@ -226,13 +225,12 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                         children: <Widget>[
                           Column(
                             mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                 child: Text(
-                                  UserData.userProfileWalls[index]["id"]
+                                  user_data.userProfileWalls[index]["id"]
                                       .toString()
                                       .toUpperCase(),
                                   style: Theme.of(context).textTheme.bodyText1,
@@ -240,46 +238,49 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                               ),
                               Row(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     JamIcons.camera,
                                     size: 20,
                                     color: Colors.white70,
                                   ),
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    "${UserData.userProfileWalls[index]["by"].toString()}",
+                                    user_data.userProfileWalls[index]["by"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Row(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     JamIcons.arrow_circle_right,
                                     size: 20,
                                     color: Colors.white70,
                                   ),
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    "${UserData.userProfileWalls[index]["desc"].toString()}",
+                                    user_data.userProfileWalls[index]["desc"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Row(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     JamIcons.save,
                                     size: 20,
                                     color: Colors.white70,
                                   ),
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    "${UserData.userProfileWalls[index]["size"].toString()}",
+                                    user_data.userProfileWalls[index]["size"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
@@ -289,36 +290,37 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           ),
                           Column(
                             mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: <Widget>[
                               Row(
                                 children: [
                                   Text(
-                                    "${UserData.userProfileWalls[index]["resolution"].toString()}",
+                                    user_data.userProfileWalls[index]
+                                            ["resolution"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
-                                  SizedBox(width: 10),
-                                  Icon(
+                                  const SizedBox(width: 10),
+                                  const Icon(
                                     JamIcons.set_square,
                                     size: 20,
                                     color: Colors.white70,
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Row(
                                 children: [
                                   Text(
-                                    UserData.userProfileWalls[index]
+                                    user_data.userProfileWalls[index]
                                             ["wallpaper_provider"]
                                         .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
-                                  SizedBox(width: 10),
-                                  Icon(
+                                  const SizedBox(width: 10),
+                                  const Icon(
                                     JamIcons.database,
                                     size: 20,
                                     color: Colors.white70,
@@ -340,32 +342,38 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           colorChanged: colorChanged,
                           link: screenshotTaken
                               ? _imageFile.path
-                              : UserData.userProfileWalls[index]
-                                  ["wallpaper_url"],
+                              : user_data.userProfileWalls[index]
+                                      ["wallpaper_url"]
+                                  .toString(),
                         ),
                         SetWallpaperButton(
                           colorChanged: colorChanged,
                           url: screenshotTaken
                               ? _imageFile.path
-                              : UserData.userProfileWalls[index]
-                                  ["wallpaper_url"],
+                              : user_data.userProfileWalls[index]
+                                      ["wallpaper_url"]
+                                  .toString(),
                         ),
                         FavouriteWallpaperButton(
-                          id: UserData.userProfileWalls[index]["id"].toString(),
-                          provider: UserData.userProfileWalls[index]
+                          id: user_data.userProfileWalls[index]["id"]
+                              .toString(),
+                          provider: user_data.userProfileWalls[index]
                                   ["wallpaper_provider"]
                               .toString(),
                           trash: false,
                         ),
                         ShareButton(
-                            id: UserData.userProfileWalls[index]["id"],
-                            provider: UserData.userProfileWalls[index]
+                            id: user_data.userProfileWalls[index]["id"]
+                                .toString(),
+                            provider: user_data.userProfileWalls[index]
                                     ["wallpaper_provider"]
                                 .toString(),
-                            url: UserData.userProfileWalls[index]
-                                ["wallpaper_url"],
-                            thumbUrl: UserData.userProfileWalls[index]
-                                ["wallpaper_thumb"])
+                            url: user_data.userProfileWalls[index]
+                                    ["wallpaper_url"]
+                                .toString(),
+                            thumbUrl: user_data.userProfileWalls[index]
+                                    ["wallpaper_thumb"]
+                                .toString())
                       ],
                     ),
                   ),
@@ -377,12 +385,32 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                 AnimatedBuilder(
                     animation: offsetAnimation,
                     builder: (buildContext, child) {
-                      if (offsetAnimation.value < 0.0)
+                      if (offsetAnimation.value < 0.0) {
                         debugPrint('${offsetAnimation.value + 8.0}');
+                      }
                       return GestureDetector(
+                        onPanUpdate: (details) {
+                          if (details.delta.dy < -10) {
+                            panelController.open();
+                            HapticFeedback.vibrate();
+                          }
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            colorChanged = false;
+                          });
+                          HapticFeedback.vibrate();
+                          shakeController.forward(from: 0.0);
+                        },
+                        onTap: () {
+                          HapticFeedback.vibrate();
+                          !isLoading ? updateAccent() : debugPrint("");
+                          shakeController.forward(from: 0.0);
+                        },
                         child: CachedNetworkImage(
-                          imageUrl: UserData.userProfileWalls[index]
-                              ["wallpaper_url"],
+                          imageUrl: user_data.userProfileWalls[index]
+                                  ["wallpaper_url"]
+                              .toString(),
                           imageBuilder: (context, imageProvider) => Screenshot(
                             controller: screenshotController,
                             child: Container(
@@ -405,49 +433,27 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           progressIndicatorBuilder:
                               (context, url, downloadProgress) => Stack(
                             children: <Widget>[
-                              SizedBox.expand(child: Text("")),
-                              Container(
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation(
-                                        config.Colors().mainAccentColor(1),
-                                      ),
-                                      value: downloadProgress.progress),
-                                ),
+                              const SizedBox.expand(child: Text("")),
+                              Center(
+                                child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation(
+                                      config.Colors().mainAccentColor(1),
+                                    ),
+                                    value: downloadProgress.progress),
                               ),
                             ],
                           ),
-                          errorWidget: (context, url, error) => Container(
-                            child: Center(
-                              child: Icon(
-                                JamIcons.close_circle_f,
-                                color: isLoading
-                                    ? Theme.of(context).accentColor
-                                    : accent.computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white,
-                              ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Icon(
+                              JamIcons.close_circle_f,
+                              color: isLoading
+                                  ? Theme.of(context).accentColor
+                                  : accent.computeLuminance() > 0.5
+                                      ? Colors.black
+                                      : Colors.white,
                             ),
                           ),
                         ),
-                        onPanUpdate: (details) {
-                          if (details.delta.dy < -10) {
-                            panelController.open();
-                            HapticFeedback.vibrate();
-                          }
-                        },
-                        onLongPress: () {
-                          setState(() {
-                            colorChanged = false;
-                          });
-                          HapticFeedback.vibrate();
-                          shakeController.forward(from: 0.0);
-                        },
-                        onTap: () {
-                          HapticFeedback.vibrate();
-                          !isLoading ? updateAccent() : debugPrint("");
-                          shakeController.forward(from: 0.0);
-                        },
                       );
                     }),
                 Align(
@@ -465,7 +471,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           : accent.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
-                      icon: Icon(
+                      icon: const Icon(
                         JamIcons.chevron_left,
                       ),
                     ),
@@ -477,12 +483,13 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     padding: const EdgeInsets.all(8.0),
                     child: IconButton(
                       onPressed: () {
-                        var link =
-                            UserData.userProfileWalls[index]["wallpaper_url"];
+                        final link =
+                            user_data.userProfileWalls[index]["wallpaper_url"];
                         Navigator.push(
                             context,
                             PageRouteBuilder(
-                                transitionDuration: Duration(milliseconds: 300),
+                                transitionDuration:
+                                    const Duration(milliseconds: 300),
                                 pageBuilder:
                                     (context, animation, secondaryAnimation) {
                                   animation = Tween(begin: 0.0, end: 1.0)
@@ -492,7 +499,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                       child: ClockOverlay(
                                         colorChanged: colorChanged,
                                         accent: accent,
-                                        link: link,
+                                        link: link.toString(),
                                         file: false,
                                       ));
                                 },
@@ -504,7 +511,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           : accent.computeLuminance() > 0.5
                               ? Colors.black
                               : Colors.white,
-                      icon: Icon(
+                      icon: const Icon(
                         JamIcons.clock,
                       ),
                     ),

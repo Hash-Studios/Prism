@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as WData;
+    as wdata;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
@@ -23,7 +23,7 @@ import 'package:Prism/theme/config.dart' as config;
 
 class SearchWallpaperScreen extends StatefulWidget {
   final List arguments;
-  SearchWallpaperScreen({@required this.arguments});
+  const SearchWallpaperScreen({@required this.arguments});
   @override
   _SearchWallpaperScreenState createState() => _SearchWallpaperScreenState();
 }
@@ -36,7 +36,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     return true;
   }
 
-  List<TargetFocus> targets = List();
+  List<TargetFocus> targets = [];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String selectedProvider;
   String query;
@@ -59,7 +59,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
       isLoading = true;
     });
     paletteGenerator = await PaletteGenerator.fromImageProvider(
-      new CachedNetworkImageProvider(link),
+      CachedNetworkImageProvider(link),
       maximumColorCount: 20,
     );
     setState(() {
@@ -76,7 +76,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
 
   void updateAccent() {
     if (colors.contains(accent)) {
-      var index = colors.indexOf(accent);
+      final index = colors.indexOf(accent);
       setState(() {
         accent = colors[(index + 1) % 5];
       });
@@ -92,10 +92,10 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
         duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
     SystemChrome.setEnabledSystemUIOverlays([]);
-    selectedProvider = widget.arguments[0];
-    query = widget.arguments[1];
-    index = widget.arguments[2];
-    link = widget.arguments[3];
+    selectedProvider = widget.arguments[0].toString();
+    query = widget.arguments[1].toString();
+    index = widget.arguments[2] as int;
+    link = widget.arguments[3].toString();
     isLoading = true;
     _updatePaletteGenerator();
   }
@@ -137,7 +137,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                       screenshotController
                           .capture(
                         pixelRatio: 3,
-                        delay: Duration(milliseconds: 10),
+                        delay: const Duration(milliseconds: 10),
                       )
                           .then((File image) async {
                         setState(() {
@@ -147,14 +147,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         });
                         debugPrint('Screenshot Taken');
                       }).catchError((onError) {
-                        debugPrint(onError);
+                        debugPrint(onError.toString());
                       });
                     } else {
-                      main.prefs.get('optimisedWallpapers') ?? true
+                      main.prefs.get('optimisedWallpapers') as bool ?? true
                           ? screenshotController
                               .capture(
                               pixelRatio: 3,
-                              delay: Duration(milliseconds: 10),
+                              delay: const Duration(milliseconds: 10),
                             )
                               .then((File image) async {
                               setState(() {
@@ -163,7 +163,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               });
                               debugPrint('Screenshot Taken');
                             }).catchError((onError) {
-                              debugPrint(onError);
+                              debugPrint(onError.toString());
                             })
                           : debugPrint("Wallpaper Optimisation is disabled!");
                     }
@@ -175,15 +175,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   });
                 },
                 backdropEnabled: true,
-                backdropTapClosesPanel: true,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-                boxShadow: [],
+                boxShadow: const [],
                 collapsed: Container(
                   decoration: BoxDecoration(
-                      borderRadius: BorderRadius.only(
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
@@ -191,7 +190,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
-                    child: Center(
+                    child: const Center(
                         child: Icon(
                       JamIcons.chevron_up,
                       color: Colors.white,
@@ -208,7 +207,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   height: MediaQuery.of(context).size.height * .46,
                   width: MediaQuery.of(context).size.width,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
@@ -217,9 +216,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Center(
+                      const Center(
                           child: Padding(
-                        padding: const EdgeInsets.all(10.0),
+                        padding: EdgeInsets.all(10.0),
                         child: Icon(
                           JamIcons.chevron_down,
                           color: Colors.white,
@@ -236,14 +235,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             children: <Widget>[
                               Column(
                                 mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Padding(
                                     padding:
                                         const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                     child: Text(
-                                      WData.wallsS[index].id
+                                      wdata.wallsS[index].id
                                           .toString()
                                           .toUpperCase(),
                                       style:
@@ -252,48 +250,49 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   ),
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         JamIcons.eye,
                                         size: 20,
                                         color: Colors.white70,
                                       ),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Text(
-                                        "${WData.wallsS[index].views.toString()}",
+                                        wdata.wallsS[index].views.toString(),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         JamIcons.heart_f,
                                         size: 20,
                                         color: Colors.white70,
                                       ),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Text(
-                                        "${WData.wallsS[index].favourites.toString()}",
+                                        wdata.wallsS[index].favourites
+                                            .toString(),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         JamIcons.save,
                                         size: 20,
                                         color: Colors.white70,
                                       ),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Text(
-                                        "${double.parse(((double.parse(WData.wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                        "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
@@ -304,7 +303,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               ),
                               Column(
                                 mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: <Widget>[
                                   Padding(
@@ -313,18 +311,18 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                     child: Row(
                                       children: [
                                         Text(
-                                          WData.wallsS[index].category
+                                          wdata.wallsS[index].category
                                                   .toString()[0]
                                                   .toUpperCase() +
-                                              WData.wallsS[index].category
+                                              wdata.wallsS[index].category
                                                   .toString()
                                                   .substring(1),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodyText2,
                                         ),
-                                        SizedBox(width: 10),
-                                        Icon(
+                                        const SizedBox(width: 10),
+                                        const Icon(
                                           JamIcons.unordered_list,
                                           size: 20,
                                           color: Colors.white70,
@@ -332,24 +330,25 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                       ],
                                     ),
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Row(
                                     children: [
                                       Text(
-                                        "${WData.wallsS[index].resolution.toString()}",
+                                        wdata.wallsS[index].resolution
+                                            .toString(),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
                                       ),
-                                      SizedBox(width: 10),
-                                      Icon(
+                                      const SizedBox(width: 10),
+                                      const Icon(
                                         JamIcons.set_square,
                                         size: 20,
                                         color: Colors.white70,
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Row(
                                     children: [
                                       Text(
@@ -359,8 +358,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                             .textTheme
                                             .bodyText2,
                                       ),
-                                      SizedBox(width: 10),
-                                      Icon(
+                                      const SizedBox(width: 10),
+                                      const Icon(
                                         JamIcons.search,
                                         size: 20,
                                         color: Colors.white70,
@@ -382,25 +381,25 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               colorChanged: colorChanged,
                               link: screenshotTaken
                                   ? _imageFile.path
-                                  : WData.wallsS[index].path.toString(),
+                                  : wdata.wallsS[index].path.toString(),
                             ),
                             SetWallpaperButton(
                                 colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
-                                    : WData.wallsS[index].path),
+                                    : wdata.wallsS[index].path),
                             FavouriteWallpaperButton(
-                              id: WData.wallsS[index].id.toString(),
+                              id: wdata.wallsS[index].id.toString(),
                               provider: "WallHaven",
-                              wallhaven: WData.wallsS[index],
+                              wallhaven: wdata.wallsS[index],
                               trash: false,
                             ),
                             ShareButton(
-                                id: WData.wallsS[index].id,
+                                id: wdata.wallsS[index].id,
                                 provider: "WallHaven",
-                                url: WData.wallsS[index].path,
-                                thumbUrl:
-                                    WData.wallsS[index].thumbs["original"])
+                                url: wdata.wallsS[index].path,
+                                thumbUrl: wdata.wallsS[index].thumbs["original"]
+                                    .toString())
                           ],
                         ),
                       ),
@@ -412,11 +411,30 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                     AnimatedBuilder(
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
-                          if (offsetAnimation.value < 0.0)
+                          if (offsetAnimation.value < 0.0) {
                             debugPrint('${offsetAnimation.value + 8.0}');
+                          }
                           return GestureDetector(
+                            onPanUpdate: (details) {
+                              if (details.delta.dy < -10) {
+                                HapticFeedback.vibrate();
+                                panelController.open();
+                              }
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                colorChanged = false;
+                              });
+                              HapticFeedback.vibrate();
+                              shakeController.forward(from: 0.0);
+                            },
+                            onTap: () {
+                              HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : debugPrint("");
+                              shakeController.forward(from: 0.0);
+                            },
                             child: CachedNetworkImage(
-                              imageUrl: WData.wallsS[index].path,
+                              imageUrl: wdata.wallsS[index].path,
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
                                 controller: screenshotController,
@@ -441,49 +459,27 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               progressIndicatorBuilder:
                                   (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
-                                  SizedBox.expand(child: Text("")),
-                                  Container(
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                          valueColor: AlwaysStoppedAnimation(
-                                            config.Colors().mainAccentColor(1),
-                                          ),
-                                          value: downloadProgress.progress),
-                                    ),
+                                  const SizedBox.expand(child: Text("")),
+                                  Center(
+                                    child: CircularProgressIndicator(
+                                        valueColor: AlwaysStoppedAnimation(
+                                          config.Colors().mainAccentColor(1),
+                                        ),
+                                        value: downloadProgress.progress),
                                   ),
                                 ],
                               ),
-                              errorWidget: (context, url, error) => Container(
-                                child: Center(
-                                  child: Icon(
-                                    JamIcons.close_circle_f,
-                                    color: isLoading
-                                        ? Theme.of(context).accentColor
-                                        : accent.computeLuminance() > 0.5
-                                            ? Colors.black
-                                            : Colors.white,
-                                  ),
+                              errorWidget: (context, url, error) => Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: isLoading
+                                      ? Theme.of(context).accentColor
+                                      : accent.computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
                                 ),
                               ),
                             ),
-                            onPanUpdate: (details) {
-                              if (details.delta.dy < -10) {
-                                HapticFeedback.vibrate();
-                                panelController.open();
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                colorChanged = false;
-                              });
-                              HapticFeedback.vibrate();
-                              shakeController.forward(from: 0.0);
-                            },
-                            onTap: () {
-                              HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : debugPrint("");
-                              shakeController.forward(from: 0.0);
-                            },
                           );
                         }),
                     Align(
@@ -501,7 +497,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                          icon: Icon(
+                          icon: const Icon(
                             JamIcons.chevron_left,
                           ),
                         ),
@@ -513,12 +509,12 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
-                            var link = WData.wallsS[index].path;
+                            final link = wdata.wallsS[index].path;
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
                                     transitionDuration:
-                                        Duration(milliseconds: 300),
+                                        const Duration(milliseconds: 300),
                                     pageBuilder: (context, animation,
                                         secondaryAnimation) {
                                       animation = Tween(begin: 0.0, end: 1.0)
@@ -540,7 +536,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                          icon: Icon(
+                          icon: const Icon(
                             JamIcons.clock,
                           ),
                         ),
@@ -566,7 +562,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                       screenshotController
                           .capture(
                         pixelRatio: 3,
-                        delay: Duration(milliseconds: 10),
+                        delay: const Duration(milliseconds: 10),
                       )
                           .then((File image) async {
                         setState(() {
@@ -576,14 +572,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         });
                         debugPrint('Screenshot Taken');
                       }).catchError((onError) {
-                        debugPrint(onError);
+                        debugPrint(onError.toString());
                       });
                     } else {
-                      main.prefs.get('optimisedWallpapers') ?? true
+                      main.prefs.get('optimisedWallpapers') as bool ?? true
                           ? screenshotController
                               .capture(
                               pixelRatio: 3,
-                              delay: Duration(milliseconds: 10),
+                              delay: const Duration(milliseconds: 10),
                             )
                               .then((File image) async {
                               setState(() {
@@ -592,7 +588,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               });
                               debugPrint('Screenshot Taken');
                             }).catchError((onError) {
-                              debugPrint(onError);
+                              debugPrint(onError.toString());
                             })
                           : debugPrint("Wallpaper Optimisation is disabled!");
                     }
@@ -604,15 +600,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   });
                 },
                 backdropEnabled: true,
-                backdropTapClosesPanel: true,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-                boxShadow: [],
+                boxShadow: const [],
                 collapsed: Container(
                   decoration: BoxDecoration(
-                      borderRadius: BorderRadius.only(
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
@@ -620,7 +615,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
-                    child: Center(
+                    child: const Center(
                         child: Icon(
                       JamIcons.chevron_up,
                       color: Colors.white,
@@ -637,7 +632,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   height: MediaQuery.of(context).size.height * .46,
                   width: MediaQuery.of(context).size.width,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
@@ -646,9 +641,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Center(
+                      const Center(
                           child: Padding(
-                        padding: const EdgeInsets.all(10.0),
+                        padding: EdgeInsets.all(10.0),
                         child: Icon(
                           JamIcons.chevron_down,
                           color: Colors.white,
@@ -668,15 +663,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                 child: Container(
                                   width: MediaQuery.of(context).size.width * .8,
                                   child: Text(
-                                    PData.wallsPS[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                        ? PData.wallsPS[index].url
+                                    pdata.wallsPS[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                        ? pdata.wallsPS[index].url
                                                 .toString()
                                                 .replaceAll(
                                                     "https://www.pexels.com/photo/", "")
                                                 .replaceAll("-", " ")
                                                 .replaceAll("/", "")[0]
                                                 .toUpperCase() +
-                                            PData.wallsPS[index].url
+                                            pdata.wallsPS[index].url
                                                 .toString()
                                                 .replaceAll(
                                                     "https://www.pexels.com/photo/", "")
@@ -684,7 +679,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                 .replaceAll("/", "")
                                                 .substring(
                                                     1,
-                                                    PData.wallsPS[index].url
+                                                    pdata.wallsPS[index].url
                                                             .toString()
                                                             .replaceAll(
                                                                 "https://www.pexels.com/photo/", "")
@@ -693,14 +688,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                             .replaceAll("/", "")
                                                             .length -
                                                         7)
-                                        : PData.wallsPS[index].url
+                                        : pdata.wallsPS[index].url
                                                 .toString()
                                                 .replaceAll(
                                                     "https://www.pexels.com/photo/", "")
                                                 .replaceAll("-", " ")
                                                 .replaceAll("/", "")[0]
                                                 .toUpperCase() +
-                                            PData.wallsPS[index].url
+                                            pdata.wallsPS[index].url
                                                 .toString()
                                                 .replaceAll(
                                                     "https://www.pexels.com/photo/",
@@ -722,29 +717,28 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                 children: <Widget>[
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: <Widget>[
                                       GestureDetector(
                                         onTap: () {
-                                          launch(PData.wallsPS[index].url);
+                                          launch(pdata.wallsPS[index].url);
                                         },
                                         child: Row(
                                           children: [
-                                            Icon(
+                                            const Icon(
                                               JamIcons.camera,
                                               size: 20,
                                               color: Colors.white70,
                                             ),
-                                            SizedBox(width: 10),
+                                            const SizedBox(width: 10),
                                             Container(
                                               width: MediaQuery.of(context)
                                                       .size
                                                       .width *
                                                   .4,
                                               child: Text(
-                                                PData
+                                                pdata
                                                     .wallsPS[index].photographer
                                                     .toString(),
                                                 textAlign: TextAlign.left,
@@ -756,17 +750,17 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                           ],
                                         ),
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Row(
                                         children: [
-                                          Icon(
+                                          const Icon(
                                             JamIcons.set_square,
                                             size: 20,
                                             color: Colors.white70,
                                           ),
-                                          SizedBox(width: 10),
+                                          const SizedBox(width: 10),
                                           Text(
-                                            "${PData.wallsPS[index].width.toString()}x${PData.wallsPS[index].height.toString()}",
+                                            "${pdata.wallsPS[index].width.toString()}x${pdata.wallsPS[index].height.toString()}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -777,26 +771,25 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   ),
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: <Widget>[
                                       Row(
                                         children: [
                                           Text(
-                                            PData.wallsPS[index].id.toString(),
+                                            pdata.wallsPS[index].id.toString(),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
                                           ),
-                                          SizedBox(width: 10),
-                                          Icon(
+                                          const SizedBox(width: 10),
+                                          const Icon(
                                             JamIcons.info,
                                             size: 20,
                                             color: Colors.white70,
                                           ),
                                         ],
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Row(
                                         children: [
                                           Text(
@@ -805,8 +798,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                 .textTheme
                                                 .bodyText2,
                                           ),
-                                          SizedBox(width: 10),
-                                          Icon(
+                                          const SizedBox(width: 10),
+                                          const Icon(
                                             JamIcons.database,
                                             size: 20,
                                             color: Colors.white70,
@@ -830,24 +823,27 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                 colorChanged: colorChanged,
                                 link: screenshotTaken
                                     ? _imageFile.path
-                                    : PData.wallsPS[index].src["original"]
+                                    : pdata.wallsPS[index].src["original"]
                                         .toString()),
                             SetWallpaperButton(
                                 colorChanged: colorChanged,
                                 url: screenshotTaken
                                     ? _imageFile.path
-                                    : PData.wallsPS[index].src["original"]),
+                                    : pdata.wallsPS[index].src["original"]
+                                        .toString()),
                             FavouriteWallpaperButton(
-                              id: PData.wallsPS[index].id.toString(),
+                              id: pdata.wallsPS[index].id.toString(),
                               provider: "Pexels",
-                              pexels: PData.wallsPS[index],
+                              pexels: pdata.wallsPS[index],
                               trash: false,
                             ),
                             ShareButton(
-                                id: PData.wallsPS[index].id,
+                                id: pdata.wallsPS[index].id,
                                 provider: selectedProvider,
-                                url: PData.wallsPS[index].src["original"],
-                                thumbUrl: PData.wallsPS[index].src["medium"])
+                                url: pdata.wallsPS[index].src["original"]
+                                    .toString(),
+                                thumbUrl: pdata.wallsPS[index].src["medium"]
+                                    .toString())
                           ],
                         ),
                       ),
@@ -859,11 +855,31 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                     AnimatedBuilder(
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
-                          if (offsetAnimation.value < 0.0)
+                          if (offsetAnimation.value < 0.0) {
                             debugPrint('${offsetAnimation.value + 8.0}');
+                          }
                           return GestureDetector(
+                            onPanUpdate: (details) {
+                              if (details.delta.dy < -10) {
+                                HapticFeedback.vibrate();
+                                panelController.open();
+                              }
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                colorChanged = false;
+                              });
+                              HapticFeedback.vibrate();
+                              shakeController.forward(from: 0.0);
+                            },
+                            onTap: () {
+                              HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : debugPrint("");
+                              shakeController.forward(from: 0.0);
+                            },
                             child: CachedNetworkImage(
-                              imageUrl: PData.wallsPS[index].src["original"],
+                              imageUrl: pdata.wallsPS[index].src["original"]
+                                  .toString(),
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
                                 controller: screenshotController,
@@ -888,49 +904,27 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               progressIndicatorBuilder:
                                   (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
-                                  SizedBox.expand(child: Text("")),
-                                  Container(
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                          valueColor: AlwaysStoppedAnimation(
-                                            config.Colors().mainAccentColor(1),
-                                          ),
-                                          value: downloadProgress.progress),
-                                    ),
+                                  const SizedBox.expand(child: Text("")),
+                                  Center(
+                                    child: CircularProgressIndicator(
+                                        valueColor: AlwaysStoppedAnimation(
+                                          config.Colors().mainAccentColor(1),
+                                        ),
+                                        value: downloadProgress.progress),
                                   ),
                                 ],
                               ),
-                              errorWidget: (context, url, error) => Container(
-                                child: Center(
-                                  child: Icon(
-                                    JamIcons.close_circle_f,
-                                    color: isLoading
-                                        ? Theme.of(context).accentColor
-                                        : accent.computeLuminance() > 0.5
-                                            ? Colors.black
-                                            : Colors.white,
-                                  ),
+                              errorWidget: (context, url, error) => Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: isLoading
+                                      ? Theme.of(context).accentColor
+                                      : accent.computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
                                 ),
                               ),
                             ),
-                            onPanUpdate: (details) {
-                              if (details.delta.dy < -10) {
-                                HapticFeedback.vibrate();
-                                panelController.open();
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                colorChanged = false;
-                              });
-                              HapticFeedback.vibrate();
-                              shakeController.forward(from: 0.0);
-                            },
-                            onTap: () {
-                              HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : debugPrint("");
-                              shakeController.forward(from: 0.0);
-                            },
                           );
                         }),
                     Align(
@@ -948,7 +942,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                          icon: Icon(
+                          icon: const Icon(
                             JamIcons.chevron_left,
                           ),
                         ),
@@ -960,12 +954,12 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
-                            var link = PData.wallsPS[index].src["original"];
+                            final link = pdata.wallsPS[index].src["original"];
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
                                     transitionDuration:
-                                        Duration(milliseconds: 300),
+                                        const Duration(milliseconds: 300),
                                     pageBuilder: (context, animation,
                                         secondaryAnimation) {
                                       animation = Tween(begin: 0.0, end: 1.0)
@@ -975,7 +969,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                           child: ClockOverlay(
                                             colorChanged: colorChanged,
                                             accent: accent,
-                                            link: link,
+                                            link: link.toString(),
                                             file: false,
                                           ));
                                     },
@@ -987,7 +981,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                          icon: Icon(
+                          icon: const Icon(
                             JamIcons.clock,
                           ),
                         ),
