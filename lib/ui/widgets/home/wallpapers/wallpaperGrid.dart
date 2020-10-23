@@ -15,7 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class WallpaperGrid extends StatefulWidget {
   final String provider;
-  WallpaperGrid({@required this.provider});
+  const WallpaperGrid({@required this.provider});
   @override
   _WallpaperGridState createState() => _WallpaperGridState();
 }
@@ -26,7 +26,8 @@ class _WallpaperGridState extends State<WallpaperGrid>
   AnimationController shakeController;
   Animation<Color> animation;
   int longTapIndex;
-  var refreshHomeKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey =
+      GlobalKey<RefreshIndicatorState>();
   int _current = 0;
   bool seeMoreLoader = false;
   @override
@@ -39,20 +40,20 @@ class _WallpaperGridState extends State<WallpaperGrid>
       vsync: this,
     );
     animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+            ThemeType.dark
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -83,19 +84,18 @@ class _WallpaperGridState extends State<WallpaperGrid>
   }
 
   @override
-  dispose() {
+  void dispose() {
     _controller?.dispose();
     shakeController.dispose();
     super.dispose();
   }
 
-  Future<Null> refreshList() async {
-    refreshHomeKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(milliseconds: 500));
+  Future<void> refreshList() async {
+    refreshHomeKey.currentState?.show();
+    await Future.delayed(const Duration(milliseconds: 500));
     Data.prismWalls = [];
     Data.subPrismWalls = [];
     Data.getPrismWalls();
-    return null;
   }
 
   @override
@@ -117,7 +117,6 @@ class _WallpaperGridState extends State<WallpaperGrid>
               SliverAppBar(
                 backgroundColor: Theme.of(context).primaryColor,
                 automaticallyImplyLeading: false,
-                pinned: false,
                 titleSpacing: 0,
                 expandedHeight: 200,
                 flexibleSpace: SizedBox(
@@ -128,33 +127,30 @@ class _WallpaperGridState extends State<WallpaperGrid>
                         carouselController: carouselController,
                         itemCount: 5,
                         options: CarouselOptions(
-                            pauseAutoPlayOnTouch: true,
                             height: 200,
-                            viewportFraction: 0.8,
-                            initialPage: 0,
-                            enableInfiniteScroll: true,
                             autoPlay: true,
-                            autoPlayInterval: Duration(seconds: 3),
-                            autoPlayAnimationDuration:
-                                Duration(milliseconds: 800),
-                            autoPlayCurve: Curves.fastOutSlowIn,
-                            scrollDirection: Axis.horizontal,
+                            autoPlayInterval: const Duration(seconds: 3),
                             onPageChanged: (index, reason) {
-                              if (mounted)
+                              if (mounted) {
                                 setState(() {
                                   _current = index;
                                 });
+                              }
                             }),
                         itemBuilder: (BuildContext context, int i) => i == 4
                             ? Container(
                                 width: MediaQuery.of(context).size.width,
-                                margin: EdgeInsets.fromLTRB(3, 1, 3, 6),
+                                margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
                                 child: GestureDetector(
+                                  onTap: () {
+                                    launch(
+                                        "https://twitter.com/PrismWallpapers");
+                                  },
                                   child: Container(
                                     decoration: BoxDecoration(
                                         color: animation.value,
                                         borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
+                                        image: const DecorationImage(
                                             image: CachedNetworkImageProvider(
                                                 "https://unblast.com/wp-content/uploads/2018/08/Gradient-Mesh-21.jpg"),
                                             fit: BoxFit.cover)),
@@ -182,23 +178,51 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                       ),
                                     ),
                                   ),
-                                  onTap: () {
-                                    launch(
-                                        "https://twitter.com/PrismWallpapers");
-                                  },
                                 ),
                               )
                             : Container(
                                 width: MediaQuery.of(context).size.width,
-                                margin: EdgeInsets.fromLTRB(3, 1, 3, 6),
+                                margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
                                 child: GestureDetector(
+                                  onTap: () {
+                                    if (Data.subPrismWalls == []) {
+                                    } else {
+                                      Navigator.pushNamed(
+                                          context, wallpaperRoute,
+                                          arguments: [
+                                            widget.provider,
+                                            i,
+                                            Data.subPrismWalls[i]
+                                                ["wallpaper_thumb"],
+                                          ]);
+                                    }
+                                  },
+                                  onLongPress: () {
+                                    setState(() {
+                                      longTapIndex = i;
+                                    });
+                                    shakeController.forward(from: 0.0);
+                                    if (Data.subPrismWalls == []) {
+                                    } else {
+                                      HapticFeedback.vibrate();
+                                      createDynamicLink(
+                                          Data.subPrismWalls[i]["id"]
+                                              .toString(),
+                                          widget.provider,
+                                          Data.subPrismWalls[i]["wallpaper_url"]
+                                              .toString(),
+                                          Data.subPrismWalls[i]
+                                                  ["wallpaper_thumb"]
+                                              .toString());
+                                    }
+                                  },
                                   child: Padding(
                                     padding: i == longTapIndex
                                         ? EdgeInsets.symmetric(
                                             vertical: offsetAnimation.value / 2,
                                             horizontal: offsetAnimation.value)
-                                        : EdgeInsets.all(0),
-                                    child: Data.subPrismWalls.length == 0
+                                        : const EdgeInsets.all(0),
+                                    child: Data.subPrismWalls.isEmpty
                                         ? Container(
                                             decoration: BoxDecoration(
                                               color: animation.value,
@@ -214,7 +238,8 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                                 image: DecorationImage(
                                                     image: CachedNetworkImageProvider(
                                                         Data.subPrismWalls[i][
-                                                            "wallpaper_thumb"]),
+                                                                "wallpaper_thumb"]
+                                                            .toString()),
                                                     fit: BoxFit.cover)),
                                             child: Center(
                                               child: Container(
@@ -245,61 +270,29 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                             ),
                                           ),
                                   ),
-                                  onTap: () {
-                                    if (Data.subPrismWalls == []) {
-                                    } else {
-                                      Navigator.pushNamed(
-                                          context, WallpaperRoute,
-                                          arguments: [
-                                            widget.provider,
-                                            i,
-                                            Data.subPrismWalls[i]
-                                                ["wallpaper_thumb"],
-                                          ]);
-                                    }
-                                  },
-                                  onLongPress: () {
-                                    setState(() {
-                                      longTapIndex = i;
-                                    });
-                                    shakeController.forward(from: 0.0);
-                                    if (Data.subPrismWalls == []) {
-                                    } else {
-                                      HapticFeedback.vibrate();
-                                      createDynamicLink(
-                                          Data.subPrismWalls[i]["id"],
-                                          widget.provider,
-                                          Data.subPrismWalls[i]
-                                              ["wallpaper_url"],
-                                          Data.subPrismWalls[i]
-                                              ["wallpaper_thumb"]);
-                                    }
-                                  },
                                 ),
                               ),
                       ),
                       Align(
                         alignment: Alignment.bottomCenter,
-                        child: Container(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [0, 1, 2, 3, 4].map((i) {
-                              return Container(
-                                width: 8.0,
-                                height: 8.0,
-                                margin: EdgeInsets.symmetric(
-                                    vertical: 14.0, horizontal: 2.0),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _current == i
-                                      ? Color(0xFFFFFFFF)
-                                      : Theme.of(context)
-                                          .primaryColor
-                                          .withOpacity(0.4),
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [0, 1, 2, 3, 4].map((i) {
+                            return Container(
+                              width: 8.0,
+                              height: 8.0,
+                              margin: const EdgeInsets.symmetric(
+                                  vertical: 14.0, horizontal: 2.0),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _current == i
+                                    ? const Color(0xFFFFFFFF)
+                                    : Theme.of(context)
+                                        .primaryColor
+                                        .withOpacity(0.4),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
                     ],
@@ -319,7 +312,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                   Data.seeMorePrism();
                   setState(() {
                     seeMoreLoader = true;
-                    Future.delayed(Duration(seconds: 4))
+                    Future.delayed(const Duration(seconds: 4))
                         .then((value) => seeMoreLoader = false);
                   });
                 }
@@ -327,9 +320,9 @@ class _WallpaperGridState extends State<WallpaperGrid>
               return false;
             },
             child: GridView.builder(
-              physics: ScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
-              itemCount: Data.subPrismWalls.length == 0
+              physics: const ScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+              itemCount: Data.subPrismWalls.isEmpty
                   ? 20
                   : Data.subPrismWalls.length - 4,
               shrinkWrap: true,
@@ -347,7 +340,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                   return FlatButton(
                       color: Provider.of<ThemeModel>(context, listen: false)
                                   .returnTheme() ==
-                              ThemeType.Dark
+                              ThemeType.dark
                           ? Colors.white10
                           : Colors.black.withOpacity(.1),
                       shape: RoundedRectangleBorder(
@@ -357,12 +350,13 @@ class _WallpaperGridState extends State<WallpaperGrid>
                           Data.seeMorePrism();
                           setState(() {
                             seeMoreLoader = true;
-                            Future.delayed(Duration(seconds: 4))
+                            Future.delayed(const Duration(seconds: 4))
                                 .then((value) => seeMoreLoader = false);
                           });
                         }
                       },
-                      child: !seeMoreLoader ? Text("See more") : Loader());
+                      child:
+                          !seeMoreLoader ? const Text("See more") : Loader());
                 }
                 return FocusedMenuHolder(
                     provider: widget.provider,
@@ -370,36 +364,14 @@ class _WallpaperGridState extends State<WallpaperGrid>
                     child: AnimatedBuilder(
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
-                          if (offsetAnimation.value < 0.0)
+                          if (offsetAnimation.value < 0.0) {
                             debugPrint('${offsetAnimation.value + 8.0}');
+                          }
                           return GestureDetector(
-                            child: Padding(
-                                padding: index == longTapIndex
-                                    ? EdgeInsets.symmetric(
-                                        vertical: offsetAnimation.value / 2,
-                                        horizontal: offsetAnimation.value)
-                                    : EdgeInsets.all(0),
-                                child: Container(
-                                  decoration: Data.subPrismWalls.length == 0
-                                      ? BoxDecoration(
-                                          color: animation.value,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        )
-                                      : BoxDecoration(
-                                          color: animation.value,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                          image: DecorationImage(
-                                              image: CachedNetworkImageProvider(
-                                                  Data.subPrismWalls[index]
-                                                      ["wallpaper_thumb"]),
-                                              fit: BoxFit.cover)),
-                                )),
                             onTap: () {
                               if (Data.subPrismWalls == []) {
                               } else {
-                                Navigator.pushNamed(context, WallpaperRoute,
+                                Navigator.pushNamed(context, wallpaperRoute,
                                     arguments: [
                                       widget.provider,
                                       index,
@@ -417,13 +389,38 @@ class _WallpaperGridState extends State<WallpaperGrid>
                               } else {
                                 HapticFeedback.vibrate();
                                 createDynamicLink(
-                                    Data.subPrismWalls[index]["id"],
+                                    Data.subPrismWalls[index]["id"].toString(),
                                     widget.provider,
-                                    Data.subPrismWalls[index]["wallpaper_url"],
-                                    Data.subPrismWalls[index]
-                                        ["wallpaper_thumb"]);
+                                    Data.subPrismWalls[index]["wallpaper_url"]
+                                        .toString(),
+                                    Data.subPrismWalls[index]["wallpaper_thumb"]
+                                        .toString());
                               }
                             },
+                            child: Padding(
+                                padding: index == longTapIndex
+                                    ? EdgeInsets.symmetric(
+                                        vertical: offsetAnimation.value / 2,
+                                        horizontal: offsetAnimation.value)
+                                    : const EdgeInsets.all(0),
+                                child: Container(
+                                  decoration: Data.subPrismWalls.isEmpty
+                                      ? BoxDecoration(
+                                          color: animation.value,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        )
+                                      : BoxDecoration(
+                                          color: animation.value,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          image: DecorationImage(
+                                              image: CachedNetworkImageProvider(
+                                                  Data.subPrismWalls[index]
+                                                          ["wallpaper_thumb"]
+                                                      .toString()),
+                                              fit: BoxFit.cover)),
+                                )),
                           );
                         }));
               },

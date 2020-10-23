@@ -1,5 +1,5 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as WData;
+    as wData;
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -17,7 +17,7 @@ import 'package:Prism/global/globals.dart' as globals;
 
 class WallHavenGrid extends StatefulWidget {
   final String provider;
-  WallHavenGrid({@required this.provider});
+  const WallHavenGrid({@required this.provider});
   @override
   _WallHavenGridState createState() => _WallHavenGridState();
 }
@@ -29,7 +29,8 @@ class _WallHavenGridState extends State<WallHavenGrid>
   Animation<Color> animation;
   int longTapIndex;
   int _current = 0;
-  var refreshHomeKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey =
+      GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
   @override
@@ -42,20 +43,20 @@ class _WallHavenGridState extends State<WallHavenGrid>
       vsync: this,
     );
     animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+            ThemeType.dark
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -86,20 +87,19 @@ class _WallHavenGridState extends State<WallHavenGrid>
   }
 
   @override
-  dispose() {
+  void dispose() {
     _controller?.dispose();
     shakeController.dispose();
     super.dispose();
   }
 
-  Future<Null> refreshList() async {
-    refreshHomeKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(milliseconds: 500));
-    WData.walls = [];
+  Future<void> refreshList() async {
+    refreshHomeKey.currentState?.show();
+    await Future.delayed(const Duration(milliseconds: 500));
+    wData.walls = [];
     Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(
         Provider.of<CategorySupplier>(context, listen: false).selectedChoice,
         "r");
-    return null;
   }
 
   @override
@@ -121,7 +121,6 @@ class _WallHavenGridState extends State<WallHavenGrid>
         SliverAppBar(
           backgroundColor: Theme.of(context).primaryColor,
           automaticallyImplyLeading: false,
-          pinned: false,
           titleSpacing: 0,
           expandedHeight: 200,
           flexibleSpace: SizedBox(
@@ -132,32 +131,29 @@ class _WallHavenGridState extends State<WallHavenGrid>
                   carouselController: carouselController,
                   itemCount: 5,
                   options: CarouselOptions(
-                      pauseAutoPlayOnTouch: true,
                       height: 200,
-                      viewportFraction: 0.8,
-                      initialPage: 0,
-                      enableInfiniteScroll: true,
                       autoPlay: true,
-                      autoPlayInterval: Duration(seconds: 3),
-                      autoPlayAnimationDuration: Duration(milliseconds: 800),
-                      autoPlayCurve: Curves.fastOutSlowIn,
-                      scrollDirection: Axis.horizontal,
+                      autoPlayInterval: const Duration(seconds: 3),
                       onPageChanged: (index, reason) {
-                        if (mounted)
+                        if (mounted) {
                           setState(() {
                             _current = index;
                           });
+                        }
                       }),
                   itemBuilder: (BuildContext context, int i) => i == 4
                       ? Container(
                           width: MediaQuery.of(context).size.width,
-                          margin: EdgeInsets.fromLTRB(5, 1, 5, 7),
+                          margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
                           child: GestureDetector(
+                            onTap: () {
+                              launch("https://twitter.com/PrismWallpapers");
+                            },
                             child: Container(
                               decoration: BoxDecoration(
                                   color: animation.value,
                                   borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
+                                  image: const DecorationImage(
                                       image: CachedNetworkImageProvider(
                                           "https://unblast.com/wp-content/uploads/2018/08/Gradient-Mesh-21.jpg"),
                                       fit: BoxFit.cover)),
@@ -183,22 +179,46 @@ class _WallHavenGridState extends State<WallHavenGrid>
                                 ),
                               ),
                             ),
-                            onTap: () {
-                              launch("https://twitter.com/PrismWallpapers");
-                            },
                           ),
                         )
                       : Container(
                           width: MediaQuery.of(context).size.width,
-                          margin: EdgeInsets.fromLTRB(5, 1, 5, 7),
+                          margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
                           child: GestureDetector(
+                            onTap: () {
+                              if (wData.walls == []) {
+                              } else {
+                                Navigator.pushNamed(context, wallpaperRoute,
+                                    arguments: [
+                                      widget.provider,
+                                      i,
+                                      wData.walls[i].thumbs["small"],
+                                    ]);
+                              }
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                longTapIndex = i;
+                              });
+                              shakeController.forward(from: 0.0);
+                              if (wData.walls == []) {
+                              } else {
+                                HapticFeedback.vibrate();
+                                createDynamicLink(
+                                    wData.walls[i].id,
+                                    widget.provider,
+                                    wData.walls[i].path,
+                                    wData.walls[i].thumbs["original"]
+                                        .toString());
+                              }
+                            },
                             child: Padding(
                               padding: i == longTapIndex
                                   ? EdgeInsets.symmetric(
                                       vertical: offsetAnimation.value / 2,
                                       horizontal: offsetAnimation.value)
-                                  : EdgeInsets.all(0),
-                              child: WData.walls.length == 0
+                                  : const EdgeInsets.all(0),
+                              child: wData.walls.isEmpty
                                   ? Container(
                                       decoration: BoxDecoration(
                                         color: animation.value,
@@ -212,8 +232,9 @@ class _WallHavenGridState extends State<WallHavenGrid>
                                               BorderRadius.circular(20),
                                           image: DecorationImage(
                                               image: CachedNetworkImageProvider(
-                                                  WData.walls[i]
-                                                      .thumbs["original"]),
+                                                  wData.walls[i]
+                                                      .thumbs["original"]
+                                                      .toString()),
                                               fit: BoxFit.cover)),
                                       child: Center(
                                         child: Container(
@@ -240,57 +261,27 @@ class _WallHavenGridState extends State<WallHavenGrid>
                                       ),
                                     ),
                             ),
-                            onTap: () {
-                              if (WData.walls == []) {
-                              } else {
-                                Navigator.pushNamed(context, WallpaperRoute,
-                                    arguments: [
-                                      widget.provider,
-                                      i,
-                                      WData.walls[i].thumbs["small"],
-                                    ]);
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                longTapIndex = i;
-                              });
-                              shakeController.forward(from: 0.0);
-                              if (WData.walls == []) {
-                              } else {
-                                HapticFeedback.vibrate();
-                                createDynamicLink(
-                                    WData.walls[i].id,
-                                    widget.provider,
-                                    WData.walls[i].path,
-                                    WData.walls[i].thumbs["original"]);
-                              }
-                            },
                           ),
                         ),
                 ),
                 Align(
                   alignment: Alignment.bottomCenter,
-                  child: Container(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [0, 1, 2, 3, 4].map((i) {
-                        return Container(
-                          width: 8.0,
-                          height: 8.0,
-                          margin: EdgeInsets.symmetric(
-                              vertical: 14.0, horizontal: 2.0),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _current == i
-                                ? Color(0xFFFFFFFF)
-                                : Theme.of(context)
-                                    .primaryColor
-                                    .withOpacity(0.4),
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [0, 1, 2, 3, 4].map((i) {
+                      return Container(
+                        width: 8.0,
+                        height: 8.0,
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 14.0, horizontal: 2.0),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _current == i
+                              ? const Color(0xFFFFFFFF)
+                              : Theme.of(context).primaryColor.withOpacity(0.4),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ],
@@ -315,7 +306,7 @@ class _WallHavenGridState extends State<WallHavenGrid>
 
                 setState(() {
                   seeMoreLoader = true;
-                  Future.delayed(Duration(seconds: 4))
+                  Future.delayed(const Duration(seconds: 4))
                       .then((value) => seeMoreLoader = false);
                 });
               }
@@ -323,8 +314,8 @@ class _WallHavenGridState extends State<WallHavenGrid>
             return false;
           },
           child: GridView.builder(
-            padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
-            itemCount: WData.walls.length == 0 ? 20 : WData.walls.length - 4,
+            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+            itemCount: wData.walls.isEmpty ? 20 : wData.walls.length - 4,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent:
@@ -336,11 +327,11 @@ class _WallHavenGridState extends State<WallHavenGrid>
                 crossAxisSpacing: 8),
             itemBuilder: (context, index) {
               index = index + 4;
-              if (index == WData.walls.length - 1) {
+              if (index == wData.walls.length - 1) {
                 return FlatButton(
                     color: Provider.of<ThemeModel>(context, listen: false)
                                 .returnTheme() ==
-                            ThemeType.Dark
+                            ThemeType.dark
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(
@@ -356,12 +347,12 @@ class _WallHavenGridState extends State<WallHavenGrid>
 
                         setState(() {
                           seeMoreLoader = true;
-                          Future.delayed(Duration(seconds: 4))
+                          Future.delayed(const Duration(seconds: 4))
                               .then((value) => seeMoreLoader = false);
                         });
                       }
                     },
-                    child: !seeMoreLoader ? Text("See more") : Loader());
+                    child: !seeMoreLoader ? const Text("See more") : Loader());
               }
               return FocusedMenuHolder(
                   provider: widget.provider,
@@ -369,17 +360,46 @@ class _WallHavenGridState extends State<WallHavenGrid>
                   child: AnimatedBuilder(
                       animation: offsetAnimation,
                       builder: (buildContext, child) {
-                        if (offsetAnimation.value < 0.0)
+                        if (offsetAnimation.value < 0.0) {
                           debugPrint('${offsetAnimation.value + 8.0}');
+                        }
                         return GestureDetector(
+                          onTap: () {
+                            if (wData.walls == []) {
+                            } else {
+                              Navigator.pushNamed(context, wallpaperRoute,
+                                  arguments: [
+                                    widget.provider,
+                                    index,
+                                    wData.walls[index].thumbs["small"]
+                                        .toString(),
+                                  ]);
+                            }
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              longTapIndex = index;
+                            });
+                            shakeController.forward(from: 0.0);
+                            if (wData.walls == []) {
+                            } else {
+                              HapticFeedback.vibrate();
+                              createDynamicLink(
+                                  wData.walls[index].id,
+                                  widget.provider,
+                                  wData.walls[index].path,
+                                  wData.walls[index].thumbs["original"]
+                                      .toString());
+                            }
+                          },
                           child: Padding(
                             padding: index == longTapIndex
                                 ? EdgeInsets.symmetric(
                                     vertical: offsetAnimation.value / 2,
                                     horizontal: offsetAnimation.value)
-                                : EdgeInsets.all(0),
+                                : const EdgeInsets.all(0),
                             child: Container(
-                              decoration: WData.walls.length == 0
+                              decoration: wData.walls.isEmpty
                                   ? BoxDecoration(
                                       color: animation.value,
                                       borderRadius: BorderRadius.circular(20),
@@ -389,37 +409,12 @@ class _WallHavenGridState extends State<WallHavenGrid>
                                       borderRadius: BorderRadius.circular(20),
                                       image: DecorationImage(
                                           image: CachedNetworkImageProvider(
-                                              WData.walls[index]
-                                                  .thumbs["original"]),
+                                              wData.walls[index]
+                                                  .thumbs["original"]
+                                                  .toString()),
                                           fit: BoxFit.cover)),
                             ),
                           ),
-                          onTap: () {
-                            if (WData.walls == []) {
-                            } else {
-                              Navigator.pushNamed(context, WallpaperRoute,
-                                  arguments: [
-                                    widget.provider,
-                                    index,
-                                    WData.walls[index].thumbs["small"],
-                                  ]);
-                            }
-                          },
-                          onLongPress: () {
-                            setState(() {
-                              longTapIndex = index;
-                            });
-                            shakeController.forward(from: 0.0);
-                            if (WData.walls == []) {
-                            } else {
-                              HapticFeedback.vibrate();
-                              createDynamicLink(
-                                  WData.walls[index].id,
-                                  widget.provider,
-                                  WData.walls[index].path,
-                                  WData.walls[index].thumbs["original"]);
-                            }
-                          },
                         );
                       }));
             },

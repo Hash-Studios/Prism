@@ -16,7 +16,7 @@ import 'package:Prism/global/globals.dart' as globals;
 
 class PexelsGrid extends StatefulWidget {
   final String provider;
-  PexelsGrid({@required this.provider});
+  const PexelsGrid({@required this.provider});
   @override
   _PexelsGridState createState() => _PexelsGridState();
 }
@@ -27,7 +27,8 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
   Animation<Color> animation;
   int _current = 0;
   int longTapIndex;
-  var refreshHomeKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey =
+      GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
   @override
@@ -40,20 +41,20 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
       vsync: this,
     );
     animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+            ThemeType.dark
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -84,20 +85,19 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
   }
 
   @override
-  dispose() {
+  void dispose() {
     _controller?.dispose();
     shakeController.dispose();
     super.dispose();
   }
 
-  Future<Null> refreshList() async {
-    refreshHomeKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(milliseconds: 500));
+  Future<void> refreshList() async {
+    refreshHomeKey.currentState?.show();
+    await Future.delayed(const Duration(milliseconds: 500));
     PData.wallsP = [];
     Provider.of<CategorySupplier>(context, listen: false).changeWallpaperFuture(
         Provider.of<CategorySupplier>(context, listen: false).selectedChoice,
         "r");
-    return null;
   }
 
   @override
@@ -119,8 +119,6 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
         SliverAppBar(
           backgroundColor: Theme.of(context).primaryColor,
           automaticallyImplyLeading: false,
-          pinned: false,
-          titleSpacing: 0,
           expandedHeight: 200,
           flexibleSpace: SizedBox(
             child: Stack(
@@ -130,32 +128,29 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                   carouselController: carouselController,
                   itemCount: 5,
                   options: CarouselOptions(
-                      pauseAutoPlayOnTouch: true,
                       height: 200,
-                      viewportFraction: 0.8,
-                      initialPage: 0,
-                      enableInfiniteScroll: true,
                       autoPlay: true,
-                      autoPlayInterval: Duration(seconds: 3),
-                      autoPlayAnimationDuration: Duration(milliseconds: 800),
-                      autoPlayCurve: Curves.fastOutSlowIn,
-                      scrollDirection: Axis.horizontal,
+                      autoPlayInterval: const Duration(seconds: 3),
                       onPageChanged: (index, reason) {
-                        if (mounted)
+                        if (mounted) {
                           setState(() {
                             _current = index;
                           });
+                        }
                       }),
                   itemBuilder: (BuildContext context, int i) => i == 4
                       ? Container(
                           width: MediaQuery.of(context).size.width,
-                          margin: EdgeInsets.fromLTRB(5, 1, 5, 7),
+                          margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
                           child: GestureDetector(
+                            onTap: () {
+                              launch("https://twitter.com/PrismWallpapers");
+                            },
                             child: Container(
                               decoration: BoxDecoration(
                                   color: animation.value,
                                   borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
+                                  image: const DecorationImage(
                                       image: CachedNetworkImageProvider(
                                           "https://unblast.com/wp-content/uploads/2018/08/Gradient-Mesh-21.jpg"),
                                       fit: BoxFit.cover)),
@@ -181,22 +176,45 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                                 ),
                               ),
                             ),
-                            onTap: () {
-                              launch("https://twitter.com/PrismWallpapers");
-                            },
                           ),
                         )
                       : Container(
                           width: MediaQuery.of(context).size.width,
-                          margin: EdgeInsets.fromLTRB(5, 1, 5, 7),
+                          margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
                           child: GestureDetector(
+                            onTap: () {
+                              if (PData.wallsP == []) {
+                              } else {
+                                Navigator.pushNamed(context, wallpaperRoute,
+                                    arguments: [
+                                      widget.provider,
+                                      i,
+                                      PData.wallsP[i].src["small"]
+                                    ]);
+                              }
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                longTapIndex = i;
+                              });
+                              shakeController.forward(from: 0.0);
+                              if (PData.wallsP == []) {
+                              } else {
+                                HapticFeedback.vibrate();
+                                createDynamicLink(
+                                    PData.wallsP[i].id,
+                                    widget.provider,
+                                    PData.wallsP[i].src["original"].toString(),
+                                    PData.wallsP[i].src["medium"].toString());
+                              }
+                            },
                             child: Padding(
                               padding: i == longTapIndex
                                   ? EdgeInsets.symmetric(
                                       vertical: offsetAnimation.value / 2,
                                       horizontal: offsetAnimation.value)
-                                  : EdgeInsets.all(0),
-                              child: PData.wallsP.length == 0
+                                  : const EdgeInsets.all(0),
+                              child: PData.wallsP.isEmpty
                                   ? Container(
                                       decoration: BoxDecoration(
                                         color: animation.value,
@@ -210,8 +228,8 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                                               BorderRadius.circular(20),
                                           image: DecorationImage(
                                               image: CachedNetworkImageProvider(
-                                                  PData
-                                                      .wallsP[i].src["medium"]),
+                                                  PData.wallsP[i].src["medium"]
+                                                      .toString()),
                                               fit: BoxFit.cover)),
                                       child: Center(
                                         child: Container(
@@ -238,57 +256,27 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                                       ),
                                     ),
                             ),
-                            onTap: () {
-                              if (PData.wallsP == []) {
-                              } else {
-                                Navigator.pushNamed(context, WallpaperRoute,
-                                    arguments: [
-                                      widget.provider,
-                                      i,
-                                      PData.wallsP[i].src["small"]
-                                    ]);
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                longTapIndex = i;
-                              });
-                              shakeController.forward(from: 0.0);
-                              if (PData.wallsP == []) {
-                              } else {
-                                HapticFeedback.vibrate();
-                                createDynamicLink(
-                                    PData.wallsP[i].id,
-                                    widget.provider,
-                                    PData.wallsP[i].src["original"],
-                                    PData.wallsP[i].src["medium"]);
-                              }
-                            },
                           ),
                         ),
                 ),
                 Align(
                   alignment: Alignment.bottomCenter,
-                  child: Container(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [0, 1, 2, 3, 4].map((i) {
-                        return Container(
-                          width: 8.0,
-                          height: 8.0,
-                          margin: EdgeInsets.symmetric(
-                              vertical: 14.0, horizontal: 2.0),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _current == i
-                                ? Color(0xFFFFFFFF)
-                                : Theme.of(context)
-                                    .primaryColor
-                                    .withOpacity(0.4),
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [0, 1, 2, 3, 4].map((i) {
+                      return Container(
+                        width: 8.0,
+                        height: 8.0,
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 14.0, horizontal: 2.0),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _current == i
+                              ? const Color(0xFFFFFFFF)
+                              : Theme.of(context).primaryColor.withOpacity(0.4),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ],
@@ -312,7 +300,7 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                         "s");
                 setState(() {
                   seeMoreLoader = true;
-                  Future.delayed(Duration(seconds: 4))
+                  Future.delayed(const Duration(seconds: 4))
                       .then((value) => seeMoreLoader = false);
                 });
               }
@@ -320,8 +308,8 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
             return false;
           },
           child: GridView.builder(
-            padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
-            itemCount: PData.wallsP.length == 0 ? 20 : PData.wallsP.length - 4,
+            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+            itemCount: PData.wallsP.isEmpty ? 20 : PData.wallsP.length - 4,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent:
@@ -337,7 +325,7 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                 return FlatButton(
                     color: Provider.of<ThemeModel>(context, listen: false)
                                 .returnTheme() ==
-                            ThemeType.Dark
+                            ThemeType.dark
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(
@@ -352,12 +340,12 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                                 "s");
                         setState(() {
                           seeMoreLoader = true;
-                          Future.delayed(Duration(seconds: 4))
+                          Future.delayed(const Duration(seconds: 4))
                               .then((value) => seeMoreLoader = false);
                         });
                       }
                     },
-                    child: !seeMoreLoader ? Text("See more") : Loader());
+                    child: !seeMoreLoader ? const Text("See more") : Loader());
               }
 
               return FocusedMenuHolder(
@@ -366,35 +354,14 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                   child: AnimatedBuilder(
                       animation: offsetAnimation,
                       builder: (buildContext, child) {
-                        if (offsetAnimation.value < 0.0)
+                        if (offsetAnimation.value < 0.0) {
                           debugPrint('${offsetAnimation.value + 8.0}');
+                        }
                         return GestureDetector(
-                          child: Padding(
-                            padding: index == longTapIndex
-                                ? EdgeInsets.symmetric(
-                                    vertical: offsetAnimation.value / 2,
-                                    horizontal: offsetAnimation.value)
-                                : EdgeInsets.all(0),
-                            child: Container(
-                              decoration: PData.wallsP.length == 0
-                                  ? BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                    )
-                                  : BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                              PData
-                                                  .wallsP[index].src["medium"]),
-                                          fit: BoxFit.cover)),
-                            ),
-                          ),
                           onTap: () {
                             if (PData.wallsP == []) {
                             } else {
-                              Navigator.pushNamed(context, WallpaperRoute,
+                              Navigator.pushNamed(context, wallpaperRoute,
                                   arguments: [
                                     widget.provider,
                                     index,
@@ -413,10 +380,33 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                               createDynamicLink(
                                   PData.wallsP[index].id,
                                   widget.provider,
-                                  PData.wallsP[index].src["original"],
-                                  PData.wallsP[index].src["medium"]);
+                                  PData.wallsP[index].src["original"]
+                                      .toString(),
+                                  PData.wallsP[index].src["medium"].toString());
                             }
                           },
+                          child: Padding(
+                            padding: index == longTapIndex
+                                ? EdgeInsets.symmetric(
+                                    vertical: offsetAnimation.value / 2,
+                                    horizontal: offsetAnimation.value)
+                                : const EdgeInsets.all(0),
+                            child: Container(
+                              decoration: PData.wallsP.isEmpty
+                                  ? BoxDecoration(
+                                      color: animation.value,
+                                      borderRadius: BorderRadius.circular(20),
+                                    )
+                                  : BoxDecoration(
+                                      color: animation.value,
+                                      borderRadius: BorderRadius.circular(20),
+                                      image: DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                              PData.wallsP[index].src["medium"]
+                                                  .toString()),
+                                          fit: BoxFit.cover)),
+                            ),
+                          ),
                         );
                       }));
             },

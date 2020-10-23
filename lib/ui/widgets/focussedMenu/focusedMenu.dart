@@ -10,10 +10,7 @@ class FocusedMenuHolder extends StatefulWidget {
   final int index;
 
   const FocusedMenuHolder(
-      {Key key,
-      @required this.provider,
-      @required this.child,
-      @required this.index});
+      {@required this.provider, @required this.child, @required this.index});
 
   @override
   _FocusedMenuHolderState createState() => _FocusedMenuHolderState();
@@ -21,13 +18,14 @@ class FocusedMenuHolder extends StatefulWidget {
 
 class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
   GlobalKey containerKey = GlobalKey();
-  Offset childOffset = Offset(0, 0);
+  Offset childOffset = const Offset(0, 0);
   Size childSize;
 
-  getOffset() {
-    RenderBox renderBox = containerKey.currentContext.findRenderObject();
-    Size size = renderBox.size;
-    Offset offset = renderBox.localToGlobal(Offset.zero);
+  void getOffset() {
+    final RenderBox renderBox =
+        containerKey.currentContext.findRenderObject() as RenderBox;
+    final Size size = renderBox.size;
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
     setState(() {
       this.childOffset = Offset(offset.dx, offset.dy);
       childSize = size;
@@ -45,27 +43,13 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
             : Align(
                 alignment: Alignment.bottomRight,
                 child: GestureDetector(
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: config.Colors().secondDarkColor(1),
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            bottomRight: Radius.circular(20))),
-                    padding: EdgeInsets.all(0),
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-                      child: Icon(
-                        JamIcons.more_horizontal,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
                   onTap: () async {
                     getOffset();
                     await Navigator.push(
                         context,
                         PageRouteBuilder(
-                            transitionDuration: Duration(milliseconds: 200),
+                            transitionDuration:
+                                const Duration(milliseconds: 200),
                             pageBuilder:
                                 (context, animation, secondaryAnimation) {
                               animation = Tween(begin: 0.0, end: 1.0)
@@ -74,18 +58,33 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
                                   opacity: animation,
                                   child: FocusedMenuDetails(
                                     provider: widget.provider,
-                                    child: widget.child,
                                     childOffset: childOffset,
                                     childSize: childSize,
                                     index: widget.index,
                                     size: MediaQuery.of(context).size,
                                     orientation:
                                         MediaQuery.of(context).orientation,
+                                    child: widget.child,
                                   ));
                             },
                             fullscreenDialog: true,
                             opaque: false));
                   },
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: config.Colors().secondDarkColor(1),
+                        borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20))),
+                    padding: const EdgeInsets.all(0),
+                    child: const Padding(
+                      padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                      child: Icon(
+                        JamIcons.more_horizontal,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
               )
       ],
