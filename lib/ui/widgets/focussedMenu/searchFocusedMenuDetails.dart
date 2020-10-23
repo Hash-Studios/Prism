@@ -120,8 +120,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                           height: childSize.height,
                           child: child)),
                 )),
-            selectedProvider == "WallHaven"
-                ? Positioned(
+            if (selectedProvider == "WallHaven") Positioned(
                     top: childOffset.dy + childSize.height * 2 / 8,
                     left: childOffset.dx,
                     child: TweenAnimationBuilder(
@@ -281,8 +280,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                         ),
                       ),
                     ),
-                  )
-                : Positioned(
+                  ) else Positioned(
                     top: childOffset.dy + childSize.height * 4 / 10,
                     left: childOffset.dx,
                     child: TweenAnimationBuilder(

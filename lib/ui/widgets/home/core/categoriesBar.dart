@@ -72,8 +72,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
       }
     }, clickSkip: () {
       debugPrint("skip");
-    })
-      ..show();
+    }).show();
   }
 
   void afterLayout(_) {

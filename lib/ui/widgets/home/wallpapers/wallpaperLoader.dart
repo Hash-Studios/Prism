@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class WallpaperLoader extends StatefulWidget {
   final Future future;
   final String provider;
-  WallpaperLoader({@required this.future, @required this.provider});
+  const WallpaperLoader({@required this.future, @required this.provider});
   @override
   _WallpaperLoaderState createState() => _WallpaperLoaderState();
 }
