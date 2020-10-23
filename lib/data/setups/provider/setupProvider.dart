@@ -33,9 +33,9 @@ Future<Map> getSetupFromName(String name) async {
       .getDocuments()
       .then((value) {
     value.documents.forEach((f) => setup = f.data);
-    print(setup);
+    debugPrint(setup.toString());
   }).catchError((e) {
-    print("data done with error");
+    debugPrint("data done with error");
   });
   return setup;
 }
