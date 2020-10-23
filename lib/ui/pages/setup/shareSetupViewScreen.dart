@@ -1,4 +1,4 @@
-import 'package:Prism/data/setups/provider/setupProvider.dart' as SData;
+import 'package:Prism/data/setups/provider/setupProvider.dart' as sdata;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -16,7 +16,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 
 class ShareSetupViewScreen extends StatefulWidget {
   final List arguments;
-  ShareSetupViewScreen({this.arguments});
+  const ShareSetupViewScreen({this.arguments});
 
   @override
   _ShareSetupViewScreenState createState() => _ShareSetupViewScreenState();
@@ -26,7 +26,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -43,16 +43,16 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    name = widget.arguments[0];
-    image = widget.arguments[1];
-    _future = SData.getSetupFromName(name);
+    name = widget.arguments[0].toString();
+    image = widget.arguments[1].toString();
+    _future = sdata.getSetupFromName(name);
     isLoading = true;
     super.initState();
     SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
   // getData() async {
-  //   await SData.getSetupFromName(name).then((value) {
+  //   await sdata.getSetupFromName(name).then((value) {
   //     setState(() {});
   //   });
   // }
@@ -84,29 +84,28 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
         body: FutureBuilder(
           future: _future,
           builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
-            print(snapshot.connectionState);
+            debugPrint(snapshot.connectionState.toString());
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
-                return Center(child: new Loader());
+                return Center(child: Loader());
               case ConnectionState.none:
-                return Center(child: new Loader());
+                return Center(child: Loader());
               case ConnectionState.active:
-                return Center(child: new Loader());
+                return Center(child: Loader());
               case ConnectionState.done:
                 if (snapshot.hasError) {
-                  return Center(child: new Loader());
+                  return Center(child: Loader());
                 } else {
                   return SlidingUpPanel(
                     backdropEnabled: true,
-                    backdropTapClosesPanel: true,
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    boxShadow: [],
+                    boxShadow: const [],
                     collapsed: Container(
                       decoration: BoxDecoration(
-                          borderRadius: BorderRadius.only(
+                          borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20),
                           ),
@@ -114,7 +113,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height / 20,
-                        child: Center(
+                        child: const Center(
                             child: Icon(
                           JamIcons.chevron_up,
                           color: Colors.white,
@@ -131,7 +130,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                       height: MediaQuery.of(context).size.height * .42,
                       width: MediaQuery.of(context).size.width,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
@@ -140,9 +139,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Center(
+                          const Center(
                               child: Padding(
-                            padding: const EdgeInsets.all(10.0),
+                            padding: EdgeInsets.all(10.0),
                             child: Icon(
                               JamIcons.chevron_down,
                               color: Colors.white,
@@ -171,7 +170,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                   padding:
                                       const EdgeInsets.fromLTRB(35, 0, 35, 0),
                                   child: Text(
-                                    SData.setup["desc"].toString(),
+                                    sdata.setup["desc"].toString(),
                                     style:
                                         Theme.of(context).textTheme.headline6,
                                   ),
@@ -190,7 +189,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                 children: <Widget>[
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: <Widget>[
@@ -198,7 +196,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),
                                         child: Text(
-                                          SData.setup["id"]
+                                          sdata.setup["id"]
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context)
@@ -208,19 +206,19 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                       ),
                                       Row(
                                         children: [
-                                          Icon(
+                                          const Icon(
                                             JamIcons.google_play_circle,
                                             size: 20,
                                             color: Colors.white70,
                                           ),
-                                          SizedBox(width: 10),
+                                          const SizedBox(width: 10),
                                           Container(
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
                                                 0.32,
                                             child: Text(
-                                              "${SData.setup["icon"].toString()}",
+                                              sdata.setup["icon"].toString(),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2,
@@ -228,26 +226,26 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                           ),
                                         ],
                                       ),
-                                      SizedBox(
+                                      const SizedBox(
                                         height: 5,
                                       ),
                                       Row(
                                         children: [
-                                          SData.setup["widget"] == ""
+                                          sdata.setup["widget"] == ""
                                               ? Container()
-                                              : Icon(
+                                              : const Icon(
                                                   JamIcons.google_play,
                                                   size: 20,
                                                   color: Colors.white70,
                                                 ),
-                                          SizedBox(width: 10),
+                                          const SizedBox(width: 10),
                                           Container(
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
                                                 0.32,
                                             child: Text(
-                                              "${SData.setup["widget"].toString()}",
+                                              sdata.setup["widget"].toString(),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText2,
@@ -259,25 +257,26 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                   ),
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: <Widget>[
                                       ActionChip(
                                           label: Text(
-                                            "${SData.setup["by"].toString()}",
+                                            sdata.setup["by"].toString(),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
                                           ),
-                                          padding: EdgeInsets.symmetric(
+                                          padding: const EdgeInsets.symmetric(
                                               vertical: 5, horizontal: 5),
                                           avatar: CircleAvatar(
                                             backgroundImage:
-                                                CachedNetworkImageProvider(
-                                                    SData.setup["userPhoto"]),
+                                                CachedNetworkImageProvider(sdata
+                                                    .setup["userPhoto"]
+                                                    .toString()),
                                           ),
                                           labelPadding:
-                                              EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                              const EdgeInsets.fromLTRB(
+                                                  7, 3, 7, 3),
                                           onPressed: () {
                                             SystemChrome
                                                 .setEnabledSystemUIOverlays([
@@ -287,26 +286,26 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                             Navigator.pushNamed(context,
                                                 photographerProfileRoute,
                                                 arguments: [
-                                                  SData.setup["by"],
-                                                  SData.setup["email"],
-                                                  SData.setup["userPhoto"],
+                                                  sdata.setup["by"],
+                                                  sdata.setup["email"],
+                                                  sdata.setup["userPhoto"],
                                                   false,
                                                   "",
                                                   ""
                                                 ]);
                                           }),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Row(
                                         children: [
                                           Text(
-                                            SData.setup["wallpaper_provider"]
+                                            sdata.setup["wallpaper_provider"]
                                                 .toString(),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
                                           ),
-                                          SizedBox(width: 10),
-                                          Icon(
+                                          const SizedBox(width: 10),
+                                          const Icon(
                                             JamIcons.database,
                                             size: 20,
                                             color: Colors.white70,
@@ -319,8 +318,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                               ),
                             ),
                           ),
-                          main.prefs.get('premium')
-                              ? SData.setup["widget"] == ""
+                          main.prefs.get('premium') as bool
+                              ? sdata.setup["widget"] == ""
                                   ? Expanded(
                                       flex: 5,
                                       child: Row(
@@ -328,16 +327,19 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                             MainAxisAlignment.spaceEvenly,
                                         children: <Widget>[
                                           DownloadButton(
-                                            link: SData.setup["wallpaper_url"],
+                                            link: sdata.setup["wallpaper_url"]
+                                                .toString(),
                                             colorChanged: false,
                                           ),
                                           SetWallpaperButton(
-                                            url: SData.setup["wallpaper_url"],
+                                            url: sdata.setup["wallpaper_url"]
+                                                .toString(),
                                             colorChanged: false,
                                           ),
                                           GestureDetector(
                                             onTap: () async {
-                                              launch(SData.setup["icon_url"]);
+                                              launch(sdata.setup["icon_url"]
+                                                  .toString());
                                             },
                                             child: Container(
                                               decoration: BoxDecoration(
@@ -348,12 +350,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                       color: Colors.black
                                                           .withOpacity(.25),
                                                       blurRadius: 4,
-                                                      offset: Offset(0, 4))
+                                                      offset:
+                                                          const Offset(0, 4))
                                                 ],
                                                 borderRadius:
                                                     BorderRadius.circular(500),
                                               ),
-                                              padding: EdgeInsets.all(17),
+                                              padding: const EdgeInsets.all(17),
                                               child: Icon(
                                                 JamIcons.google_play_circle,
                                                 color: Theme.of(context)
@@ -372,16 +375,19 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                             MainAxisAlignment.spaceEvenly,
                                         children: <Widget>[
                                           DownloadButton(
-                                            link: SData.setup["wallpaper_url"],
+                                            link: sdata.setup["wallpaper_url"]
+                                                .toString(),
                                             colorChanged: false,
                                           ),
                                           SetWallpaperButton(
-                                            url: SData.setup["wallpaper_url"],
+                                            url: sdata.setup["wallpaper_url"]
+                                                .toString(),
                                             colorChanged: false,
                                           ),
                                           GestureDetector(
                                             onTap: () async {
-                                              launch(SData.setup["icon_url"]);
+                                              launch(sdata.setup["icon_url"]
+                                                  .toString());
                                             },
                                             child: Container(
                                               decoration: BoxDecoration(
@@ -392,12 +398,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                       color: Colors.black
                                                           .withOpacity(.25),
                                                       blurRadius: 4,
-                                                      offset: Offset(0, 4))
+                                                      offset:
+                                                          const Offset(0, 4))
                                                 ],
                                                 borderRadius:
                                                     BorderRadius.circular(500),
                                               ),
-                                              padding: EdgeInsets.all(17),
+                                              padding: const EdgeInsets.all(17),
                                               child: Icon(
                                                 JamIcons.google_play_circle,
                                                 color: Theme.of(context)
@@ -408,7 +415,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                           ),
                                           GestureDetector(
                                             onTap: () async {
-                                              launch(SData.setup["widget_url"]);
+                                              launch(sdata.setup["widget_url"]
+                                                  .toString());
                                             },
                                             child: Container(
                                               decoration: BoxDecoration(
@@ -419,12 +427,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                       color: Colors.black
                                                           .withOpacity(.25),
                                                       blurRadius: 4,
-                                                      offset: Offset(0, 4))
+                                                      offset:
+                                                          const Offset(0, 4))
                                                 ],
                                                 borderRadius:
                                                     BorderRadius.circular(500),
                                               ),
-                                              padding: EdgeInsets.all(17),
+                                              padding: const EdgeInsets.all(17),
                                               child: Icon(
                                                 JamIcons.google_play,
                                                 color: Theme.of(context)
@@ -458,12 +467,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                   color: Colors.black
                                                       .withOpacity(.25),
                                                   blurRadius: 4,
-                                                  offset: Offset(0, 4))
+                                                  offset: const Offset(0, 4))
                                             ],
                                             borderRadius:
                                                 BorderRadius.circular(500),
                                           ),
-                                          padding: EdgeInsets.all(17),
+                                          padding: const EdgeInsets.all(17),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
@@ -473,7 +482,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                     .accentColor,
                                                 size: 30,
                                               ),
-                                              SizedBox(
+                                              const SizedBox(
                                                 width: 4,
                                               ),
                                               Text(
@@ -497,9 +506,24 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                         AnimatedBuilder(
                             animation: offsetAnimation,
                             builder: (buildContext, child) {
-                              if (offsetAnimation.value < 0.0)
-                                print('${offsetAnimation.value + 8.0}');
+                              if (offsetAnimation.value < 0.0) {
+                                debugPrint('${offsetAnimation.value + 8.0}');
+                              }
                               return GestureDetector(
+                                onPanUpdate: (details) {
+                                  if (details.delta.dy < -10) {
+                                    panelController.open();
+                                    HapticFeedback.vibrate();
+                                  }
+                                },
+                                onLongPress: () {
+                                  HapticFeedback.vibrate();
+                                  shakeController.forward(from: 0.0);
+                                },
+                                onTap: () {
+                                  HapticFeedback.vibrate();
+                                  shakeController.forward(from: 0.0);
+                                },
                                 child: CachedNetworkImage(
                                   imageUrl: image,
                                   imageBuilder: (context, imageProvider) =>
@@ -524,48 +548,28 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                   progressIndicatorBuilder:
                                       (context, url, downloadProgress) => Stack(
                                     children: <Widget>[
-                                      SizedBox.expand(child: Text("")),
-                                      Container(
-                                        child: Center(
-                                          child: CircularProgressIndicator(
-                                              valueColor:
-                                                  AlwaysStoppedAnimation(
-                                                config.Colors()
-                                                    .mainAccentColor(1),
-                                              ),
-                                              value: downloadProgress.progress),
-                                        ),
+                                      const SizedBox.expand(child: Text("")),
+                                      Center(
+                                        child: CircularProgressIndicator(
+                                            valueColor: AlwaysStoppedAnimation(
+                                              config.Colors()
+                                                  .mainAccentColor(1),
+                                            ),
+                                            value: downloadProgress.progress),
                                       ),
                                     ],
                                   ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                    child: Center(
-                                      child: Icon(
-                                        JamIcons.close_circle_f,
-                                        color: isLoading
-                                            ? Theme.of(context).accentColor
-                                            : colors[0].computeLuminance() > 0.5
-                                                ? Colors.black
-                                                : Colors.white,
-                                      ),
+                                  errorWidget: (context, url, error) => Center(
+                                    child: Icon(
+                                      JamIcons.close_circle_f,
+                                      color: isLoading
+                                          ? Theme.of(context).accentColor
+                                          : colors[0].computeLuminance() > 0.5
+                                              ? Colors.black
+                                              : Colors.white,
                                     ),
                                   ),
                                 ),
-                                onPanUpdate: (details) {
-                                  if (details.delta.dy < -10) {
-                                    panelController.open();
-                                    HapticFeedback.vibrate();
-                                  }
-                                },
-                                onLongPress: () {
-                                  HapticFeedback.vibrate();
-                                  shakeController.forward(from: 0.0);
-                                },
-                                onTap: () {
-                                  HapticFeedback.vibrate();
-                                  shakeController.forward(from: 0.0);
-                                },
                               );
                             }),
                         Align(
@@ -575,7 +579,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                             child: IconButton(
                               onPressed: () {
                                 navStack.removeLast();
-                                print(navStack);
+                                debugPrint(navStack.toString());
                                 Navigator.pop(context);
                               },
                               color: isLoading
@@ -583,7 +587,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                   : colors[0].computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
-                              icon: Icon(
+                              icon: const Icon(
                                 JamIcons.chevron_left,
                               ),
                             ),
@@ -595,7 +599,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                 }
                 break;
               default:
-                return Center(child: new CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
             }
           },
         ),
