@@ -45,7 +45,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     },
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.max,
                       children: const <Widget>[
                         Spacer(),
                         Center(child: Text("Can't connect to the Servers!")),

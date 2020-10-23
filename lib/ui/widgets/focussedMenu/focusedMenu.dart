@@ -27,7 +27,7 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
     final Size size = renderBox.size;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     setState(() {
-      this.childOffset = Offset(offset.dx, offset.dy);
+      childOffset = Offset(offset.dx, offset.dy);
       childSize = size;
     });
   }

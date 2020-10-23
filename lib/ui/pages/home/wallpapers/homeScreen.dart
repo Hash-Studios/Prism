@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     isNew = true;
     _updateToken();
-    _future = Future.delayed(const Duration(seconds: 0)).then((value) =>
+    _future = Future.delayed(const Duration()).then((value) =>
         Provider.of<CategorySupplier>(context, listen: false)
             .wallpaperFutureRefresh);
   }
@@ -127,7 +127,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.max,
                       children: const <Widget>[
                         Spacer(),
                         Center(child: Text("Can't connect to the Servers!")),

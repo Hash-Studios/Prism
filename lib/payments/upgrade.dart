@@ -1,18 +1,15 @@
 import 'dart:async';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/routes/router.dart';
+import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:flare_flutter/flare_actor.dart';
 import 'components.dart';
-import 'package:Prism/gitkey.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/theme/config.dart' as config;
 
 PurchaserInfo _purchaserInfo;
 
@@ -158,7 +155,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                   automaticallyImplyLeading: false,
                   title: const Text("Purchase"),
                   leading: IconButton(
-                    icon: Icon(JamIcons.close),
+                    icon: const Icon(JamIcons.close),
                     onPressed: () {
                       if (navStack.length > 1) navStack.removeLast();
                       debugPrint(navStack.toString());
@@ -170,7 +167,6 @@ class _UpsellScreenState extends State<UpsellScreen> {
                     height: MediaQuery.of(context).size.height,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
                       children: <Widget>[
                         Container(
                           height: 200,
@@ -201,8 +197,6 @@ class _UpsellScreenState extends State<UpsellScreen> {
                         ),
                         const Spacer(),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const SizedBox(
                               width: 20,
@@ -232,8 +226,6 @@ class _UpsellScreenState extends State<UpsellScreen> {
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const SizedBox(
                               width: 20,
@@ -263,8 +255,6 @@ class _UpsellScreenState extends State<UpsellScreen> {
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const SizedBox(
                               width: 20,
@@ -294,8 +284,6 @@ class _UpsellScreenState extends State<UpsellScreen> {
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const SizedBox(
                               width: 20,
@@ -325,8 +313,6 @@ class _UpsellScreenState extends State<UpsellScreen> {
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const SizedBox(
                               width: 20,
@@ -356,8 +342,6 @@ class _UpsellScreenState extends State<UpsellScreen> {
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const SizedBox(
                               width: 20,
@@ -465,7 +449,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
             automaticallyImplyLeading: false,
             title: const Text("Purchase"),
             leading: IconButton(
-              icon: Icon(JamIcons.close),
+              icon: const Icon(JamIcons.close),
               onPressed: () {
                 if (navStack.length > 1) navStack.removeLast();
                 debugPrint(navStack.toString());
@@ -552,7 +536,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                         width: MediaQuery.of(context).size.width * 0.4,
                         child: Text(
                           'Buy ${widget.package.product.title}',
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600),
                           textAlign: TextAlign.center,
                         ),

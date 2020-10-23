@@ -31,7 +31,7 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
     final Size size = renderBox.size;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     setState(() {
-      this.childOffset = Offset(offset.dx, offset.dy);
+      childOffset = Offset(offset.dx, offset.dy);
       childSize = size;
     });
   }

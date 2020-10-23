@@ -113,7 +113,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                     Navigator.pop(context);
                   },
                   color: Theme.of(context).accentColor,
-                  icon: Icon(
+                  icon: const Icon(
                     JamIcons.chevron_left,
                   ),
                 ),

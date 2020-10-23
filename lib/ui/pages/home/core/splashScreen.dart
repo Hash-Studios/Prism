@@ -16,8 +16,7 @@ RemoteConfig remoteConfig;
 class SplashWidget extends StatelessWidget {
   Future<void> rcInit() async {
     remoteConfig = await RemoteConfig.instance;
-    await remoteConfig
-        .setConfigSettings(RemoteConfigSettings(debugMode: false));
+    await remoteConfig.setConfigSettings(RemoteConfigSettings());
     await remoteConfig.setDefaults(<String, dynamic>{
       'categories': categories.toString(),
       'currentVersion': globals.currentAppVersion.toString(),
@@ -27,10 +26,10 @@ class SplashWidget extends StatelessWidget {
           '["TOP-RATED","BEST OF COMMUNITY","FAN-FAVOURITE","TRENDING",]',
       'premiumCollections': '["space","landscapes","mesh gradients",]'
     });
-    print("Started Fetching Values from rc");
+    debugPrint("Started Fetching Values from rc");
     await remoteConfig.fetch(expiration: const Duration(hours: 6));
     await remoteConfig.activateFetched();
-    print("Fetched Values from rc");
+    debugPrint("Fetched Values from rc");
     var premiumC = remoteConfig.getString('premiumCollections');
     premiumC = premiumC.replaceAll('"', '');
     premiumC = premiumC.replaceAll("[", "");
@@ -42,7 +41,7 @@ class SplashWidget extends StatelessWidget {
     text = text.replaceAll(",]", "");
     globals.topTitleText = text.split(",");
     globals.topTitleText.shuffle();
-    var cList = [];
+    final cList = [];
     var tempVar = remoteConfig
         .getString('categories')
         .replaceAll('[', "")
@@ -51,9 +50,9 @@ class SplashWidget extends StatelessWidget {
     tempVar = tempVar.sublist(0, tempVar.length - 1);
     tempVar.forEach((element) {
       cList.add(element.split('"name": "')[1].split('",')[0].toString());
-      categories[tempVar.indexOf(element)] = json.decode(element + "}");
+      categories[tempVar.indexOf(element)] = json.decode("$element}");
     });
-    print(cList);
+    debugPrint(cList.toString());
   }
 
   const SplashWidget({
@@ -65,7 +64,7 @@ class SplashWidget extends StatelessWidget {
     return SplashScreen(
       'assets/animations/Prism Splash.flr',
       (context) {
-        print("splash done");
+        debugPrint("splash done");
         return PageManager();
       },
       startAnimation:

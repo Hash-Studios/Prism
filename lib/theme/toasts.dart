@@ -6,10 +6,8 @@ void codeSend(String msg) {
       msg: msg,
       toastLength: Toast.LENGTH_LONG,
       gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 1,
       textColor: Colors.white,
-      backgroundColor: Colors.green[400],
-      fontSize: 16.0);
+      backgroundColor: Colors.green[400]);
 }
 
 void error(String msg) {
@@ -17,10 +15,8 @@ void error(String msg) {
     msg: msg,
     toastLength: Toast.LENGTH_LONG,
     gravity: ToastGravity.BOTTOM,
-    timeInSecForIosWeb: 1,
     textColor: Colors.white,
     backgroundColor: Colors.red[400],
-    fontSize: 16.0,
   );
 }
 
@@ -29,9 +25,7 @@ void color(Color color) {
     msg: "Color code copied to clipboard",
     toastLength: Toast.LENGTH_LONG,
     gravity: ToastGravity.BOTTOM,
-    timeInSecForIosWeb: 1,
     textColor: color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
     backgroundColor: color,
-    fontSize: 16.0,
   );
 }
