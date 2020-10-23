@@ -11,22 +11,22 @@ final List<String> supportPurchase = ['support', 'support_more', 'support_max'];
 
 class StudioList extends StatefulWidget {
   final ScrollController scrollController;
-  StudioList({this.scrollController});
+  const StudioList({this.scrollController});
   @override
   _StudioListState createState() => _StudioListState();
 }
 
 class _StudioListState extends State<StudioList> {
-  InAppPurchaseConnection _iap = InAppPurchaseConnection.instance;
+  final InAppPurchaseConnection _iap = InAppPurchaseConnection.instance;
   bool _available = true;
   List<ProductDetails> _products = [];
   List<PurchaseDetails> _purchases = [];
   StreamSubscription _subscription;
 
-  void _initialize() async {
+  Future<void> _initialize() async {
     _available = await _iap.isAvailable();
     if (_available) {
-      List<Future> futures = [_getProducts(), _getPastPurchases()];
+      final List<Future> futures = [_getProducts(), _getPastPurchases()];
       await Future.wait(futures);
       _subscription = _iap.purchaseUpdatedStream.listen(
         (data) => setState(
@@ -39,11 +39,11 @@ class _StudioListState extends State<StudioList> {
     }
   }
 
-  void onSupport(BuildContext context) async {
+  Future<void> onSupport(BuildContext context) async {
     showDialog(
       context: context,
       child: AlertDialog(
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(
             Radius.circular(20),
           ),
@@ -102,15 +102,16 @@ class _StudioListState extends State<StudioList> {
   }
 
   Future<void> _getProducts() async {
-    Set<String> ids = Set.from(supportPurchase);
-    ProductDetailsResponse response = await _iap.queryProductDetails(ids);
+    final Set<String> ids = Set.from(supportPurchase);
+    final ProductDetailsResponse response = await _iap.queryProductDetails(ids);
     setState(() {
       _products = response.productDetails;
     });
   }
 
   Future<void> _getPastPurchases() async {
-    QueryPurchaseDetailsResponse response = await _iap.queryPastPurchases();
+    final QueryPurchaseDetailsResponse response =
+        await _iap.queryPastPurchases();
     setState(() {
       _purchases = response.pastPurchases;
     });
@@ -122,7 +123,7 @@ class _StudioListState extends State<StudioList> {
   }
 
   void _verifyPurchase(String productID) {
-    PurchaseDetails purchase = _hasPurchased(productID);
+    final PurchaseDetails purchase = _hasPurchased(productID);
     if (purchase != null) {
       if (purchase.status == PurchaseStatus.purchased) {
         toasts.codeSend("Thanks for your support! It means a lot.");
@@ -154,17 +155,17 @@ class _StudioListState extends State<StudioList> {
     return Column(
       children: <Widget>[
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.luggage,
             ),
-            title: new Text(
+            title: Text(
               "Wanna work with us?",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "We are recruiting Flutter developers",
               style: TextStyle(fontSize: 12),
             ),
@@ -172,17 +173,17 @@ class _StudioListState extends State<StudioList> {
               launch("https://forms.gle/nSt4QtiQVVaZvhdA8");
             }),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.coffee,
             ),
-            title: new Text(
+            title: Text(
               "Buy us a cup of tea",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "Support us if you like what we do",
               style: TextStyle(fontSize: 12),
             ),
@@ -190,10 +191,10 @@ class _StudioListState extends State<StudioList> {
               onSupport(context);
             }),
         ExpansionTile(
-          leading: Icon(
+          leading: const Icon(
             JamIcons.users,
           ),
-          title: new Text(
+          title: Text(
             "Meet the awesome team",
             style: TextStyle(
                 color: Theme.of(context).accentColor,
@@ -207,17 +208,17 @@ class _StudioListState extends State<StudioList> {
           ),
           children: [
             ListTile(
-                leading: CircleAvatar(
+                leading: const CircleAvatar(
                   backgroundImage: AssetImage("assets/images/AB.jpg"),
                 ),
-                title: new Text(
+                title: Text(
                   "LiquidatorCoder",
                   style: TextStyle(
                       color: Theme.of(context).accentColor,
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
-                subtitle: Text(
+                subtitle: const Text(
                   "Abhay Maurya",
                   style: TextStyle(fontSize: 12),
                 ),
@@ -225,17 +226,17 @@ class _StudioListState extends State<StudioList> {
                   launch("https://github.com/LiquidatorCoder");
                 }),
             ListTile(
-                leading: CircleAvatar(
+                leading: const CircleAvatar(
                   backgroundImage: AssetImage("assets/images/AK.jpg"),
                 ),
-                title: new Text(
+                title: Text(
                   "CodeNameAkshay",
                   style: TextStyle(
                       color: Theme.of(context).accentColor,
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
-                subtitle: Text(
+                subtitle: const Text(
                   "Akshay Maurya",
                   style: TextStyle(fontSize: 12),
                 ),
@@ -243,17 +244,17 @@ class _StudioListState extends State<StudioList> {
                   launch("https://github.com/codenameakshay");
                 }),
             ListTile(
-                leading: CircleAvatar(
+                leading: const CircleAvatar(
                   backgroundImage: AssetImage("assets/images/PT.jpg"),
                 ),
-                title: new Text(
+                title: Text(
                   "UnHired-Coder",
                   style: TextStyle(
                       color: Theme.of(context).accentColor,
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
-                subtitle: Text(
+                subtitle: const Text(
                   "Pratyush Tiwari",
                   style: TextStyle(fontSize: 12),
                 ),
@@ -261,17 +262,17 @@ class _StudioListState extends State<StudioList> {
                   launch("https://github.com/UnHired-Coder");
                 }),
             ListTile(
-                leading: CircleAvatar(
+                leading: const CircleAvatar(
                   backgroundImage: AssetImage("assets/images/AY.jpg"),
                 ),
-                title: new Text(
+                title: Text(
                   "MrHYDRA-6469",
                   style: TextStyle(
                       color: Theme.of(context).accentColor,
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
-                subtitle: Text(
+                subtitle: const Text(
                   "Arpit Yadav",
                   style: TextStyle(fontSize: 12),
                 ),
@@ -279,17 +280,17 @@ class _StudioListState extends State<StudioList> {
                   launch("https://github.com/MrHYDRA-6469");
                 }),
             ListTile(
-                leading: CircleAvatar(
+                leading: const CircleAvatar(
                   backgroundImage: AssetImage("assets/images/AT.jpg"),
                 ),
-                title: new Text(
+                title: Text(
                   "AyushTevatia99",
                   style: TextStyle(
                       color: Theme.of(context).accentColor,
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
-                subtitle: Text(
+                subtitle: const Text(
                   "Ayush Tevatia",
                   style: TextStyle(fontSize: 12),
                 ),

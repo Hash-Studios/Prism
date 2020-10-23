@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class UserProfileLoader extends StatefulWidget {
   final Future future;
   final String email;
-  UserProfileLoader({@required this.future, @required this.email});
+  const UserProfileLoader({@required this.future, @required this.email});
   @override
   _UserProfileLoaderState createState() => _UserProfileLoaderState();
 }
@@ -28,12 +28,12 @@ class _UserProfileLoaderState extends State<UserProfileLoader> {
         builder: (ctx, snapshot) {
           if (snapshot == null) {
             debugPrint("snapshot null");
-            return LoadingCards();
+            return const LoadingCards();
           }
           if (snapshot.connectionState == ConnectionState.waiting ||
               snapshot.connectionState == ConnectionState.none) {
             debugPrint("snapshot none, waiting");
-            return LoadingCards();
+            return const LoadingCards();
           } else {
             return UserProfileGrid(
               email: widget.email,

@@ -41,7 +41,7 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
 
   @override
   Widget build(BuildContext context) {
-    double scale = 1.3 - animation.value;
+    final double scale = 1.3 - animation.value;
     return GestureDetector(
       onTap: _onTap,
       child: Transform.scale(

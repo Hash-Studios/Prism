@@ -45,7 +45,7 @@ void main() {
     Hive.registerAdapter(NotifDataAdapter());
     await Hive.openBox<List>('notifications');
     prefs = await Hive.openBox('prefs');
-    print("Box Opened");
+    debugPrint("Box Opened");
     if (prefs.get("mainAccentColor") == null) {
       prefs.put("mainAccentColor", 0xFFE57697);
     }

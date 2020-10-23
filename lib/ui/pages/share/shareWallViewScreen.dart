@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
@@ -18,14 +19,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:screenshot/screenshot.dart';
-import 'dart:io';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 
 class ShareWallpaperViewScreen extends StatefulWidget {
   final List arguments;
-  ShareWallpaperViewScreen({this.arguments});
+  const ShareWallpaperViewScreen({this.arguments});
 
   @override
   _ShareWallpaperViewScreenState createState() =>
@@ -48,9 +48,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   bool screenshotTaken = false;
   ScreenshotController screenshotController = ScreenshotController();
   AnimationController shakeController;
-  Future future;
+  Future<WallPaper> futureW;
+  Future<WallPaperP> futureP;
+  Future<Map> futureM;
   PanelController panelController = PanelController();
-  var image;
+  ImageProvider<Object> image;
   bool panelClosed = true;
 
   Future<void> _updatePaletteGenerator() async {
@@ -58,10 +60,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
       isLoading = true;
     });
     try {
-      image = new CachedNetworkImageProvider(thumb);
-    } catch (e) {}
+      image = CachedNetworkImageProvider(thumb);
+    } catch (e) {
+      e.toString();
+    }
     paletteGenerator = await PaletteGenerator.fromImageProvider(image,
-        maximumColorCount: 20, timeout: Duration(seconds: 120));
+        maximumColorCount: 20, timeout: const Duration(seconds: 120));
     setState(() {
       isLoading = false;
     });
@@ -77,7 +81,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
 
   void updateAccent() {
     if (colors.contains(accent)) {
-      var index = colors.indexOf(accent);
+      final index = colors.indexOf(accent);
       setState(() {
         accent = colors[(index + 1) % 5];
       });
@@ -91,17 +95,17 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    id = widget.arguments[0];
-    provider = widget.arguments[1];
-    url = widget.arguments[2];
-    thumb = widget.arguments[3];
+    id = widget.arguments[0].toString();
+    provider = widget.arguments[1].toString();
+    url = widget.arguments[2].toString();
+    thumb = widget.arguments[3].toString();
     isLoading = true;
     if (provider == "WallHaven") {
-      future = WData.getWallbyID(id);
+      futureW = WData.getWallbyID(id);
     } else if (provider == "Pexels") {
-      future = PData.getWallbyIDP(id);
+      futureP = PData.getWallbyIDP(id);
     } else if (provider == "Prism") {
-      future = Data.getDataByID(id);
+      futureM = Data.getDataByID(id);
     }
     _updatePaletteGenerator();
     super.initState();
@@ -148,7 +152,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                       screenshotController
                           .capture(
                         pixelRatio: 3,
-                        delay: Duration(milliseconds: 10),
+                        delay: const Duration(milliseconds: 10),
                       )
                           .then((File image) async {
                         setState(() {
@@ -158,14 +162,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         });
                         debugPrint('Screenshot Taken');
                       }).catchError((onError) {
-                        debugPrint(onError);
+                        debugPrint(onError.toString());
                       });
                     } else {
-                      main.prefs.get('optimisedWallpapers') ?? true
+                      (main.prefs.get('optimisedWallpapers') ?? true) == true
                           ? screenshotController
                               .capture(
                               pixelRatio: 3,
-                              delay: Duration(milliseconds: 10),
+                              delay: const Duration(milliseconds: 10),
                             )
                               .then((File image) async {
                               setState(() {
@@ -175,7 +179,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               });
                               debugPrint('Screenshot Taken');
                             }).catchError((onError) {
-                              debugPrint(onError);
+                              debugPrint(onError.toString());
                             })
                           : debugPrint("Wallpaper Optimisation is disabled!");
                     }
@@ -187,15 +191,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   });
                 },
                 backdropEnabled: true,
-                backdropTapClosesPanel: true,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-                boxShadow: [],
+                boxShadow: const [],
                 collapsed: Container(
                   decoration: BoxDecoration(
-                      borderRadius: BorderRadius.only(
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
@@ -203,7 +206,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
-                    child: Center(
+                    child: const Center(
                         child: Icon(
                       JamIcons.chevron_up,
                       color: Colors.white,
@@ -220,14 +223,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   height: MediaQuery.of(context).size.height * .42,
                   width: MediaQuery.of(context).size.width,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
                     color: config.Colors().secondDarkColor(1),
                   ),
                   child: FutureBuilder<WallPaper>(
-                      future: future,
+                      future: futureW,
                       builder: (context, AsyncSnapshot<WallPaper> snapshot) {
                         if (snapshot.connectionState ==
                                 ConnectionState.waiting ||
@@ -239,9 +242,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Center(
+                              const Center(
                                   child: Padding(
-                                padding: const EdgeInsets.all(10.0),
+                                padding: EdgeInsets.all(10.0),
                                 child: Icon(
                                   JamIcons.chevron_down,
                                   color: Colors.white,
@@ -260,8 +263,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                     children: <Widget>[
                                       Column(
                                         mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: <Widget>[
@@ -277,12 +278,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           ),
                                           Row(
                                             children: [
-                                              Icon(
+                                              const Icon(
                                                 JamIcons.eye,
                                                 size: 20,
                                                 color: Colors.white70,
                                               ),
-                                              SizedBox(width: 10),
+                                              const SizedBox(width: 10),
                                               Text(
                                                 "${WData.wall == null ? 0 : WData.wall.views.toString()}",
                                                 style: Theme.of(context)
@@ -291,15 +292,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               ),
                                             ],
                                           ),
-                                          SizedBox(height: 5),
+                                          const SizedBox(height: 5),
                                           Row(
                                             children: [
-                                              Icon(
+                                              const Icon(
                                                 JamIcons.heart_f,
                                                 size: 20,
                                                 color: Colors.white70,
                                               ),
-                                              SizedBox(width: 10),
+                                              const SizedBox(width: 10),
                                               Text(
                                                 "${WData.wall == null ? 0 : WData.wall.favourites.toString()}",
                                                 style: Theme.of(context)
@@ -308,17 +309,17 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               ),
                                             ],
                                           ),
-                                          SizedBox(height: 5),
+                                          const SizedBox(height: 5),
                                           Row(
                                             children: [
-                                              Icon(
+                                              const Icon(
                                                 JamIcons.save,
                                                 size: 20,
                                                 color: Colors.white70,
                                               ),
-                                              SizedBox(width: 10),
+                                              const SizedBox(width: 10),
                                               Text(
-                                                "${WData.wall == null ? 0 : (double.parse(((double.parse(WData.wall.file_size.toString()) / 1000000).toString())).toStringAsFixed(2))} MB",
+                                                "${WData.wall == null ? 0 : (double.parse((double.parse(WData.wall.file_size.toString()) / 1000000).toString()).toStringAsFixed(2))} MB",
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodyText2,
@@ -329,8 +330,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       ),
                                       Column(
                                         mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
                                         crossAxisAlignment:
                                             CrossAxisAlignment.end,
                                         children: <Widget>[
@@ -352,8 +351,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       .textTheme
                                                       .bodyText2,
                                                 ),
-                                                SizedBox(width: 10),
-                                                Icon(
+                                                const SizedBox(width: 10),
+                                                const Icon(
                                                   JamIcons.unordered_list,
                                                   size: 20,
                                                   color: Colors.white70,
@@ -361,7 +360,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               ],
                                             ),
                                           ),
-                                          SizedBox(height: 5),
+                                          const SizedBox(height: 5),
                                           Row(
                                             children: [
                                               Text(
@@ -370,15 +369,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     .textTheme
                                                     .bodyText2,
                                               ),
-                                              SizedBox(width: 10),
-                                              Icon(
+                                              const SizedBox(width: 10),
+                                              const Icon(
                                                 JamIcons.set_square,
                                                 size: 20,
                                                 color: Colors.white70,
                                               ),
                                             ],
                                           ),
-                                          SizedBox(height: 5),
+                                          const SizedBox(height: 5),
                                           Row(
                                             children: [
                                               Text(
@@ -387,8 +386,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     .textTheme
                                                     .bodyText2,
                                               ),
-                                              SizedBox(width: 10),
-                                              Icon(
+                                              const SizedBox(width: 10),
+                                              const Icon(
                                                 JamIcons.database,
                                                 size: 20,
                                                 color: Colors.white70,
@@ -427,9 +426,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           ? ""
                                           : WData.wall.id.toString(),
                                       provider: "WallHaven",
-                                      wallhaven: WData.wall == null
-                                          ? WallPaper()
-                                          : WData.wall,
+                                      wallhaven: WData.wall ?? WallPaper(),
                                       trash: false,
                                     )
                                   ],
@@ -445,9 +442,28 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                     AnimatedBuilder(
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
-                          if (offsetAnimation.value < 0.0)
+                          if (offsetAnimation.value < 0.0) {
                             debugPrint('${offsetAnimation.value + 8.0}');
+                          }
                           return GestureDetector(
+                            onPanUpdate: (details) {
+                              if (details.delta.dy < -10) {
+                                HapticFeedback.vibrate();
+                                panelController.open();
+                              }
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                colorChanged = false;
+                              });
+                              HapticFeedback.vibrate();
+                              shakeController.forward(from: 0.0);
+                            },
+                            onTap: () {
+                              HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : debugPrint("");
+                              shakeController.forward(from: 0.0);
+                            },
                             child: CachedNetworkImage(
                               imageUrl: url,
                               imageBuilder: (context, imageProvider) =>
@@ -474,49 +490,27 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               progressIndicatorBuilder:
                                   (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
-                                  SizedBox.expand(child: Text("")),
-                                  Container(
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                          valueColor: AlwaysStoppedAnimation(
-                                            config.Colors().mainAccentColor(1),
-                                          ),
-                                          value: downloadProgress.progress),
-                                    ),
+                                  const SizedBox.expand(child: Text("")),
+                                  Center(
+                                    child: CircularProgressIndicator(
+                                        valueColor: AlwaysStoppedAnimation(
+                                          config.Colors().mainAccentColor(1),
+                                        ),
+                                        value: downloadProgress.progress),
                                   ),
                                 ],
                               ),
-                              errorWidget: (context, url, error) => Container(
-                                child: Center(
-                                  child: Icon(
-                                    JamIcons.close_circle_f,
-                                    color: isLoading
-                                        ? Theme.of(context).accentColor
-                                        : accent.computeLuminance() > 0.5
-                                            ? Colors.black
-                                            : Colors.white,
-                                  ),
+                              errorWidget: (context, url, error) => Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: isLoading
+                                      ? Theme.of(context).accentColor
+                                      : accent.computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
                                 ),
                               ),
                             ),
-                            onPanUpdate: (details) {
-                              if (details.delta.dy < -10) {
-                                HapticFeedback.vibrate();
-                                panelController.open();
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                colorChanged = false;
-                              });
-                              HapticFeedback.vibrate();
-                              shakeController.forward(from: 0.0);
-                            },
-                            onTap: () {
-                              HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : debugPrint("");
-                              shakeController.forward(from: 0.0);
-                            },
                           );
                         }),
                     Align(
@@ -534,7 +528,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                          icon: Icon(
+                          icon: const Icon(
                             JamIcons.chevron_left,
                           ),
                         ),
@@ -546,12 +540,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
-                            var link = url;
+                            final link = url;
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
                                     transitionDuration:
-                                        Duration(milliseconds: 300),
+                                        const Duration(milliseconds: 300),
                                     pageBuilder: (context, animation,
                                         secondaryAnimation) {
                                       animation = Tween(begin: 0.0, end: 1.0)
@@ -573,7 +567,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                          icon: Icon(
+                          icon: const Icon(
                             JamIcons.clock,
                           ),
                         ),
@@ -597,7 +591,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           screenshotController
                               .capture(
                             pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
+                            delay: const Duration(milliseconds: 10),
                           )
                               .then((File image) async {
                             setState(() {
@@ -607,14 +601,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             });
                             debugPrint('Screenshot Taken');
                           }).catchError((onError) {
-                            debugPrint(onError);
+                            debugPrint(onError.toString());
                           });
                         } else {
-                          main.prefs.get('optimisedWallpapers') ?? true
+                          (main.prefs.get('optimisedWallpapers') ?? true) ==
+                                  true
                               ? screenshotController
                                   .capture(
                                   pixelRatio: 3,
-                                  delay: Duration(milliseconds: 10),
+                                  delay: const Duration(milliseconds: 10),
                                 )
                                   .then((File image) async {
                                   setState(() {
@@ -624,7 +619,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   });
                                   debugPrint('Screenshot Taken');
                                 }).catchError((onError) {
-                                  debugPrint(onError);
+                                  debugPrint(onError.toString());
                                 })
                               : debugPrint(
                                   "Wallpaper Optimisation is disabled!");
@@ -637,15 +632,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                       });
                     },
                     backdropEnabled: true,
-                    backdropTapClosesPanel: true,
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    boxShadow: [],
+                    boxShadow: const [],
                     collapsed: Container(
                       decoration: BoxDecoration(
-                          borderRadius: BorderRadius.only(
+                          borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20),
                           ),
@@ -653,7 +647,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height / 20,
-                        child: Center(
+                        child: const Center(
                             child: Icon(
                           JamIcons.chevron_up,
                           color: Colors.white,
@@ -670,14 +664,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                       height: MediaQuery.of(context).size.height * .42,
                       width: MediaQuery.of(context).size.width,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
                         color: config.Colors().secondDarkColor(1),
                       ),
                       child: FutureBuilder<Map>(
-                          future: future,
+                          future: futureM,
                           builder: (context, AsyncSnapshot<Map> snapshot) {
                             if (snapshot.connectionState ==
                                     ConnectionState.waiting ||
@@ -691,9 +685,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
-                                  Center(
+                                  const Center(
                                       child: Padding(
-                                    padding: const EdgeInsets.all(10.0),
+                                    padding: EdgeInsets.all(10.0),
                                     child: Icon(
                                       JamIcons.chevron_down,
                                       color: Colors.white,
@@ -713,8 +707,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                         children: <Widget>[
                                           Column(
                                             mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: <Widget>[
@@ -729,15 +721,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       .bodyText1,
                                                 ),
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
-                                                  Icon(
+                                                  const Icon(
                                                     JamIcons.arrow_circle_right,
                                                     size: 20,
                                                     color: Colors.white70,
                                                   ),
-                                                  SizedBox(width: 10),
+                                                  const SizedBox(width: 10),
                                                   Text(
                                                     "${Data.wall == null ? 0 : Data.wall["desc"].toString()}",
                                                     style: Theme.of(context)
@@ -746,15 +738,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
-                                                  Icon(
+                                                  const Icon(
                                                     JamIcons.save,
                                                     size: 20,
                                                     color: Colors.white70,
                                                   ),
-                                                  SizedBox(width: 10),
+                                                  const SizedBox(width: 10),
                                                   Text(
                                                     "${Data.wall == null ? 0 : Data.wall["size"].toString()}",
                                                     style: Theme.of(context)
@@ -767,8 +759,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           ),
                                           Column(
                                             mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.end,
                                             children: <Widget>[
@@ -795,26 +785,31 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                               ""
                                                             ]);
                                                       },
-                                                padding: EdgeInsets.symmetric(
-                                                    vertical: 5, horizontal: 5),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 5,
+                                                        horizontal: 5),
                                                 avatar: CircleAvatar(
                                                   backgroundImage:
                                                       CachedNetworkImageProvider(
-                                                          Data.wall[
-                                                              "userPhoto"]),
+                                                          Data.wall["userPhoto"]
+                                                              .toString()),
                                                 ),
                                                 labelPadding:
-                                                    EdgeInsets.fromLTRB(
+                                                    const EdgeInsets.fromLTRB(
                                                         7, 3, 7, 3),
                                                 label: Text(
-                                                    "${Data.wall == null ? "Photographer" : Data.wall["by"].toString()}",
+                                                    Data.wall == null
+                                                        ? "Photographer"
+                                                        : Data.wall["by"]
+                                                            .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2
                                                         .copyWith(
                                                             fontSize: 16)),
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
                                                   Text(
@@ -823,15 +818,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                         .textTheme
                                                         .bodyText2,
                                                   ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
+                                                  const SizedBox(width: 10),
+                                                  const Icon(
                                                     JamIcons.set_square,
                                                     size: 20,
                                                     color: Colors.white70,
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
                                                   Text(
@@ -840,8 +835,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                         .textTheme
                                                         .bodyText2,
                                                   ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
+                                                  const SizedBox(width: 10),
+                                                  const Icon(
                                                     JamIcons.database,
                                                     size: 20,
                                                     color: Colors.white70,
@@ -882,9 +877,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               ? ""
                                               : Data.wall["id"].toString(),
                                           provider: "Prism",
-                                          prism: Data.wall == null
-                                              ? {}
-                                              : Data.wall,
+                                          prism: Data.wall ?? {},
                                           trash: false,
                                         )
                                       ],
@@ -900,9 +893,28 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         AnimatedBuilder(
                             animation: offsetAnimation,
                             builder: (buildContext, child) {
-                              if (offsetAnimation.value < 0.0)
+                              if (offsetAnimation.value < 0.0) {
                                 debugPrint('${offsetAnimation.value + 8.0}');
+                              }
                               return GestureDetector(
+                                onPanUpdate: (details) {
+                                  if (details.delta.dy < -10) {
+                                    HapticFeedback.vibrate();
+                                    panelController.open();
+                                  }
+                                },
+                                onLongPress: () {
+                                  setState(() {
+                                    colorChanged = false;
+                                  });
+                                  HapticFeedback.vibrate();
+                                  shakeController.forward(from: 0.0);
+                                },
+                                onTap: () {
+                                  HapticFeedback.vibrate();
+                                  !isLoading ? updateAccent() : debugPrint("");
+                                  shakeController.forward(from: 0.0);
+                                },
                                 child: CachedNetworkImage(
                                   imageUrl: url,
                                   imageBuilder: (context, imageProvider) =>
@@ -931,52 +943,30 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   progressIndicatorBuilder:
                                       (context, url, downloadProgress) => Stack(
                                     children: <Widget>[
-                                      SizedBox.expand(child: Text("")),
-                                      Container(
-                                        child: Center(
-                                          child: CircularProgressIndicator(
-                                              valueColor:
-                                                  AlwaysStoppedAnimation(
-                                                config.Colors()
-                                                    .mainAccentColor(1),
-                                              ),
-                                              value: downloadProgress.progress),
-                                        ),
+                                      const SizedBox.expand(child: Text("")),
+                                      Center(
+                                        child: CircularProgressIndicator(
+                                            valueColor:
+                                                AlwaysStoppedAnimation(
+                                              config.Colors()
+                                                  .mainAccentColor(1),
+                                            ),
+                                            value: downloadProgress.progress),
                                       ),
                                     ],
                                   ),
                                   errorWidget: (context, url, error) =>
-                                      Container(
-                                    child: Center(
-                                      child: Icon(
-                                        JamIcons.close_circle_f,
-                                        color: isLoading
-                                            ? Theme.of(context).accentColor
-                                            : accent.computeLuminance() > 0.5
-                                                ? Colors.black
-                                                : Colors.white,
+                                      Center(
+                                        child: Icon(
+                                          JamIcons.close_circle_f,
+                                          color: isLoading
+                                              ? Theme.of(context).accentColor
+                                              : accent.computeLuminance() > 0.5
+                                                  ? Colors.black
+                                                  : Colors.white,
+                                        ),
                                       ),
-                                    ),
-                                  ),
                                 ),
-                                onPanUpdate: (details) {
-                                  if (details.delta.dy < -10) {
-                                    HapticFeedback.vibrate();
-                                    panelController.open();
-                                  }
-                                },
-                                onLongPress: () {
-                                  setState(() {
-                                    colorChanged = false;
-                                  });
-                                  HapticFeedback.vibrate();
-                                  shakeController.forward(from: 0.0);
-                                },
-                                onTap: () {
-                                  HapticFeedback.vibrate();
-                                  !isLoading ? updateAccent() : debugPrint("");
-                                  shakeController.forward(from: 0.0);
-                                },
                               );
                             }),
                         Align(
@@ -994,7 +984,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
-                              icon: Icon(
+                              icon: const Icon(
                                 JamIcons.chevron_left,
                               ),
                             ),
@@ -1006,12 +996,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             padding: const EdgeInsets.all(8.0),
                             child: IconButton(
                               onPressed: () {
-                                var link = url;
+                                final link = url;
                                 Navigator.push(
                                     context,
                                     PageRouteBuilder(
                                         transitionDuration:
-                                            Duration(milliseconds: 300),
+                                            const Duration(milliseconds: 300),
                                         pageBuilder: (context, animation,
                                             secondaryAnimation) {
                                           animation =
@@ -1034,7 +1024,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
-                              icon: Icon(
+                              icon: const Icon(
                                 JamIcons.clock,
                               ),
                             ),
@@ -1058,7 +1048,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               screenshotController
                                   .capture(
                                 pixelRatio: 3,
-                                delay: Duration(milliseconds: 10),
+                                delay: const Duration(milliseconds: 10),
                               )
                                   .then((File image) async {
                                 setState(() {
@@ -1068,14 +1058,15 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 });
                                 debugPrint('Screenshot Taken');
                               }).catchError((onError) {
-                                debugPrint(onError);
+                                debugPrint(onError.toString());
                               });
                             } else {
-                              main.prefs.get('optimisedWallpapers') ?? true
+                              (main.prefs.get('optimisedWallpapers') ?? true) ==
+                                      true
                                   ? screenshotController
                                       .capture(
                                       pixelRatio: 3,
-                                      delay: Duration(milliseconds: 10),
+                                      delay: const Duration(milliseconds: 10),
                                     )
                                       .then((File image) async {
                                       setState(() {
@@ -1085,7 +1076,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       });
                                       debugPrint('Screenshot Taken');
                                     }).catchError((onError) {
-                                      debugPrint(onError);
+                                      debugPrint(onError.toString());
                                     })
                                   : debugPrint(
                                       "Wallpaper Optimisation is disabled!");
@@ -1098,15 +1089,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           });
                         },
                         backdropEnabled: true,
-                        backdropTapClosesPanel: true,
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
-                        boxShadow: [],
+                        boxShadow: const [],
                         collapsed: Container(
                           decoration: BoxDecoration(
-                              borderRadius: BorderRadius.only(
+                              borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(20),
                                 topRight: Radius.circular(20),
                               ),
@@ -1114,7 +1104,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width,
                             height: MediaQuery.of(context).size.height / 20,
-                            child: Center(
+                            child: const Center(
                                 child: Icon(
                               JamIcons.chevron_up,
                               color: Colors.white,
@@ -1131,14 +1121,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             height: MediaQuery.of(context).size.height * .42,
                             width: MediaQuery.of(context).size.width,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.only(
+                              borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(20),
                                 topRight: Radius.circular(20),
                               ),
                               color: config.Colors().secondDarkColor(1),
                             ),
                             child: FutureBuilder<WallPaperP>(
-                                future: future,
+                                future: futureP,
                                 builder: (context,
                                     AsyncSnapshot<WallPaperP> snapshot) {
                                   if (snapshot.connectionState ==
@@ -1154,9 +1144,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: <Widget>[
-                                        Center(
+                                        const Center(
                                             child: Padding(
-                                          padding: const EdgeInsets.all(10.0),
+                                          padding: EdgeInsets.all(10.0),
                                           child: Icon(
                                             JamIcons.chevron_down,
                                             color: Colors.white,
@@ -1235,22 +1225,19 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     Column(
                                                       mainAxisSize:
                                                           MainAxisSize.min,
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .start,
                                                       crossAxisAlignment:
                                                           CrossAxisAlignment
                                                               .start,
                                                       children: <Widget>[
                                                         Row(
                                                           children: [
-                                                            Icon(
+                                                            const Icon(
                                                               JamIcons.camera,
                                                               size: 20,
                                                               color: Colors
                                                                   .white70,
                                                             ),
-                                                            SizedBox(width: 10),
+                                                            const SizedBox(width: 10),
                                                             Container(
                                                               width: MediaQuery.of(
                                                                           context)
@@ -1275,17 +1262,17 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                             ),
                                                           ],
                                                         ),
-                                                        SizedBox(height: 5),
+                                                        const SizedBox(height: 5),
                                                         Row(
                                                           children: [
-                                                            Icon(
+                                                            const Icon(
                                                               JamIcons
                                                                   .set_square,
                                                               size: 20,
                                                               color: Colors
                                                                   .white70,
                                                             ),
-                                                            SizedBox(width: 10),
+                                                            const SizedBox(width: 10),
                                                             Text(
                                                               "${PData.wall == null ? 0 : PData.wall.width.toString()}x${PData.wall == null ? 0 : PData.wall.height.toString()}",
                                                               style: Theme.of(
@@ -1300,9 +1287,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     Column(
                                                       mainAxisSize:
                                                           MainAxisSize.min,
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .start,
                                                       crossAxisAlignment:
                                                           CrossAxisAlignment
                                                               .end,
@@ -1316,8 +1300,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                   .textTheme
                                                                   .bodyText2,
                                                             ),
-                                                            SizedBox(width: 10),
-                                                            Icon(
+                                                            const SizedBox(width: 10),
+                                                            const Icon(
                                                               JamIcons.info,
                                                               size: 20,
                                                               color: Colors
@@ -1325,7 +1309,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                             ),
                                                           ],
                                                         ),
-                                                        SizedBox(height: 5),
+                                                        const SizedBox(height: 5),
                                                         Row(
                                                           children: [
                                                             Text(
@@ -1336,8 +1320,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                   .textTheme
                                                                   .bodyText2,
                                                             ),
-                                                            SizedBox(width: 10),
-                                                            Icon(
+                                                            const SizedBox(width: 10),
+                                                            const Icon(
                                                               JamIcons.database,
                                                               size: 20,
                                                               color: Colors
@@ -1376,9 +1360,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     ? ""
                                                     : PData.wall.id.toString(),
                                                 provider: "Pexels",
-                                                pexels: PData.wall == null
-                                                    ? WallPaperP()
-                                                    : PData.wall,
+                                                pexels: PData.wall ?? WallPaperP(),
                                                 trash: false,
                                               )
                                             ],
@@ -1393,10 +1375,31 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             AnimatedBuilder(
                                 animation: offsetAnimation,
                                 builder: (buildContext, child) {
-                                  if (offsetAnimation.value < 0.0)
+                                  if (offsetAnimation.value < 0.0) {
                                     debugPrint(
                                         '${offsetAnimation.value + 8.0}');
+                                  }
                                   return GestureDetector(
+                                    onPanUpdate: (details) {
+                                      if (details.delta.dy < -10) {
+                                        HapticFeedback.vibrate();
+                                        panelController.open();
+                                      }
+                                    },
+                                    onLongPress: () {
+                                      setState(() {
+                                        colorChanged = false;
+                                      });
+                                      HapticFeedback.vibrate();
+                                      shakeController.forward(from: 0.0);
+                                    },
+                                    onTap: () {
+                                      HapticFeedback.vibrate();
+                                      !isLoading
+                                          ? updateAccent()
+                                          : debugPrint("");
+                                      shakeController.forward(from: 0.0);
+                                    },
                                     child: CachedNetworkImage(
                                       imageUrl: url,
                                       imageBuilder: (context, imageProvider) =>
@@ -1426,56 +1429,32 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           (context, url, downloadProgress) =>
                                               Stack(
                                         children: <Widget>[
-                                          SizedBox.expand(child: Text("")),
-                                          Container(
-                                            child: Center(
-                                              child: CircularProgressIndicator(
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation(
-                                                    config.Colors()
-                                                        .mainAccentColor(1),
-                                                  ),
-                                                  value: downloadProgress
-                                                      .progress),
-                                            ),
+                                          const SizedBox.expand(child: Text("")),
+                                          Center(
+                                            child: CircularProgressIndicator(
+                                                valueColor:
+                                                    AlwaysStoppedAnimation(
+                                                  config.Colors()
+                                                      .mainAccentColor(1),
+                                                ),
+                                                value: downloadProgress
+                                                    .progress),
                                           ),
                                         ],
                                       ),
                                       errorWidget: (context, url, error) =>
-                                          Container(
-                                        child: Center(
-                                          child: Icon(
-                                            JamIcons.close_circle_f,
-                                            color: isLoading
-                                                ? Theme.of(context).accentColor
-                                                : accent.computeLuminance() >
-                                                        0.5
-                                                    ? Colors.black
-                                                    : Colors.white,
+                                          Center(
+                                            child: Icon(
+                                              JamIcons.close_circle_f,
+                                              color: isLoading
+                                                  ? Theme.of(context).accentColor
+                                                  : accent.computeLuminance() >
+                                                          0.5
+                                                      ? Colors.black
+                                                      : Colors.white,
+                                            ),
                                           ),
-                                        ),
-                                      ),
                                     ),
-                                    onPanUpdate: (details) {
-                                      if (details.delta.dy < -10) {
-                                        HapticFeedback.vibrate();
-                                        panelController.open();
-                                      }
-                                    },
-                                    onLongPress: () {
-                                      setState(() {
-                                        colorChanged = false;
-                                      });
-                                      HapticFeedback.vibrate();
-                                      shakeController.forward(from: 0.0);
-                                    },
-                                    onTap: () {
-                                      HapticFeedback.vibrate();
-                                      !isLoading
-                                          ? updateAccent()
-                                          : debugPrint("");
-                                      shakeController.forward(from: 0.0);
-                                    },
                                   );
                                 }),
                             Align(
@@ -1493,7 +1472,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       : colors[0].computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
-                                  icon: Icon(
+                                  icon: const Icon(
                                     JamIcons.chevron_left,
                                   ),
                                 ),
@@ -1505,12 +1484,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   onPressed: () {
-                                    var link = url;
+                                    final link = url;
                                     Navigator.push(
                                         context,
                                         PageRouteBuilder(
                                             transitionDuration:
-                                                Duration(milliseconds: 300),
+                                                const Duration(milliseconds: 300),
                                             pageBuilder: (context, animation,
                                                 secondaryAnimation) {
                                               animation =
@@ -1533,7 +1512,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       : colors[0].computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
-                                  icon: Icon(
+                                  icon: const Icon(
                                     JamIcons.clock,
                                   ),
                                 ),

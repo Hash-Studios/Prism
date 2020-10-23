@@ -19,7 +19,7 @@ import 'package:Prism/theme/config.dart' as config;
 
 class UploadWallScreen extends StatefulWidget {
   final List arguments;
-  UploadWallScreen({this.arguments});
+  const UploadWallScreen({this.arguments});
   @override
   _UploadWallScreenState createState() => _UploadWallScreenState();
 }
@@ -47,7 +47,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   @override
   void initState() {
     super.initState();
-    image = widget.arguments[0];
+    image = widget.arguments[0] as File;
     isUploading = false;
     isProcessing = true;
     randomId();
@@ -60,15 +60,15 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   void randomId() {
     tempid = "";
-    var alp = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split("");
-    var r = new Random();
-    var choice = r.nextInt(4);
+    final alp = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split("");
+    final r = Random();
+    final choice = r.nextInt(4);
     for (var i = 0; i < 4; i++) {
       if (choice == i) {
-        var ran = r.nextInt(10);
+        final ran = r.nextInt(10);
         tempid = tempid + ran.toString();
       } else {
-        var ran = r.nextInt(26);
+        final ran = r.nextInt(26);
         tempid = tempid + alp[ran].toString();
       }
     }
@@ -88,21 +88,20 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future processImage() async {
-    var imgList = image.readAsBytesSync();
-    var decodedImage = await decodeImageFromList(imgList);
+    final imgList = image.readAsBytesSync();
+    final decodedImage = await decodeImageFromList(imgList);
 
     debugPrint(decodedImage.width.toString());
     debugPrint(decodedImage.height.toString());
 
-    var res =
-        decodedImage.width.toString() + "x" + decodedImage.height.toString();
+    final res = "${decodedImage.width}x${decodedImage.height}";
 
     setState(() {
       wallpaperResolution = res;
     });
 
     image.length().then((value) =>
-        {wallpaperSize = (value / 1024 / 1024).toStringAsFixed(2) + "MB"});
+        {wallpaperSize = "${(value / 1024 / 1024).toStringAsFixed(2)}MB"});
 
     imageBytes = await image.readAsBytes();
     imageBytesThumb = await compute<File, List<int>>(_resizeImage, image);
@@ -111,7 +110,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future deleteFile() async {
-    var github = GitHub(auth: Authentication.withToken(token));
+    final github = GitHub(auth: Authentication.withToken(token));
     await github.repositories.deleteFile(RepositorySlug(gitUserName, repoName),
         wallpaperPath, wallpaperPath, wallpaperSha, "master");
     await github.repositories.deleteFile(RepositorySlug(gitUserName, repoName),
@@ -125,16 +124,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       isProcessing = false;
     });
     try {
-      String base64Image = base64Encode(imageBytes);
-      String base64ImageThumb = base64Encode(imageBytesThumb);
-      var github = GitHub(auth: Authentication.withToken(token));
+      final String base64Image = base64Encode(imageBytes);
+      final String base64ImageThumb = base64Encode(imageBytesThumb);
+      final github = GitHub(auth: Authentication.withToken(token));
       await github.repositories
           .createFile(
               RepositorySlug(gitUserName, repoName),
               CreateFile(
-                  message: "${Path.basename(image.path)}",
+                  message: Path.basename(image.path),
                   content: base64Image,
-                  path: '${Path.basename(image.path)}'))
+                  path: Path.basename(image.path)))
           .then((value) => setState(() {
                 wallpaperUrl = value.content.downloadUrl;
                 wallpaperPath = value.content.path;
@@ -184,145 +183,143 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             style: TextStyle(color: Theme.of(context).accentColor),
           ),
         ),
-        body: Container(
-          child: Column(
-            children: <Widget>[
-              ClipRRect(
-                child: Container(
-                  color: Theme.of(context).hintColor,
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.width,
-                  child: PhotoView(
-                    imageProvider: FileImage(image),
-                    backgroundDecoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
-                    ),
+        body: Column(
+          children: <Widget>[
+            ClipRRect(
+              child: Container(
+                color: Theme.of(context).hintColor,
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.width,
+                child: PhotoView(
+                  imageProvider: FileImage(image),
+                  backgroundDecoration: BoxDecoration(
+                    color: Theme.of(context).hintColor,
                   ),
                 ),
               ),
-              isProcessing || isUploading
-                  ? Container(
-                      width: MediaQuery.of(context).size.width / 2.4,
-                      height: MediaQuery.of(context).size.width / 2.4,
-                      child: FlareActor(
-                        isUploading
-                            ? "assets/animations/Upload.flr"
-                            : "assets/animations/Process.flr",
-                        animation: isUploading ? "upload" : "process",
-                        isPaused: false,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.center,
-                      ),
-                    )
-                  : Container(),
-              isUploading
-                  ? Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Text(
-                        "Uploading...",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Theme.of(context).accentColor,
-                        ),
-                      ),
-                    )
-                  : Container(),
-              isProcessing
-                  ? Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Text(
-                        "Processing...",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Theme.of(context).accentColor,
-                        ),
-                      ),
-                    )
-                  : Container(),
-              isProcessing || isUploading
-                  ? Container(
-                      width: MediaQuery.of(context).size.width / 2,
-                      child: ClipRRect(
-                          borderRadius: BorderRadius.circular(500),
-                          child: LinearProgressIndicator(
-                            backgroundColor: Theme.of(context).hintColor,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                config.Colors().mainAccentColor(1)),
-                          )))
-                  : Container(),
-              Spacer(),
+            ),
+            if (isProcessing || isUploading)
+              Container(
+                width: MediaQuery.of(context).size.width / 2.4,
+                height: MediaQuery.of(context).size.width / 2.4,
+                child: FlareActor(
+                  isUploading
+                      ? "assets/animations/Upload.flr"
+                      : "assets/animations/Process.flr",
+                  animation: isUploading ? "upload" : "process",
+                ),
+              )
+            else
+              Container(),
+            if (isUploading)
               Padding(
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.2,
-                      child: Center(
-                        child: Icon(
-                          JamIcons.info,
-                          color: Theme.of(context).accentColor.withOpacity(0.6),
-                        ),
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Text(
+                  "Uploading...",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).accentColor,
+                  ),
+                ),
+              )
+            else
+              Container(),
+            if (isProcessing)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Text(
+                  "Processing...",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).accentColor,
+                  ),
+                ),
+              )
+            else
+              Container(),
+            if (isProcessing || isUploading)
+              Container(
+                  width: MediaQuery.of(context).size.width / 2,
+                  child: ClipRRect(
+                      borderRadius: BorderRadius.circular(500),
+                      child: LinearProgressIndicator(
+                        backgroundColor: Theme.of(context).hintColor,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            config.Colors().mainAccentColor(1)),
+                      )))
+            else
+              Container(),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: MediaQuery.of(context).size.width * 0.2,
+                    child: Center(
+                      child: Icon(
+                        JamIcons.info,
+                        color: Theme.of(context).accentColor.withOpacity(0.6),
                       ),
                     ),
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.6,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Center(
-                          child: Text(
-                            main.prefs.get('premium') == true
-                                ? "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. Your photo will be visible in the profile/community section."
-                                : "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Theme.of(context)
-                                  .accentColor
-                                  .withOpacity(0.6),
-                            ),
+                  ),
+                  Container(
+                    width: MediaQuery.of(context).size.width * 0.6,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Center(
+                        child: Text(
+                          main.prefs.get('premium') == true
+                              ? "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. Your photo will be visible in the profile/community section."
+                              : "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color:
+                                Theme.of(context).accentColor.withOpacity(0.6),
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              )
-            ],
-          ),
+                  ),
+                ],
+              ),
+            )
+          ],
         ),
         floatingActionButton: FloatingActionButton(
-            backgroundColor: !isProcessing && !isUploading
-                ? config.Colors().mainAccentColor(1)
-                : Theme.of(context).hintColor,
-            disabledElevation: 0,
-            child: Icon(
-              JamIcons.check,
-              size: 40,
-              color: Colors.white,
-            ),
-            onPressed: !isProcessing && !isUploading
-                ? () async {
-                    navStack.removeLast();
-                    debugPrint(navStack.toString());
-                    Navigator.pop(context);
-                    analytics.logEvent(
-                        name: 'upload_wallpaper',
-                        parameters: {'id': id, 'link': wallpaperUrl});
-                    await WallStore.createRecord(
-                        id,
-                        wallpaperProvider,
-                        wallpaperThumb,
-                        wallpaperUrl,
-                        wallpaperResolution,
-                        wallpaperSize,
-                        wallpaperCategory,
-                        wallpaperDesc,
-                        review);
-                  }
-                : null),
+          backgroundColor: !isProcessing && !isUploading
+              ? config.Colors().mainAccentColor(1)
+              : Theme.of(context).hintColor,
+          disabledElevation: 0,
+          onPressed: !isProcessing && !isUploading
+              ? () async {
+                  navStack.removeLast();
+                  debugPrint(navStack.toString());
+                  Navigator.pop(context);
+                  analytics.logEvent(
+                      name: 'upload_wallpaper',
+                      parameters: {'id': id, 'link': wallpaperUrl});
+                  WallStore.createRecord(
+                      id,
+                      wallpaperProvider,
+                      wallpaperThumb,
+                      wallpaperUrl,
+                      wallpaperResolution,
+                      wallpaperSize,
+                      wallpaperCategory,
+                      wallpaperDesc,
+                      review);
+                }
+              : null,
+          child: const Icon(
+            JamIcons.check,
+            size: 40,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
