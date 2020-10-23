@@ -9,7 +9,7 @@ import 'package:Prism/theme/config.dart' as config;
 final databaseReference = Firestore.instance;
 
 void showUpdate(BuildContext context) {
-  Dialog aboutPopUp = Dialog(
+  final Dialog aboutPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: Container(
       decoration: BoxDecoration(
@@ -24,14 +24,12 @@ void showUpdate(BuildContext context) {
             height: 150,
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: FlareActor(
+            child: const FlareActor(
               "assets/animations/Update.flr",
-              isPaused: false,
-              alignment: Alignment.center,
               animation: "update",
             ),
           ),
@@ -40,9 +38,7 @@ void showUpdate(BuildContext context) {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
                 child: Text(
-                  'New version ' +
-                      globals.versionInfo["version_number"] +
-                      ' Available!',
+                  'New version ${globals.versionInfo["version_number"]} Available!',
                   style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
@@ -58,9 +54,7 @@ void showUpdate(BuildContext context) {
                 child: Container(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
-                    'Version ' +
-                        globals.versionInfo["version_number"] +
-                        ' includes -',
+                    'Version ${globals.versionInfo["version_number"]} includes -',
                     style: TextStyle(
                         fontSize: 14, color: Theme.of(context).accentColor),
                   ),
@@ -68,17 +62,15 @@ void showUpdate(BuildContext context) {
               ),
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 20,
           ),
           for (var feature in globals.versionInfo["version_desc"].split("^*^"))
             Padding(
               padding: const EdgeInsets.only(bottom: 10.0),
-              child: (Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.start,
+              child: Row(
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 20,
                   ),
                   Icon(
@@ -86,7 +78,7 @@ void showUpdate(BuildContext context) {
                     size: 22,
                     color: config.Colors().mainAccentColor(1),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     width: 20,
                   ),
                   Container(
@@ -100,7 +92,7 @@ void showUpdate(BuildContext context) {
                     ),
                   ),
                 ],
-              )),
+              ),
             ),
           Row(
             children: [
@@ -117,14 +109,14 @@ void showUpdate(BuildContext context) {
               ),
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 25,
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               FlatButton(
-                shape: StadiumBorder(),
+                shape: const StadiumBorder(),
                 color: config.Colors().mainAccentColor(1),
                 onPressed: () async {
                   Navigator.of(context).pop();
@@ -136,7 +128,7 @@ void showUpdate(BuildContext context) {
                     throw 'Could not launch $url';
                   }
                 },
-                child: Text(
+                child: const Text(
                   'UPDATE',
                   style: TextStyle(
                     fontSize: 16.0,
@@ -145,7 +137,7 @@ void showUpdate(BuildContext context) {
                 ),
               ),
               FlatButton(
-                shape: StadiumBorder(),
+                shape: const StadiumBorder(),
                 color: Colors.transparent,
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -160,7 +152,7 @@ void showUpdate(BuildContext context) {
               ),
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 15,
           ),
         ],

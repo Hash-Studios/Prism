@@ -13,19 +13,19 @@ class PremiumList extends StatelessWidget {
             ? Container()
             : ListTile(
                 onTap: () {
-                  if (!main.prefs.get("isLoggedin")) {
+                  if (main.prefs.get("isLoggedin") == false) {
                     googleSignInPopUp(context, () {
-                      if (main.prefs.get("premium")) {
+                      if (main.prefs.get("premium") == true) {
                         main.RestartWidget.restartApp(context);
                       } else {
-                        Navigator.pushNamed(context, PremiumRoute);
+                        Navigator.pushNamed(context, premiumRoute);
                       }
                     });
                   } else {
-                    Navigator.pushNamed(context, PremiumRoute);
+                    Navigator.pushNamed(context, premiumRoute);
                   }
                 },
-                leading: Icon(JamIcons.instant_picture_f),
+                leading: const Icon(JamIcons.instant_picture_f),
                 title: Text(
                   "Buy Premium",
                   style: TextStyle(
@@ -33,7 +33,7 @@ class PremiumList extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
-                subtitle: Text(
+                subtitle: const Text(
                   "Get unlimited setups and filters.",
                   style: TextStyle(fontSize: 12),
                 ),

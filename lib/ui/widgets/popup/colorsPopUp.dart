@@ -9,58 +9,58 @@ import 'package:Prism/main.dart' as main;
 
 final databaseReference = Firestore.instance;
 List<Color> colors = [
-  Color(0xFFFF0000),
-  Color(0xFFF44436),
-  Color(0xFFe91e63),
-  Color(0xFF9c27b0),
-  Color(0xFF673ab7),
-  Color(0xFF0000FF),
-  Color(0xFF1976D2),
-  Color(0xFF03a9f4),
-  Color(0xFF00bcd4),
-  Color(0xFF009688),
-  Color(0xFF4caf50),
-  Color(0xFF00FF00),
-  Color(0xFF8bc34a),
-  Color(0xFFcddc39),
-  Color(0xFFffeb3b),
-  Color(0xFFffc107),
-  Color(0xFFff9800),
-  Color(0xFFff5722),
-  Color(0xFF795548),
-  Color(0xFF9e9e9e),
-  Color(0xFF607d8b),
-  Color(0xFF000000),
-  Color(0xFFFFFFFF)
+  const Color(0xFFFF0000),
+  const Color(0xFFF44436),
+  const Color(0xFFe91e63),
+  const Color(0xFF9c27b0),
+  const Color(0xFF673ab7),
+  const Color(0xFF0000FF),
+  const Color(0xFF1976D2),
+  const Color(0xFF03a9f4),
+  const Color(0xFF00bcd4),
+  const Color(0xFF009688),
+  const Color(0xFF4caf50),
+  const Color(0xFF00FF00),
+  const Color(0xFF8bc34a),
+  const Color(0xFFcddc39),
+  const Color(0xFFffeb3b),
+  const Color(0xFFffc107),
+  const Color(0xFFff9800),
+  const Color(0xFFff5722),
+  const Color(0xFF795548),
+  const Color(0xFF9e9e9e),
+  const Color(0xFF607d8b),
+  const Color(0xFF000000),
+  const Color(0xFFFFFFFF)
 ];
 List<Color> accentColors = [
-  Color(0xFFFF0000),
-  Color(0xFFF44436),
-  Color(0xFFe91e63),
-  Color(0xFF9c27b0),
-  Color(0xFF673ab7),
-  Color(0xFF0000FF),
-  Color(0xFF1976D2),
-  Color(0xFF03a9f4),
-  Color(0xFF00bcd4),
-  Color(0xFF009688),
-  Color(0xFF4caf50),
-  Color(0xFF00FF00),
-  Color(0xFF8bc34a),
-  Color(0xFFcddc39),
-  Color(0xFFffeb3b),
-  Color(0xFFffc107),
-  Color(0xFFff9800),
-  Color(0xFFff5722),
-  Color(0xFF795548),
-  Color(0xFF9e9e9e),
-  Color(0xFF607d8b),
-  Color(0xFFE57697),
+  const Color(0xFFFF0000),
+  const Color(0xFFF44436),
+  const Color(0xFFe91e63),
+  const Color(0xFF9c27b0),
+  const Color(0xFF673ab7),
+  const Color(0xFF0000FF),
+  const Color(0xFF1976D2),
+  const Color(0xFF03a9f4),
+  const Color(0xFF00bcd4),
+  const Color(0xFF009688),
+  const Color(0xFF4caf50),
+  const Color(0xFF00FF00),
+  const Color(0xFF8bc34a),
+  const Color(0xFFcddc39),
+  const Color(0xFFffeb3b),
+  const Color(0xFFffc107),
+  const Color(0xFFff9800),
+  const Color(0xFFff5722),
+  const Color(0xFF795548),
+  const Color(0xFF9e9e9e),
+  const Color(0xFF607d8b),
+  const Color(0xFFE57697),
 ];
-Color currentColor = Color(0xFFFF0000);
+Color currentColor = const Color(0xFFFF0000);
 
 Color showColors(BuildContext context) {
-  Dialog colorPopUp = Dialog(
+  final Dialog colorPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: Container(
       decoration: BoxDecoration(
@@ -75,14 +75,12 @@ Color showColors(BuildContext context) {
             height: 150,
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: FlareActor(
+            child: const FlareActor(
               "assets/animations/Color.flr",
-              isPaused: false,
-              alignment: Alignment.center,
               animation: "color",
             ),
           ),
@@ -100,35 +98,20 @@ Color showColors(BuildContext context) {
               ),
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 5,
           ),
           Wrap(
             children: <Widget>[
               for (var color in colors)
                 GestureDetector(
-                  child: Container(
-                    margin: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: Colors.white38,
-                          width: 1,
-                          style: BorderStyle.solid),
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
-                    child: SizedBox(
-                      width: 41,
-                      height: 41,
-                    ),
-                  ),
                   onTap: () {
                     currentColor = color;
-                    debugPrint(navStack);
+                    debugPrint(navStack.toString());
                     Navigator.pop(context);
                     Navigator.pushNamed(
                       context,
-                      ColorRoute,
+                      colorRoute,
                       arguments: [
                         color
                             .toString()
@@ -139,24 +122,38 @@ Color showColors(BuildContext context) {
                       ],
                     );
                   },
+                  child: Container(
+                    margin: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.white38,
+                      ),
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const SizedBox(
+                      width: 41,
+                      height: 41,
+                    ),
+                  ),
                 )
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 15,
           ),
           FlatButton(
-            shape: StadiumBorder(),
+            shape: const StadiumBorder(),
             color: config.Colors().mainAccentColor(1),
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: Text(
+            child: const Text(
               'CLOSE',
               style: TextStyle(fontSize: 16.0, color: Colors.white),
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 15,
           ),
         ],
@@ -167,7 +164,7 @@ Color showColors(BuildContext context) {
 }
 
 void showAccentColors(BuildContext context) {
-  Dialog colorPopUp = Dialog(
+  final Dialog colorPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: Container(
       decoration: BoxDecoration(
@@ -182,14 +179,12 @@ void showAccentColors(BuildContext context) {
             height: 150,
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: FlareActor(
+            child: const FlareActor(
               "assets/animations/Color.flr",
-              isPaused: false,
-              alignment: Alignment.center,
               animation: "color",
             ),
           ),
@@ -207,36 +202,21 @@ void showAccentColors(BuildContext context) {
               ),
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 5,
           ),
           Wrap(
             children: <Widget>[
               for (var color in accentColors)
                 GestureDetector(
-                  child: Container(
-                    margin: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: Colors.white38,
-                          width: 1,
-                          style: BorderStyle.solid),
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
-                    child: SizedBox(
-                      width: 41,
-                      height: 41,
-                    ),
-                  ),
                   onTap: () {
-                    var accentColor = int.parse(color
+                    final accentColor = int.parse(color
                         .toString()
                         .replaceAll(
                             "MaterialColor(primary value: Color(0xff", "")
                         .replaceAll("Color(", "")
                         .replaceAll(")", ""));
-                    var hexString = color
+                    final hexString = color
                         .toString()
                         .replaceAll(
                             "MaterialColor(primary value: Color(0xff", "")
@@ -248,24 +228,38 @@ void showAccentColors(BuildContext context) {
                         parameters: {'color': hexString});
                     main.RestartWidget.restartApp(context);
                   },
+                  child: Container(
+                    margin: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.white38,
+                      ),
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const SizedBox(
+                      width: 41,
+                      height: 41,
+                    ),
+                  ),
                 )
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 15,
           ),
           FlatButton(
-            shape: StadiumBorder(),
+            shape: const StadiumBorder(),
             color: config.Colors().mainAccentColor(1),
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: Text(
+            child: const Text(
               'CLOSE',
               style: TextStyle(fontSize: 16.0, color: Colors.white),
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 15,
           ),
         ],

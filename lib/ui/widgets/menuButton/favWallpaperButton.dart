@@ -43,7 +43,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        if (!main.prefs.get("isLoggedin")) {
+        if (main.prefs.get("isLoggedin") == false) {
           googleSignInPopUp(context, () {
             onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels,
                 widget.prism);
@@ -62,11 +62,11 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
                 BoxShadow(
                     color: Colors.black.withOpacity(.25),
                     blurRadius: 4,
-                    offset: Offset(0, 4))
+                    offset: const Offset(0, 4))
               ],
               borderRadius: BorderRadius.circular(500),
             ),
-            padding: EdgeInsets.all(17),
+            padding: const EdgeInsets.all(17),
             child: Icon(
               widget.trash ? JamIcons.trash : JamIcons.heart,
               color: Theme.of(context).accentColor,
@@ -78,14 +78,15 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
               left: 0,
               height: 63,
               width: 63,
-              child: isLoading ? CircularProgressIndicator() : Container())
+              child:
+                  isLoading ? const CircularProgressIndicator() : Container())
         ],
       ),
     );
   }
 
-  void onFav(String id, String provider, WallPaper wallhaven, WallPaperP pexels,
-      Map prism) async {
+  Future<void> onFav(String id, String provider, WallPaper wallhaven,
+      WallPaperP pexels, Map prism) async {
     setState(() {
       isLoading = true;
     });
