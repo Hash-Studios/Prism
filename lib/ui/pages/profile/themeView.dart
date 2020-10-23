@@ -10,7 +10,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 
 class ThemeView extends StatefulWidget {
   final List arguments;
-  ThemeView({@required this.arguments});
+  const ThemeView({@required this.arguments});
   @override
   _ThemeViewState createState() => _ThemeViewState();
 }
@@ -19,7 +19,7 @@ class _ThemeViewState extends State<ThemeView> {
   ThemeData currentTheme;
   @override
   void initState() {
-    currentTheme = widget.arguments[0];
+    currentTheme = widget.arguments[0] as ThemeData;
     super.initState();
   }
 
@@ -41,7 +41,7 @@ class _ThemeViewState extends State<ThemeView> {
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-              icon: Icon(JamIcons.chevron_left),
+              icon: const Icon(JamIcons.chevron_left),
               onPressed: () {
                 if (Provider.of<ThemeModel>(context, listen: false)
                         .currentTheme ==
@@ -55,7 +55,7 @@ class _ThemeViewState extends State<ThemeView> {
               }),
           actions: <Widget>[
             IconButton(
-                icon: Icon(
+                icon: const Icon(
                   JamIcons.check,
                   size: 30,
                 ),
@@ -73,13 +73,12 @@ class _ThemeViewState extends State<ThemeView> {
         backgroundColor: Theme.of(context).primaryColor,
         body: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Center(
               child: Stack(
                 children: <Widget>[
                   AnimatedOpacity(
-                    duration: Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 300),
                     opacity: Provider.of<ThemeModel>(context, listen: false)
                                 .returnTheme() ==
                             ThemeType.dark
@@ -93,15 +92,15 @@ class _ThemeViewState extends State<ThemeView> {
                           BoxShadow(
                             color: Colors.black.withOpacity(.9),
                             blurRadius: 38,
-                            offset: Offset(0, 19),
+                            offset: const Offset(0, 19),
                           ),
                           BoxShadow(
                             color: Colors.black.withOpacity(.8),
                             blurRadius: 12,
-                            offset: Offset(0, 15),
+                            offset: const Offset(0, 15),
                           )
                         ],
-                        image: DecorationImage(
+                        image: const DecorationImage(
                             image: AssetImage(
                               "assets/images/dark_theme.jpg",
                             ),
@@ -114,7 +113,7 @@ class _ThemeViewState extends State<ThemeView> {
                     ),
                   ),
                   AnimatedOpacity(
-                    duration: Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 300),
                     opacity: Provider.of<ThemeModel>(context, listen: false)
                                 .returnTheme() ==
                             ThemeType.dark
@@ -128,15 +127,15 @@ class _ThemeViewState extends State<ThemeView> {
                           BoxShadow(
                             color: Colors.black.withOpacity(.15),
                             blurRadius: 38,
-                            offset: Offset(0, 19),
+                            offset: const Offset(0, 19),
                           ),
                           BoxShadow(
                             color: Colors.black.withOpacity(.10),
                             blurRadius: 12,
-                            offset: Offset(0, 15),
+                            offset: const Offset(0, 15),
                           )
                         ],
-                        image: DecorationImage(
+                        image: const DecorationImage(
                             image: AssetImage(
                               "assets/images/light_theme.jpg",
                             ),
@@ -165,14 +164,14 @@ class _ThemeViewState extends State<ThemeView> {
                       BoxShadow(
                         color: Colors.black.withOpacity(.8),
                         blurRadius: 38,
-                        offset: Offset(0, 19),
+                        offset: const Offset(0, 19),
                       ),
                     ]
                   : [
                       BoxShadow(
                         color: Colors.black.withOpacity(.15),
                         blurRadius: 38,
-                        offset: Offset(0, 19),
+                        offset: const Offset(0, 19),
                       ),
                     ],
               onToggleCallback: (index) {
@@ -180,7 +179,7 @@ class _ThemeViewState extends State<ThemeView> {
                 main.prefs.get("darkMode") == null
                     ? analytics.logEvent(
                         name: 'theme_changed', parameters: {'type': 'dark'})
-                    : main.prefs.get("darkMode")
+                    : main.prefs.get("darkMode") as bool
                         ? analytics.logEvent(
                             name: 'theme_changed',
                             parameters: {'type': 'light'})

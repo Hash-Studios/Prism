@@ -97,59 +97,54 @@ class _WallpaperScreenState extends State<WallpaperScreen>
       targetPosition: TargetPosition(const Size(0, 0), const Offset(0, 0)),
       contents: [
         ContentTarget(
-            align: AlignContent.bottom,
             child: SizedBox(
-              height: globals.height,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    "Variants are here.",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: RichText(
-                      text: TextSpan(
-                          text:
-                              "➜ Tap on the wallpaper to quickly cycle between ",
-                          style: TextStyle(color: Colors.white),
-                          children: [
-                            TextSpan(
-                              text: "color variants.",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const TextSpan(text: "\n\n"),
-                            const TextSpan(text: "➜ Press and hold to "),
-                            TextSpan(
-                              text: "reset ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const TextSpan(text: "the variant.\n\n"),
-                            const TextSpan(
-                                text:
-                                    "➜ To set variants of a wallpaper, you need to be a "),
-                            TextSpan(
-                              text: "premium ",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const TextSpan(text: "user."),
-                          ]),
-                    ),
-                  )
-                ],
+          height: globals.height,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Text(
+                "Variants are here.",
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 20.0),
               ),
-            )),
+              Padding(
+                padding: const EdgeInsets.only(top: 10.0),
+                child: RichText(
+                  text: const TextSpan(
+                      text: "➜ Tap on the wallpaper to quickly cycle between ",
+                      style: TextStyle(color: Colors.white),
+                      children: [
+                        TextSpan(
+                          text: "color variants.",
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(text: "\n\n"),
+                        TextSpan(text: "➜ Press and hold to "),
+                        TextSpan(
+                          text: "reset ",
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(text: "the variant.\n\n"),
+                        TextSpan(
+                            text:
+                                "➜ To set variants of a wallpaper, you need to be a "),
+                        TextSpan(
+                          text: "premium ",
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(text: "user."),
+                      ]),
+                ),
+              )
+            ],
+          ),
+        )),
       ],
       shape: ShapeLightFocus.Circle,
     ));
@@ -164,7 +159,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
+                const Text(
                   "This is the color palette.",
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -174,7 +169,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                 Padding(
                   padding: const EdgeInsets.only(top: 10.0),
                   child: RichText(
-                    text: TextSpan(
+                    text: const TextSpan(
                         text: "➜ Tap on any color to find wallpapers with ",
                         style: TextStyle(color: Colors.white),
                         children: [
@@ -184,16 +179,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
-                          const TextSpan(text: "\n\n"),
-                          const TextSpan(
-                              text: "➜ Press and hold any color to "),
+                          TextSpan(text: "\n\n"),
+                          TextSpan(text: "➜ Press and hold any color to "),
                           TextSpan(
                             text: "copy ",
                             style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
-                          const TextSpan(text: "its color code.\n\n"),
+                          TextSpan(text: "its color code.\n\n"),
                         ]),
                   ),
                 )
@@ -213,7 +207,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
+                const Text(
                   "This is the quick info section.",
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -223,7 +217,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                 Padding(
                   padding: const EdgeInsets.only(top: 10.0),
                   child: RichText(
-                    text: TextSpan(
+                    text: const TextSpan(
                         text: "➜ Tap on user name to ",
                         style: TextStyle(color: Colors.white),
                         children: [
@@ -233,7 +227,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
-                          const TextSpan(text: " from them.\n\n"),
+                          TextSpan(text: " from them.\n\n"),
                         ]),
                   ),
                 )
@@ -253,7 +247,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
+                const Text(
                   "This is the quick action section.",
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -263,7 +257,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                 Padding(
                   padding: const EdgeInsets.only(top: 10.0),
                   child: RichText(
-                    text: TextSpan(
+                    text: const TextSpan(
                         text: "➜ Here you can ",
                         style: TextStyle(color: Colors.white),
                         children: [
@@ -273,15 +267,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
-                          const TextSpan(text: " and"),
+                          TextSpan(text: " and"),
                           TextSpan(
                             text: " share",
                             style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
-                          const TextSpan(text: " this wallpaper.\n\n"),
-                          const TextSpan(
+                          TextSpan(text: " this wallpaper.\n\n"),
+                          TextSpan(
                               text:
                                   "➜ Press and hold apply wallpaper button to "),
                           TextSpan(
@@ -290,7 +284,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
-                          const TextSpan(text: "this wallpaper.\n\n"),
+                          TextSpan(text: "this wallpaper.\n\n"),
                         ]),
                   ),
                 )
@@ -305,7 +299,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     TutorialCoachMark(context,
         targets: targets,
         colorShadow: config.Colors().mainAccentColor(1),
-        textSkip: "SKIP",
         paddingFocus: 1,
         opacityShadow: 0.9, finish: () {
       debugPrint("finish");
@@ -335,7 +328,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     super.initState();
     initTargets();
     if (isNew) {
-      Future.delayed(const Duration(seconds: 0)).then(
+      Future.delayed(const Duration()).then(
           (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
     }
     SystemChrome.setEnabledSystemUIOverlays([]);
@@ -435,7 +428,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
-                    child: Center(
+                    child: const Center(
                         child: Icon(
                       JamIcons.chevron_up,
                       color: Colors.white,
@@ -461,9 +454,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Center(
+                      const Center(
                           child: Padding(
-                        padding: const EdgeInsets.all(10.0),
+                        padding: EdgeInsets.all(10.0),
                         child: Icon(
                           JamIcons.chevron_down,
                           color: Colors.white,
@@ -480,7 +473,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             children: <Widget>[
                               Column(
                                 mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Padding(
@@ -496,7 +488,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   ),
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         JamIcons.eye,
                                         size: 20,
                                         color: Colors.white70,
@@ -513,31 +505,32 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   const SizedBox(height: 5),
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         JamIcons.heart_f,
                                         size: 20,
                                         color: Colors.white70,
                                       ),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Text(
-                                        "${wdata.walls[index].favourites.toString()}",
+                                        wdata.walls[index].favourites
+                                            .toString(),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         JamIcons.save,
                                         size: 20,
                                         color: Colors.white70,
                                       ),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Text(
-                                        "${double.parse(((double.parse(wdata.walls[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                        "${double.parse((double.parse(wdata.walls[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
@@ -548,7 +541,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               ),
                               Column(
                                 mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: <Widget>[
                                   Padding(
@@ -567,8 +559,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .textTheme
                                               .bodyText2,
                                         ),
-                                        SizedBox(width: 10),
-                                        Icon(
+                                        const SizedBox(width: 10),
+                                        const Icon(
                                           JamIcons.unordered_list,
                                           size: 20,
                                           color: Colors.white70,
@@ -576,24 +568,25 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       ],
                                     ),
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Row(
                                     children: [
                                       Text(
-                                        "${wdata.walls[index].resolution.toString()}",
+                                        wdata.walls[index].resolution
+                                            .toString(),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText2,
                                       ),
-                                      SizedBox(width: 10),
-                                      Icon(
+                                      const SizedBox(width: 10),
+                                      const Icon(
                                         JamIcons.set_square,
                                         size: 20,
                                         color: Colors.white70,
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 5),
+                                  const SizedBox(height: 5),
                                   Row(
                                     children: [
                                       Text(
@@ -602,8 +595,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             .textTheme
                                             .bodyText2,
                                       ),
-                                      SizedBox(width: 10),
-                                      Icon(
+                                      const SizedBox(width: 10),
+                                      const Icon(
                                         JamIcons.database,
                                         size: 20,
                                         color: Colors.white70,
@@ -654,9 +647,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                     AnimatedBuilder(
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
-                          if (offsetAnimation.value < 0.0)
+                          if (offsetAnimation.value < 0.0) {
                             debugPrint('${offsetAnimation.value + 8.0}');
+                          }
                           return GestureDetector(
+                            onPanUpdate: (details) {
+                              if (details.delta.dy < -10) {
+                                panelController.open();
+                                HapticFeedback.vibrate();
+                              }
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                colorChanged = false;
+                              });
+                              HapticFeedback.vibrate();
+                              shakeController.forward(from: 0.0);
+                            },
+                            onTap: () {
+                              HapticFeedback.vibrate();
+                              !isLoading ? updateAccent() : debugPrint("");
+                              shakeController.forward(from: 0.0);
+                            },
                             child: CachedNetworkImage(
                               imageUrl: wdata.walls[index].path,
                               imageBuilder: (context, imageProvider) =>
@@ -683,49 +695,27 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               progressIndicatorBuilder:
                                   (context, url, downloadProgress) => Stack(
                                 children: <Widget>[
-                                  SizedBox.expand(child: Text("")),
-                                  Container(
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                          valueColor: AlwaysStoppedAnimation(
-                                            config.Colors().mainAccentColor(1),
-                                          ),
-                                          value: downloadProgress.progress),
-                                    ),
+                                  const SizedBox.expand(child: Text("")),
+                                  Center(
+                                    child: CircularProgressIndicator(
+                                        valueColor: AlwaysStoppedAnimation(
+                                          config.Colors().mainAccentColor(1),
+                                        ),
+                                        value: downloadProgress.progress),
                                   ),
                                 ],
                               ),
-                              errorWidget: (context, url, error) => Container(
-                                child: Center(
-                                  child: Icon(
-                                    JamIcons.close_circle_f,
-                                    color: isLoading
-                                        ? Theme.of(context).accentColor
-                                        : accent.computeLuminance() > 0.5
-                                            ? Colors.black
-                                            : Colors.white,
-                                  ),
+                              errorWidget: (context, url, error) => Center(
+                                child: Icon(
+                                  JamIcons.close_circle_f,
+                                  color: isLoading
+                                      ? Theme.of(context).accentColor
+                                      : accent.computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white,
                                 ),
                               ),
                             ),
-                            onPanUpdate: (details) {
-                              if (details.delta.dy < -10) {
-                                panelController.open();
-                                HapticFeedback.vibrate();
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                colorChanged = false;
-                              });
-                              HapticFeedback.vibrate();
-                              shakeController.forward(from: 0.0);
-                            },
-                            onTap: () {
-                              HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : debugPrint("");
-                              shakeController.forward(from: 0.0);
-                            },
                           );
                         }),
                     Align(
@@ -743,7 +733,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                          icon: Icon(
+                          icon: const Icon(
                             JamIcons.chevron_left,
                           ),
                         ),
@@ -755,12 +745,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
-                            var link = wdata.walls[index].path;
+                            final link = wdata.walls[index].path;
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
                                     transitionDuration:
-                                        Duration(milliseconds: 300),
+                                        const Duration(milliseconds: 300),
                                     pageBuilder: (context, animation,
                                         secondaryAnimation) {
                                       animation = Tween(begin: 0.0, end: 1.0)
@@ -782,7 +772,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               : accent.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
-                          icon: Icon(
+                          icon: const Icon(
                             JamIcons.clock,
                           ),
                         ),
@@ -809,7 +799,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           screenshotController
                               .capture(
                             pixelRatio: 3,
-                            delay: Duration(milliseconds: 10),
+                            delay: const Duration(milliseconds: 10),
                           )
                               .then((File image) async {
                             setState(() {
@@ -848,15 +838,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       });
                     },
                     backdropEnabled: true,
-                    backdropTapClosesPanel: true,
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    boxShadow: [],
+                    boxShadow: const [],
                     collapsed: Container(
                       decoration: BoxDecoration(
-                          borderRadius: BorderRadius.only(
+                          borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20),
                           ),
@@ -864,7 +853,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height / 20,
-                        child: Center(
+                        child: const Center(
                             child: Icon(
                           JamIcons.chevron_up,
                           color: Colors.white,
@@ -881,7 +870,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       height: MediaQuery.of(context).size.height * .46,
                       width: MediaQuery.of(context).size.width,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
@@ -890,9 +879,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Center(
+                          const Center(
                               child: Padding(
-                            padding: const EdgeInsets.all(10.0),
+                            padding: EdgeInsets.all(10.0),
                             child: Icon(
                               JamIcons.chevron_down,
                               color: Colors.white,
@@ -910,7 +899,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 children: <Widget>[
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: <Widget>[
@@ -926,34 +914,36 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .bodyText1,
                                         ),
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Row(
                                         children: [
-                                          Icon(
+                                          const Icon(
                                             JamIcons.arrow_circle_right,
                                             size: 20,
                                             color: Colors.white70,
                                           ),
-                                          SizedBox(width: 10),
+                                          const SizedBox(width: 10),
                                           Text(
-                                            "${data.subPrismWalls[index]["desc"].toString()}",
+                                            data.subPrismWalls[index]["desc"]
+                                                .toString(),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
                                           ),
                                         ],
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Row(
                                         children: [
-                                          Icon(
+                                          const Icon(
                                             JamIcons.save,
                                             size: 20,
                                             color: Colors.white70,
                                           ),
-                                          SizedBox(width: 10),
+                                          const SizedBox(width: 10),
                                           Text(
-                                            "${data.subPrismWalls[index]["size"].toString()}",
+                                            data.subPrismWalls[index]["size"]
+                                                .toString(),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
@@ -964,7 +954,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   ),
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: <Widget>[
                                       ActionChip(
@@ -987,7 +976,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 ""
                                               ]);
                                         },
-                                        padding: EdgeInsets.symmetric(
+                                        padding: const EdgeInsets.symmetric(
                                             vertical: 5, horizontal: 5),
                                         avatar: CircleAvatar(
                                           backgroundImage:
@@ -996,33 +985,36 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       ["userPhoto"]
                                                   .toString()),
                                         ),
-                                        labelPadding:
-                                            EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                        labelPadding: const EdgeInsets.fromLTRB(
+                                            7, 3, 7, 3),
                                         label: Text(
-                                            "${data.subPrismWalls[index]["by"].toString()}",
+                                            data.subPrismWalls[index]["by"]
+                                                .toString(),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2
                                                 .copyWith(fontSize: 16)),
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Row(
                                         children: [
                                           Text(
-                                            "${data.subPrismWalls[index]["resolution"].toString()}",
+                                            data.subPrismWalls[index]
+                                                    ["resolution"]
+                                                .toString(),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2,
                                           ),
-                                          SizedBox(width: 10),
-                                          Icon(
+                                          const SizedBox(width: 10),
+                                          const Icon(
                                             JamIcons.set_square,
                                             size: 20,
                                             color: Colors.white70,
                                           ),
                                         ],
                                       ),
-                                      SizedBox(height: 5),
+                                      const SizedBox(height: 5),
                                       Row(
                                         children: [
                                           Text(
@@ -1031,8 +1023,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 .textTheme
                                                 .bodyText2,
                                           ),
-                                          SizedBox(width: 10),
-                                          Icon(
+                                          const SizedBox(width: 10),
+                                          const Icon(
                                             JamIcons.database,
                                             size: 20,
                                             color: Colors.white70,
@@ -1096,6 +1088,24 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 debugPrint('${offsetAnimation.value + 8.0}');
                               }
                               return GestureDetector(
+                                onPanUpdate: (details) {
+                                  if (details.delta.dy < -10) {
+                                    panelController.open();
+                                    HapticFeedback.vibrate();
+                                  }
+                                },
+                                onLongPress: () {
+                                  setState(() {
+                                    colorChanged = false;
+                                  });
+                                  HapticFeedback.vibrate();
+                                  shakeController.forward(from: 0.0);
+                                },
+                                onTap: () {
+                                  HapticFeedback.vibrate();
+                                  !isLoading ? updateAccent() : debugPrint("");
+                                  shakeController.forward(from: 0.0);
+                                },
                                 child: CachedNetworkImage(
                                   imageUrl: data.subPrismWalls[index]
                                           ["wallpaper_url"]
@@ -1126,52 +1136,28 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   progressIndicatorBuilder:
                                       (context, url, downloadProgress) => Stack(
                                     children: <Widget>[
-                                      SizedBox.expand(child: Text("")),
-                                      Container(
-                                        child: Center(
-                                          child: CircularProgressIndicator(
-                                              valueColor:
-                                                  AlwaysStoppedAnimation(
-                                                config.Colors()
-                                                    .mainAccentColor(1),
-                                              ),
-                                              value: downloadProgress.progress),
-                                        ),
+                                      const SizedBox.expand(child: Text("")),
+                                      Center(
+                                        child: CircularProgressIndicator(
+                                            valueColor: AlwaysStoppedAnimation(
+                                              config.Colors()
+                                                  .mainAccentColor(1),
+                                            ),
+                                            value: downloadProgress.progress),
                                       ),
                                     ],
                                   ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                    child: Center(
-                                      child: Icon(
-                                        JamIcons.close_circle_f,
-                                        color: isLoading
-                                            ? Theme.of(context).accentColor
-                                            : accent.computeLuminance() > 0.5
-                                                ? Colors.black
-                                                : Colors.white,
-                                      ),
+                                  errorWidget: (context, url, error) => Center(
+                                    child: Icon(
+                                      JamIcons.close_circle_f,
+                                      color: isLoading
+                                          ? Theme.of(context).accentColor
+                                          : accent.computeLuminance() > 0.5
+                                              ? Colors.black
+                                              : Colors.white,
                                     ),
                                   ),
                                 ),
-                                onPanUpdate: (details) {
-                                  if (details.delta.dy < -10) {
-                                    panelController.open();
-                                    HapticFeedback.vibrate();
-                                  }
-                                },
-                                onLongPress: () {
-                                  setState(() {
-                                    colorChanged = false;
-                                  });
-                                  HapticFeedback.vibrate();
-                                  shakeController.forward(from: 0.0);
-                                },
-                                onTap: () {
-                                  HapticFeedback.vibrate();
-                                  !isLoading ? updateAccent() : debugPrint("");
-                                  shakeController.forward(from: 0.0);
-                                },
                               );
                             }),
                         Align(
@@ -1189,7 +1175,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
-                              icon: Icon(
+                              icon: const Icon(
                                 JamIcons.chevron_left,
                               ),
                             ),
@@ -1201,7 +1187,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             padding: const EdgeInsets.all(8.0),
                             child: IconButton(
                               onPressed: () {
-                                var link =
+                                final link =
                                     data.subPrismWalls[index]["wallpaper_url"];
                                 Navigator.push(
                                     context,
@@ -1230,7 +1216,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   : accent.computeLuminance() > 0.5
                                       ? Colors.black
                                       : Colors.white,
-                              icon: Icon(
+                              icon: const Icon(
                                 JamIcons.clock,
                               ),
                             ),
@@ -1257,7 +1243,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               screenshotController
                                   .capture(
                                 pixelRatio: 3,
-                                delay: Duration(milliseconds: 10),
+                                delay: const Duration(milliseconds: 10),
                               )
                                   .then((File image) async {
                                 setState(() {
@@ -1266,7 +1252,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 });
                                 debugPrint('Screenshot Taken');
                               }).catchError((onError) {
-                                debugPrint(onError);
+                                debugPrint(onError.toString());
                               });
                             } else {
                               (main.prefs.get('optimisedWallpapers') ?? true) ==
@@ -1274,7 +1260,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   ? screenshotController
                                       .capture(
                                       pixelRatio: 3,
-                                      delay: Duration(milliseconds: 10),
+                                      delay: const Duration(milliseconds: 10),
                                     )
                                       .then((File image) async {
                                       setState(() {
@@ -1283,7 +1269,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       });
                                       debugPrint('Screenshot Taken');
                                     }).catchError((onError) {
-                                      debugPrint(onError);
+                                      debugPrint(onError.toString());
                                     })
                                   : debugPrint(
                                       "Wallpaper Optimisation is disabled!");
@@ -1296,15 +1282,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           });
                         },
                         backdropEnabled: true,
-                        backdropTapClosesPanel: true,
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
-                        boxShadow: [],
+                        boxShadow: const [],
                         collapsed: Container(
                           decoration: BoxDecoration(
-                              borderRadius: BorderRadius.only(
+                              borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(20),
                                 topRight: Radius.circular(20),
                               ),
@@ -1312,7 +1297,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width,
                             height: MediaQuery.of(context).size.height / 20,
-                            child: Center(
+                            child: const Center(
                                 child: Icon(
                               JamIcons.chevron_up,
                               color: Colors.white,
@@ -1329,7 +1314,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           height: MediaQuery.of(context).size.height * .46,
                           width: MediaQuery.of(context).size.width,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
+                            borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(20),
                               topRight: Radius.circular(20),
                             ),
@@ -1338,9 +1323,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Center(
+                              const Center(
                                   child: Padding(
-                                padding: const EdgeInsets.all(10.0),
+                                padding: EdgeInsets.all(10.0),
                                 child: Icon(
                                   JamIcons.chevron_down,
                                   color: Colors.white,
@@ -1420,8 +1405,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         children: <Widget>[
                                           Column(
                                             mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: <Widget>[
@@ -1432,12 +1415,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 },
                                                 child: Row(
                                                   children: [
-                                                    Icon(
+                                                    const Icon(
                                                       JamIcons.camera,
                                                       size: 20,
                                                       color: Colors.white70,
                                                     ),
-                                                    SizedBox(width: 10),
+                                                    const SizedBox(width: 10),
                                                     Container(
                                                       width:
                                                           MediaQuery.of(context)
@@ -1458,15 +1441,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ],
                                                 ),
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
-                                                  Icon(
+                                                  const Icon(
                                                     JamIcons.set_square,
                                                     size: 20,
                                                     color: Colors.white70,
                                                   ),
-                                                  SizedBox(width: 10),
+                                                  const SizedBox(width: 10),
                                                   Text(
                                                     "${pdata.wallsP[index].width.toString()}x${pdata.wallsP[index].height.toString()}",
                                                     style: Theme.of(context)
@@ -1479,8 +1462,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ),
                                           Column(
                                             mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.end,
                                             children: <Widget>[
@@ -1493,15 +1474,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         .textTheme
                                                         .bodyText2,
                                                   ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
+                                                  const SizedBox(width: 10),
+                                                  const Icon(
                                                     JamIcons.info,
                                                     size: 20,
                                                     color: Colors.white70,
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
                                                   Text(
@@ -1510,8 +1491,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         .textTheme
                                                         .bodyText2,
                                                   ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
+                                                  const SizedBox(width: 10),
+                                                  const Icon(
                                                     JamIcons.database,
                                                     size: 20,
                                                     color: Colors.white70,
@@ -1544,7 +1525,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         url: screenshotTaken
                                             ? _imageFile.path
                                             : pdata
-                                                .wallsP[index].src["original"]),
+                                                .wallsP[index].src["original"]
+                                                .toString()),
                                     FavouriteWallpaperButton(
                                       id: pdata.wallsP[index].id.toString(),
                                       provider: "Pexels",
@@ -1554,10 +1536,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     ShareButton(
                                         id: pdata.wallsP[index].id,
                                         provider: provider,
-                                        url:
-                                            pdata.wallsP[index].src["original"],
-                                        thumbUrl:
-                                            pdata.wallsP[index].src["medium"])
+                                        url: pdata.wallsP[index].src["original"]
+                                            .toString(),
+                                        thumbUrl: pdata
+                                            .wallsP[index].src["medium"]
+                                            .toString())
                                   ],
                                 ),
                               ),
@@ -1569,13 +1552,35 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             AnimatedBuilder(
                                 animation: offsetAnimation,
                                 builder: (buildContext, child) {
-                                  if (offsetAnimation.value < 0.0)
+                                  if (offsetAnimation.value < 0.0) {
                                     debugPrint(
                                         '${offsetAnimation.value + 8.0}');
+                                  }
                                   return GestureDetector(
+                                    onPanUpdate: (details) {
+                                      if (details.delta.dy < -10) {
+                                        HapticFeedback.vibrate();
+                                        panelController.open();
+                                      }
+                                    },
+                                    onLongPress: () {
+                                      setState(() {
+                                        colorChanged = false;
+                                      });
+                                      HapticFeedback.vibrate();
+                                      shakeController.forward(from: 0.0);
+                                    },
+                                    onTap: () {
+                                      HapticFeedback.vibrate();
+                                      !isLoading
+                                          ? updateAccent()
+                                          : debugPrint("");
+                                      shakeController.forward(from: 0.0);
+                                    },
                                     child: CachedNetworkImage(
-                                      imageUrl:
-                                          pdata.wallsP[index].src["original"],
+                                      imageUrl: pdata
+                                          .wallsP[index].src["original"]
+                                          .toString(),
                                       imageBuilder: (context, imageProvider) =>
                                           Screenshot(
                                         controller: screenshotController,
@@ -1603,56 +1608,32 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           (context, url, downloadProgress) =>
                                               Stack(
                                         children: <Widget>[
-                                          SizedBox.expand(child: Text("")),
-                                          Container(
-                                            child: Center(
-                                              child: CircularProgressIndicator(
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation(
-                                                    config.Colors()
-                                                        .mainAccentColor(1),
-                                                  ),
-                                                  value: downloadProgress
-                                                      .progress),
-                                            ),
+                                          const SizedBox.expand(
+                                              child: Text("")),
+                                          Center(
+                                            child: CircularProgressIndicator(
+                                                valueColor:
+                                                    AlwaysStoppedAnimation(
+                                                  config.Colors()
+                                                      .mainAccentColor(1),
+                                                ),
+                                                value:
+                                                    downloadProgress.progress),
                                           ),
                                         ],
                                       ),
                                       errorWidget: (context, url, error) =>
-                                          Container(
-                                        child: Center(
-                                          child: Icon(
-                                            JamIcons.close_circle_f,
-                                            color: isLoading
-                                                ? Theme.of(context).accentColor
-                                                : accent.computeLuminance() >
-                                                        0.5
-                                                    ? Colors.black
-                                                    : Colors.white,
-                                          ),
+                                          Center(
+                                        child: Icon(
+                                          JamIcons.close_circle_f,
+                                          color: isLoading
+                                              ? Theme.of(context).accentColor
+                                              : accent.computeLuminance() > 0.5
+                                                  ? Colors.black
+                                                  : Colors.white,
                                         ),
                                       ),
                                     ),
-                                    onPanUpdate: (details) {
-                                      if (details.delta.dy < -10) {
-                                        HapticFeedback.vibrate();
-                                        panelController.open();
-                                      }
-                                    },
-                                    onLongPress: () {
-                                      setState(() {
-                                        colorChanged = false;
-                                      });
-                                      HapticFeedback.vibrate();
-                                      shakeController.forward(from: 0.0);
-                                    },
-                                    onTap: () {
-                                      HapticFeedback.vibrate();
-                                      !isLoading
-                                          ? updateAccent()
-                                          : debugPrint("");
-                                      shakeController.forward(from: 0.0);
-                                    },
                                   );
                                 }),
                             Align(
@@ -1670,7 +1651,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       : accent.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
-                                  icon: Icon(
+                                  icon: const Icon(
                                     JamIcons.chevron_left,
                                   ),
                                 ),
@@ -1682,13 +1663,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   onPressed: () {
-                                    var link =
+                                    final link =
                                         pdata.wallsP[index].src["original"];
                                     Navigator.push(
                                         context,
                                         PageRouteBuilder(
-                                            transitionDuration:
-                                                Duration(milliseconds: 300),
+                                            transitionDuration: const Duration(
+                                                milliseconds: 300),
                                             pageBuilder: (context, animation,
                                                 secondaryAnimation) {
                                               animation =
@@ -1699,7 +1680,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   child: ClockOverlay(
                                                     colorChanged: colorChanged,
                                                     accent: accent,
-                                                    link: link,
+                                                    link: link.toString(),
                                                     file: false,
                                                   ));
                                             },
@@ -1711,7 +1692,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       : accent.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
-                                  icon: Icon(
+                                  icon: const Icon(
                                     JamIcons.clock,
                                   ),
                                 ),
@@ -1739,7 +1720,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   screenshotController
                                       .capture(
                                     pixelRatio: 3,
-                                    delay: Duration(milliseconds: 10),
+                                    delay: const Duration(milliseconds: 10),
                                   )
                                       .then((File image) async {
                                     setState(() {
@@ -1748,14 +1729,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     });
                                     debugPrint('Screenshot Taken');
                                   }).catchError((onError) {
-                                    debugPrint(onError);
+                                    debugPrint(onError.toString());
                                   });
                                 } else {
-                                  main.prefs.get('optimisedWallpapers') ?? true
+                                  main.prefs.get('optimisedWallpapers')
+                                              as bool ??
+                                          true
                                       ? screenshotController
                                           .capture(
                                           pixelRatio: 3,
-                                          delay: Duration(milliseconds: 10),
+                                          delay:
+                                              const Duration(milliseconds: 10),
                                         )
                                           .then((File image) async {
                                           setState(() {
@@ -1764,7 +1748,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           });
                                           debugPrint('Screenshot Taken');
                                         }).catchError((onError) {
-                                          debugPrint(onError);
+                                          debugPrint(onError.toString());
                                         })
                                       : debugPrint(
                                           "Wallpaper Optimisation is disabled!");
@@ -1777,15 +1761,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               });
                             },
                             backdropEnabled: true,
-                            backdropTapClosesPanel: true,
-                            borderRadius: BorderRadius.only(
+                            borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(20),
                               topRight: Radius.circular(20),
                             ),
-                            boxShadow: [],
+                            boxShadow: const [],
                             collapsed: Container(
                               decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.only(
+                                  borderRadius: const BorderRadius.only(
                                     topLeft: Radius.circular(20),
                                     topRight: Radius.circular(20),
                                   ),
@@ -1793,7 +1776,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width,
                                 height: MediaQuery.of(context).size.height / 20,
-                                child: Center(
+                                child: const Center(
                                     child: Icon(
                                   JamIcons.chevron_up,
                                   color: Colors.white,
@@ -1810,7 +1793,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               height: MediaQuery.of(context).size.height * .46,
                               width: MediaQuery.of(context).size.width,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.only(
+                                borderRadius: const BorderRadius.only(
                                   topLeft: Radius.circular(20),
                                   topRight: Radius.circular(20),
                                 ),
@@ -1819,9 +1802,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
-                                  Center(
+                                  const Center(
                                       child: Padding(
-                                    padding: const EdgeInsets.all(10.0),
+                                    padding: EdgeInsets.all(10.0),
                                     child: Icon(
                                       JamIcons.chevron_down,
                                       color: Colors.white,
@@ -1894,19 +1877,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             children: <Widget>[
                                               Column(
                                                 mainAxisSize: MainAxisSize.min,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.start,
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: <Widget>[
                                                   Row(
                                                     children: [
-                                                      Icon(
+                                                      const Icon(
                                                         JamIcons.camera,
                                                         size: 20,
                                                         color: Colors.white70,
                                                       ),
-                                                      SizedBox(width: 10),
+                                                      const SizedBox(width: 10),
                                                       Container(
                                                         width: MediaQuery.of(
                                                                     context)
@@ -1927,15 +1908,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       ),
                                                     ],
                                                   ),
-                                                  SizedBox(height: 5),
+                                                  const SizedBox(height: 5),
                                                   Row(
                                                     children: [
-                                                      Icon(
+                                                      const Icon(
                                                         JamIcons.set_square,
                                                         size: 20,
                                                         color: Colors.white70,
                                                       ),
-                                                      SizedBox(width: 10),
+                                                      const SizedBox(width: 10),
                                                       Text(
                                                         "${pdata.wallsC[index].width.toString()}x${pdata.wallsC[index].height.toString()}",
                                                         style: Theme.of(context)
@@ -1948,8 +1929,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               ),
                                               Column(
                                                 mainAxisSize: MainAxisSize.min,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.start,
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.end,
                                                 children: <Widget>[
@@ -1962,15 +1941,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                             .textTheme
                                                             .bodyText2,
                                                       ),
-                                                      SizedBox(width: 10),
-                                                      Icon(
+                                                      const SizedBox(width: 10),
+                                                      const Icon(
                                                         JamIcons.info,
                                                         size: 20,
                                                         color: Colors.white70,
                                                       ),
                                                     ],
                                                   ),
-                                                  SizedBox(height: 5),
+                                                  const SizedBox(height: 5),
                                                   Row(
                                                     children: [
                                                       Text(
@@ -1979,8 +1958,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                             .textTheme
                                                             .bodyText2,
                                                       ),
-                                                      SizedBox(width: 10),
-                                                      Icon(
+                                                      const SizedBox(width: 10),
+                                                      const Icon(
                                                         JamIcons.database,
                                                         size: 20,
                                                         color: Colors.white70,
@@ -2014,7 +1993,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             url: screenshotTaken
                                                 ? _imageFile.path
                                                 : pdata.wallsC[index]
-                                                    .src["original"]),
+                                                    .src["original"]
+                                                    .toString()),
                                         FavouriteWallpaperButton(
                                           id: pdata.wallsC[index].id.toString(),
                                           provider: "Pexels",
@@ -2025,9 +2005,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             id: pdata.wallsC[index].id,
                                             provider: "Pexels",
                                             url: pdata
-                                                .wallsC[index].src["original"],
+                                                .wallsC[index].src["original"]
+                                                .toString(),
                                             thumbUrl: pdata
-                                                .wallsC[index].src["medium"])
+                                                .wallsC[index].src["medium"]
+                                                .toString())
                                       ],
                                     ),
                                   ),
@@ -2041,13 +2023,37 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     : AnimatedBuilder(
                                         animation: offsetAnimation,
                                         builder: (buildContext, child) {
-                                          if (offsetAnimation.value < 0.0)
+                                          if (offsetAnimation.value < 0.0) {
                                             debugPrint(
                                                 '${offsetAnimation.value + 8.0}');
+                                          }
                                           return GestureDetector(
+                                            onPanUpdate: (details) {
+                                              if (details.delta.dy < -10) {
+                                                HapticFeedback.vibrate();
+                                                panelController.open();
+                                              }
+                                            },
+                                            onLongPress: () {
+                                              setState(() {
+                                                colorChanged = false;
+                                              });
+                                              HapticFeedback.vibrate();
+                                              shakeController.forward(
+                                                  from: 0.0);
+                                            },
+                                            onTap: () {
+                                              HapticFeedback.vibrate();
+                                              !isLoading
+                                                  ? updateAccent()
+                                                  : debugPrint("");
+                                              shakeController.forward(
+                                                  from: 0.0);
+                                            },
                                             child: CachedNetworkImage(
-                                              imageUrl: pdata.wallsC[index]
-                                                  .src["original"],
+                                              imageUrl: pdata
+                                                  .wallsC[index].src["original"]
+                                                  .toString(),
                                               imageBuilder:
                                                   (context, imageProvider) =>
                                                       Screenshot(
@@ -2084,64 +2090,38 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           downloadProgress) =>
                                                       Stack(
                                                 children: <Widget>[
-                                                  SizedBox.expand(
+                                                  const SizedBox.expand(
                                                       child: Text("")),
-                                                  Container(
-                                                    child: Center(
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                              valueColor:
-                                                                  AlwaysStoppedAnimation(
-                                                                Color(main.prefs
-                                                                    .get(
-                                                                        "mainAccentColor")),
-                                                              ),
-                                                              value:
-                                                                  downloadProgress
-                                                                      .progress),
-                                                    ),
+                                                  Center(
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                            valueColor:
+                                                                AlwaysStoppedAnimation(
+                                                              Color(main.prefs.get(
+                                                                      "mainAccentColor")
+                                                                  as int),
+                                                            ),
+                                                            value:
+                                                                downloadProgress
+                                                                    .progress),
                                                   ),
                                                 ],
                                               ),
                                               errorWidget:
                                                   (context, url, error) =>
-                                                      Container(
-                                                child: Center(
-                                                  child: Icon(
-                                                    JamIcons.close_circle_f,
-                                                    color: isLoading
-                                                        ? Theme.of(context)
-                                                            .accentColor
-                                                        : accent.computeLuminance() >
-                                                                0.5
-                                                            ? Colors.black
-                                                            : Colors.white,
-                                                  ),
+                                                      Center(
+                                                child: Icon(
+                                                  JamIcons.close_circle_f,
+                                                  color: isLoading
+                                                      ? Theme.of(context)
+                                                          .accentColor
+                                                      : accent.computeLuminance() >
+                                                              0.5
+                                                          ? Colors.black
+                                                          : Colors.white,
                                                 ),
                                               ),
                                             ),
-                                            onPanUpdate: (details) {
-                                              if (details.delta.dy < -10) {
-                                                HapticFeedback.vibrate();
-                                                panelController.open();
-                                              }
-                                            },
-                                            onLongPress: () {
-                                              setState(() {
-                                                colorChanged = false;
-                                              });
-                                              HapticFeedback.vibrate();
-                                              shakeController.forward(
-                                                  from: 0.0);
-                                            },
-                                            onTap: () {
-                                              HapticFeedback.vibrate();
-                                              !isLoading
-                                                  ? updateAccent()
-                                                  : debugPrint("");
-                                              shakeController.forward(
-                                                  from: 0.0);
-                                            },
                                           );
                                         }),
                                 Align(
@@ -2159,7 +2139,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           : accent.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
-                                      icon: Icon(
+                                      icon: const Icon(
                                         JamIcons.chevron_left,
                                       ),
                                     ),
@@ -2171,13 +2151,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding: const EdgeInsets.all(8.0),
                                     child: IconButton(
                                       onPressed: () {
-                                        var link =
+                                        final link =
                                             pdata.wallsC[index].src["original"];
                                         Navigator.push(
                                             context,
                                             PageRouteBuilder(
                                                 transitionDuration:
-                                                    Duration(milliseconds: 300),
+                                                    const Duration(
+                                                        milliseconds: 300),
                                                 pageBuilder: (context,
                                                     animation,
                                                     secondaryAnimation) {
@@ -2190,7 +2171,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         colorChanged:
                                                             colorChanged,
                                                         accent: accent,
-                                                        link: link,
+                                                        link: link.toString(),
                                                         file: false,
                                                       ));
                                                 },
@@ -2202,7 +2183,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           : accent.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
-                                      icon: Icon(
+                                      icon: const Icon(
                                         JamIcons.clock,
                                       ),
                                     ),
@@ -2229,7 +2210,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   screenshotController
                                       .capture(
                                     pixelRatio: 3,
-                                    delay: Duration(milliseconds: 10),
+                                    delay: const Duration(milliseconds: 10),
                                   )
                                       .then((File image) async {
                                     setState(() {
@@ -2238,14 +2219,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     });
                                     debugPrint('Screenshot Taken');
                                   }).catchError((onError) {
-                                    debugPrint(onError);
+                                    debugPrint(onError.toString());
                                   });
                                 } else {
-                                  main.prefs.get('optimisedWallpapers') ?? true
+                                  main.prefs.get('optimisedWallpapers')
+                                              as bool ??
+                                          true
                                       ? screenshotController
                                           .capture(
                                           pixelRatio: 3,
-                                          delay: Duration(milliseconds: 10),
+                                          delay:
+                                              const Duration(milliseconds: 10),
                                         )
                                           .then((File image) async {
                                           setState(() {
@@ -2254,7 +2238,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           });
                                           debugPrint('Screenshot Taken');
                                         }).catchError((onError) {
-                                          debugPrint(onError);
+                                          debugPrint(onError.toString());
                                         })
                                       : debugPrint(
                                           "Wallpaper Optimisation is disabled!");
@@ -2267,15 +2251,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               });
                             },
                             backdropEnabled: true,
-                            backdropTapClosesPanel: true,
-                            borderRadius: BorderRadius.only(
+                            borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(20),
                               topRight: Radius.circular(20),
                             ),
-                            boxShadow: [],
+                            boxShadow: const [],
                             collapsed: Container(
                               decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.only(
+                                  borderRadius: const BorderRadius.only(
                                     topLeft: Radius.circular(20),
                                     topRight: Radius.circular(20),
                                   ),
@@ -2283,7 +2266,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width,
                                 height: MediaQuery.of(context).size.height / 20,
-                                child: Center(
+                                child: const Center(
                                     child: Icon(
                                   JamIcons.chevron_up,
                                   color: Colors.white,
@@ -2300,7 +2283,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               height: MediaQuery.of(context).size.height * .46,
                               width: MediaQuery.of(context).size.width,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.only(
+                                borderRadius: const BorderRadius.only(
                                   topLeft: Radius.circular(20),
                                   topRight: Radius.circular(20),
                                 ),
@@ -2309,9 +2292,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
-                                  Center(
+                                  const Center(
                                       child: Padding(
-                                    padding: const EdgeInsets.all(10.0),
+                                    padding: EdgeInsets.all(10.0),
                                     child: Icon(
                                       JamIcons.chevron_down,
                                       color: Colors.white,
@@ -2331,8 +2314,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                         children: <Widget>[
                                           Column(
                                             mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: <Widget>[
@@ -2351,48 +2332,51 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               ),
                                               Row(
                                                 children: [
-                                                  Icon(
+                                                  const Icon(
                                                     JamIcons.eye,
                                                     size: 20,
                                                     color: Colors.white70,
                                                   ),
-                                                  SizedBox(width: 10),
+                                                  const SizedBox(width: 10),
                                                   Text(
-                                                    "${wdata.wallsS[index].views.toString()}",
+                                                    wdata.wallsS[index].views
+                                                        .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
-                                                  Icon(
+                                                  const Icon(
                                                     JamIcons.heart_f,
                                                     size: 20,
                                                     color: Colors.white70,
                                                   ),
-                                                  SizedBox(width: 10),
+                                                  const SizedBox(width: 10),
                                                   Text(
-                                                    "${wdata.wallsS[index].favourites.toString()}",
+                                                    wdata.wallsS[index]
+                                                        .favourites
+                                                        .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
-                                                  Icon(
+                                                  const Icon(
                                                     JamIcons.save,
                                                     size: 20,
                                                     color: Colors.white70,
                                                   ),
-                                                  SizedBox(width: 10),
+                                                  const SizedBox(width: 10),
                                                   Text(
-                                                    "${double.parse(((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString())).toStringAsFixed(2)} MB",
+                                                    "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
@@ -2403,8 +2387,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           ),
                                           Column(
                                             mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.end,
                                             children: <Widget>[
@@ -2427,8 +2409,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           .textTheme
                                                           .bodyText2,
                                                     ),
-                                                    SizedBox(width: 10),
-                                                    Icon(
+                                                    const SizedBox(width: 10),
+                                                    const Icon(
                                                       JamIcons.unordered_list,
                                                       size: 20,
                                                       color: Colors.white70,
@@ -2436,24 +2418,26 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   ],
                                                 ),
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
                                                   Text(
-                                                    "${wdata.wallsS[index].resolution.toString()}",
+                                                    wdata.wallsS[index]
+                                                        .resolution
+                                                        .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodyText2,
                                                   ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
+                                                  const SizedBox(width: 10),
+                                                  const Icon(
                                                     JamIcons.set_square,
                                                     size: 20,
                                                     color: Colors.white70,
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(height: 5),
+                                              const SizedBox(height: 5),
                                               Row(
                                                 children: [
                                                   Text(
@@ -2467,8 +2451,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         .textTheme
                                                         .bodyText2,
                                                   ),
-                                                  SizedBox(width: 10),
-                                                  Icon(
+                                                  const SizedBox(width: 10),
+                                                  const Icon(
                                                     JamIcons.search,
                                                     size: 20,
                                                     color: Colors.white70,
@@ -2510,7 +2494,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             provider: "WallHaven",
                                             url: wdata.wallsS[index].path,
                                             thumbUrl: wdata.wallsS[index]
-                                                .thumbs["original"])
+                                                .thumbs["original"]
+                                                .toString())
                                       ],
                                     ),
                                   ),
@@ -2522,10 +2507,31 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 AnimatedBuilder(
                                     animation: offsetAnimation,
                                     builder: (buildContext, child) {
-                                      if (offsetAnimation.value < 0.0)
+                                      if (offsetAnimation.value < 0.0) {
                                         debugPrint(
                                             '${offsetAnimation.value + 8.0}');
+                                      }
                                       return GestureDetector(
+                                        onPanUpdate: (details) {
+                                          if (details.delta.dy < -10) {
+                                            HapticFeedback.vibrate();
+                                            panelController.open();
+                                          }
+                                        },
+                                        onLongPress: () {
+                                          setState(() {
+                                            colorChanged = false;
+                                          });
+                                          HapticFeedback.vibrate();
+                                          shakeController.forward(from: 0.0);
+                                        },
+                                        onTap: () {
+                                          HapticFeedback.vibrate();
+                                          !isLoading
+                                              ? updateAccent()
+                                              : debugPrint("");
+                                          shakeController.forward(from: 0.0);
+                                        },
                                         child: CachedNetworkImage(
                                           imageUrl: wdata.wallsS[index].path,
                                           imageBuilder:
@@ -2559,60 +2565,36 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   url, downloadProgress) =>
                                               Stack(
                                             children: <Widget>[
-                                              SizedBox.expand(child: Text("")),
-                                              Container(
-                                                child: Center(
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                          valueColor:
-                                                              AlwaysStoppedAnimation(
-                                                            config.Colors()
-                                                                .mainAccentColor(
-                                                                    1),
-                                                          ),
-                                                          value:
-                                                              downloadProgress
-                                                                  .progress),
-                                                ),
+                                              const SizedBox.expand(
+                                                  child: Text("")),
+                                              Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        valueColor:
+                                                            AlwaysStoppedAnimation(
+                                                          config.Colors()
+                                                              .mainAccentColor(
+                                                                  1),
+                                                        ),
+                                                        value: downloadProgress
+                                                            .progress),
                                               ),
                                             ],
                                           ),
                                           errorWidget: (context, url, error) =>
-                                              Container(
-                                            child: Center(
-                                              child: Icon(
-                                                JamIcons.close_circle_f,
-                                                color: isLoading
-                                                    ? Theme.of(context)
-                                                        .accentColor
-                                                    : accent.computeLuminance() >
-                                                            0.5
-                                                        ? Colors.black
-                                                        : Colors.white,
-                                              ),
+                                              Center(
+                                            child: Icon(
+                                              JamIcons.close_circle_f,
+                                              color: isLoading
+                                                  ? Theme.of(context)
+                                                      .accentColor
+                                                  : accent.computeLuminance() >
+                                                          0.5
+                                                      ? Colors.black
+                                                      : Colors.white,
                                             ),
                                           ),
                                         ),
-                                        onPanUpdate: (details) {
-                                          if (details.delta.dy < -10) {
-                                            HapticFeedback.vibrate();
-                                            panelController.open();
-                                          }
-                                        },
-                                        onLongPress: () {
-                                          setState(() {
-                                            colorChanged = false;
-                                          });
-                                          HapticFeedback.vibrate();
-                                          shakeController.forward(from: 0.0);
-                                        },
-                                        onTap: () {
-                                          HapticFeedback.vibrate();
-                                          !isLoading
-                                              ? updateAccent()
-                                              : debugPrint("");
-                                          shakeController.forward(from: 0.0);
-                                        },
                                       );
                                     }),
                                 Align(
@@ -2630,7 +2612,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           : accent.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
-                                      icon: Icon(
+                                      icon: const Icon(
                                         JamIcons.chevron_left,
                                       ),
                                     ),
@@ -2642,12 +2624,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     padding: const EdgeInsets.all(8.0),
                                     child: IconButton(
                                       onPressed: () {
-                                        var link = wdata.wallsS[index].path;
+                                        final link = wdata.wallsS[index].path;
                                         Navigator.push(
                                             context,
                                             PageRouteBuilder(
                                                 transitionDuration:
-                                                    Duration(milliseconds: 300),
+                                                    const Duration(
+                                                        milliseconds: 300),
                                                 pageBuilder: (context,
                                                     animation,
                                                     secondaryAnimation) {
@@ -2672,7 +2655,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           : accent.computeLuminance() > 0.5
                                               ? Colors.black
                                               : Colors.white,
-                                      icon: Icon(
+                                      icon: const Icon(
                                         JamIcons.clock,
                                       ),
                                     ),
