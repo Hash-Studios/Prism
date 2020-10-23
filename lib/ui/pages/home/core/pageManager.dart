@@ -36,7 +36,6 @@ class _PageManagerState extends State<PageManager> {
   bool result = true;
 
   RateMyApp rateMyApp = RateMyApp(
-    preferencesPrefix: 'rateMyApp_',
     minDays: 0, //0
     minLaunches: 5, //5
     remindDays: 7, //7
@@ -44,16 +43,16 @@ class _PageManagerState extends State<PageManager> {
     googlePlayIdentifier: 'com.hash.prism',
   );
 
-  void checkConnection() async {
+  Future<void> checkConnection() async {
     result = await DataConnectionChecker().hasConnection;
     if (result) {
       debugPrint("Internet working as expected!");
       setState(() {});
-      return true;
+      // return true;
     } else {
       debugPrint("Not connected to Internet!");
       setState(() {});
-      return false;
+      // return false;
     }
   }
 
@@ -78,20 +77,20 @@ class _PageManagerState extends State<PageManager> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: FlatButton(
-                  shape: StadiumBorder(),
+                  shape: const StadiumBorder(),
                   color: config.Colors().mainAccentColor(1),
                   onPressed: () async {
-                    print('Thanks for the ' +
-                        (stars == null ? '0' : stars.round().toString()) +
-                        ' star(s) !');
+                    debugPrint(
+                        'Thanks for the ${stars == null ? '0' : stars.round().toString()} star(s) !');
                     if (stars <= 3) {
                       if (Platform.isAndroid) {
-                        var androidInfo = await DeviceInfoPlugin().androidInfo;
-                        var release = androidInfo.version.release;
-                        var sdkInt = androidInfo.version.sdkInt;
-                        var manufacturer = androidInfo.manufacturer;
-                        var model = androidInfo.model;
-                        print(
+                        final androidInfo =
+                            await DeviceInfoPlugin().androidInfo;
+                        final release = androidInfo.version.release;
+                        final sdkInt = androidInfo.version.sdkInt;
+                        final manufacturer = androidInfo.manufacturer;
+                        final model = androidInfo.model;
+                        debugPrint(
                             'Android $release (SDK $sdkInt), $manufacturer $model');
                         launch(
                             "mailto:hash.studios.inc@gmail.com?subject=%5BCUSTOMER%20FEEDBACK%5D&body=----x-x-x----%0D%0ADevice%20Info%20-%0D%0A%0D%0AAndroid%20Version%3A%20Android%20$release%0D%0ASDK%20Number%3A%20SDK%20$sdkInt%0D%0ADevice%20Manufacturer%3A%20$manufacturer%0D%0ADevice%20Model%3A%20$model%0D%0A----x-x-x----%0D%0A%0D%0AEnter%20your%20feedback%20below%20---");
@@ -101,7 +100,7 @@ class _PageManagerState extends State<PageManager> {
                       launch(
                           "https://play.google.com/store/apps/details?id=com.hash.prism");
                     }
-                    ;
+
                     analytics.logEvent(
                         name: "rating_given", parameters: {'rating': stars});
                     await rateMyApp
@@ -109,7 +108,7 @@ class _PageManagerState extends State<PageManager> {
                     Navigator.pop<RateMyAppDialogButton>(
                         context, RateMyAppDialogButton.rate);
                   },
-                  child: Text(
+                  child: const Text(
                     'OK',
                     style: TextStyle(
                       fontSize: 16.0,
@@ -127,7 +126,7 @@ class _PageManagerState extends State<PageManager> {
                 .textTheme
                 .headline6
                 .copyWith(color: Theme.of(context).accentColor),
-            messagePadding: EdgeInsets.only(bottom: 20),
+            messagePadding: const EdgeInsets.only(bottom: 20),
             titleStyle: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
@@ -151,10 +150,10 @@ class _PageManagerState extends State<PageManager> {
     final Uri deepLink = data?.link;
 
     if (deepLink != null && linkOpened == 0) {
-      print("opened while closed altogether via deep link");
+      debugPrint("opened while closed altogether via deep link");
       if (deepLink.pathSegments[0] == "share") {
-        Future.delayed(Duration(seconds: 0)).then(
-            (value) => Navigator.pushNamed(context, ShareRoute, arguments: [
+        Future.delayed(const Duration()).then(
+            (value) => Navigator.pushNamed(context, shareRoute, arguments: [
                   deepLink.queryParameters["id"],
                   deepLink.queryParameters["provider"],
                   deepLink.queryParameters["url"],
@@ -162,25 +161,25 @@ class _PageManagerState extends State<PageManager> {
                 ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "user") {
-        Future.delayed(Duration(seconds: 0)).then((value) =>
-            Navigator.pushNamed(context, PhotographerProfileRoute, arguments: [
+        Future.delayed(const Duration()).then((value) =>
+            Navigator.pushNamed(context, photographerProfileRoute, arguments: [
               deepLink.queryParameters["name"],
               deepLink.queryParameters["email"],
               deepLink.queryParameters["userPhoto"],
-              deepLink.queryParameters["premium"] == "true" ? true : false,
+              deepLink.queryParameters["premium"] == "true",
               deepLink.queryParameters["twitter"],
               deepLink.queryParameters["instagram"],
             ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "setup") {
-        Future.delayed(Duration(seconds: 0))
-            .then((value) => main.prefs.get("isLoggedin")
-                ? Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
+        Future.delayed(const Duration())
+            .then((value) => main.prefs.get("isLoggedin") == true
+                ? Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
                     deepLink.queryParameters["name"],
                     deepLink.queryParameters["thumbUrl"],
                   ])
                 : googleSignInPopUp(context, () {
-                    Navigator.pushNamed(context, ShareSetupViewRoute,
+                    Navigator.pushNamed(context, shareSetupViewRoute,
                         arguments: [
                           deepLink.queryParameters["name"],
                           deepLink.queryParameters["thumbUrl"],
@@ -188,7 +187,7 @@ class _PageManagerState extends State<PageManager> {
                   }));
         linkOpened = 1;
       } else {}
-      print("opened while closed altogether via deep link2345");
+      debugPrint("opened while closed altogether via deep link2345");
     }
 
     FirebaseDynamicLinks.instance.onLink(
@@ -196,41 +195,43 @@ class _PageManagerState extends State<PageManager> {
       final Uri deepLink = dynamicLink?.link;
 
       if (deepLink != null) {
-        print("opened while bg via deep link1");
+        debugPrint("opened while bg via deep link1");
         if (deepLink.pathSegments[0] == "share") {
-          Future.delayed(Duration(seconds: 0)).then(
-              (value) => Navigator.pushNamed(context, ShareRoute, arguments: [
+          Future.delayed(const Duration()).then(
+              (value) => Navigator.pushNamed(context, shareRoute, arguments: [
                     deepLink.queryParameters["id"],
                     deepLink.queryParameters["provider"],
                     deepLink.queryParameters["url"],
                     deepLink.queryParameters["thumb"],
                   ]));
         } else if (deepLink.pathSegments[0] == "user") {
-          Future.delayed(Duration(seconds: 0)).then((value) => Navigator
-                  .pushNamed(context, PhotographerProfileRoute, arguments: [
-                deepLink.queryParameters["name"],
-                deepLink.queryParameters["email"],
-                deepLink.queryParameters["userPhoto"],
-                deepLink.queryParameters["premium"] == "true" ? true : false,
-                deepLink.queryParameters["twitter"],
-                deepLink.queryParameters["instagram"],
-              ]));
+          Future.delayed(const Duration()).then((value) => Navigator.pushNamed(
+                  context, photographerProfileRoute,
+                  arguments: [
+                    deepLink.queryParameters["name"],
+                    deepLink.queryParameters["email"],
+                    deepLink.queryParameters["userPhoto"],
+                    deepLink.queryParameters["premium"] == "true",
+                    deepLink.queryParameters["twitter"],
+                    deepLink.queryParameters["instagram"],
+                  ]));
         } else if (deepLink.pathSegments[0] == "setup") {
-          Future.delayed(Duration(seconds: 0)).then((value) => main.prefs
-                  .get("isLoggedin")
-              ? Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
+          Future.delayed(const Duration()).then((value) => main.prefs
+                      .get("isLoggedin") ==
+                  true
+              ? Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
                   deepLink.queryParameters["name"],
                   deepLink.queryParameters["thumbUrl"],
                 ])
               : googleSignInPopUp(context, () {
-                  Navigator.pushNamed(context, ShareSetupViewRoute, arguments: [
+                  Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
                     deepLink.queryParameters["name"],
                     deepLink.queryParameters["thumbUrl"],
                   ]);
                 }));
         } else {}
 
-        print("opened while bg via deep link2345");
+        debugPrint("opened while bg via deep link2345");
       }
     }, onError: (OnLinkErrorException e) async {
       debugPrint('onLinkError');
@@ -241,7 +242,7 @@ class _PageManagerState extends State<PageManager> {
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(Duration(seconds: 1), () => initDynamicLinks(context));
+    Future.delayed(const Duration(seconds: 1), () => initDynamicLinks(context));
     return WillPopScope(
       onWillPop: () async {
         if (page != 0) {
@@ -283,7 +284,7 @@ class _PageManagerState extends State<PageManager> {
                     itemBuilder: (context, index) {
                       debugPrint("Index : ${index.toString()}");
                       if (index == 0) {
-                        return HomeScreen();
+                        return const HomeScreen();
                       } else if (index == 1) {
                         return const CollectionScreen();
                       }

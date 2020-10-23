@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:flutter/material.dart';
 
 final Firestore databaseReference = Firestore.instance;
 List userProfileWalls;

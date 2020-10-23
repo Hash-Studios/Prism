@@ -68,7 +68,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
   // ignore: prefer_void_to_null
   Future<Null> refreshList() async {
-    refreshDownloadKey.currentState?.show(atTop: true);
+    refreshDownloadKey.currentState?.show();
     await Future.delayed(const Duration(milliseconds: 500));
     setState(() {
       files = [];
@@ -85,7 +85,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size(double.infinity, 55),
+          preferredSize: const Size(double.infinity, 55),
           child: HeadingChipBar(
             current: "Downloads",
           ),
@@ -143,7 +143,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModel>(context, listen: false)
                                     .returnTheme() ==
-                                ThemeType.Dark
+                                ThemeType.dark
                             ? SvgPicture.string(
                                 downloadsDark.replaceAll(
                                     "E57697",

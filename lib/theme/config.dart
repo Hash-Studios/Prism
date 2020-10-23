@@ -37,13 +37,14 @@ class App {
 }
 
 class Colors {
-  Color _mainColor = Color(0xFFFFFFFF);
-  Color _secondColor = Color(0xFFEDEDED);
-  Color _accentColor = Color(0xFF2F2F2F);
-  Color _mainDarkColor = Color(0xFF181818);
-  Color _secondDarkColor = Color(0xFF2F2F2F);
-  Color _accentDarkColor = Color(0xFFF0F0F0);
-  Color _mainAccentColor = Color(main.prefs.get("mainAccentColor"));
+  static const Color _mainColor = Color(0xFFFFFFFF);
+  static const Color _secondColor = Color(0xFFEDEDED);
+  static const Color _accentColor = Color(0xFF2F2F2F);
+  static const Color _mainDarkColor = Color(0xFF181818);
+  static const Color _secondDarkColor = Color(0xFF2F2F2F);
+  static const Color _accentDarkColor = Color(0xFFF0F0F0);
+  final Color _mainAccentColor =
+      Color(main.prefs.get("mainAccentColor") as int);
 
   Color mainColor(double opacity) {
     return _mainColor.withOpacity(opacity);
@@ -70,6 +71,6 @@ class Colors {
   }
 
   Color mainAccentColor(double opacity) {
-    return this._mainAccentColor.withOpacity(opacity);
+    return _mainAccentColor.withOpacity(opacity);
   }
 }

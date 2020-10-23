@@ -25,7 +25,8 @@ class _UserProfileGridState extends State<UserProfileGrid>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
-  var refreshProfileKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshProfileKey =
+      GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -35,20 +36,20 @@ class _UserProfileGridState extends State<UserProfileGrid>
       vsync: this,
     );
     animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+            ThemeType.dark
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -84,11 +85,10 @@ class _UserProfileGridState extends State<UserProfileGrid>
     super.dispose();
   }
 
-  Future<Null> refreshList() async {
-    refreshProfileKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(milliseconds: 500));
+  Future<void> refreshList() async {
+    refreshProfileKey.currentState?.show();
+    await Future.delayed(const Duration(milliseconds: 500));
     UserData.getuserProfileWalls(widget.email);
-    return null;
   }
 
   @override
@@ -98,7 +98,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
         key: refreshProfileKey,
         onRefresh: refreshList,
         child: UserData.userProfileWalls != null
-            ? UserData.userProfileWalls.length == 0
+            ? UserData.userProfileWalls.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -106,7 +106,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModel>(context, listen: false)
                                     .returnTheme() ==
-                                ThemeType.Dark
+                                ThemeType.dark
                             ? SvgPicture.string(
                                 postsDark.replaceAll(
                                     "E57697",
@@ -135,7 +135,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
                 : GridView.builder(
                     shrinkWrap: true,
                     cacheExtent: 50000,
-                    padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
+                    padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
                     itemCount: UserData.userProfileWalls.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
@@ -151,22 +151,11 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         provider: "UserProfileWall",
                         index: index,
                         child: GestureDetector(
-                          child: Container(
-                            decoration: BoxDecoration(
-                                color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                      UserData.userProfileWalls[index]
-                                          ["wallpaper_thumb"],
-                                    ),
-                                    fit: BoxFit.cover)),
-                          ),
                           onTap: () {
                             if (UserData.userProfileWalls == []) {
                             } else {
                               Navigator.pushNamed(
-                                  context, UserProfileWallViewRoute,
+                                  context, userProfileWallViewRoute,
                                   arguments: [
                                     index,
                                     UserData.userProfileWalls[index]
@@ -174,9 +163,21 @@ class _UserProfileGridState extends State<UserProfileGrid>
                                   ]);
                             }
                           },
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                    image: CachedNetworkImageProvider(
+                                      UserData.userProfileWalls[index]
+                                              ["wallpaper_thumb"]
+                                          .toString(),
+                                    ),
+                                    fit: BoxFit.cover)),
+                          ),
                         ),
                       );
                     })
-            : LoadingCards());
+            : const LoadingCards());
   }
 }

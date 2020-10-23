@@ -9,13 +9,13 @@ import 'package:provider/provider.dart';
 import 'package:Prism/theme/config.dart' as config;
 
 class UserList extends StatelessWidget {
-  TextEditingController _twitterController = TextEditingController();
-  TextEditingController _igController = TextEditingController();
+  final TextEditingController _twitterController = TextEditingController();
+  final TextEditingController _igController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
-      leading: Icon(JamIcons.user_circle),
-      title: new Text(
+      leading: const Icon(JamIcons.user_circle),
+      title: Text(
         "User",
         style: TextStyle(
             color: Theme.of(context).accentColor,
@@ -23,7 +23,7 @@ class UserList extends StatelessWidget {
             fontFamily: "Proxima Nova"),
       ),
       subtitle: Text(
-        main.prefs.get("isLoggedin")
+        main.prefs.get("isLoggedin") == true
             ? "Clear favorites or logout"
             : "Login with Google",
         style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
@@ -32,7 +32,7 @@ class UserList extends StatelessWidget {
         main.prefs.get("isLoggedin") == false
             ? ListTile(
                 onTap: () {
-                  Dialog loaderDialog = Dialog(
+                  final Dialog loaderDialog = Dialog(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
                     child: Container(
@@ -41,12 +41,12 @@ class UserList extends StatelessWidget {
                           color: Theme.of(context).primaryColor),
                       width: MediaQuery.of(context).size.width * .7,
                       height: MediaQuery.of(context).size.height * .3,
-                      child: Center(
+                      child: const Center(
                         child: CircularProgressIndicator(),
                       ),
                     ),
                   );
-                  if (!main.prefs.get("isLoggedin")) {
+                  if (main.prefs.get("isLoggedin") == false) {
                     showDialog(
                         barrierDismissible: false,
                         context: context,
@@ -57,7 +57,7 @@ class UserList extends StatelessWidget {
                       Navigator.pop(context);
                       main.RestartWidget.restartApp(context);
                     }).catchError((e) {
-                      debugPrint(e);
+                      debugPrint(e.toString());
                       Navigator.pop(context);
                       main.prefs.put("isLoggedin", false);
                       toasts.error("Something went wrong, please try again!");
@@ -66,7 +66,7 @@ class UserList extends StatelessWidget {
                     main.RestartWidget.restartApp(context);
                   }
                 },
-                leading: Icon(JamIcons.log_in),
+                leading: const Icon(JamIcons.log_in),
                 title: Text(
                   "Log in",
                   style: TextStyle(
@@ -74,27 +74,27 @@ class UserList extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
-                subtitle: Text(
+                subtitle: const Text(
                   "Log in to sync data across devices",
                   style: TextStyle(fontSize: 12),
                 ),
               )
             : Container(),
-        main.prefs.get("isLoggedin")
+        main.prefs.get("isLoggedin") == true
             ? Column(
                 children: [
                   ListTile(
-                      leading: Icon(
+                      leading: const Icon(
                         JamIcons.heart,
                       ),
-                      title: new Text(
+                      title: Text(
                         "Clear favourites",
                         style: TextStyle(
                             color: Theme.of(context).accentColor,
                             fontWeight: FontWeight.w500,
                             fontFamily: "Proxima Nova"),
                       ),
-                      subtitle: Text(
+                      subtitle: const Text(
                         "Remove all favourites",
                         style: TextStyle(fontSize: 12),
                       ),
@@ -102,7 +102,7 @@ class UserList extends StatelessWidget {
                         showDialog(
                           context: context,
                           child: AlertDialog(
-                            shape: RoundedRectangleBorder(
+                            shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.all(
                                 Radius.circular(20),
                               ),
@@ -119,7 +119,7 @@ class UserList extends StatelessWidget {
                             ),
                             actions: <Widget>[
                               FlatButton(
-                                shape: StadiumBorder(),
+                                shape: const StadiumBorder(),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                   toasts.error("Cleared all favourites!");
@@ -138,12 +138,12 @@ class UserList extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.only(right: 8.0),
                                 child: FlatButton(
-                                  shape: StadiumBorder(),
+                                  shape: const StadiumBorder(),
                                   color: config.Colors().mainAccentColor(1),
                                   onPressed: () {
                                     Navigator.of(context).pop();
                                   },
-                                  child: Text(
+                                  child: const Text(
                                     'NO',
                                     style: TextStyle(
                                       fontSize: 16.0,
@@ -157,17 +157,17 @@ class UserList extends StatelessWidget {
                         );
                       }),
                   ListTile(
-                      leading: Icon(
+                      leading: const Icon(
                         JamIcons.twitter,
                       ),
-                      title: new Text(
+                      title: Text(
                         "Connect your Twitter",
                         style: TextStyle(
                             color: Theme.of(context).accentColor,
                             fontWeight: FontWeight.w500,
                             fontFamily: "Proxima Nova"),
                       ),
-                      subtitle: Text(
+                      subtitle: const Text(
                         "Show your twitter account on your profile",
                         style: TextStyle(fontSize: 12),
                       ),
@@ -175,7 +175,7 @@ class UserList extends StatelessWidget {
                         showDialog(
                           context: context,
                           child: AlertDialog(
-                            shape: RoundedRectangleBorder(
+                            shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.all(
                                 Radius.circular(20),
                               ),
@@ -209,7 +209,7 @@ class UserList extends StatelessWidget {
                                                     .accentColor),
                                         controller: _twitterController,
                                         decoration: InputDecoration(
-                                          contentPadding: EdgeInsets.only(
+                                          contentPadding: const EdgeInsets.only(
                                               left: 30, top: 15),
                                           border: InputBorder.none,
                                           disabledBorder: InputBorder.none,
@@ -237,7 +237,7 @@ class UserList extends StatelessWidget {
                             ),
                             actions: <Widget>[
                               FlatButton(
-                                shape: StadiumBorder(),
+                                shape: const StadiumBorder(),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
@@ -252,16 +252,16 @@ class UserList extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.only(right: 8.0),
                                 child: FlatButton(
-                                  shape: StadiumBorder(),
+                                  shape: const StadiumBorder(),
                                   color: config.Colors().mainAccentColor(1),
                                   onPressed: () async {
                                     Navigator.of(context).pop();
                                     await setUserTwitter(
                                         "https://www.twitter.com/${_twitterController.text}",
-                                        main.prefs.get("id"));
+                                        main.prefs.get("id").toString());
                                     toasts.codeSend("Successfully linked!");
                                   },
-                                  child: Text(
+                                  child: const Text(
                                     'SAVE',
                                     style: TextStyle(
                                       fontSize: 16.0,
@@ -275,17 +275,17 @@ class UserList extends StatelessWidget {
                         );
                       }),
                   ListTile(
-                      leading: Icon(
+                      leading: const Icon(
                         JamIcons.instagram,
                       ),
-                      title: new Text(
+                      title: Text(
                         "Connect your Instagram",
                         style: TextStyle(
                             color: Theme.of(context).accentColor,
                             fontWeight: FontWeight.w500,
                             fontFamily: "Proxima Nova"),
                       ),
-                      subtitle: Text(
+                      subtitle: const Text(
                         "Show your IG account on your profile",
                         style: TextStyle(fontSize: 12),
                       ),
@@ -293,7 +293,7 @@ class UserList extends StatelessWidget {
                         showDialog(
                           context: context,
                           child: AlertDialog(
-                            shape: RoundedRectangleBorder(
+                            shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.all(
                                 Radius.circular(20),
                               ),
@@ -327,7 +327,7 @@ class UserList extends StatelessWidget {
                                                     .accentColor),
                                         controller: _igController,
                                         decoration: InputDecoration(
-                                          contentPadding: EdgeInsets.only(
+                                          contentPadding: const EdgeInsets.only(
                                               left: 30, top: 15),
                                           border: InputBorder.none,
                                           disabledBorder: InputBorder.none,
@@ -355,7 +355,7 @@ class UserList extends StatelessWidget {
                             ),
                             actions: <Widget>[
                               FlatButton(
-                                shape: StadiumBorder(),
+                                shape: const StadiumBorder(),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
@@ -370,16 +370,16 @@ class UserList extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.only(right: 8.0),
                                 child: FlatButton(
-                                  shape: StadiumBorder(),
+                                  shape: const StadiumBorder(),
                                   color: config.Colors().mainAccentColor(1),
                                   onPressed: () async {
                                     Navigator.of(context).pop();
                                     await setUserIG(
                                         "https://www.instagram.com/${_igController.text}",
-                                        main.prefs.get("id"));
+                                        main.prefs.get("id").toString());
                                     toasts.codeSend("Successfully linked!");
                                   },
-                                  child: Text(
+                                  child: const Text(
                                     'SAVE',
                                     style: TextStyle(
                                       fontSize: 16.0,
@@ -393,10 +393,10 @@ class UserList extends StatelessWidget {
                         );
                       }),
                   ListTile(
-                      leading: Icon(
+                      leading: const Icon(
                         JamIcons.log_out,
                       ),
-                      title: new Text(
+                      title: Text(
                         "Logout",
                         style: TextStyle(
                             color: Theme.of(context).accentColor,
@@ -404,8 +404,8 @@ class UserList extends StatelessWidget {
                             fontFamily: "Proxima Nova"),
                       ),
                       subtitle: Text(
-                        main.prefs.get("email"),
-                        style: TextStyle(fontSize: 12),
+                        main.prefs.get("email").toString(),
+                        style: const TextStyle(fontSize: 12),
                       ),
                       onTap: () {
                         globals.gAuth.signOutGoogle();
