@@ -252,7 +252,8 @@ class _WallpaperGridState extends State<WallpaperGrid>
                                                   padding:
                                                       const EdgeInsets.all(8.0),
                                                   child: Text(
-                                                    globals.topTitleText[i],
+                                                    globals.topTitleText[i]
+                                                        .toString(),
                                                     textAlign: TextAlign.center,
                                                     maxLines: 1,
                                                     style: Theme.of(context)

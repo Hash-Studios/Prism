@@ -1,4 +1,3 @@
-// ignore: file_names
 import 'dart:math';
 import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

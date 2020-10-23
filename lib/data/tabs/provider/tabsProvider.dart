@@ -8,14 +8,14 @@ class TabProvider extends ChangeNotifier {
   String selectedTab = 'Wallpapers';
   void updateSelectedTab(String newTab) {
     this.selectedTab = newTab;
-    Future.delayed(Duration(seconds: 0)).then((value) {
+    Future.delayed(const Duration()).then((value) {
       super.notifyListeners();
     });
   }
 
   void updateTabs(List<String> newTab) {
     this.tabs = newTab;
-    Future.delayed(Duration(seconds: 0)).then((value) {
+    Future.delayed(const Duration()).then((value) {
       super.notifyListeners();
     });
   }

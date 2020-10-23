@@ -2,18 +2,18 @@ import 'package:Prism/auth/google_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
-var gAuth = GoogleAuth();
-var currentAppVersion = '2.5.7';
-var currentAppVersionCode = '19';
-var updateChecked = false;
-var updateAvailable = false;
-var versionInfo = {};
-var height = 1440.0;
-var width = 720.0;
+GoogleAuth gAuth = GoogleAuth();
+String currentAppVersion = '2.5.7';
+String currentAppVersionCode = '19';
+bool updateChecked = false;
+bool updateAvailable = false;
+Map versionInfo = {};
+double height = 1440.0;
+double width = 720.0;
 bool loadingAd = true;
 bool updateAlerted = false;
 
-var topTitleText = [
+List topTitleText = [
   "TOP-RATED",
   "BEST OF COMMUNITY",
   "FAN-FAVOURITE",
@@ -23,7 +23,7 @@ var topTitleText = [
 AutoScrollController categoryController =
     AutoScrollController(axis: Axis.horizontal);
 
-var premiumCollections = [
+List premiumCollections = [
   "space",
   "abstract",
   "flat",

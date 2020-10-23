@@ -34,7 +34,7 @@ class CategorySupplier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List> changeWallpaperFuture(choice, String mode) async {
+  Future<List> changeWallpaperFuture(CategoryMenu choice, String mode) async {
     for (final category in categories) {
       if (category['name'] == choice.name) {
         if (category['type'] == 'search') {

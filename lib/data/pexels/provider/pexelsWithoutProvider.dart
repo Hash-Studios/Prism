@@ -46,7 +46,7 @@ Future<List<WallPaperP>> categoryDataFetcherP(
                 height: resp["photos"][i]["height"].toString(),
                 photographer: resp["photos"][i]["photographer"].toString(),
                 src: resp["photos"][i]["src"] as Map,
-                current_page: resp["page"] as int),
+                currentPage: resp["page"] as int),
           );
         }
         pageNumbersP[index][categoryName] = (resp["page"] as int) + 1;
@@ -81,7 +81,7 @@ Future<List<WallPaperP>> getDataP(String mode) async {
                 height: resp["photos"][i]["height"].toString(),
                 photographer: resp["photos"][i]["photographer"].toString(),
                 src: resp["photos"][i]["src"] as Map,
-                current_page: resp["page"] as int),
+                currentPage: resp["page"] as int),
           );
         }
         pageGetDataP = (resp["page"] as int) + 1;
@@ -126,7 +126,7 @@ Future<List<WallPaperP>> getWallsPbyQuery(String query) async {
               height: resp["photos"][i]["height"].toString(),
               photographer: resp["photos"][i]["photographer"].toString(),
               src: resp["photos"][i]["src"] as Map,
-              current_page: resp["page"] as int),
+              currentPage: resp["page"] as int),
         );
       }
       pageGetQueryP = (resp["page"] as int) + 1;
@@ -141,7 +141,7 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
       "https://api.pexels.com/v1/search?query=$query&per_page=80&page=$pageGetQueryP",
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
-      var resp = json.decode(response.body);
+      final resp = json.decode(response.body);
       for (int i = 0; i < (resp["photos"].length as int); i++) {
         wallsPS.add(
           WallPaperP(
@@ -151,7 +151,7 @@ Future<List<WallPaperP>> getWallsPbyQueryPage(String query) async {
               height: resp["photos"][i]["height"].toString(),
               photographer: resp["photos"][i]["photographer"].toString(),
               src: resp["photos"][i]["src"] as Map,
-              current_page: resp["page"] as int),
+              currentPage: resp["page"] as int),
         );
       }
       pageGetQueryP = (resp["page"] as int) + 1;
@@ -167,7 +167,7 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
   http.get("https://api.pexels.com/v1/search?query=$query&per_page=24&page=1",
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
-      var resp = json.decode(response.body);
+      final resp = json.decode(response.body);
       for (int i = 0; i < (resp["photos"].length as int); i++) {
         wallsC.add(
           WallPaperP(
@@ -177,7 +177,7 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
               height: resp["photos"][i]["height"].toString(),
               photographer: resp["photos"][i]["photographer"].toString(),
               src: resp["photos"][i]["src"] as Map,
-              current_page: resp["page"] as int),
+              currentPage: resp["page"] as int),
         );
       }
       pageColorsP = (resp["page"] as int) + 1;
@@ -189,12 +189,12 @@ Future<List<WallPaperP>> getWallsPbyColor(String query) async {
 
 Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
   debugPrint(
-      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}");
+      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP");
   http.get(
-      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=${pageColorsP}",
+      "https://api.pexels.com/v1/search?query=$query&per_page=24&page=$pageColorsP",
       headers: {"Authorization": pexelApiKey}).then(
     (http.Response response) {
-      var resp = json.decode(response.body);
+      final resp = json.decode(response.body);
       for (int i = 0; i < (resp["photos"].length as int); i++) {
         wallsC.add(
           WallPaperP(
@@ -204,7 +204,7 @@ Future<List<WallPaperP>> getWallsPbyColorPage(String query) async {
               height: resp["photos"][i]["height"].toString(),
               photographer: resp["photos"][i]["photographer"].toString(),
               src: resp["photos"][i]["src"] as Map,
-              current_page: resp["page"] as int),
+              currentPage: resp["page"] as int),
         );
       }
       pageColorsP = (resp["page"] as int) + 1;
