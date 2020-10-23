@@ -11,7 +11,8 @@
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
 ![Stars](https://img.shields.io/github/stars/Hash-Studios/Prism)
-<a href='https://twitter.com/PrismWallpapers'><img alt='Follow on Twitter' src='https://img.shields.io/twitter/follow/PrismWallpapers?color=green&label=Follow&logo=Twitter&style=plastic'/></a>
+<a href='https://twitter.com/PrismWallpapers'><img alt='Follow on Twitter' src='https://img.shields.io/twitter/follow/PrismWallpapers?color=green&label=Follow&logo=Twitter&style=flat'/></a>
+<a href='https://t.me/PrismWallpapers'><img alt='Join us on Telegram' src='https://img.shields.io/badge/Telegram-PrismWallpapers-blue?logo=telegram'/></a>
 
 </div>
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
@@ -47,7 +48,14 @@ You also get a PRO badge in front of your profile, plus you directly support the
 Prism Wallpapers is now on Twitter. We regularly share exclusive wallpapers, setups and organise giveaways.
 Follow us there to stay notified. [https://twitter.com/PrismWallpapers](https://twitter.com/PrismWallpapers)
 
-<a href='https://twitter.com/PrismWallpapers'><img alt='Follow on Twitter' src='https://img.shields.io/twitter/follow/PrismWallpapers?color=green&label=Follow&logo=Twitter&style=plastic'/></a>
+<a href='https://twitter.com/PrismWallpapers'><img alt='Follow on Twitter' src='https://img.shields.io/twitter/follow/PrismWallpapers?color=green&label=Follow&logo=Twitter&style=flat'/></a>
+
+### Telegram
+
+Prism Wallpapers & Setups is now on Telegram. It is a great place to hangout with Awesome Customisation Nerds!
+Join us on Telegram now. [https://t.me/PrismWallpapers](https://t.me/PrismWallpapers)
+
+<a href='https://t.me/PrismWallpapers'><img alt='Join us on Telegram' src='https://img.shields.io/badge/Telegram-PrismWallpapers-green?logo=telegram'/></a>
 
 ## List of Contents
 
@@ -96,16 +104,16 @@ Follow us there to stay notified. [https://twitter.com/PrismWallpapers](https://
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-### v2.5.6
-- Now Download wallpapers even if ads failed to load
-- Redesigned Collections' screen
-- Redesigned Setups' Browser
-- Added option to disable Wallpaper Optimisation (Save walls in max resolution)
-- Now Upload Setups in-app
-- Redesigned Clock Overlay
-- Fixed Pexels API not working
-- Removed Secure Flags
-- Major bug fixes
+### v2.5.7
+- Redesigned settings screen
+- Now customise the accent color of the app
+- Now connect Twitter with your Prism Profile
+- Now connect Instagram with your Prism Profile
+- Now share setups and profiles
+- Redesigned App Icon
+- Redesigned splash animation
+- Now join our telegram group from the app
+- Minor bug fixes and improvements
 
 ## Demo
 
@@ -199,6 +207,7 @@ The following packages are needed for the development of this application.
 - `extended_image: ^0.9.0` for cropping wallpapers before uploading
 - `device_info: ^0.4.2+7` for getting device info for bug reports
 - `firebase_storage: ^3.1.5` for storing setups
+- `rate_my_app: ^0.7.2` for showing app rating popup
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
 

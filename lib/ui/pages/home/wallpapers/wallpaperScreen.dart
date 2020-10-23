@@ -24,6 +24,7 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -303,7 +304,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   void showTutorial() {
     TutorialCoachMark(context,
         targets: targets,
-        colorShadow: const Color(0xFFE57697),
+        colorShadow: config.Colors().mainAccentColor(1),
         textSkip: "SKIP",
         paddingFocus: 1,
         opacityShadow: 0.9, finish: () {
@@ -431,7 +432,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
-                      color: Color(0xFF2F2F2F)),
+                      color: config.Colors().secondDarkColor(1)),
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
@@ -445,7 +446,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.54,
-                color: const Color(0xFF2F2F2F),
+                color: config.Colors().secondDarkColor(1),
                 maxHeight: MediaQuery.of(context).size.height * .46,
                 controller: panelController,
                 panel: Container(
@@ -456,7 +457,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    color: Color(0xFF2F2F2F),
+                    color: config.Colors().secondDarkColor(1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -687,7 +688,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: Center(
                                       child: CircularProgressIndicator(
                                           valueColor: AlwaysStoppedAnimation(
-                                            Color(0xFFE57697),
+                                            config.Colors().mainAccentColor(1),
                                           ),
                                           value: downloadProgress.progress),
                                     ),
@@ -858,7 +859,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20),
                           ),
-                          color: Color(0xFF2F2F2F)),
+                          color: config.Colors().secondDarkColor(1)),
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height / 20,
@@ -872,7 +873,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                     minHeight: MediaQuery.of(context).size.height / 20,
                     parallaxEnabled: true,
                     parallaxOffset: 0.54,
-                    color: Color(0xFF2F2F2F),
+                    color: config.Colors().secondDarkColor(1),
                     maxHeight: MediaQuery.of(context).size.height * .46,
                     controller: panelController,
                     panel: Container(
@@ -883,7 +884,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
-                        color: Color(0xFF2F2F2F),
+                        color: config.Colors().secondDarkColor(1),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -978,8 +979,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 data.subPrismWalls[index]["by"],
                                                 data.subPrismWalls[index]
                                                     ["email"],
-                                                data.subPrismWalls[index]
-                                                    ["userPhoto"]
+                                                Data.subPrismWalls[index]
+                                                    ["userPhoto"],
+                                                false,"",""
                                               ]);
                                         },
                                         padding: EdgeInsets.symmetric(
@@ -1120,7 +1122,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           child: CircularProgressIndicator(
                                               valueColor:
                                                   AlwaysStoppedAnimation(
-                                                Color(0xFFE57697),
+                                                config.Colors()
+                                                    .mainAccentColor(1),
                                               ),
                                               value: downloadProgress.progress),
                                         ),
@@ -1294,7 +1297,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 topLeft: Radius.circular(20),
                                 topRight: Radius.circular(20),
                               ),
-                              color: Color(0xFF2F2F2F)),
+                              color: config.Colors().secondDarkColor(1)),
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width,
                             height: MediaQuery.of(context).size.height / 20,
@@ -1308,7 +1311,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                         minHeight: MediaQuery.of(context).size.height / 20,
                         parallaxEnabled: true,
                         parallaxOffset: 0.54,
-                        color: Color(0xFF2F2F2F),
+                        color: config.Colors().secondDarkColor(1),
                         maxHeight: MediaQuery.of(context).size.height * .46,
                         controller: panelController,
                         panel: Container(
@@ -1319,7 +1322,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               topLeft: Radius.circular(20),
                               topRight: Radius.circular(20),
                             ),
-                            color: Color(0xFF2F2F2F),
+                            color: config.Colors().secondDarkColor(1),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1595,7 +1598,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               child: CircularProgressIndicator(
                                                   valueColor:
                                                       AlwaysStoppedAnimation(
-                                                    Color(0xFFE57697),
+                                                    config.Colors()
+                                                        .mainAccentColor(1),
                                                   ),
                                                   value: downloadProgress
                                                       .progress),
@@ -1774,7 +1778,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     topLeft: Radius.circular(20),
                                     topRight: Radius.circular(20),
                                   ),
-                                  color: Color(0xFF2F2F2F)),
+                                  color: config.Colors().secondDarkColor(1)),
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width,
                                 height: MediaQuery.of(context).size.height / 20,
@@ -1788,7 +1792,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             minHeight: MediaQuery.of(context).size.height / 20,
                             parallaxEnabled: true,
                             parallaxOffset: 0.54,
-                            color: Color(0xFF2F2F2F),
+                            color: config.Colors().secondDarkColor(1),
                             maxHeight: MediaQuery.of(context).size.height * .46,
                             controller: panelController,
                             panel: Container(
@@ -1799,7 +1803,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   topLeft: Radius.circular(20),
                                   topRight: Radius.circular(20),
                                 ),
-                                color: Color(0xFF2F2F2F),
+                                color: config.Colors().secondDarkColor(1),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2077,8 +2081,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           CircularProgressIndicator(
                                                               valueColor:
                                                                   AlwaysStoppedAnimation(
-                                                                Color(
-                                                                    0xFFE57697),
+                                                                Color(main.prefs.get("mainAccentColor")),
                                                               ),
                                                               value:
                                                                   downloadProgress
@@ -2263,7 +2266,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     topLeft: Radius.circular(20),
                                     topRight: Radius.circular(20),
                                   ),
-                                  color: Color(0xFF2F2F2F)),
+                                  color: config.Colors().secondDarkColor(1)),
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width,
                                 height: MediaQuery.of(context).size.height / 20,
@@ -2277,7 +2280,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             minHeight: MediaQuery.of(context).size.height / 20,
                             parallaxEnabled: true,
                             parallaxOffset: 0.54,
-                            color: Color(0xFF2F2F2F),
+                            color: config.Colors().secondDarkColor(1),
                             maxHeight: MediaQuery.of(context).size.height * .46,
                             controller: panelController,
                             panel: Container(
@@ -2288,7 +2291,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   topLeft: Radius.circular(20),
                                   topRight: Radius.circular(20),
                                 ),
-                                color: Color(0xFF2F2F2F),
+                                color: config.Colors().secondDarkColor(1),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2550,7 +2553,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       CircularProgressIndicator(
                                                           valueColor:
                                                               AlwaysStoppedAnimation(
-                                                            Color(0xFFE57697),
+                                                            config.Colors()
+                                                                .mainAccentColor(
+                                                                    1),
                                                           ),
                                                           value:
                                                               downloadProgress

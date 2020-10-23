@@ -13,6 +13,7 @@ import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:firebase_analytics/observer.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
@@ -23,6 +24,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/services.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 Box prefs;
 Directory dir;
@@ -34,6 +36,7 @@ void main() {
   InAppPurchaseConnection.enablePendingPurchases();
   Crashlytics.instance.enableInDevMode = false;
   FlutterError.onError = Crashlytics.instance.recordFlutterError;
+  GestureBinding.instance.resamplingEnabled = true;
   getApplicationDocumentsDirectory().then((dir) async {
     Hive.init(dir.path);
     await Hive.openBox('wallpapers');
@@ -42,9 +45,12 @@ void main() {
     Hive.registerAdapter(NotifDataAdapter());
     await Hive.openBox<List>('notifications');
     prefs = await Hive.openBox('prefs');
-    debugPrint("Box Opened");
-    hqThumbs = prefs.get('hqThumbs') == true ?? false;
-    if (hqThumbs) {
+    print("Box Opened");
+    if (prefs.get("mainAccentColor") == null) {
+      prefs.put("mainAccentColor", 0xFFE57697);
+    }
+    hqThumbs = prefs.get('hqThumbs') ?? false;
+    if (hqThumbs)
       prefs.put('hqThumbs', true);
     } else {
       prefs.put('hqThumbs', false);
@@ -60,7 +66,9 @@ void main() {
       prefs.put('optimisedWallpapers', true);
     } else {
       prefs.put('optimisedWallpapers', false);
-    }
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      systemNavigationBarColor: config.Colors().mainAccentColor(1),
+    ));
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
         .then((value) => runZoned<Future<void>>(() {
               runApp(
@@ -140,6 +148,9 @@ class RestartWidget extends StatefulWidget {
 
   static void restartApp(BuildContext context) {
     router.navStack = ["Home"];
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      systemNavigationBarColor: Color(prefs.get("mainAccentColor")),
+    ));
     observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>().restartApp();
   }

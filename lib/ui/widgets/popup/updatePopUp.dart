@@ -4,6 +4,7 @@ import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/theme/config.dart' as config;
 
 final databaseReference = Firestore.instance;
 
@@ -83,7 +84,7 @@ void showUpdate(BuildContext context) {
                   Icon(
                     JamIcons.arrow_right,
                     size: 22,
-                    color: Color(0xFFE57697),
+                    color: config.Colors().mainAccentColor(1),
                   ),
                   SizedBox(
                     width: 20,
@@ -124,7 +125,7 @@ void showUpdate(BuildContext context) {
             children: <Widget>[
               FlatButton(
                 shape: StadiumBorder(),
-                color: Color(0xFFE57697),
+                color: config.Colors().mainAccentColor(1),
                 onPressed: () async {
                   Navigator.of(context).pop();
                   const url =
@@ -153,7 +154,7 @@ void showUpdate(BuildContext context) {
                   'CLOSE',
                   style: TextStyle(
                     fontSize: 16.0,
-                    color: Color(0xFFE57697),
+                    color: config.Colors().mainAccentColor(1),
                   ),
                 ),
               ),

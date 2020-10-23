@@ -10,6 +10,7 @@ import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class SearchFocusedMenuDetails extends StatelessWidget {
   final String selectedProvider;
@@ -139,7 +140,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                           width: childSize.width,
                           height: childSize.height * 6 / 8,
                           decoration: BoxDecoration(
-                            color: Color(0xFF2F2F2F),
+                            color: config.Colors().secondDarkColor(1),
                             borderRadius:
                                 const BorderRadius.all(Radius.circular(20.0)),
                           ),
@@ -255,7 +256,8 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                   child: GestureDetector(
                                     child: Container(
                                       decoration: BoxDecoration(
-                                          color: Color(0xFF2F2F2F),
+                                          color: config.Colors()
+                                              .secondDarkColor(1),
                                           borderRadius: BorderRadius.only(
                                               topLeft: Radius.circular(20),
                                               bottomRight:
@@ -298,7 +300,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                           width: childSize.width,
                           height: childSize.height * 6 / 10,
                           decoration: BoxDecoration(
-                            color: Color(0xFF2F2F2F),
+                            color: config.Colors().secondDarkColor(1),
                             borderRadius:
                                 const BorderRadius.all(Radius.circular(20.0)),
                           ),
@@ -409,7 +411,8 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                   child: GestureDetector(
                                     child: Container(
                                       decoration: BoxDecoration(
-                                          color: Color(0xFF2F2F2F),
+                                          color: config.Colors()
+                                              .secondDarkColor(1),
                                           borderRadius: BorderRadius.only(
                                               topLeft: Radius.circular(20),
                                               bottomRight:

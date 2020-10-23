@@ -5,6 +5,9 @@ import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
+import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/main.dart' as main;
+import 'package:url_launcher/url_launcher.dart';
 
 class UserProfile extends StatefulWidget {
   final List arguments;
@@ -14,40 +17,21 @@ class UserProfile extends StatefulWidget {
 }
 
 class _UserProfileState extends State<UserProfile> {
-  Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
-    return true;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-        body: UserProfileChild(arguments: widget.arguments),
-      ),
-    );
-  }
-}
-
-class UserProfileChild extends StatefulWidget {
-  final List arguments;
-  UserProfileChild({@required this.arguments});
-  @override
-  _UserProfileChildState createState() => _UserProfileChildState();
-}
-
-class _UserProfileChildState extends State<UserProfileChild> {
   String name;
   String email;
   String userPhoto;
+  bool premium;
+  String twitter;
+  String instagram;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {
     name = widget.arguments[0];
     email = widget.arguments[1];
     userPhoto = widget.arguments[2];
+    premium = widget.arguments[3];
+    twitter = widget.arguments[4];
+    instagram = widget.arguments[5];
     super.initState();
   }
 
@@ -66,7 +50,23 @@ class _UserProfileChildState extends State<UserProfileChild> {
           body: NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
               SliverAppBar(
-                backgroundColor: Color(0xFFE57697),
+                actions: [
+                  twitter != "" && twitter != null
+                      ? IconButton(
+                          icon: Icon(JamIcons.twitter),
+                          onPressed: () {
+                            launch("https://www.twitter.com/" + twitter);
+                          })
+                      : Container(),
+                  instagram != "" && instagram != null
+                      ? IconButton(
+                          icon: Icon(JamIcons.instagram),
+                          onPressed: () {
+                            launch("https://www.instagram.com/" + instagram);
+                          })
+                      : Container(),
+                ],
+                backgroundColor: config.Colors().mainAccentColor(1),
                 automaticallyImplyLeading: true,
                 pinned: true,
                 expandedHeight: 260.0,
@@ -75,7 +75,7 @@ class _UserProfileChildState extends State<UserProfileChild> {
                     fit: StackFit.expand,
                     children: [
                       Container(
-                        color: Color(0xFFE57697),
+                        color: config.Colors().mainAccentColor(1),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 25.0),
@@ -105,16 +105,59 @@ class _UserProfileChildState extends State<UserProfileChild> {
                                       ),
                                     ),
                               Spacer(flex: 2),
-                              name == null
-                                  ? Container()
-                                  : Text(
-                                      name,
-                                      style: TextStyle(
-                                          fontFamily: "Proxima Nova",
-                                          color: Colors.white,
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w700),
-                                    ),
+                              premium == false
+                                  ? name == null
+                                      ? Container()
+                                      : Text(
+                                          name,
+                                          style: TextStyle(
+                                              fontFamily: "Proxima Nova",
+                                              color: Colors.white,
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.w700),
+                                        )
+                                  : name == null
+                                      ? Container()
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Text(
+                                              name,
+                                              style: TextStyle(
+                                                  fontFamily: "Proxima Nova",
+                                                  color: Colors.white,
+                                                  fontSize: 32,
+                                                  fontWeight: FontWeight.w700),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 8.0),
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 3, horizontal: 5),
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            50),
+                                                    color: Color(0xFFFFFFFF)),
+                                                child: Text(
+                                                  "PRO",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          fontSize: 10,
+                                                          color: Color(
+                                                              main.prefs.get(
+                                                                  "mainAccentColor"))),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
                               Spacer(flex: 1),
                               Row(
                                 mainAxisSize: MainAxisSize.min,

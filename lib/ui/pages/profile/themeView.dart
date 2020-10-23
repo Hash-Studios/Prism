@@ -41,7 +41,7 @@ class _ThemeViewState extends State<ThemeView> {
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-              icon: Icon(JamIcons.arrow_left),
+              icon: Icon(JamIcons.chevron_left),
               onPressed: () {
                 if (Provider.of<ThemeModel>(context, listen: false)
                         .currentTheme ==

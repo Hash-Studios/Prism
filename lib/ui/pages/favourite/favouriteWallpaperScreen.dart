@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 
 class FavWallpaperViewScreen extends StatefulWidget {
   final List arguments;
@@ -135,7 +136,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       screenshotController
                           .capture(
                         pixelRatio: 3,
-                        delay: const Duration(milliseconds: 10),
+                        delay: Duration(milliseconds: 10),
                       )
                           .then((File image) async {
                         setState(() {
@@ -143,16 +144,16 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           screenshotTaken = true;
                           panelClosed = false;
                         });
-                        debugPrint('Screenshot Taken');
+                        print('Screenshot Taken');
                       }).catchError((onError) {
-                        debugPrint(onError as String);
+                        print(onError);
                       });
                     } else {
-                      main.prefs.get('optimisedWallpapers') == true ?? true
+                      main.prefs.get('optimisedWallpapers') ?? true
                           ? screenshotController
                               .capture(
                               pixelRatio: 3,
-                              delay: const Duration(milliseconds: 10),
+                              delay: Duration(milliseconds: 10),
                             )
                               .then((File image) async {
                               setState(() {
@@ -160,11 +161,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 screenshotTaken = true;
                                 panelClosed = false;
                               });
-                              debugPrint('Screenshot Taken');
+                              print('Screenshot Taken');
                             }).catchError((onError) {
-                              debugPrint(onError as String);
+                              print(onError);
                             })
-                          : debugPrint("Wallpaper Optimisation is disabled!");
+                          : print("Wallpaper Optimisation is disabled!");
                     }
                   }
                 },
@@ -186,7 +187,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
-                      color: Color(0xFF2F2F2F)),
+                      color: config.Colors().secondDarkColor(1)),
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
@@ -200,7 +201,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.54,
-                color: const Color(0xFF2F2F2F),
+                color: config.Colors().secondDarkColor(1),
                 maxHeight: MediaQuery.of(context).size.height * .46,
                 controller: panelController,
                 panel: Container(
@@ -211,7 +212,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    color: Color(0xFF2F2F2F),
+                    color: config.Colors().secondDarkColor(1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -776,7 +777,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     child: Center(
                                       child: CircularProgressIndicator(
                                           valueColor: AlwaysStoppedAnimation(
-                                            Color(0xFFE57697),
+                                            config.Colors().mainAccentColor(1),
                                           ),
                                           value: downloadProgress.progress),
                                     ),
@@ -903,9 +904,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           screenshotTaken = true;
                           panelClosed = false;
                         });
-                        debugPrint('Screenshot Taken');
+                        print('Screenshot Taken');
                       }).catchError((onError) {
-                        debugPrint(onError);
+                        print(onError);
                       });
                     } else {
                       main.prefs.get('optimisedWallpapers') ?? true
@@ -920,11 +921,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 screenshotTaken = true;
                                 panelClosed = false;
                               });
-                              debugPrint('Screenshot Taken');
+                              print('Screenshot Taken');
                             }).catchError((onError) {
-                              debugPrint(onError);
+                              print(onError);
                             })
-                          : debugPrint("Wallpaper Optimisation is disabled!");
+                          : print("Wallpaper Optimisation is disabled!");
                     }
                   }
                 },
@@ -946,7 +947,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
-                      color: Color(0xFF2F2F2F)),
+                      color: config.Colors().secondDarkColor(1)),
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height / 20,
@@ -960,7 +961,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.54,
-                color: Color(0xFF2F2F2F),
+                color: config.Colors().secondDarkColor(1),
                 maxHeight: MediaQuery.of(context).size.height * .46,
                 controller: panelController,
                 panel: Container(
@@ -971,7 +972,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    color: Color(0xFF2F2F2F),
+                    color: config.Colors().secondDarkColor(1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1298,7 +1299,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     child: Center(
                                       child: CircularProgressIndicator(
                                           valueColor: AlwaysStoppedAnimation(
-                                            Color(0xFFE57697),
+                                            config.Colors().mainAccentColor(1),
                                           ),
                                           value: downloadProgress.progress),
                                     ),
@@ -1341,7 +1342,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   child: Center(
                                     child: CircularProgressIndicator(
                                         valueColor: AlwaysStoppedAnimation(
-                                          Color(0xFFE57697),
+                                          config.Colors().mainAccentColor(1),
                                         ),
                                         value: downloadProgress.progress),
                                   ),

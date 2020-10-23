@@ -76,7 +76,7 @@ var kLightTheme = ThemeData(
 
 var kDarkTheme = ThemeData(
   canvasColor: Colors.transparent,
-  primaryColor: Color(0xFF181818),
+  primaryColor: config.Colors().mainDarkColor(1),
   brightness: Brightness.dark,
   accentColor: config.Colors().accentDarkColor(1),
   focusColor: config.Colors().mainDarkColor(1),
@@ -87,7 +87,7 @@ var kDarkTheme = ThemeData(
       fontFamily: 'Proxima Nova',
       fontSize: 16,
       fontWeight: FontWeight.w800,
-      color: Color(0xFF181818),
+      color: config.Colors().mainDarkColor(1),
     ),
     headline5: TextStyle(
       fontSize: 16.0,

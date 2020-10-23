@@ -18,6 +18,7 @@ import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/pages/search/searchWallpaperScreen.dart';
 import 'package:Prism/ui/pages/setup/setupScreen.dart';
 import 'package:Prism/ui/pages/setup/setupViewScreen.dart';
+import 'package:Prism/ui/pages/setup/shareSetupViewScreen.dart';
 import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/pages/home/core/notificationScreen.dart';
@@ -116,8 +117,15 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: shareRoute);
       return CupertinoPageRoute(
           builder: (context) =>
-              ShareWallpaperViewScreen(arguments: settings.arguments as List));
-    case favWallViewRoute:
+              ShareWallpaperViewScreen(arguments: settings.arguments));
+    case ShareSetupViewRoute:
+      navStack.add("SharedSetup");
+      print(navStack);
+      analytics.setCurrentScreen(screenName: ShareSetupViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              ShareSetupViewScreen(arguments: settings.arguments));
+    case FavWallViewRoute:
       navStack.add("FavouriteWallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: favWallViewRoute);
@@ -132,12 +140,27 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           pageBuilder: (context, animation1, animation2) => SetupScreen());
     case setupViewRoute:
       navStack.add("SetupView");
-      debugPrint(navStack.toString());
-      analytics.setCurrentScreen(screenName: setupViewRoute);
-      return MaterialPageRoute(
-          builder: (context) =>
-              SetupViewScreen(arguments: settings.arguments as List));
-    case profileWallViewRoute:
+      print(navStack);
+      analytics.setCurrentScreen(screenName: SetupViewRoute);
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            SetupViewScreen(
+          arguments: settings.arguments,
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          var begin = 0.0;
+          var end = 1.0;
+          var curve = Curves.easeOut;
+
+          var tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return ScaleTransition(
+            scale: animation.drive(tween),
+            child: child,
+          );
+        },
+      );
+    case ProfileWallViewRoute:
       navStack.add("ProfileWallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: profileWallViewRoute);
@@ -160,27 +183,25 @@ Route<dynamic> generateRoute(RouteSettings settings) {
               ThemeView(arguments: settings.arguments as List));
     case editWallRoute:
       navStack.add("Edit Wallpaper");
-      debugPrint(navStack.toString());
-      analytics.setCurrentScreen(screenName: editWallRoute);
-      return MaterialPageRoute(
-          builder: (context) =>
-              EditWallScreen(arguments: settings.arguments as List),
+      print(navStack);
+      analytics.setCurrentScreen(screenName: EditWallRoute);
+      return CupertinoPageRoute(
+          builder: (context) => EditWallScreen(arguments: settings.arguments),
           fullscreenDialog: true);
     case uploadSetupRoute:
       navStack.add("Upload Setup");
-      debugPrint(navStack.toString());
-      analytics.setCurrentScreen(screenName: uploadSetupRoute);
-      return MaterialPageRoute(
+      print(navStack);
+      analytics.setCurrentScreen(screenName: UploadSetupRoute);
+      return CupertinoPageRoute(
           builder: (context) =>
               UploadSetupScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     case uploadWallRoute:
       navStack.add("Add");
-      debugPrint(navStack.toString());
-      analytics.setCurrentScreen(screenName: uploadWallRoute);
-      return MaterialPageRoute(
-          builder: (context) =>
-              UploadWallScreen(arguments: settings.arguments as List),
+      print(navStack);
+      analytics.setCurrentScreen(screenName: UploadWallRoute);
+      return CupertinoPageRoute(
+          builder: (context) => UploadWallScreen(arguments: settings.arguments),
           fullscreenDialog: true);
     default:
       navStack.add("undefined");

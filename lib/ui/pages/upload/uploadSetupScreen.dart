@@ -11,6 +11,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 
 class UploadSetupScreen extends StatefulWidget {
   final List arguments;
@@ -221,7 +222,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             child: LinearProgressIndicator(
                               backgroundColor: Theme.of(context).hintColor,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFFE57697)),
+                                  config.Colors().mainAccentColor(1)),
                             )))
                     : Container(),
                 Spacer(),
@@ -280,7 +281,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
         ),
         floatingActionButton: FloatingActionButton(
             backgroundColor: !isProcessing && !isUploading
-                ? Color(0xFFE57697)
+                ? config.Colors().mainAccentColor(1)
                 : Theme.of(context).hintColor,
             disabledElevation: 0,
             child: Icon(
@@ -374,7 +375,7 @@ class _InputTextFieldState extends State<InputTextField> {
               fontFamily: "Proxima Nova",
               fontWeight: FontWeight.w700,
               fontSize: 14,
-              color: Color(0xFFE57697).withOpacity(0.5),
+              color: config.Colors().mainAccentColor(1).withOpacity(0.5),
             ),
             border: InputBorder.none,
             focusedBorder: InputBorder.none,
@@ -383,7 +384,7 @@ class _InputTextFieldState extends State<InputTextField> {
             disabledBorder: InputBorder.none,
             prefixIcon: Icon(
               widget.icon,
-              color: Color(0xFFE57697),
+              color: config.Colors().mainAccentColor(1),
             ),
           ),
         ),
