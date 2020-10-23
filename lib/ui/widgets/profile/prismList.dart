@@ -12,10 +12,10 @@ class PrismList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
-      leading: Icon(
+      leading: const Icon(
         JamIcons.cog,
       ),
-      title: new Text(
+      title: Text(
         "Prism",
         style: TextStyle(
             color: Theme.of(context).accentColor,
@@ -28,17 +28,17 @@ class PrismList extends StatelessWidget {
       ),
       children: [
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.paper_plane,
             ),
-            title: new Text(
+            title: Text(
               "Prism on Telegram",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "Discuss with community.",
               style: TextStyle(fontSize: 12),
             ),
@@ -46,17 +46,17 @@ class PrismList extends StatelessWidget {
               launch("https://t.me/PrismWallpapers");
             }),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.info,
             ),
-            title: new Text(
+            title: Text(
               "What's new?",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "Check out the changelog",
               style: TextStyle(fontSize: 12),
             ),
@@ -64,17 +64,17 @@ class PrismList extends StatelessWidget {
               showChangelog(context, () {});
             }),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.star,
             ),
-            title: new Text(
+            title: Text(
               "Rate Prism!",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "If you like Prism, please consider rating it.",
               style: TextStyle(fontSize: 12),
             ),
@@ -83,17 +83,17 @@ class PrismList extends StatelessWidget {
                   "https://play.google.com/store/apps/details?id=com.hash.prism");
             }),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.share_alt,
             ),
-            title: new Text(
+            title: Text(
               "Share Prism!",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "Quick link to pass on to your friends and enemies",
               style: TextStyle(fontSize: 12),
             ),
@@ -102,17 +102,17 @@ class PrismList extends StatelessWidget {
                   'Hey check out this amazing wallpaper app Prism https://play.google.com/store/apps/details?id=com.hash.prism');
             }),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.twitter,
             ),
-            title: new Text(
+            title: Text(
               "Follow Prism on Twitter",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "We regularly share setups, wallpapers & organise giveaways.",
               style: TextStyle(fontSize: 12),
             ),
@@ -120,17 +120,17 @@ class PrismList extends StatelessWidget {
               launch("https://twitter.com/PrismWallpapers");
             }),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.users,
             ),
-            title: new Text(
+            title: Text(
               "Privacy Policy",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "Read Prism's Privacy Policy.",
               style: TextStyle(fontSize: 12),
             ),
@@ -139,17 +139,17 @@ class PrismList extends StatelessWidget {
                   "https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md");
             }),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.github,
             ),
-            title: new Text(
+            title: Text(
               "View Prism on GitHub!",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "Check out the code or contribute yourself",
               style: TextStyle(fontSize: 12),
             ),
@@ -157,17 +157,17 @@ class PrismList extends StatelessWidget {
               launch("https://github.com/LiquidatorCoder/Prism");
             }),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.picture,
             ),
-            title: new Text(
+            title: Text(
               "API",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "Prism uses Wallhaven and Pexels API for wallpapers",
               style: TextStyle(fontSize: 12),
             ),
@@ -175,7 +175,7 @@ class PrismList extends StatelessWidget {
               showDialog(
                 context: context,
                 child: AlertDialog(
-                  shape: RoundedRectangleBorder(
+                  shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(
                       Radius.circular(20),
                     ),
@@ -242,10 +242,10 @@ class PrismList extends StatelessWidget {
               );
             }),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.computer_alt,
             ),
-            title: new Text(
+            title: Text(
               "Version",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
@@ -254,31 +254,31 @@ class PrismList extends StatelessWidget {
             ),
             subtitle: Text(
               "v${globals.currentAppVersion}+${globals.currentAppVersionCode}",
-              style: TextStyle(fontSize: 12),
+              style: const TextStyle(fontSize: 12),
             ),
             onTap: () {}),
         ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.bug,
             ),
-            title: new Text(
+            title: Text(
               "Report a bug",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "Tell us if you found out a bug",
               style: TextStyle(fontSize: 12),
             ),
             onTap: () async {
               if (Platform.isAndroid) {
-                var androidInfo = await DeviceInfoPlugin().androidInfo;
-                var release = androidInfo.version.release;
-                var sdkInt = androidInfo.version.sdkInt;
-                var manufacturer = androidInfo.manufacturer;
-                var model = androidInfo.model;
+                final androidInfo = await DeviceInfoPlugin().androidInfo;
+                final release = androidInfo.version.release;
+                final sdkInt = androidInfo.version.sdkInt;
+                final manufacturer = androidInfo.manufacturer;
+                final model = androidInfo.model;
                 debugPrint(
                     'Android $release (SDK $sdkInt), $manufacturer $model');
                 launch(

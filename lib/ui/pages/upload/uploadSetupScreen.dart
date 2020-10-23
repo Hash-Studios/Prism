@@ -15,7 +15,7 @@ import 'package:Prism/theme/config.dart' as config;
 
 class UploadSetupScreen extends StatefulWidget {
   final List arguments;
-  UploadSetupScreen({this.arguments});
+  const UploadSetupScreen({this.arguments});
   @override
   _UploadSetupScreenState createState() => _UploadSetupScreenState();
 }
@@ -42,7 +42,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   @override
   void initState() {
     super.initState();
-    image = widget.arguments[0];
+    image = widget.arguments[0] as File;
     isUploading = false;
     isProcessing = true;
     randomId();
@@ -54,15 +54,15 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
 
   void randomId() {
     tempid = "";
-    var alp = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split("");
-    var r = new Random();
-    var choice = r.nextInt(6);
+    final alp = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split("");
+    final r = Random();
+    final choice = r.nextInt(6);
     for (var i = 0; i < 6; i++) {
       if (choice == i) {
-        var ran = r.nextInt(10);
+        final ran = r.nextInt(10);
         tempid = tempid + ran.toString();
       } else {
-        var ran = r.nextInt(26);
+        final ran = r.nextInt(26);
         tempid = tempid + alp[ran].toString();
       }
     }
@@ -83,14 +83,14 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       isProcessing = false;
     });
     try {
-      StorageReference storageReference =
-          FirebaseStorage.instance.ref().child('${Path.basename(image.path)}');
-      StorageUploadTask uploadTask = storageReference.putFile(image);
+      final StorageReference storageReference =
+          FirebaseStorage.instance.ref().child(Path.basename(image.path));
+      final StorageUploadTask uploadTask = storageReference.putFile(image);
       await uploadTask.onComplete;
       debugPrint('File Uploaded');
       storageReference.getDownloadURL().then((fileURL) {
         setState(() {
-          imageURL = fileURL;
+          imageURL = fileURL.toString();
           isUploading = false;
         });
       });
@@ -122,7 +122,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           ),
         ),
         body: SingleChildScrollView(
-          physics: ScrollPhysics(),
+          physics: const ScrollPhysics(),
           child: Container(
             height: MediaQuery.of(context).size.height * 0.9,
             child: Column(
@@ -188,44 +188,47 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                     ),
                   ),
                 ),
-                isUploading
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 12.0),
-                        child: Text(
-                          "Uploading...",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Theme.of(context).accentColor,
-                          ),
-                        ),
-                      )
-                    : Container(),
-                isProcessing
-                    ? Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Text(
-                          "Processing...",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Theme.of(context).accentColor,
-                          ),
-                        ),
-                      )
-                    : Container(),
-                isProcessing || isUploading
-                    ? Container(
-                        width: MediaQuery.of(context).size.width / 2,
-                        child: ClipRRect(
-                            borderRadius: BorderRadius.circular(500),
-                            child: LinearProgressIndicator(
-                              backgroundColor: Theme.of(context).hintColor,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  config.Colors().mainAccentColor(1)),
-                            )))
-                    : Container(),
-                Spacer(),
+                if (isUploading)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 12.0),
+                    child: Text(
+                      "Uploading...",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).accentColor,
+                      ),
+                    ),
+                  )
+                else
+                  Container(),
+                if (isProcessing)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Text(
+                      "Processing...",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).accentColor,
+                      ),
+                    ),
+                  )
+                else
+                  Container(),
+                if (isProcessing || isUploading)
+                  Container(
+                      width: MediaQuery.of(context).size.width / 2,
+                      child: ClipRRect(
+                          borderRadius: BorderRadius.circular(500),
+                          child: LinearProgressIndicator(
+                            backgroundColor: Theme.of(context).hintColor,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                config.Colors().mainAccentColor(1)),
+                          )))
+                else
+                  Container(),
+                const Spacer(),
                 Container(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
@@ -240,7 +243,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
                     children: <Widget>[
                       Container(
                         width: MediaQuery.of(context).size.width * 0.2,
@@ -280,46 +282,47 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-            backgroundColor: !isProcessing && !isUploading
-                ? config.Colors().mainAccentColor(1)
-                : Theme.of(context).hintColor,
-            disabledElevation: 0,
-            child: Icon(
-              JamIcons.check,
-              size: 40,
-              color: Colors.white,
-            ),
-            onPressed: !isProcessing && !isUploading
-                ? () async {
-                    if (setupName.text == "" ||
-                        setupDesc.text == "" ||
-                        wallpaperUrl.text == "" ||
-                        iconName.text == "" ||
-                        iconURL.text == "") {
-                      toasts.error("Please fill all required fields!");
-                    } else {
-                      navStack.removeLast();
-                      debugPrint(navStack.toString());
-                      Navigator.pop(context);
-                      analytics.logEvent(
-                          name: 'upload_setup',
-                          parameters: {'id': id, 'link': imageURL});
-                      await WallStore.createSetup(
-                          id,
-                          imageURL,
-                          wallpaperProvider,
-                          wallpaperThumb,
-                          wallpaperUrl.text,
-                          iconName.text,
-                          iconURL.text,
-                          widgetName.text,
-                          widgetURL.text,
-                          setupName.text,
-                          setupDesc.text,
-                          review);
-                    }
+          backgroundColor: !isProcessing && !isUploading
+              ? config.Colors().mainAccentColor(1)
+              : Theme.of(context).hintColor,
+          disabledElevation: 0,
+          onPressed: !isProcessing && !isUploading
+              ? () async {
+                  if (setupName.text == "" ||
+                      setupDesc.text == "" ||
+                      wallpaperUrl.text == "" ||
+                      iconName.text == "" ||
+                      iconURL.text == "") {
+                    toasts.error("Please fill all required fields!");
+                  } else {
+                    navStack.removeLast();
+                    debugPrint(navStack.toString());
+                    Navigator.pop(context);
+                    analytics.logEvent(
+                        name: 'upload_setup',
+                        parameters: {'id': id, 'link': imageURL});
+                    WallStore.createSetup(
+                        id,
+                        imageURL,
+                        wallpaperProvider,
+                        wallpaperThumb,
+                        wallpaperUrl.text,
+                        iconName.text,
+                        iconURL.text,
+                        widgetName.text,
+                        widgetURL.text,
+                        setupName.text,
+                        setupDesc.text,
+                        review);
                   }
-                : null),
+                }
+              : null,
+          child: const Icon(
+            JamIcons.check,
+            size: 40,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

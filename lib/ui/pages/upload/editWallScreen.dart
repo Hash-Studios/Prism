@@ -1,16 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:extended_image/extended_image.dart';
 import 'package:image_editor/image_editor.dart' hide ImageSource;
 
 class EditWallScreen extends StatefulWidget {
   final List arguments;
-  EditWallScreen({this.arguments});
+  const EditWallScreen({this.arguments});
   @override
   _EditWallScreenState createState() => _EditWallScreenState();
 }
@@ -76,7 +76,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
   @override
   void initState() {
     super.initState();
-    image = widget.arguments[0];
+    image = widget.arguments[0] as File;
   }
 
   Future<bool> onWillPop() async {
@@ -98,7 +98,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
             ),
             actions: <Widget>[
               IconButton(
-                icon: Icon(Icons.settings_backup_restore),
+                icon: const Icon(Icons.settings_backup_restore),
                 onPressed: () {
                   setState(() {
                     sat = 1;
@@ -108,40 +108,38 @@ class _EditWallScreenState extends State<EditWallScreen> {
                 },
               ),
               IconButton(
-                icon: Icon(Icons.check),
+                icon: const Icon(Icons.check),
                 onPressed: () async {
                   await crop();
                 },
               ),
             ]),
-        body: Container(
-          child: Column(
-            children: <Widget>[
-              AspectRatio(
-                aspectRatio: 1,
-                child: buildImage(),
-              ),
-              Expanded(
-                child: SliderTheme(
-                  data: const SliderThemeData(
-                    showValueIndicator: ShowValueIndicator.never,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Spacer(flex: 3),
-                      _buildSat(),
-                      Spacer(flex: 1),
-                      _buildBrightness(),
-                      Spacer(flex: 1),
-                      _buildCon(),
-                      Spacer(flex: 3),
-                    ],
-                  ),
+        body: Column(
+          children: <Widget>[
+            AspectRatio(
+              aspectRatio: 1,
+              child: buildImage(),
+            ),
+            Expanded(
+              child: SliderTheme(
+                data: const SliderThemeData(
+                  showValueIndicator: ShowValueIndicator.never,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    const Spacer(flex: 3),
+                    _buildSat(),
+                    const Spacer(),
+                    _buildBrightness(),
+                    const Spacer(),
+                    _buildCon(),
+                    const Spacer(flex: 3),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         bottomNavigationBar: _buildFunctions(),
       ),
@@ -167,8 +165,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
           initEditorConfigHandler: (ExtendedImageState state) {
             return EditorConfig(
               maxScale: 8.0,
-              cropRectPadding: const EdgeInsets.all(20.0),
-              hitTestSize: 20.0,
               cropAspectRatio: 1 / 2,
             );
           },
@@ -231,7 +227,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
             break;
         }
       },
-      currentIndex: 0,
       selectedItemColor: Theme.of(context).primaryColor,
       unselectedItemColor: Theme.of(context).primaryColor,
     );
@@ -277,7 +272,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     debugPrint('image_editor time : $diff');
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
-    Future.delayed(Duration(seconds: 0)).then((value) =>
+    Future.delayed(const Duration()).then((value) =>
         Navigator.pushReplacementNamed(context, uploadWallRoute,
             arguments: [image]));
   }
@@ -292,8 +287,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Widget _buildSat() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      mainAxisSize: MainAxisSize.max,
       children: <Widget>[
         SizedBox(
           width: MediaQuery.of(context).size.width * 0.03,
@@ -321,7 +314,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
             },
             divisions: 50,
             value: sat,
-            min: 0,
             max: 2,
           ),
         ),
@@ -332,8 +324,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Widget _buildBrightness() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      mainAxisSize: MainAxisSize.max,
       children: <Widget>[
         SizedBox(
           width: MediaQuery.of(context).size.width * 0.03,
@@ -353,7 +343,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
         Container(
           width: MediaQuery.of(context).size.width * 0.7,
           child: Slider(
-            label: '${bright.toStringAsFixed(2)}',
+            label: bright.toStringAsFixed(2),
             onChanged: (double value) {
               setState(() {
                 bright = value;
@@ -362,7 +352,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
             divisions: 50,
             value: bright,
             min: -1,
-            max: 1,
           ),
         ),
         Text(bright.toStringAsFixed(2)),
@@ -372,8 +361,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Widget _buildCon() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      mainAxisSize: MainAxisSize.max,
       children: <Widget>[
         SizedBox(
           width: MediaQuery.of(context).size.width * 0.03,
@@ -401,7 +388,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
             },
             divisions: 50,
             value: con,
-            min: 0,
             max: 4,
           ),
         ),

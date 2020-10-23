@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class ProfileLoader extends StatefulWidget {
   final Future future;
-  ProfileLoader({@required this.future});
+  const ProfileLoader({@required this.future});
   @override
   _ProfileLoaderState createState() => _ProfileLoaderState();
 }
@@ -27,14 +27,14 @@ class _ProfileLoaderState extends State<ProfileLoader> {
         builder: (ctx, snapshot) {
           if (snapshot == null) {
             debugPrint("snapshot null");
-            return LoadingCards();
+            return const LoadingCards();
           }
           if (snapshot.connectionState == ConnectionState.waiting ||
               snapshot.connectionState == ConnectionState.none) {
             debugPrint("snapshot none, waiting");
-            return LoadingCards();
+            return const LoadingCards();
           } else {
-            return ProfileGrid();
+            return const ProfileGrid();
           }
         },
       ),

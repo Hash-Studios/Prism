@@ -26,12 +26,12 @@ class _WallpaperLoaderState extends State<WallpaperLoader> {
       builder: (ctx, snapshot) {
         if (snapshot == null) {
           debugPrint("snapshot null");
-          return LoadingCards();
+          return const LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
           debugPrint("snapshot none, waiting");
-          return LoadingCards();
+          return const LoadingCards();
         } else {
           return WallpaperGrid(
             provider: widget.provider,
