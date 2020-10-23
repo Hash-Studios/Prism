@@ -31,7 +31,7 @@ class ColorScreen extends StatelessWidget {
       },
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
-          appBar: PreferredSize(
+          appBar: const PreferredSize(
             preferredSize: Size(double.infinity, 55),
             child: HeadingChipBar(
               current: "Colors",

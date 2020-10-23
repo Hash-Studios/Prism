@@ -84,8 +84,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
-        appBar: PreferredSize(
-          preferredSize: const Size(double.infinity, 55),
+        appBar: const PreferredSize(
+          preferredSize: Size(double.infinity, 55),
           child: HeadingChipBar(
             current: "Downloads",
           ),

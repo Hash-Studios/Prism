@@ -137,7 +137,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: setupRoute);
       return PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) => SetupScreen());
+          pageBuilder: (context, animation1, animation2) =>
+              const SetupScreen());
     case setupViewRoute:
       navStack.add("SetupView");
       debugPrint(navStack.toString());

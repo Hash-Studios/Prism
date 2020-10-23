@@ -1,7 +1,7 @@
 import 'dart:ui';
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as WData;
+    as wdata;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
@@ -120,328 +120,319 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                           height: childSize.height,
                           child: child)),
                 )),
-            if (selectedProvider == "WallHaven") Positioned(
-                    top: childOffset.dy + childSize.height * 2 / 8,
-                    left: childOffset.dx,
-                    child: TweenAnimationBuilder(
-                      duration: const Duration(milliseconds: 200),
-                      builder:
-                          (BuildContext context, double value, Widget child) {
-                        return Transform.scale(
-                          scale: value,
-                          alignment: Alignment.bottomRight,
-                          child: child,
-                        );
-                      },
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      child: Container(
-                        width: childSize.width,
-                        height: childSize.height * 6 / 8,
-                        decoration: BoxDecoration(
-                          color: config.Colors().secondDarkColor(1),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(20.0)),
-                        ),
-                        child: ClipRRect(
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(20.0)),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: <Widget>[
-                              Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    ActionChip(
-                                        pressElevation: 5,
-                                        padding: const EdgeInsets.fromLTRB(
-                                            14, 11, 14, 11),
-                                        avatar: Icon(JamIcons.ordered_list,
-                                            color: HexColor(WData
+            if (selectedProvider == "WallHaven")
+              Positioned(
+                top: childOffset.dy + childSize.height * 2 / 8,
+                left: childOffset.dx,
+                child: TweenAnimationBuilder(
+                  duration: const Duration(milliseconds: 200),
+                  builder: (BuildContext context, double value, Widget child) {
+                    return Transform.scale(
+                      scale: value,
+                      alignment: Alignment.bottomRight,
+                      child: child,
+                    );
+                  },
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  child: Container(
+                    width: childSize.width,
+                    height: childSize.height * 6 / 8,
+                    decoration: BoxDecoration(
+                      color: config.Colors().secondDarkColor(1),
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(20.0)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(20.0)),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                ActionChip(
+                                    pressElevation: 5,
+                                    padding: const EdgeInsets.fromLTRB(
+                                        14, 11, 14, 11),
+                                    avatar: Icon(JamIcons.ordered_list,
+                                        color: HexColor(wdata
+                                                        .wallsS[index]
+                                                        .colors[wdata
+                                                                .wallsS[index]
+                                                                .colors
+                                                                .length -
+                                                            1]
+                                                        .toString())
+                                                    .computeLuminance() >
+                                                0.5
+                                            ? Colors.black
+                                            : Colors.white,
+                                        size: 20),
+                                    backgroundColor: HexColor(wdata
+                                        .wallsS[index]
+                                        .colors[wdata.wallsS[index].colors.length - 1]
+                                        .toString()),
+                                    label: Text(
+                                      wdata.wallsS[index].category
+                                              .toString()[0]
+                                              .toUpperCase() +
+                                          wdata.wallsS[index].category
+                                              .toString()
+                                              .substring(1),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline4
+                                          .copyWith(
+                                            color: HexColor(wdata
                                                             .wallsS[index]
-                                                            .colors[
-                                                                WData.wallsS[index].colors.length -
-                                                                    1]
+                                                            .colors[wdata
+                                                                    .wallsS[
+                                                                        index]
+                                                                    .colors
+                                                                    .length -
+                                                                1]
                                                             .toString())
                                                         .computeLuminance() >
                                                     0.5
                                                 ? Colors.black
                                                 : Colors.white,
-                                            size: 20),
-                                        backgroundColor: HexColor(WData
-                                            .wallsS[index]
-                                            .colors[WData.wallsS[index].colors.length - 1]
-                                            .toString()),
-                                        label: Text(
-                                          WData.wallsS[index].category
-                                                  .toString()[0]
-                                                  .toUpperCase() +
-                                              WData.wallsS[index].category
-                                                  .toString()
-                                                  .substring(1),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline4
-                                              .copyWith(
-                                                color: HexColor(WData
-                                                                .wallsS[index]
-                                                                .colors[WData
-                                                                        .wallsS[
-                                                                            index]
-                                                                        .colors
-                                                                        .length -
-                                                                    1]
-                                                                .toString())
-                                                            .computeLuminance() >
-                                                        0.5
-                                                    ? Colors.black
-                                                    : Colors.white,
-                                              ),
-                                        ),
-                                        onPressed: () {}),
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          0, 5, 0, 10),
-                                      child: Text(
-                                        WData.wallsS[index].id
-                                            .toString()
-                                            .toUpperCase(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline5,
-                                      ),
+                                          ),
                                     ),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          JamIcons.eye,
-                                          size: 20,
-                                          color: Colors.white70,
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          "Views: ${WData.wallsS[index].views.toString()}",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2,
-                                        ),
-                                      ],
+                                    onPressed: () {}),
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                  child: Text(
+                                    wdata.wallsS[index].id
+                                        .toString()
+                                        .toUpperCase(),
+                                    style:
+                                        Theme.of(context).textTheme.headline5,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      JamIcons.eye,
+                                      size: 20,
+                                      color: Colors.white70,
                                     ),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          JamIcons.set_square,
-                                          size: 20,
-                                          color: Colors.white70,
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          WData.wallsS[index].resolution,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2,
-                                        ),
-                                      ],
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      "Views: ${wdata.wallsS[index].views.toString()}",
+                                      style:
+                                          Theme.of(context).textTheme.bodyText2,
                                     ),
                                   ],
                                 ),
-                              ),
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                        color:
-                                            config.Colors().secondDarkColor(1),
-                                        borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(20),
-                                            bottomRight: Radius.circular(20))),
-                                    padding: const EdgeInsets.all(0),
-                                    child: const Padding(
-                                      padding:
-                                          EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                      child: Icon(
-                                        JamIcons.close,
-                                        color: Colors.white,
-                                      ),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      JamIcons.set_square,
+                                      size: 20,
+                                      color: Colors.white70,
                                     ),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ) else Positioned(
-                    top: childOffset.dy + childSize.height * 4 / 10,
-                    left: childOffset.dx,
-                    child: TweenAnimationBuilder(
-                      duration: const Duration(milliseconds: 200),
-                      builder:
-                          (BuildContext context, double value, Widget child) {
-                        return Transform.scale(
-                          scale: value,
-                          alignment: Alignment.bottomRight,
-                          child: child,
-                        );
-                      },
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      child: Container(
-                        width: childSize.width,
-                        height: childSize.height * 6 / 10,
-                        decoration: BoxDecoration(
-                          color: config.Colors().secondDarkColor(1),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(20.0)),
-                        ),
-                        child: ClipRRect(
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(20.0)),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: <Widget>[
-                              Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    ActionChip(
-                                        pressElevation: 5,
-                                        padding: const EdgeInsets.fromLTRB(
-                                            14, 11, 14, 11),
-                                        backgroundColor: Colors.black,
-                                        avatar: const Icon(JamIcons.camera,
-                                            color: Colors.white, size: 20),
-                                        label: Text(
-                                          PData.wallsPS[index].photographer
-                                              .toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline4
-                                              .copyWith(
-                                                color: Colors.white,
-                                              ),
-                                        ),
-                                        onPressed: () {
-                                          launch(PData.wallsPS[index].url);
-                                        }),
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          0, 5, 0, 10),
-                                      child: Text(
-                                        PData.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll(
-                                                        "https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")
-                                                    .length >
-                                                8
-                                            ? PData.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll(
-                                                        "https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")[0]
-                                                    .toUpperCase() +
-                                                PData.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll(
-                                                        "https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")
-                                                    .substring(
-                                                        1,
-                                                        PData.wallsPS[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
-                                                            7)
-                                            : PData.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll(
-                                                        "https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")[0]
-                                                    .toUpperCase() +
-                                                PData.wallsPS[index].url
-                                                    .toString()
-                                                    .replaceAll(
-                                                        "https://www.pexels.com/photo/", "")
-                                                    .replaceAll("-", " ")
-                                                    .replaceAll("/", "")
-                                                    .substring(1),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headline5,
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          JamIcons.set_square,
-                                          color: Colors.white70,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Text(
-                                          "${PData.wallsPS[index].width.toString()}x${PData.wallsPS[index].height.toString()}",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline6,
-                                        ),
-                                      ],
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      wdata.wallsS[index].resolution,
+                                      style:
+                                          Theme.of(context).textTheme.bodyText2,
                                     ),
                                   ],
                                 ),
-                              ),
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                        color:
-                                            config.Colors().secondDarkColor(1),
-                                        borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(20),
-                                            bottomRight: Radius.circular(20))),
-                                    padding: const EdgeInsets.all(0),
-                                    child: const Padding(
-                                      padding:
-                                          EdgeInsets.fromLTRB(10, 5, 10, 5),
-                                      child: Icon(
-                                        JamIcons.close,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                              ],
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: GestureDetector(
+                              onTap: () async {
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: config.Colors().secondDarkColor(1),
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        bottomRight: Radius.circular(20))),
+                                padding: const EdgeInsets.all(0),
+                                child: const Padding(
+                                  padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                  child: Icon(
+                                    JamIcons.close,
+                                    color: Colors.white,
                                   ),
                                 ),
-                              )
-                            ],
-                          ),
-                        ),
+                              ),
+                            ),
+                          )
+                        ],
                       ),
                     ),
                   ),
+                ),
+              )
+            else
+              Positioned(
+                top: childOffset.dy + childSize.height * 4 / 10,
+                left: childOffset.dx,
+                child: TweenAnimationBuilder(
+                  duration: const Duration(milliseconds: 200),
+                  builder: (BuildContext context, double value, Widget child) {
+                    return Transform.scale(
+                      scale: value,
+                      alignment: Alignment.bottomRight,
+                      child: child,
+                    );
+                  },
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  child: Container(
+                    width: childSize.width,
+                    height: childSize.height * 6 / 10,
+                    decoration: BoxDecoration(
+                      color: config.Colors().secondDarkColor(1),
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(20.0)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(20.0)),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                ActionChip(
+                                    pressElevation: 5,
+                                    padding: const EdgeInsets.fromLTRB(
+                                        14, 11, 14, 11),
+                                    backgroundColor: Colors.black,
+                                    avatar: const Icon(JamIcons.camera,
+                                        color: Colors.white, size: 20),
+                                    label: Text(
+                                      pdata.wallsPS[index].photographer
+                                          .toString(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline4
+                                          .copyWith(
+                                            color: Colors.white,
+                                          ),
+                                    ),
+                                    onPressed: () {
+                                      launch(pdata.wallsPS[index].url);
+                                    }),
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                  child: Text(
+                                    pdata.wallsPS[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
+                                        ? pdata.wallsPS[index].url
+                                                .toString()
+                                                .replaceAll(
+                                                    "https://www.pexels.com/photo/", "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")[0]
+                                                .toUpperCase() +
+                                            pdata.wallsPS[index].url
+                                                .toString()
+                                                .replaceAll(
+                                                    "https://www.pexels.com/photo/", "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")
+                                                .substring(
+                                                    1,
+                                                    pdata.wallsPS[index].url
+                                                            .toString()
+                                                            .replaceAll(
+                                                                "https://www.pexels.com/photo/", "")
+                                                            .replaceAll(
+                                                                "-", " ")
+                                                            .replaceAll("/", "")
+                                                            .length -
+                                                        7)
+                                        : pdata.wallsPS[index].url
+                                                .toString()
+                                                .replaceAll(
+                                                    "https://www.pexels.com/photo/", "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")[0]
+                                                .toUpperCase() +
+                                            pdata.wallsPS[index].url
+                                                .toString()
+                                                .replaceAll(
+                                                    "https://www.pexels.com/photo/",
+                                                    "")
+                                                .replaceAll("-", " ")
+                                                .replaceAll("/", "")
+                                                .substring(1),
+                                    style:
+                                        Theme.of(context).textTheme.headline5,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      JamIcons.set_square,
+                                      color: Colors.white70,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      "${pdata.wallsPS[index].width.toString()}x${pdata.wallsPS[index].height.toString()}",
+                                      style:
+                                          Theme.of(context).textTheme.headline6,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: GestureDetector(
+                              onTap: () async {
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: config.Colors().secondDarkColor(1),
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        bottomRight: Radius.circular(20))),
+                                padding: const EdgeInsets.all(0),
+                                child: const Padding(
+                                  padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                  child: Icon(
+                                    JamIcons.close,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               top: topOffset,
               left: leftOffset,
               child: SetWallpaperButton(
                 colorChanged: false,
                 url: selectedProvider == "WallHaven"
-                    ? WData.wallsS[index].path.toString()
-                    : PData.wallsPS[index].src["original"].toString(),
+                    ? wdata.wallsS[index].path.toString()
+                    : pdata.wallsPS[index].src["original"].toString(),
               ),
             ),
             Positioned(
@@ -449,15 +440,15 @@ class SearchFocusedMenuDetails extends StatelessWidget {
               left: leftOffset - fabHeartLeftOffset,
               child: selectedProvider == "WallHaven"
                   ? FavouriteWallpaperButton(
-                      id: WData.wallsS[index].id.toString(),
+                      id: wdata.wallsS[index].id.toString(),
                       provider: "WallHaven",
-                      wallhaven: WData.wallsS[index],
+                      wallhaven: wdata.wallsS[index],
                       trash: false,
                     )
                   : FavouriteWallpaperButton(
-                      id: PData.wallsPS[index].id.toString(),
+                      id: pdata.wallsPS[index].id.toString(),
                       provider: "Pexels",
-                      pexels: PData.wallsPS[index],
+                      pexels: pdata.wallsPS[index],
                       trash: false,
                     ),
             ),
@@ -467,8 +458,8 @@ class SearchFocusedMenuDetails extends StatelessWidget {
               child: DownloadButton(
                 colorChanged: false,
                 link: selectedProvider == "WallHaven"
-                    ? WData.wallsS[index].path.toString()
-                    : PData.wallsPS[index].src["original"].toString(),
+                    ? wdata.wallsS[index].path.toString()
+                    : pdata.wallsPS[index].src["original"].toString(),
               ),
             ),
           ],

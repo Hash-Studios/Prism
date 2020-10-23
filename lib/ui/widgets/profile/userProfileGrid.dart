@@ -1,4 +1,4 @@
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userdata;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -88,7 +88,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
   Future<void> refreshList() async {
     refreshProfileKey.currentState?.show();
     await Future.delayed(const Duration(milliseconds: 500));
-    UserData.getuserProfileWalls(widget.email);
+    userdata.getuserProfileWalls(widget.email);
   }
 
   @override
@@ -97,8 +97,8 @@ class _UserProfileGridState extends State<UserProfileGrid>
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
         onRefresh: refreshList,
-        child: UserData.userProfileWalls != null
-            ? UserData.userProfileWalls.isEmpty
+        child: userdata.userProfileWalls != null
+            ? userdata.userProfileWalls.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -136,7 +136,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
                     shrinkWrap: true,
                     cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: UserData.userProfileWalls.length,
+                    itemCount: userdata.userProfileWalls.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
                             MediaQuery.of(context).orientation ==
@@ -152,13 +152,13 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         index: index,
                         child: GestureDetector(
                           onTap: () {
-                            if (UserData.userProfileWalls == []) {
+                            if (userdata.userProfileWalls == []) {
                             } else {
                               Navigator.pushNamed(
                                   context, userProfileWallViewRoute,
                                   arguments: [
                                     index,
-                                    UserData.userProfileWalls[index]
+                                    userdata.userProfileWalls[index]
                                         ["wallpaper_thumb"],
                                   ]);
                             }
@@ -169,7 +169,7 @@ class _UserProfileGridState extends State<UserProfileGrid>
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      UserData.userProfileWalls[index]
+                                      userdata.userProfileWalls[index]
                                               ["wallpaper_thumb"]
                                           .toString(),
                                     ),

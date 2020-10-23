@@ -45,7 +45,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           automaticallyImplyLeading: false,
           title: const Text("Notifications"),
           leading: IconButton(
-            icon: Icon(JamIcons.close),
+            icon: const Icon(JamIcons.close),
             onPressed: () {
               if (navStack.length > 1) navStack.removeLast();
               debugPrint(navStack.toString());
@@ -55,8 +55,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
           actions: <Widget>[
             IconButton(
                 icon: main.prefs.get("Subscriber") == false
-                    ? Icon(JamIcons.bell)
-                    : Icon(JamIcons.bell_off),
+                    ? const Icon(JamIcons.bell)
+                    : const Icon(JamIcons.bell_off),
                 onPressed: () {
                   final Dialog notificationsPopUp = Dialog(
                     shape: RoundedRectangleBorder(
@@ -95,12 +95,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: <Widget>[
                               FlatButton(
-                                shape: StadiumBorder(),
+                                shape: const StadiumBorder(),
                                 color: config.Colors().mainAccentColor(1),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
-                                child: Text(
+                                child: const Text(
                                   'NO',
                                   style: TextStyle(
                                     fontSize: 16.0,
@@ -109,7 +109,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 ),
                               ),
                               FlatButton(
-                                shape: StadiumBorder(),
+                                shape: const StadiumBorder(),
                                 color: config.Colors().mainAccentColor(1),
                                 onPressed: () {
                                   Navigator.of(context).pop();
@@ -126,7 +126,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                         .codeSend("Succesfully unsubscribed!");
                                   }
                                 },
-                                child: Text(
+                                child: const Text(
                                   'YES',
                                   style: TextStyle(
                                     fontSize: 16.0,
@@ -163,26 +163,26 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         final Box<List> box = Hive.box('notifications');
                         box.put('notifications', notifications);
                       },
-                      dismissThresholds: {
+                      dismissThresholds: const {
                         DismissDirection.startToEnd: 0.5,
                         DismissDirection.endToStart: 0.5
                       },
                       secondaryBackground: Container(
                         color: Colors.red,
-                        child: Align(
+                        child: const Align(
                           alignment: Alignment.centerRight,
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: EdgeInsets.all(8.0),
                             child: Icon(JamIcons.trash),
                           ),
                         ),
                       ),
                       background: Container(
                         color: Colors.red,
-                        child: Align(
+                        child: const Align(
                           alignment: Alignment.centerLeft,
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: EdgeInsets.all(8.0),
                             child: Icon(JamIcons.trash),
                           ),
                         ),

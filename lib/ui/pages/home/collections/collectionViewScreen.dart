@@ -22,7 +22,7 @@ class CollectionViewScreen extends StatelessWidget {
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: PreferredSize(
-            preferredSize: Size(double.infinity, 55),
+            preferredSize: const Size(double.infinity, 55),
             child: HeadingChipBar(
               current: arguments[0] as String,
             ),

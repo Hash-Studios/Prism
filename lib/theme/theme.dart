@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
 
-var kLightTheme = ThemeData(
+ThemeData kLightTheme = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: Colors.white,
   brightness: Brightness.light,
   accentColor: config.Colors().accentColor(1),
   focusColor: config.Colors().mainColor(1),
   hintColor: config.Colors().secondColor(1),
-  accentTextTheme: TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme:
+      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
-    button: TextStyle(
+    button: const TextStyle(
       fontFamily: 'Proxima Nova',
       fontSize: 16,
       fontWeight: FontWeight.w800,
@@ -26,12 +27,12 @@ var kLightTheme = ThemeData(
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: config.Colors().accentColor(1)),
-    headline3: TextStyle(
+    headline3: const TextStyle(
         fontSize: 20,
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: Colors.black),
-    headline2: TextStyle(
+    headline2: const TextStyle(
         fontSize: 24,
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
@@ -74,14 +75,15 @@ var kLightTheme = ThemeData(
   ),
 );
 
-var kDarkTheme = ThemeData(
+ThemeData kDarkTheme = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: config.Colors().mainDarkColor(1),
   brightness: Brightness.dark,
   accentColor: config.Colors().accentDarkColor(1),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: config.Colors().secondDarkColor(1),
-  accentTextTheme: TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
+  accentTextTheme:
+      const TextTheme(headline6: TextStyle(fontFamily: "Proxima Nova")),
   textTheme: TextTheme(
     button: TextStyle(
       fontFamily: 'Proxima Nova',
@@ -99,12 +101,12 @@ var kDarkTheme = ThemeData(
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: config.Colors().accentDarkColor(1)),
-    headline3: TextStyle(
+    headline3: const TextStyle(
         fontSize: 20,
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
         color: Colors.white),
-    headline2: TextStyle(
+    headline2: const TextStyle(
         fontSize: 24,
         fontFamily: "Proxima Nova",
         fontWeight: FontWeight.w500,
