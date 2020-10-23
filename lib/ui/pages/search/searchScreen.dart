@@ -23,7 +23,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -138,7 +138,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     elevation: 4,
                     initialValue: selectedProviders,
                     onCanceled: () {
-                      print('You have not choosed anything');
+                      debugPrint('You have not choosed anything');
                     },
                     tooltip: 'Providers',
                     onSelected: (choice) {
@@ -320,12 +320,12 @@ class _SearchLoaderState extends State<SearchLoader> {
       future: _future,
       builder: (ctx, snapshot) {
         if (snapshot == null) {
-          print("snapshot null");
+          debugPrint("snapshot null");
           return LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
-          print("snapshot none, waiting");
+          debugPrint("snapshot none, waiting");
           return LoadingCards();
         } else {
           return SearchGrid(

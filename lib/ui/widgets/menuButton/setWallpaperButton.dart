@@ -45,12 +45,12 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
       if (result) {
-        print("Success");
+        debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Both', 'result': 'Success'});
       } else {
-        print("Failed");
+        debugPrint("Failed");
         toasts.error("Something went wrong!");
       }
       if (this.mounted) {
@@ -61,7 +61,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
-      print(e);
+      debugPrint(e);
     }
   }
 
@@ -85,13 +85,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
       if (result) {
-        print("Success");
+        debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Both', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        print("Failed");
+        debugPrint("Failed");
         toasts.error("Something went wrong!");
       }
       if (this.mounted) {
@@ -102,7 +102,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     } catch (e) {
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
-      print(e);
+      debugPrint(e);
     }
   }
 
@@ -126,13 +126,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
       if (result) {
-        print("Success");
+        debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Lock', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        print("Failed");
+        debugPrint("Failed");
         toasts.error("Something went wrong!");
       }
       if (this.mounted) {
@@ -141,7 +141,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
-      print(e);
+      debugPrint(e);
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
@@ -167,13 +167,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
       if (result) {
-        print("Success");
+        debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
             parameters: {'type': 'Home', 'result': 'Success'});
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        print("Failed");
+        debugPrint("Failed");
         toasts.error("Something went wrong!");
       }
       if (this.mounted) {
@@ -182,7 +182,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
-      print(e);
+      debugPrint(e);
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
@@ -329,9 +329,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         if (Platform.isAndroid) {
           var androidInfo = await DeviceInfoPlugin().androidInfo;
           var sdkInt = androidInfo.version.sdkInt;
-          print('(SDK $sdkInt)');
+          debugPrint('(SDK $sdkInt)');
           isLoading
-              ? print("")
+              ? debugPrint("")
               : sdkInt >= 24
                   ? onPaint()
                   : toasts
@@ -341,7 +341,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         }
       },
       onTap: () {
-        isLoading ? print("") : onTapPaint();
+        isLoading ? debugPrint("") : onTapPaint();
       },
       child: Stack(
         children: [

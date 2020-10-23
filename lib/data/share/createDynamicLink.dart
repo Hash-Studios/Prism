@@ -1,10 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:share/share.dart';
 
-void createDynamicLink(
+Future<String> createDynamicLink(
     String id, String provider, String url, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
@@ -29,10 +30,11 @@ void createDynamicLink(
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(
-      ClipboardData(text: "🔥Check this out ➜ " + shortUrl.toString()));
+      ClipboardData(text: "🔥Check this out ➜ ${shortUrl.toString()}"));
   analytics.logShare(contentType: 'focussedMenu', itemId: id, method: 'link');
   toasts.codeSend("Sharing link copied!");
-  print(shortUrl);
+  debugPrint(shortUrl.toString());
+  return shortUrl.toString();
 }
 
 void createUserDynamicLink(String name, String email, String userPhoto,

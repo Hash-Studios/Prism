@@ -100,7 +100,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
   }
 
   void showGooglePopUp(Function func) {
-    print(main.prefs.get("isLoggedin"));
+    debugPrint(main.prefs.get("isLoggedin"));
     if (!main.prefs.get("isLoggedin")) {
       googleSignInPopUp(context, func);
     } else {

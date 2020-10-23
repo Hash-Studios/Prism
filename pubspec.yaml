@@ -64,9 +64,9 @@ dependency_overrides:
   image: ^2.1.12
 dev_dependencies:
   build_runner: ^1.10.0
-  effective_dart: ^1.2.3
   flutter_launcher_icons: ^0.8.1
   hive_generator: 0.5.1
+  lint: 1.2.0
 
 flutter_icons:
   android: true

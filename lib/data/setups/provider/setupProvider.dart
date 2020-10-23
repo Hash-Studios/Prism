@@ -2,22 +2,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class SetupProvider extends ChangeNotifier {
-  final databaseReference = Firestore.instance;
+  final Firestore databaseReference = Firestore.instance;
   List setups;
   Future<List> getDataBase() async {
-    this.setups = [];
+    setups = [];
     await databaseReference
         .collection("setups")
         .orderBy("created_at", descending: true)
         .where("review", isEqualTo: true)
         .getDocuments()
         .then((value) {
-      value.documents.forEach((f) => this.setups.add(f.data));
-      print(this.setups);
+      for (final f in value.documents) {
+        setups.add(f.data);
+      }
+      debugPrint(setups.toString());
     }).catchError((e) {
-      print("data done with error");
+      debugPrint("data done with error");
     });
-    return this.setups;
+    return setups;
   }
 }
 

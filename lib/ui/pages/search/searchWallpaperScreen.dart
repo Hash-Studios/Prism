@@ -32,7 +32,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -129,7 +129,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   if (panelClosed) {
-                    print('Screenshot Starting');
+                    debugPrint('Screenshot Starting');
                     setState(() {
                       panelClosed = false;
                     });
@@ -145,9 +145,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                           screenshotTaken = true;
                           panelClosed = false;
                         });
-                        print('Screenshot Taken');
+                        debugPrint('Screenshot Taken');
                       }).catchError((onError) {
-                        print(onError);
+                        debugPrint(onError);
                       });
                     } else {
                       main.prefs.get('optimisedWallpapers') ?? true
@@ -161,11 +161,11 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                 _imageFile = image;
                                 screenshotTaken = true;
                               });
-                              print('Screenshot Taken');
+                              debugPrint('Screenshot Taken');
                             }).catchError((onError) {
-                              print(onError);
+                              debugPrint(onError);
                             })
-                          : print("Wallpaper Optimisation is disabled!");
+                          : debugPrint("Wallpaper Optimisation is disabled!");
                     }
                   }
                 },
@@ -413,7 +413,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0)
-                            print('${offsetAnimation.value + 8.0}');
+                            debugPrint('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
                               imageUrl: WData.wallsS[index].path,
@@ -481,7 +481,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : print("");
+                              !isLoading ? updateAccent() : debugPrint("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -493,7 +493,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack);
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -558,7 +558,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
               body: SlidingUpPanel(
                 onPanelOpened: () {
                   if (panelClosed) {
-                    print('Screenshot Starting');
+                    debugPrint('Screenshot Starting');
                     setState(() {
                       panelClosed = false;
                     });
@@ -574,9 +574,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                           screenshotTaken = true;
                           panelClosed = false;
                         });
-                        print('Screenshot Taken');
+                        debugPrint('Screenshot Taken');
                       }).catchError((onError) {
-                        print(onError);
+                        debugPrint(onError);
                       });
                     } else {
                       main.prefs.get('optimisedWallpapers') ?? true
@@ -590,11 +590,11 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                 _imageFile = image;
                                 screenshotTaken = true;
                               });
-                              print('Screenshot Taken');
+                              debugPrint('Screenshot Taken');
                             }).catchError((onError) {
-                              print(onError);
+                              debugPrint(onError);
                             })
-                          : print("Wallpaper Optimisation is disabled!");
+                          : debugPrint("Wallpaper Optimisation is disabled!");
                     }
                   }
                 },
@@ -860,7 +860,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         animation: offsetAnimation,
                         builder: (buildContext, child) {
                           if (offsetAnimation.value < 0.0)
-                            print('${offsetAnimation.value + 8.0}');
+                            debugPrint('${offsetAnimation.value + 8.0}');
                           return GestureDetector(
                             child: CachedNetworkImage(
                               imageUrl: PData.wallsPS[index].src["original"],
@@ -928,7 +928,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             },
                             onTap: () {
                               HapticFeedback.vibrate();
-                              !isLoading ? updateAccent() : print("");
+                              !isLoading ? updateAccent() : debugPrint("");
                               shakeController.forward(from: 0.0);
                             },
                           );
@@ -940,7 +940,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack);
                             Navigator.pop(context);
                           },
                           color: isLoading

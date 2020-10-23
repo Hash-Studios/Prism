@@ -47,11 +47,14 @@ class _PageManagerState extends State<PageManager> {
   void checkConnection() async {
     result = await DataConnectionChecker().hasConnection;
     if (result) {
-      print("Internet working as expected!");
+      debugPrint("Internet working as expected!");
+      setState(() {});
+      return true;
     } else {
-      print("Not connected to Internet!");
+      debugPrint("Not connected to Internet!");
+      setState(() {});
+      return false;
     }
-    setState(() {});
   }
 
   @override
@@ -142,7 +145,7 @@ class _PageManagerState extends State<PageManager> {
     });
   }
 
-  void initDynamicLinks(BuildContext context) async {
+  Future<bool> initDynamicLinks(BuildContext context) async {
     final PendingDynamicLinkData data =
         await FirebaseDynamicLinks.instance.getInitialLink();
     final Uri deepLink = data?.link;
@@ -230,9 +233,10 @@ class _PageManagerState extends State<PageManager> {
         print("opened while bg via deep link2345");
       }
     }, onError: (OnLinkErrorException e) async {
-      print('onLinkError');
-      print(e.message);
+      debugPrint('onLinkError');
+      debugPrint(e.message);
     });
+    return true;
   }
 
   @override
@@ -250,17 +254,17 @@ class _PageManagerState extends State<PageManager> {
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: PreferredSize(
+            preferredSize: const Size(double.infinity, 55),
             child: CategoriesBar(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height),
-            preferredSize: Size(double.infinity, 55),
           ),
           body: Stack(
             children: <Widget>[
               BottomBar(
                 child: PageView.builder(
                     onPageChanged: (index) {
-                      print("Index cat: " + index.toString());
+                      debugPrint("Index cat: ${index.toString()}");
                       setState(() {
                         page = index;
                       });
@@ -277,16 +281,16 @@ class _PageManagerState extends State<PageManager> {
                     controller: pageController,
                     itemCount: 2,
                     itemBuilder: (context, index) {
-                      print("Index : " + index.toString());
+                      debugPrint("Index : ${index.toString()}");
                       if (index == 0) {
                         return HomeScreen();
                       } else if (index == 1) {
-                        return CollectionScreen();
+                        return const CollectionScreen();
                       }
-                      return UndefinedScreen();
+                      return const UndefinedScreen();
                     }),
               ),
-              !result ? ConnectivityWidget() : Container(),
+              if (!result) ConnectivityWidget() else Container(),
             ],
           )),
     );

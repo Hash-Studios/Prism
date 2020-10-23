@@ -19,15 +19,16 @@ class DownloadScreen extends StatefulWidget {
 class _DownloadScreenState extends State<DownloadScreen> {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = HashMap();
-  List files = List();
+  List files = [];
   ScrollController controller;
-  var refreshDownloadKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshDownloadKey =
+      GlobalKey<RefreshIndicatorState>();
   @override
   void initState() {
     super.initState();
@@ -42,19 +43,19 @@ class _DownloadScreenState extends State<DownloadScreen> {
   }
 
   Future<String> get localfile async {
-    String path = 'storage/emulated/0/';
+    const String path = 'storage/emulated/0/';
     return '$path/Prism';
   }
 
   Future<void> readData() async {
-    var status = await Permission.storage.status;
+    final status = await Permission.storage.status;
     if (!status.isGranted) {
       await Permission.storage.request();
     }
     final file = await localfile;
     files = Directory(file).listSync();
 
-    if (files.length == 0) {
+    if (files.isEmpty) {
       setState(() {
         dataFetched = false;
       });
@@ -65,9 +66,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
     }
   }
 
+  // ignore: prefer_void_to_null
   Future<Null> refreshList() async {
     refreshDownloadKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 500));
     setState(() {
       files = [];
       dataFetched = false;
@@ -83,10 +85,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
+          preferredSize: Size(double.infinity, 55),
           child: HeadingChipBar(
             current: "Downloads",
           ),
-          preferredSize: Size(double.infinity, 55),
         ),
         backgroundColor: Theme.of(context).primaryColor,
         body: SafeArea(
@@ -95,46 +97,44 @@ class _DownloadScreenState extends State<DownloadScreen> {
             key: refreshDownloadKey,
             onRefresh: refreshList,
             child: dataFetched
-                ? Container(
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
-                      itemCount: files.length,
-                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent:
-                              MediaQuery.of(context).orientation ==
-                                      Orientation.portrait
-                                  ? 300
-                                  : 250,
-                          childAspectRatio: 0.6625,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8),
-                      itemBuilder: (BuildContext context, int index) {
-                        return GestureDetector(
-                          child: Container(
-                            decoration: files.length == 0
-                                ? BoxDecoration(
-                                    color: Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(20),
-                                  )
-                                : BoxDecoration(
-                                    color: Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(20),
-                                    image: DecorationImage(
-                                        image: FileImage(files[index]),
-                                        fit: BoxFit.cover)),
-                          ),
-                          onTap: () {
-                            Navigator.pushNamed(context, DownloadWallpaperRoute,
-                                arguments: ["Downloads", files[index]]);
-                          },
-                        );
-                      },
-                    ),
+                ? GridView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+                    itemCount: files.length,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent:
+                            MediaQuery.of(context).orientation ==
+                                    Orientation.portrait
+                                ? 300
+                                : 250,
+                        childAspectRatio: 0.6625,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8),
+                    itemBuilder: (BuildContext context, int index) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, downloadWallpaperRoute,
+                              arguments: ["Downloads", files[index]]);
+                        },
+                        child: Container(
+                          decoration: files.isEmpty
+                              ? BoxDecoration(
+                                  color: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                )
+                              : BoxDecoration(
+                                  color: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: FileImage(files[index] as File),
+                                      fit: BoxFit.cover)),
+                        ),
+                      );
+                    },
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,

@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 
 class DownloadWallpaperScreen extends StatefulWidget {
   final List arguments;
-  DownloadWallpaperScreen({@required this.arguments});
+  const DownloadWallpaperScreen({@required this.arguments});
   @override
   _DownloadWallpaperScreenState createState() =>
       _DownloadWallpaperScreenState();
@@ -18,7 +18,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -33,8 +33,8 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
         duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
     SystemChrome.setEnabledSystemUIOverlays([]);
-    provider = widget.arguments[0];
-    file = widget.arguments[1];
+    provider = widget.arguments[0] as String;
+    file = widget.arguments[1] as File;
   }
 
   @override
@@ -66,9 +66,18 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
             AnimatedBuilder(
                 animation: offsetAnimation,
                 builder: (buildContext, child) {
-                  if (offsetAnimation.value < 0.0)
-                    print('${offsetAnimation.value + 8.0}');
+                  if (offsetAnimation.value < 0.0) {
+                    debugPrint('${offsetAnimation.value + 8.0}');
+                  }
                   return GestureDetector(
+                    onLongPress: () {
+                      HapticFeedback.vibrate();
+                      shakeController.forward(from: 0.0);
+                    },
+                    onTap: () {
+                      HapticFeedback.vibrate();
+                      shakeController.forward(from: 0.0);
+                    },
                     child: Container(
                       margin: EdgeInsets.symmetric(
                           vertical: offsetAnimation.value * 1.25,
@@ -84,14 +93,6 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                       height: MediaQuery.of(context).size.height,
                       width: MediaQuery.of(context).size.width,
                     ),
-                    onLongPress: () {
-                      HapticFeedback.vibrate();
-                      shakeController.forward(from: 0.0);
-                    },
-                    onTap: () {
-                      HapticFeedback.vibrate();
-                      shakeController.forward(from: 0.0);
-                    },
                   );
                 }),
             Align(
@@ -108,7 +109,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                 child: IconButton(
                   onPressed: () {
                     navStack.removeLast();
-                    print(navStack);
+                    debugPrint(navStack.toString());
                     Navigator.pop(context);
                   },
                   color: Theme.of(context).accentColor,
@@ -124,11 +125,12 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                 padding: const EdgeInsets.all(8.0),
                 child: IconButton(
                   onPressed: () {
-                    var link = file.path;
+                    final link = file.path;
                     Navigator.push(
                         context,
                         PageRouteBuilder(
-                            transitionDuration: Duration(milliseconds: 300),
+                            transitionDuration:
+                                const Duration(milliseconds: 300),
                             pageBuilder:
                                 (context, animation, secondaryAnimation) {
                               animation = Tween(begin: 0.0, end: 1.0)
@@ -146,7 +148,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                             opaque: false));
                   },
                   color: Theme.of(context).accentColor,
-                  icon: Icon(
+                  icon: const Icon(
                     JamIcons.clock,
                   ),
                 ),

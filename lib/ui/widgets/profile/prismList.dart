@@ -279,7 +279,8 @@ class PrismList extends StatelessWidget {
                 var sdkInt = androidInfo.version.sdkInt;
                 var manufacturer = androidInfo.manufacturer;
                 var model = androidInfo.model;
-                print('Android $release (SDK $sdkInt), $manufacturer $model');
+                debugPrint(
+                    'Android $release (SDK $sdkInt), $manufacturer $model');
                 launch(
                     "mailto:hash.studios.inc@gmail.com?subject=%5BBUG%20REPORT%5D&body=----x-x-x----%0D%0ADevice%20Info%20-%0D%0A%0D%0AAndroid%20Version%3A%20Android%20$release%0D%0ASDK%20Number%3A%20SDK%20$sdkInt%0D%0ADevice%20Manufacturer%3A%20$manufacturer%0D%0ADevice%20Model%3A%20$model%0D%0A----x-x-x----%0D%0A%0D%0AEnter%20the%20bug%2Fissue%20below%20---");
               }

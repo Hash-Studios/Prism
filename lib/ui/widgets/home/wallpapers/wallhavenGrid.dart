@@ -370,7 +370,7 @@ class _WallHavenGridState extends State<WallHavenGrid>
                       animation: offsetAnimation,
                       builder: (buildContext, child) {
                         if (offsetAnimation.value < 0.0)
-                          print('${offsetAnimation.value + 8.0}');
+                          debugPrint('${offsetAnimation.value + 8.0}');
                         return GestureDetector(
                           child: Padding(
                             padding: index == longTapIndex

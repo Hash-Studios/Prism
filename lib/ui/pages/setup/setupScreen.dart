@@ -26,7 +26,7 @@ class SetupScreen extends StatefulWidget {
 class _SetupScreenState extends State<SetupScreen> {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack);
     return true;
   }
 
@@ -155,12 +155,12 @@ class _SetupPageState extends State<SetupPage> {
               future: widget.future,
               builder: (context, snapshot) {
                 if (snapshot == null) {
-                  print("snapshot null");
+                  debugPrint("snapshot null");
                   return Center(child: Loader());
                 }
                 if (snapshot.connectionState == ConnectionState.waiting ||
                     snapshot.connectionState == ConnectionState.none) {
-                  print("snapshot none, waiting");
+                  debugPrint("snapshot none, waiting");
                   return Center(child: Loader());
                 } else {
                   Future.delayed(Duration(seconds: 0))

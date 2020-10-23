@@ -23,7 +23,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
           onPressed: () {
             Navigator.pop(context);
             if (navStack.length > 1) navStack.removeLast();
-            print(navStack);
+            debugPrint(navStack);
           }),
       title: SizedBox(
           width: MediaQuery.of(context).size.width,

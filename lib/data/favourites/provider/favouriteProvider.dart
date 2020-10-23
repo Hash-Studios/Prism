@@ -6,28 +6,30 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 class FavouriteProvider extends ChangeNotifier {
-  final databaseReference = Firestore.instance;
+  final Firestore databaseReference = Firestore.instance;
   List liked;
   Future<List> getDataBase() async {
-    var uid = main.prefs.get("id");
-    this.liked = [];
+    final String uid = main.prefs.get("id") as String;
+    liked = [];
     await databaseReference
         .collection("users")
         .document(uid)
         .collection("images")
         .getDocuments()
         .then((value) {
-      this.liked = [];
-      value.documents.forEach((f) => this.liked.add(f.data));
+      liked = [];
+      for (final f in value.documents) {
+        liked.add(f.data);
+      }
     }).catchError((e) {
-      print("data done with error");
+      debugPrint("data done with error");
     });
 
-    return this.liked;
+    return liked;
   }
 
-  void deleteDataByID(String id) async {
-    var uid = main.prefs.get("id");
+  Future<bool> deleteDataByID(String id) async {
+    final String uid = main.prefs.get("id") as String;
     try {
       await databaseReference
           .collection("users")
@@ -36,14 +38,15 @@ class FavouriteProvider extends ChangeNotifier {
           .document(id)
           .delete();
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
     }
     await getDataBase();
+    return true;
   }
 
-  void createDataByWall(String provider, WallPaper wallhaven, WallPaperP pexels,
-      Map prism) async {
-    var uid = main.prefs.get("id");
+  Future<bool> createDataByWall(String provider, WallPaper wallhaven,
+      WallPaperP pexels, Map prism) async {
+    final String uid = main.prefs.get("id") as String;
     if (provider == "WallHaven") {
       await databaseReference
           .collection("users")
@@ -75,7 +78,7 @@ class FavouriteProvider extends ChangeNotifier {
         "category": "",
         "provider": "Pexels",
         "views": "",
-        "resolution": pexels.width.toString() + "x" + pexels.height.toString(),
+        "resolution": "${pexels.width}x${pexels.height}",
         "fav": "",
         "size": "",
         "photographer": pexels.photographer.toString()
@@ -99,6 +102,7 @@ class FavouriteProvider extends ChangeNotifier {
         "photographer": prism["by"].toString()
       });
     }
+    return true;
   }
 
   Future favCheck(String id, String provider, WallPaper wallhaven,
@@ -106,15 +110,13 @@ class FavouriteProvider extends ChangeNotifier {
     int index;
     await getDataBase().then(
       (value) {
-        value.forEach(
-          (element) {
-            if (element["id"] == id) {
-              index = value.indexOf(element);
-            }
-          },
-        );
+        for (final element in value) {
+          if (element["id"] == id) {
+            index = value.indexOf(element);
+          }
+        }
         if (index == null) {
-          print("Fav");
+          debugPrint("Fav");
           createDataByWall(provider, wallhaven, pexels, prism);
           toasts.codeSend("Wallpaper added to favourites!");
         } else {
@@ -128,16 +130,16 @@ class FavouriteProvider extends ChangeNotifier {
 
   Future<int> countFav() async {
     int favs = 0;
-    print("in countfav");
+    debugPrint("in countfav");
     await getDataBase().then((value) {
-      print(value.length);
+      debugPrint(value.length.toString());
       favs = value.length;
     });
     return favs;
   }
 
-  void deleteData() async {
-    var uid = main.prefs.get("id");
+  Future<bool> deleteData() async {
+    final String uid = main.prefs.get("id") as String;
     try {
       await databaseReference
           .collection("users")
@@ -145,13 +147,14 @@ class FavouriteProvider extends ChangeNotifier {
           .collection("images")
           .getDocuments()
           .then((snapshot) {
-        for (DocumentSnapshot ds in snapshot.documents) {
+        for (final DocumentSnapshot ds in snapshot.documents) {
           ds.reference.delete();
         }
       });
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
     }
     await getDataBase();
+    return true;
   }
 }
