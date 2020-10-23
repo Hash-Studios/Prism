@@ -30,7 +30,7 @@ class _ThemeViewState extends State<ThemeView> {
       Provider.of<ThemeModel>(context, listen: false).toggleTheme();
     }
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -50,7 +50,7 @@ class _ThemeViewState extends State<ThemeView> {
                   Provider.of<ThemeModel>(context, listen: false).toggleTheme();
                 }
                 navStack.removeLast();
-                debugPrint(navStack);
+                debugPrint(navStack.toString());
                 Navigator.pop(context);
               }),
           actions: <Widget>[
@@ -82,7 +82,7 @@ class _ThemeViewState extends State<ThemeView> {
                     duration: Duration(milliseconds: 300),
                     opacity: Provider.of<ThemeModel>(context, listen: false)
                                 .returnTheme() ==
-                            ThemeType.Dark
+                            ThemeType.dark
                         ? 1
                         : 0,
                     child: Container(
@@ -117,7 +117,7 @@ class _ThemeViewState extends State<ThemeView> {
                     duration: Duration(milliseconds: 300),
                     opacity: Provider.of<ThemeModel>(context, listen: false)
                                 .returnTheme() ==
-                            ThemeType.Dark
+                            ThemeType.dark
                         ? 0
                         : 1,
                     child: Container(
@@ -160,7 +160,7 @@ class _ThemeViewState extends State<ThemeView> {
               buttonColor: Theme.of(context).primaryColor,
               shadows: Provider.of<ThemeModel>(context, listen: false)
                           .returnTheme() ==
-                      ThemeType.Dark
+                      ThemeType.dark
                   ? [
                       BoxShadow(
                         color: Colors.black.withOpacity(.8),

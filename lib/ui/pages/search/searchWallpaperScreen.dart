@@ -32,7 +32,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -493,7 +493,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            debugPrint(navStack);
+                            debugPrint(navStack.toString());
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -940,7 +940,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            debugPrint(navStack);
+                            debugPrint(navStack.toString());
                             Navigator.pop(context);
                           },
                           color: isLoading

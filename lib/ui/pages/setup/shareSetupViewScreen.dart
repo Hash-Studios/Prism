@@ -285,7 +285,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                               SystemUiOverlay.bottom
                                             ]);
                                             Navigator.pushNamed(context,
-                                                PhotographerProfileRoute,
+                                                photographerProfileRoute,
                                                 arguments: [
                                                   SData.setup["by"],
                                                   SData.setup["email"],
@@ -447,7 +447,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                           toasts.codeSend(
                                               "Applying Setups require Premium");
                                           Navigator.pushNamed(
-                                              context, PremiumRoute);
+                                              context, premiumRoute);
                                         },
                                         child: Container(
                                           decoration: BoxDecoration(

@@ -30,7 +30,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -473,7 +473,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                     child: IconButton(
                       onPressed: () {
                         navStack.removeLast();
-                        debugPrint(navStack);
+                        debugPrint(navStack.toString());
                         Navigator.pop(context);
                       },
                       color: isLoading

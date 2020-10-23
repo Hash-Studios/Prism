@@ -81,7 +81,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -276,9 +276,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
     image.writeAsBytesSync(result);
     debugPrint('image_editor time : $diff');
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     Future.delayed(Duration(seconds: 0)).then((value) =>
-        Navigator.pushReplacementNamed(context, UploadWallRoute,
+        Navigator.pushReplacementNamed(context, uploadWallRoute,
             arguments: [image]));
   }
 

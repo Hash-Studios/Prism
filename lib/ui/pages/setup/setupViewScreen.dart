@@ -25,7 +25,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     with SingleTickerProviderStateMixin {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -252,7 +252,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     SystemUiOverlay.bottom
                                   ]);
                                   Navigator.pushNamed(
-                                      context, PhotographerProfileRoute,
+                                      context, photographerProfileRoute,
                                       arguments: [
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
@@ -492,7 +492,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
-                      debugPrint(navStack);
+                      debugPrint(navStack.toString());
                       Navigator.pop(context);
                     },
                     color: isLoading
