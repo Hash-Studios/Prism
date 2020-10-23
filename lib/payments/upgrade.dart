@@ -9,6 +9,10 @@ import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'components.dart';
+import 'package:Prism/gitkey.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/theme/config.dart' as config;
 
 PurchaserInfo _purchaserInfo;
 
@@ -206,7 +210,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Icon(
                               JamIcons.instant_picture,
                               size: 22,
-                              color: const Color(0xFFE57697),
+                              color: config.Colors().mainAccentColor(1),
                             ),
                             const SizedBox(
                               width: 20,
@@ -237,7 +241,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Icon(
                               JamIcons.filter,
                               size: 22,
-                              color: const Color(0xFFE57697),
+                              color: config.Colors().mainAccentColor(1),
                             ),
                             const SizedBox(
                               width: 20,
@@ -268,7 +272,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Icon(
                               JamIcons.user,
                               size: 22,
-                              color: const Color(0xFFE57697),
+                              color: config.Colors().mainAccentColor(1),
                             ),
                             const SizedBox(
                               width: 20,
@@ -299,7 +303,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Icon(
                               JamIcons.clock,
                               size: 22,
-                              color: const Color(0xFFE57697),
+                              color: config.Colors().mainAccentColor(1),
                             ),
                             const SizedBox(
                               width: 20,
@@ -330,7 +334,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Icon(
                               JamIcons.download,
                               size: 22,
-                              color: const Color(0xFFE57697),
+                              color: config.Colors().mainAccentColor(1),
                             ),
                             const SizedBox(
                               width: 20,
@@ -361,7 +365,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Icon(
                               JamIcons.coffee,
                               size: 22,
-                              color: const Color(0xFFE57697),
+                              color: config.Colors().mainAccentColor(1),
                             ),
                             const SizedBox(
                               width: 20,
@@ -538,7 +542,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                 child: Container(
                   width: MediaQuery.of(context).size.width * 0.9,
                   decoration: BoxDecoration(
-                      color: const Color(0xFFE57697),
+                      color: config.Colors().mainAccentColor(1),
                       borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.all(10.0),
                   child: Row(
@@ -597,7 +601,7 @@ class ProScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(18.0),
                   child: Icon(
                     Icons.star,
-                    color: const Color(0xFFE57697),
+                    color: config.Colors().mainAccentColor(1),
                     size: 44.0,
                   ),
                 ),

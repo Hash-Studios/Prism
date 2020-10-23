@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
+import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/favourite/favLoader.dart';
@@ -18,6 +19,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
+import 'package:Prism/theme/config.dart' as config;
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -90,7 +93,40 @@ class _ProfileChildState extends State<ProfileChild> {
                     headerSliverBuilder: (context, innerBoxIsScrolled) =>
                         <Widget>[
                       SliverAppBar(
-                        backgroundColor: Color(0xFFE57697),
+                        actions: main.prefs.get("name") == null &&
+                                main.prefs.get("email") == null &&
+                                main.prefs.get("googleimage") == null
+                            ? []
+                            : [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: IconButton(
+                                      icon: Icon(JamIcons.share_alt),
+                                      onPressed: () {
+                                        createUserDynamicLink(
+                                            main.prefs.get("name"),
+                                            main.prefs.get("email"),
+                                            main.prefs.get("googleimage"),
+                                            main.prefs.get("premium"),
+                                            main.prefs.get("twitter") != ""
+                                                ? main.prefs
+                                                        .get("twitter")
+                                                        .toString()
+                                                        .split(
+                                                            "https://www.twitter.com/")[
+                                                    1]
+                                                : "",
+                                            main.prefs.get("instagram") != ""
+                                                ? main.prefs
+                                                    .get("instagram")
+                                                    .toString()
+                                                    .split(
+                                                        "https://www.instagram.com/")[1]
+                                                : "");
+                                      }),
+                                )
+                              ],
+                        backgroundColor: config.Colors().mainAccentColor(1),
                         automaticallyImplyLeading: false,
                         pinned: false,
                         expandedHeight: 260.0,
@@ -99,7 +135,7 @@ class _ProfileChildState extends State<ProfileChild> {
                             fit: StackFit.expand,
                             children: [
                               Container(
-                                color: Color(0xFFE57697),
+                                color: config.Colors().mainAccentColor(1),
                               ),
                               Padding(
                                 padding: const EdgeInsets.only(top: 25.0),
@@ -185,8 +221,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               .bodyText2
                                                               .copyWith(
                                                                   fontSize: 10,
-                                                                  color: Color(
-                                                                      0xFFE57697)),
+                                                                  color: Color(main
+                                                                      .prefs
+                                                                      .get(
+                                                                          "mainAccentColor"))),
                                                         ),
                                                       ),
                                                     )
@@ -252,7 +290,86 @@ class _ProfileChildState extends State<ProfileChild> {
                                           Spacer(flex: 3),
                                         ],
                                       ),
-                                      Spacer(flex: 4),
+                                      Spacer(flex: 1),
+                                      main.prefs.get("twitter") != "" &&
+                                              main.prefs.get("twitter") !=
+                                                  "https://www.twitter.com/"
+                                          ? GestureDetector(
+                                              onTap: () {
+                                                launch(main.prefs
+                                                    .get("twitter")
+                                                    .toString());
+                                              },
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                // mainAxisAlignment:
+                                                //     MainAxisAlignment.start,
+                                                children: <Widget>[
+                                                  Icon(
+                                                    JamIcons.twitter,
+                                                    color: Colors.white70,
+                                                  ),
+                                                  Text(
+                                                    " " +
+                                                        main.prefs
+                                                            .get("twitter")
+                                                            .toString()
+                                                            .split(
+                                                                "https://www.twitter.com/")[1],
+                                                    style: TextStyle(
+                                                        fontFamily:
+                                                            "Proxima Nova",
+                                                        fontSize: 20,
+                                                        color: Colors.white70,
+                                                        fontWeight:
+                                                            FontWeight.normal),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          : Spacer(
+                                              flex: 1,
+                                            ),
+                                      Spacer(flex: 1),
+                                      main.prefs.get("instagram") != "" &&
+                                              main.prefs.get("instagram") !=
+                                                  "https://www.instagram.com/"
+                                          ? GestureDetector(
+                                              onTap: () {
+                                                launch(main.prefs
+                                                    .get("instagram")
+                                                    .toString());
+                                              },
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                // mainAxisAlignment:
+                                                //     MainAxisAlignment.start,
+                                                children: <Widget>[
+                                                  Icon(
+                                                    JamIcons.instagram,
+                                                    color: Colors.white70,
+                                                  ),
+                                                  Text(
+                                                    " " +
+                                                        main.prefs
+                                                            .get("instagram")
+                                                            .toString()
+                                                            .split(
+                                                                "https://www.instagram.com/")[1],
+                                                    style: TextStyle(
+                                                        fontFamily:
+                                                            "Proxima Nova",
+                                                        fontSize: 20,
+                                                        color: Colors.white70,
+                                                        fontWeight:
+                                                            FontWeight.normal),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          : Spacer(
+                                              flex: 1,
+                                            ),
                                     ],
                                   ),
                                 ),
@@ -262,7 +379,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         ),
                       ),
                       SliverAppBar(
-                        backgroundColor: Color(0xFFE57697),
+                        backgroundColor: config.Colors().mainAccentColor(1),
                         automaticallyImplyLeading: false,
                         pinned: true,
                         titleSpacing: 0,
@@ -338,7 +455,7 @@ class _ProfileChildState extends State<ProfileChild> {
                 body:
                     CustomScrollView(controller: controller, slivers: <Widget>[
                   SliverAppBar(
-                    backgroundColor: Color(0xFFE57697),
+                    backgroundColor: config.Colors().mainAccentColor(1),
                     automaticallyImplyLeading: false,
                     pinned: false,
                     expandedHeight: 280.0,
@@ -349,7 +466,7 @@ class _ProfileChildState extends State<ProfileChild> {
                           Stack(
                             children: <Widget>[
                               Container(
-                                color: Color(0xFFE57697),
+                                color: config.Colors().mainAccentColor(1),
                               ),
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),

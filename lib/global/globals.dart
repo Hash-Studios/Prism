@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 var gAuth = GoogleAuth();
-var currentAppVersion = '2.5.6';
-var currentAppVersionCode = '18';
+var currentAppVersion = '2.5.7';
+var currentAppVersionCode = '19';
 var updateChecked = false;
 var updateAvailable = false;
 var versionInfo = {};

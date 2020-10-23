@@ -60,11 +60,17 @@ class _StudioListState extends State<StudioList> {
                     leading: Icon(
                       index == 0
                           ? JamIcons.coffee
-                          : index == 1 ? Icons.fastfood : JamIcons.pizza_slice,
+                          : index == 1
+                              ? Icons.fastfood
+                              : JamIcons.pizza_slice,
                       color: Theme.of(context).accentColor,
                     ),
                     title: Text(
-                      index == 0 ? "Tea" : index == 1 ? "Burger" : "Pan Pizza",
+                      index == 0
+                          ? "Tea"
+                          : index == 1
+                              ? "Burger"
+                              : "Pan Pizza",
                       style: Theme.of(context).textTheme.headline4,
                     ),
                     onTap: index == 0
@@ -147,19 +153,6 @@ class _StudioListState extends State<StudioList> {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Hash Studios',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).accentColor,
-              ),
-            ),
-          ),
-        ),
         ListTile(
             leading: Icon(
               JamIcons.luggage,

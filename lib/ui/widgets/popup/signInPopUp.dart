@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/theme/config.dart' as config;
 
 void googleSignInPopUp(BuildContext context, Function func) {
   Dialog loaderDialog = Dialog(
@@ -73,7 +74,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.heart,
                   size: 22,
-                  color: Color(0xFFE57697),
+                  color: config.Colors().mainAccentColor(1),
                 ),
                 SizedBox(
                   width: 20,
@@ -103,7 +104,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.instant_picture,
                   size: 22,
-                  color: Color(0xFFE57697),
+                  color: config.Colors().mainAccentColor(1),
                 ),
                 SizedBox(
                   width: 20,
@@ -133,7 +134,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.upload,
                   size: 22,
-                  color: Color(0xFFE57697),
+                  color: config.Colors().mainAccentColor(1),
                 ),
                 SizedBox(
                   width: 20,
@@ -163,7 +164,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.coin,
                   size: 22,
-                  color: Color(0xFFE57697),
+                  color: config.Colors().mainAccentColor(1),
                 ),
                 SizedBox(
                   width: 20,
@@ -193,7 +194,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.cloud,
                   size: 22,
-                  color: Color(0xFFE57697),
+                  color: config.Colors().mainAccentColor(1),
                 ),
                 SizedBox(
                   width: 20,
@@ -215,7 +216,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
             ),
             FlatButton(
               shape: StadiumBorder(),
-              color: Color(0xFFE57697),
+              color: config.Colors().mainAccentColor(1),
               onPressed: () {
                 Navigator.of(context).pop();
                 showDialog(

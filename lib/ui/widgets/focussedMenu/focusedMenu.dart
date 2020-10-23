@@ -2,6 +2,7 @@ import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenuDetails.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class FocusedMenuHolder extends StatefulWidget {
   final String provider;
@@ -46,7 +47,7 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
                 child: GestureDetector(
                   child: Container(
                     decoration: BoxDecoration(
-                        color: Color(0xFF2F2F2F),
+                        color: config.Colors().secondDarkColor(1),
                         borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(20),
                             bottomRight: Radius.circular(20))),
@@ -77,6 +78,9 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
                                     childOffset: childOffset,
                                     childSize: childSize,
                                     index: widget.index,
+                                    size: MediaQuery.of(context).size,
+                                    orientation:
+                                        MediaQuery.of(context).orientation,
                                   ));
                             },
                             fullscreenDialog: true,

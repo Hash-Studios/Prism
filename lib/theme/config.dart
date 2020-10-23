@@ -1,3 +1,4 @@
+import 'package:Prism/main.dart' as main;
 import 'package:flutter/material.dart';
 
 class App {
@@ -36,12 +37,13 @@ class App {
 }
 
 class Colors {
-  final Color _mainColor = const Color(0xFFFFFFFF);
-  final Color _secondColor = const Color(0xFFEDEDED);
-  final Color _accentColor = const Color(0xFF2F2F2F);
-  final Color _mainDarkColor = const Color(0xFF181818);
-  final Color _secondDarkColor = const Color(0xFF2F2F2F);
-  final Color _accentDarkColor = const Color(0xFFF0F0F0);
+  Color _mainColor = Color(0xFFFFFFFF);
+  Color _secondColor = Color(0xFFEDEDED);
+  Color _accentColor = Color(0xFF2F2F2F);
+  Color _mainDarkColor = Color(0xFF181818);
+  Color _secondDarkColor = Color(0xFF2F2F2F);
+  Color _accentDarkColor = Color(0xFFF0F0F0);
+  Color _mainAccentColor = Color(main.prefs.get("mainAccentColor"));
 
   Color mainColor(double opacity) {
     return _mainColor.withOpacity(opacity);
@@ -65,5 +67,9 @@ class Colors {
 
   Color accentDarkColor(double opacity) {
     return _accentDarkColor.withOpacity(opacity);
+  }
+
+  Color mainAccentColor(double opacity) {
+    return this._mainAccentColor.withOpacity(opacity);
   }
 }

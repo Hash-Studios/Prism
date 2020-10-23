@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
 
 class SetupScreen extends StatefulWidget {
   SetupScreen({
@@ -93,7 +94,10 @@ class _SetupPageState extends State<SetupPage> {
             height: MediaQuery.of(context).size.height * 0.3,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFE57697), Theme.of(context).primaryColor],
+                colors: [
+                  config.Colors().mainAccentColor(1),
+                  Theme.of(context).primaryColor
+                ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 stops: [0, 1],
@@ -298,7 +302,8 @@ class _SetupPageState extends State<SetupPage> {
                                             child: CircularProgressIndicator(
                                                 valueColor:
                                                     AlwaysStoppedAnimation(
-                                                  Color(0xFFE57697),
+                                                  config.Colors()
+                                                      .mainAccentColor(1),
                                                 ),
                                                 value:
                                                     downloadProgress.progress),
@@ -499,7 +504,9 @@ class _SetupPageState extends State<SetupPage> {
                                                     CircularProgressIndicator(
                                                         valueColor:
                                                             AlwaysStoppedAnimation(
-                                                          Color(0xFFE57697),
+                                                          config.Colors()
+                                                              .mainAccentColor(
+                                                                  1),
                                                         ),
                                                         value: downloadProgress
                                                             .progress),

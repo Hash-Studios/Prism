@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class Loader extends StatefulWidget {
   @override
@@ -66,7 +67,7 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Color(0xFFE57697),
+            color: config.Colors().mainAccentColor(1),
           ),
           child: SizedBox(
             width: 55,

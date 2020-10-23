@@ -1,6 +1,7 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 void showChangelog(BuildContext context, Function func) {
   final controller = ScrollController();
@@ -38,13 +39,55 @@ void showChangelog(BuildContext context, Function func) {
               child: SingleChildScrollView(
                 controller: controller,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  ChangeVersion(number: 'v2.5.6'),
+                  ChangeVersion(number: 'v2.5.7'),
                   Change(
-                      icon: JamIcons.instant_picture,
-                      text: "Fixed curated wallpapers not loading."),
+                      icon: JamIcons.settings_alt,
+                      text: "Redesigned settings screen."),
+                  Change(
+                      icon: JamIcons.background_color,
+                      text: "Now customise accent color of the app."),
+                  Change(
+                      icon: JamIcons.share,
+                      text: "Now share setups and profiles."),
+                  Change(
+                      icon: JamIcons.twitter,
+                      text: "Now connect Twitter with your profile."),
+                  Change(
+                      icon: JamIcons.instagram,
+                      text: "Now connect Instagram with your profile."),
+                  Change(icon: JamIcons.android, text: "Redesigned app icon."),
+                  Change(
+                      icon: JamIcons.rocket,
+                      text: "Redesigned splash animation."),
+                  Change(
+                      icon: JamIcons.paper_plane,
+                      text: "Connected to Telegram group."),
                   Change(
                       icon: JamIcons.bug,
                       text: "Minor bug fixes and improvements."),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ChangeVersion(number: 'v2.5.6'),
+                  Change(
+                      icon: JamIcons.upload, text: "Now upload setups in-app."),
+                  Change(
+                      icon: JamIcons.pictures,
+                      text: "Redesigned collections' screen."),
+                  Change(
+                      icon: JamIcons.clock, text: "Redesigned clock overlay."),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text: "Redesigned setups' browser."),
+                  Change(
+                      icon: JamIcons.refresh,
+                      text: "Added wallpaper optimisation."),
+                  Change(
+                      icon: JamIcons.picture,
+                      text: "Fixed curated wallpapers not loading."),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Major bug fixes and improvements."),
                   SizedBox(
                     height: 15,
                   ),
@@ -327,7 +370,7 @@ void showChangelog(BuildContext context, Function func) {
           ),
           FlatButton(
             shape: StadiumBorder(),
-            color: Color(0xFFE57697),
+            color: config.Colors().mainAccentColor(1),
             onPressed: () {
               Navigator.of(context).pop();
               func();
@@ -401,7 +444,7 @@ class Change extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color: Color(0xFFE57697),
+              color: config.Colors().mainAccentColor(1),
             ),
             SizedBox(
               width: 20,

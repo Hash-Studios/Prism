@@ -1,5 +1,16 @@
 ## Changelog
 
+### v2.5.7
+- Redesigned settings screen
+- Now customise the accent color of the app
+- Now connect Twitter with your Prism Profile
+- Now connect Instagram with your Prism Profile
+- Now share setups and profiles
+- Redesigned App Icon
+- Redesigned splash animation
+- Now join our telegram group from the app
+- Minor bug fixes and improvements
+
 ### v2.5.6
 - Now Download wallpapers even if ads failed to load
 - Redesigned Collections' screen

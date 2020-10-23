@@ -11,21 +11,40 @@ import 'package:Prism/global/globals.dart' as globals;
 class PrismList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return ExpansionTile(
+      leading: Icon(
+        JamIcons.cog,
+      ),
+      title: new Text(
+        "Prism",
+        style: TextStyle(
+            color: Theme.of(context).accentColor,
+            fontWeight: FontWeight.w500,
+            fontFamily: "Proxima Nova"),
+      ),
+      subtitle: Text(
+        "Connect with Prism community",
+        style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
+      ),
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Prism',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).accentColor,
-              ),
+        ListTile(
+            leading: Icon(
+              JamIcons.paper_plane,
             ),
-          ),
-        ),
+            title: new Text(
+              "Prism on Telegram",
+              style: TextStyle(
+                  color: Theme.of(context).accentColor,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: Text(
+              "Discuss with community.",
+              style: TextStyle(fontSize: 12),
+            ),
+            onTap: () {
+              launch("https://t.me/PrismWallpapers");
+            }),
         ListTile(
             leading: Icon(
               JamIcons.info,
