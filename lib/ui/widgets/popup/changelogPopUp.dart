@@ -5,7 +5,7 @@ import 'package:Prism/theme/config.dart' as config;
 
 void showChangelog(BuildContext context, Function func) {
   final controller = ScrollController();
-  Dialog aboutPopUp = Dialog(
+  final Dialog aboutPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: Container(
       decoration: BoxDecoration(
@@ -20,14 +20,12 @@ void showChangelog(BuildContext context, Function func) {
             height: 150,
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: FlareActor(
+            child: const FlareActor(
               "assets/animations/Changelog.flr",
-              isPaused: false,
-              alignment: Alignment.center,
               animation: "changelog",
             ),
           ),
@@ -38,7 +36,7 @@ void showChangelog(BuildContext context, Function func) {
               isAlwaysShown: true,
               child: SingleChildScrollView(
                 controller: controller,
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                child: Column(mainAxisSize: MainAxisSize.min, children: const [
                   ChangeVersion(number: 'v2.5.7'),
                   Change(
                       icon: JamIcons.settings_alt,
@@ -365,17 +363,17 @@ void showChangelog(BuildContext context, Function func) {
               ),
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 25,
           ),
           FlatButton(
-            shape: StadiumBorder(),
+            shape: const StadiumBorder(),
             color: config.Colors().mainAccentColor(1),
             onPressed: () {
               Navigator.of(context).pop();
               func();
             },
-            child: Text(
+            child: const Text(
               'CLOSE',
               style: TextStyle(
                 fontSize: 16.0,
@@ -383,7 +381,7 @@ void showChangelog(BuildContext context, Function func) {
               ),
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 15,
           ),
         ],
@@ -395,7 +393,7 @@ void showChangelog(BuildContext context, Function func) {
 
 class ChangeVersion extends StatelessWidget {
   final String number;
-  ChangeVersion({@required this.number});
+  const ChangeVersion({@required this.number});
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -416,7 +414,7 @@ class ChangeVersion extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(
+        const SizedBox(
           height: 20,
         ),
       ],
@@ -427,7 +425,7 @@ class ChangeVersion extends StatelessWidget {
 class Change extends StatelessWidget {
   final IconData icon;
   final String text;
-  Change({@required this.icon, @required this.text});
+  const Change({@required this.icon, @required this.text});
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -435,10 +433,8 @@ class Change extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            SizedBox(
+            const SizedBox(
               width: 20,
             ),
             Icon(
@@ -446,7 +442,7 @@ class Change extends StatelessWidget {
               size: 22,
               color: config.Colors().mainAccentColor(1),
             ),
-            SizedBox(
+            const SizedBox(
               width: 20,
             ),
             Container(
@@ -461,7 +457,7 @@ class Change extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(
+        const SizedBox(
           height: 10,
         ),
       ],

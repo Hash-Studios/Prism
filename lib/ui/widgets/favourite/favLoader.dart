@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 
 class FavLoader extends StatefulWidget {
   final Future<List> future;
-  FavLoader({this.future});
+  const FavLoader({this.future});
   @override
   _FavLoaderState createState() => _FavLoaderState();
 }
@@ -25,14 +25,14 @@ class _FavLoaderState extends State<FavLoader> {
       builder: (ctx, snapshot) {
         if (snapshot == null) {
           debugPrint("snapshot null");
-          return LoadingCards();
+          return const LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
           debugPrint("snapshot none, waiting");
-          return LoadingCards();
+          return const LoadingCards();
         } else {
-          return FavouriteGrid();
+          return const FavouriteGrid();
         }
       },
     );

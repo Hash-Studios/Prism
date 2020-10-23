@@ -79,7 +79,9 @@ class _LoadingCardsState extends State<LoadingCards>
     ScrollController controller;
     try {
       controller = InheritedDataProvider.of(context).scrollController;
-    } catch (e) {}
+    } catch (e) {
+      debugPrint(e.toString());
+    }
 
     return controller != null
         ? GridView.builder(
@@ -105,7 +107,7 @@ class _LoadingCardsState extends State<LoadingCards>
             },
           )
         : GridView.builder(
-            padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
+            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(

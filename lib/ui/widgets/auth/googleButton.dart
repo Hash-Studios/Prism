@@ -32,9 +32,9 @@ class _GoogleButtonState extends State<GoogleButton> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                      color: Color(0xFFEFF5FF).withOpacity(0.4),
+                      color: const Color(0xFFEFF5FF).withOpacity(0.4),
                       blurRadius: 16,
-                      offset: Offset(0, 4)),
+                      offset: const Offset(0, 4)),
                 ],
                 borderRadius: BorderRadius.circular(500),
               )
@@ -47,14 +47,14 @@ class _GoogleButtonState extends State<GoogleButton> {
               ),
         child: FlatButton(
           colorBrightness: Brightness.light,
-          padding: EdgeInsets.all(0),
-          shape: StadiumBorder(),
+          padding: const EdgeInsets.all(0),
+          shape: const StadiumBorder(),
           onPressed: () {
             gAuth.signInWithGoogle().whenComplete(() async {}).catchError((e) {
               setState(() {
                 isError = true;
               });
-              Future.delayed(Duration(milliseconds: 500))
+              Future.delayed(const Duration(milliseconds: 500))
                   .then((value) => Navigator.pop(context));
             });
           },

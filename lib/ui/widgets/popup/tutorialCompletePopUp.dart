@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
 
 void showTutorialComplete(BuildContext context) {
-  Dialog tutPopUp = Dialog(
+  final Dialog tutPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: Container(
       decoration: BoxDecoration(
@@ -19,15 +19,12 @@ void showTutorialComplete(BuildContext context) {
             height: 150,
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: FlareActor(
+            child: const FlareActor(
               "assets/animations/Success.flr",
-              fit: BoxFit.contain,
-              isPaused: false,
-              alignment: Alignment.center,
               animation: "trophy",
             ),
           ),
@@ -48,14 +45,12 @@ void showTutorialComplete(BuildContext context) {
                   ),
                 ],
               ),
-              SizedBox(
+              const SizedBox(
                 height: 20,
               ),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 20,
                   ),
                   Container(
@@ -72,21 +67,20 @@ void showTutorialComplete(BuildContext context) {
               ),
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 25,
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               FlatButton(
-                shape: StadiumBorder(),
+                shape: const StadiumBorder(),
                 color: config.Colors().mainAccentColor(1),
                 onPressed: () {
                   Navigator.of(context).pop();
                   showChangelog(context, () {});
                 },
-                child: Text(
+                child: const Text(
                   'VIEW CHANGELOG',
                   style: TextStyle(
                     fontSize: 16.0,
@@ -95,7 +89,7 @@ void showTutorialComplete(BuildContext context) {
                 ),
               ),
               FlatButton(
-                shape: StadiumBorder(),
+                shape: const StadiumBorder(),
                 color: Theme.of(context).accentColor.withOpacity(0.3),
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -110,7 +104,7 @@ void showTutorialComplete(BuildContext context) {
               ),
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 15,
           ),
         ],

@@ -17,11 +17,11 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget>
     super.initState();
     animationController = AnimationController(
         duration: const Duration(milliseconds: 500), vsync: this);
-    Future.delayed(Duration(seconds: 1)).then((value) {
-      this.animationController.forward();
+    Future.delayed(const Duration(seconds: 1)).then((value) {
+      animationController.forward();
     });
-    Future.delayed(Duration(seconds: 10))
-        .then((value) => {this.animationController.reverse()});
+    Future.delayed(const Duration(seconds: 10))
+        .then((value) => {animationController.reverse()});
   }
 
   @override
@@ -45,10 +45,10 @@ class OfflineBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(2),
+      padding: const EdgeInsets.all(2),
       width: double.infinity,
       color: Colors.red,
-      child: Text(
+      child: const Text(
         "No Internet",
         style: TextStyle(
           fontSize: 10,

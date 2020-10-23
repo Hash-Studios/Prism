@@ -8,7 +8,7 @@ class ClockOverlay extends StatefulWidget {
   final bool file;
   final Color accent;
   final bool colorChanged;
-  ClockOverlay({
+  const ClockOverlay({
     @required this.link,
     @required this.file,
     @required this.accent,
@@ -21,50 +21,51 @@ class ClockOverlay extends StatefulWidget {
 class _ClockOverlayState extends State<ClockOverlay> {
   @override
   Widget build(BuildContext context) {
-    var day = DateFormat('EEEE').format(DateTime.now());
-    var month = DateFormat('MMMM').format(DateTime.now());
-    var dayNo = DateFormat('d').format(DateTime.now());
-    var suffix = dayNo[dayNo.length - 1] == 1
+    final day = DateFormat('EEEE').format(DateTime.now());
+    final month = DateFormat('MMMM').format(DateTime.now());
+    final dayNo = DateFormat('d').format(DateTime.now());
+    final suffix = dayNo[dayNo.length - 1] as int == 1
         ? "ˢᵗ"
-        : dayNo[dayNo.length - 1] == 2
+        : dayNo[dayNo.length - 1] as int == 2
             ? "ⁿᵈ"
-            : dayNo[dayNo.length - 1] == 3 ? "ʳᵈ" : "ᵗʰ";
+            : dayNo[dayNo.length - 1] as int == 3
+                ? "ʳᵈ"
+                : "ᵗʰ";
     return Material(
       child: Stack(
         children: <Widget>[
-          !widget.file
-              ? CachedNetworkImage(
-                  imageUrl: widget.link,
-                  imageBuilder: (context, imageProvider) => Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        colorFilter: widget.colorChanged
-                            ? ColorFilter.mode(widget.accent, BlendMode.hue)
-                            : null,
-                        image: imageProvider,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                )
-              : Container(
-                  height: MediaQuery.of(context).size.height,
-                  width: MediaQuery.of(context).size.width,
-                  child: Image.file(
-                    File(widget.link),
-                    color: widget.accent,
-                    colorBlendMode:
-                        widget.colorChanged ? BlendMode.color : null,
+          if (!widget.file)
+            CachedNetworkImage(
+              imageUrl: widget.link,
+              imageBuilder: (context, imageProvider) => Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    colorFilter: widget.colorChanged
+                        ? ColorFilter.mode(widget.accent, BlendMode.hue)
+                        : null,
+                    image: imageProvider,
                     fit: BoxFit.cover,
                   ),
                 ),
+              ),
+            )
+          else
+            Container(
+              height: MediaQuery.of(context).size.height,
+              width: MediaQuery.of(context).size.width,
+              child: Image.file(
+                File(widget.link),
+                color: widget.accent,
+                colorBlendMode: widget.colorChanged ? BlendMode.color : null,
+                fit: BoxFit.cover,
+              ),
+            ),
           SizedBox(
             height: MediaQuery.of(context).size.height / 3,
             width: MediaQuery.of(context).size.width,
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   Text(
                     "$day,",
@@ -80,7 +81,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                       fontWeight: FontWeight.w300,
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 5,
                   ),
                   Text(
@@ -107,7 +108,6 @@ class _ClockOverlayState extends State<ClockOverlay> {
               width: MediaQuery.of(context).size.width,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   Image.asset(
                     "assets/images/dialer.png",
@@ -137,12 +137,12 @@ class _ClockOverlayState extends State<ClockOverlay> {
             ),
           ),
           GestureDetector(
+            onTap: () => {Navigator.pop(context)},
             child: SizedBox(
               height: MediaQuery.of(context).size.height,
               width: MediaQuery.of(context).size.width,
-              child: Text(""),
+              child: const Text(""),
             ),
-            onTap: () => {Navigator.pop(context)},
           )
         ],
       ),

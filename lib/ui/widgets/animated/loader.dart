@@ -52,7 +52,7 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
   }
 
   @override
-  dispose() {
+  void dispose() {
     _controller.dispose();
     _controller2.dispose();
     super.dispose();
@@ -69,7 +69,7 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
             shape: BoxShape.circle,
             color: config.Colors().mainAccentColor(1),
           ),
-          child: SizedBox(
+          child: const SizedBox(
             width: 55,
             height: 55,
           ),
