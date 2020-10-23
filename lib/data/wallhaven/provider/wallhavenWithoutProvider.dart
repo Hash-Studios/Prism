@@ -33,7 +33,7 @@ Future<List<WallPaper>> categoryDataFetcher(
   if (navStack.last == "Home") {
     http
         .get(
-            "https://wallhaven.cc/api/v1/search?q=${categoryName}&page=${pageNumbers[index][categoryName]}")
+            "https://wallhaven.cc/api/v1/search?q=$categoryName&page=${pageNumbers[index][categoryName]}")
         .then(
       (http.Response response) {
         final resp = json.decode(response.body);
@@ -78,7 +78,7 @@ Future<List<WallPaper>> getData(String mode) async {
   if (navStack.last == "Home") {
     http
         .get(
-            "https://wallhaven.cc/api/v1/search?page=${pageGetData}&categories=100&purity=100&sorting=toplist&order=des")
+            "https://wallhaven.cc/api/v1/search?page=$pageGetData&categories=100&purity=100&sorting=toplist&order=des")
         .then(
       (http.Response response) {
         final resp = json.decode(response.body);
@@ -140,7 +140,7 @@ Future<WallPaper> getWallbyID(String id) async {
             id: resp["tags"][tag]["id"].toString(),
             name: resp["tags"][tag]["name"].toString(),
             alias: resp["tags"][tag]["alias"].toString(),
-            category_id: resp["tags"][tag]["category_id"].toString(),
+            categoryId: resp["tags"][tag]["category_id"].toString(),
             category: resp["tags"][tag]["category"].toString(),
           ),
         ),
@@ -184,10 +184,9 @@ Future<List<WallPaper>> getWallsbyQuery(String query) async {
 }
 
 Future<List<WallPaper>> getWallsbyQueryPage(String query) async {
-  debugPrint(
-      "https://wallhaven.cc/api/v1/search?q=$query&page=${pageGetQuery}");
+  debugPrint("https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery");
   http
-      .get("https://wallhaven.cc/api/v1/search?q=$query&page=${pageGetQuery}")
+      .get("https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery")
       .then(
     (http.Response response) {
       final resp = json.decode(response.body);

@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 Firestore firestore = Firestore.instance;
-void createRecord(
+Future<void> createRecord(
     String id,
     String wallpaperProvider,
     String wallpaperThumb,
@@ -36,7 +36,7 @@ void createRecord(
   }
 }
 
-void createSetup(
+Future<void> createSetup(
     String id,
     String imageURL,
     String wallpaperProvider,

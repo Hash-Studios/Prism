@@ -324,7 +324,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                   Provider.of<CategorySupplier>(context, listen: false)
                       .changeSelectedChoice(choice as CategoryMenu);
                   Provider.of<CategorySupplier>(context, listen: false)
-                      .changeWallpaperFuture(choice, "r");
+                      .changeWallpaperFuture(choice as CategoryMenu, "r");
                   PM.pageController.animateToPage(0,
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInCubic);
