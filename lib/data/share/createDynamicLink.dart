@@ -37,7 +37,7 @@ Future<String> createDynamicLink(
   return shortUrl.toString();
 }
 
-void createUserDynamicLink(String name, String email, String userPhoto,
+Future<void> createUserDynamicLink(String name, String email, String userPhoto,
     bool premium, String twitter, String instagram) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
@@ -61,12 +61,13 @@ void createUserDynamicLink(String name, String email, String userPhoto,
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  Share.share("🔥Check this out ➜ " + shortUrl.toString());
+  Share.share("🔥Check this out ➜ $shortUrl");
   analytics.logShare(contentType: 'userShare', itemId: email, method: 'link');
-  print(shortUrl);
+  debugPrint(shortUrl.toString());
 }
 
-void createSetupDynamicLink(String index, String name, String thumbUrl) async {
+Future<void> createSetupDynamicLink(
+    String index, String name, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
           title: "$name - Prism Wallpapers",
@@ -90,7 +91,7 @@ void createSetupDynamicLink(String index, String name, String thumbUrl) async {
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  Share.share("🔥Check this out ➜ " + shortUrl.toString());
+  Share.share("🔥Check this out ➜ $shortUrl");
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
-  print(shortUrl);
+  debugPrint(shortUrl.toString());
 }
