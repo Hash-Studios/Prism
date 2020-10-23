@@ -15,7 +15,7 @@ import 'package:Prism/theme/config.dart' as config;
 
 class SetupViewScreen extends StatefulWidget {
   final List arguments;
-  SetupViewScreen({this.arguments});
+  const SetupViewScreen({this.arguments});
 
   @override
   _SetupViewScreenState createState() => _SetupViewScreenState();
@@ -41,7 +41,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0];
+    index = widget.arguments[0] as int;
     isLoading = true;
     super.initState();
     SystemChrome.setEnabledSystemUIOverlays([]);
@@ -73,15 +73,14 @@ class _SetupViewScreenState extends State<SetupViewScreen>
         backgroundColor: Theme.of(context).primaryColor,
         body: SlidingUpPanel(
           backdropEnabled: true,
-          backdropTapClosesPanel: true,
-          borderRadius: BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
           ),
-          boxShadow: [],
+          boxShadow: const [],
           collapsed: Container(
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -89,7 +88,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
             child: SizedBox(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height / 20,
-              child: Center(
+              child: const Center(
                   child: Icon(
                 JamIcons.chevron_up,
                 color: Colors.white,
@@ -106,7 +105,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
             height: MediaQuery.of(context).size.height * .42,
             width: MediaQuery.of(context).size.width,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
@@ -115,9 +114,9 @@ class _SetupViewScreenState extends State<SetupViewScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Center(
+                const Center(
                     child: Padding(
-                  padding: const EdgeInsets.all(10.0),
+                  padding: EdgeInsets.all(10.0),
                   child: Icon(
                     JamIcons.chevron_down,
                     color: Colors.white,
@@ -165,7 +164,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                       children: <Widget>[
                         Column(
                           mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Padding(
@@ -181,24 +179,27 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                             ),
                             Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   JamIcons.google_play_circle,
                                   size: 20,
                                   color: Colors.white70,
                                 ),
-                                SizedBox(width: 10),
+                                const SizedBox(width: 10),
                                 Container(
                                   width:
                                       MediaQuery.of(context).size.width * 0.32,
                                   child: Text(
-                                    "${Provider.of<SetupProvider>(context, listen: false).setups[index]["icon"].toString()}",
+                                    Provider.of<SetupProvider>(context,
+                                            listen: false)
+                                        .setups[index]["icon"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 5,
                             ),
                             Row(
@@ -208,17 +209,20 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                             .setups[index]["widget"] ==
                                         ""
                                     ? Container()
-                                    : Icon(
+                                    : const Icon(
                                         JamIcons.google_play,
                                         size: 20,
                                         color: Colors.white70,
                                       ),
-                                SizedBox(width: 10),
+                                const SizedBox(width: 10),
                                 Container(
                                   width:
                                       MediaQuery.of(context).size.width * 0.32,
                                   child: Text(
-                                    "${Provider.of<SetupProvider>(context, listen: false).setups[index]["widget"].toString()}",
+                                    Provider.of<SetupProvider>(context,
+                                            listen: false)
+                                        .setups[index]["widget"]
+                                        .toString(),
                                     style:
                                         Theme.of(context).textTheme.bodyText2,
                                   ),
@@ -229,23 +233,27 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                         ),
                         Column(
                           mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: <Widget>[
                             ActionChip(
                                 label: Text(
-                                  "${Provider.of<SetupProvider>(context, listen: false).setups[index]["by"].toString()}",
+                                  Provider.of<SetupProvider>(context,
+                                          listen: false)
+                                      .setups[index]["by"]
+                                      .toString(),
                                   style: Theme.of(context).textTheme.bodyText2,
                                 ),
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                     vertical: 5, horizontal: 5),
                                 avatar: CircleAvatar(
                                   backgroundImage: CachedNetworkImageProvider(
                                       Provider.of<SetupProvider>(context,
                                               listen: false)
-                                          .setups[index]["userPhoto"]),
+                                          .setups[index]["userPhoto"]
+                                          .toString()),
                                 ),
-                                labelPadding: EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                labelPadding:
+                                    const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                 onPressed: () {
                                   SystemChrome.setEnabledSystemUIOverlays([
                                     SystemUiOverlay.top,
@@ -268,7 +276,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                         ""
                                       ]);
                                 }),
-                            SizedBox(height: 5),
+                            const SizedBox(height: 5),
                             Row(
                               children: [
                                 Text(
@@ -278,8 +286,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       .toString(),
                                   style: Theme.of(context).textTheme.bodyText2,
                                 ),
-                                SizedBox(width: 10),
-                                Icon(
+                                const SizedBox(width: 10),
+                                const Icon(
                                   JamIcons.database,
                                   size: 20,
                                   color: Colors.white70,
@@ -303,20 +311,23 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                             DownloadButton(
                               link: Provider.of<SetupProvider>(context,
                                       listen: false)
-                                  .setups[index]["wallpaper_url"],
+                                  .setups[index]["wallpaper_url"]
+                                  .toString(),
                               colorChanged: false,
                             ),
                             SetWallpaperButton(
                               url: Provider.of<SetupProvider>(context,
                                       listen: false)
-                                  .setups[index]["wallpaper_url"],
+                                  .setups[index]["wallpaper_url"]
+                                  .toString(),
                               colorChanged: false,
                             ),
                             GestureDetector(
                               onTap: () async {
                                 launch(Provider.of<SetupProvider>(context,
                                         listen: false)
-                                    .setups[index]["icon_url"]);
+                                    .setups[index]["icon_url"]
+                                    .toString());
                               },
                               child: Container(
                                 decoration: BoxDecoration(
@@ -325,11 +336,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     BoxShadow(
                                         color: Colors.black.withOpacity(.25),
                                         blurRadius: 4,
-                                        offset: Offset(0, 4))
+                                        offset: const Offset(0, 4))
                                   ],
                                   borderRadius: BorderRadius.circular(500),
                                 ),
-                                padding: EdgeInsets.all(17),
+                                padding: const EdgeInsets.all(17),
                                 child: Icon(
                                   JamIcons.google_play_circle,
                                   color: Theme.of(context).accentColor,
@@ -348,20 +359,23 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                             DownloadButton(
                               link: Provider.of<SetupProvider>(context,
                                       listen: false)
-                                  .setups[index]["wallpaper_url"],
+                                  .setups[index]["wallpaper_url"]
+                                  .toString(),
                               colorChanged: false,
                             ),
                             SetWallpaperButton(
                               url: Provider.of<SetupProvider>(context,
                                       listen: false)
-                                  .setups[index]["wallpaper_url"],
+                                  .setups[index]["wallpaper_url"]
+                                  .toString(),
                               colorChanged: false,
                             ),
                             GestureDetector(
                               onTap: () async {
                                 launch(Provider.of<SetupProvider>(context,
                                         listen: false)
-                                    .setups[index]["icon_url"]);
+                                    .setups[index]["icon_url"]
+                                    .toString());
                               },
                               child: Container(
                                 decoration: BoxDecoration(
@@ -370,11 +384,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     BoxShadow(
                                         color: Colors.black.withOpacity(.25),
                                         blurRadius: 4,
-                                        offset: Offset(0, 4))
+                                        offset: const Offset(0, 4))
                                   ],
                                   borderRadius: BorderRadius.circular(500),
                                 ),
-                                padding: EdgeInsets.all(17),
+                                padding: const EdgeInsets.all(17),
                                 child: Icon(
                                   JamIcons.google_play_circle,
                                   color: Theme.of(context).accentColor,
@@ -386,7 +400,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                               onTap: () async {
                                 launch(Provider.of<SetupProvider>(context,
                                         listen: false)
-                                    .setups[index]["widget_url"]);
+                                    .setups[index]["widget_url"]
+                                    .toString());
                               },
                               child: Container(
                                 decoration: BoxDecoration(
@@ -395,11 +410,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     BoxShadow(
                                         color: Colors.black.withOpacity(.25),
                                         blurRadius: 4,
-                                        offset: Offset(0, 4))
+                                        offset: const Offset(0, 4))
                                   ],
                                   borderRadius: BorderRadius.circular(500),
                                 ),
-                                padding: EdgeInsets.all(17),
+                                padding: const EdgeInsets.all(17),
                                 child: Icon(
                                   JamIcons.google_play,
                                   color: Theme.of(context).accentColor,
@@ -418,13 +433,29 @@ class _SetupViewScreenState extends State<SetupViewScreen>
               AnimatedBuilder(
                   animation: offsetAnimation,
                   builder: (buildContext, child) {
-                    if (offsetAnimation.value < 0.0)
+                    if (offsetAnimation.value < 0.0) {
                       debugPrint('${offsetAnimation.value + 8.0}');
+                    }
                     return GestureDetector(
+                      onPanUpdate: (details) {
+                        if (details.delta.dy < -10) {
+                          panelController.open();
+                          HapticFeedback.vibrate();
+                        }
+                      },
+                      onLongPress: () {
+                        HapticFeedback.vibrate();
+                        shakeController.forward(from: 0.0);
+                      },
+                      onTap: () {
+                        HapticFeedback.vibrate();
+                        shakeController.forward(from: 0.0);
+                      },
                       child: CachedNetworkImage(
                         imageUrl:
                             Provider.of<SetupProvider>(context, listen: false)
-                                .setups[index]["image"],
+                                .setups[index]["image"]
+                                .toString(),
                         imageBuilder: (context, imageProvider) => Hero(
                           tag: "CustomHerotag$index",
                           child: Container(
@@ -444,45 +475,27 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                         progressIndicatorBuilder:
                             (context, url, downloadProgress) => Stack(
                           children: <Widget>[
-                            SizedBox.expand(child: Text("")),
-                            Container(
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation(
-                                      config.Colors().mainAccentColor(1),
-                                    ),
-                                    value: downloadProgress.progress),
-                              ),
+                            const SizedBox.expand(child: Text("")),
+                            Center(
+                              child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(
+                                    config.Colors().mainAccentColor(1),
+                                  ),
+                                  value: downloadProgress.progress),
                             ),
                           ],
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          child: Center(
-                            child: Icon(
-                              JamIcons.close_circle_f,
-                              color: isLoading
-                                  ? Theme.of(context).accentColor
-                                  : colors[0].computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                            ),
+                        errorWidget: (context, url, error) => Center(
+                          child: Icon(
+                            JamIcons.close_circle_f,
+                            color: isLoading
+                                ? Theme.of(context).accentColor
+                                : colors[0].computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
                           ),
                         ),
                       ),
-                      onPanUpdate: (details) {
-                        if (details.delta.dy < -10) {
-                          panelController.open();
-                          HapticFeedback.vibrate();
-                        }
-                      },
-                      onLongPress: () {
-                        HapticFeedback.vibrate();
-                        shakeController.forward(from: 0.0);
-                      },
-                      onTap: () {
-                        HapticFeedback.vibrate();
-                        shakeController.forward(from: 0.0);
-                      },
                     );
                   }),
               Align(
@@ -500,7 +513,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                         : colors[0].computeLuminance() > 0.5
                             ? Colors.black
                             : Colors.white,
-                    icon: Icon(
+                    icon: const Icon(
                       JamIcons.chevron_left,
                     ),
                   ),
@@ -515,16 +528,18 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                       createSetupDynamicLink(
                           index.toString(),
                           Provider.of<SetupProvider>(context, listen: false)
-                              .setups[index]["name"],
+                              .setups[index]["name"]
+                              .toString(),
                           Provider.of<SetupProvider>(context, listen: false)
-                              .setups[index]["image"]);
+                              .setups[index]["image"]
+                              .toString());
                     },
                     color: isLoading
                         ? Theme.of(context).accentColor
                         : colors[0].computeLuminance() > 0.5
                             ? Colors.black
                             : Colors.white,
-                    icon: Icon(
+                    icon: const Icon(
                       JamIcons.share_alt,
                     ),
                   ),
