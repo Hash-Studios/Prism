@@ -23,7 +23,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -253,7 +253,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModel>(context, listen: false)
                                     .returnTheme() ==
-                                ThemeType.Dark
+                                ThemeType.dark
                             ? SvgPicture.string(
                                 loaderDark.replaceAll(
                                     "E57697",

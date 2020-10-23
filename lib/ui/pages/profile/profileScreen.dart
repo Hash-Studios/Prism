@@ -55,7 +55,7 @@ class _ProfileChildState extends State<ProfileChild> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -65,7 +65,7 @@ class _ProfileChildState extends State<ProfileChild> {
           .countFav()
           .then(
         (value) {
-          debugPrint(value);
+          debugPrint(value.toString());
           setState(
             () {
               favCount = value;

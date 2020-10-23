@@ -1662,7 +1662,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 child: IconButton(
                                   onPressed: () {
                                     navStack.removeLast();
-                                    debugPrint(navStack);
+                                    debugPrint(navStack.toString());
                                     Navigator.pop(context);
                                   },
                                   color: isLoading
@@ -2151,7 +2151,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: IconButton(
                                       onPressed: () {
                                         navStack.removeLast();
-                                        debugPrint(navStack);
+                                        debugPrint(navStack.toString());
                                         Navigator.pop(context);
                                       },
                                       color: isLoading
@@ -2622,7 +2622,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     child: IconButton(
                                       onPressed: () {
                                         navStack.removeLast();
-                                        debugPrint(navStack);
+                                        debugPrint(navStack.toString());
                                         Navigator.pop(context);
                                       },
                                       color: isLoading

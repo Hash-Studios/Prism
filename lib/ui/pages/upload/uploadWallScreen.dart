@@ -91,8 +91,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     var imgList = image.readAsBytesSync();
     var decodedImage = await decodeImageFromList(imgList);
 
-    debugPrint(decodedImage.width);
-    debugPrint(decodedImage.height);
+    debugPrint(decodedImage.width.toString());
+    debugPrint(decodedImage.height.toString());
 
     var res =
         decodedImage.width.toString() + "x" + decodedImage.height.toString();
@@ -160,14 +160,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       debugPrint(e.toString());
       Navigator.pop(context);
       navStack.removeLast();
-      debugPrint(navStack);
+      debugPrint(navStack.toString());
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     deleteFile();
     return true;
   }
@@ -306,7 +306,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             onPressed: !isProcessing && !isUploading
                 ? () async {
                     navStack.removeLast();
-                    debugPrint(navStack);
+                    debugPrint(navStack.toString());
                     Navigator.pop(context);
                     analytics.logEvent(
                         name: 'upload_wallpaper',

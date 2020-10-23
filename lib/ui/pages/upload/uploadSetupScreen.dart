@@ -98,14 +98,14 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       debugPrint(e.toString());
       Navigator.pop(context);
       navStack.removeLast();
-      debugPrint(navStack);
+      debugPrint(navStack.toString());
       toasts.error("Some uploading issue, please try again.");
     }
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -299,7 +299,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                       toasts.error("Please fill all required fields!");
                     } else {
                       navStack.removeLast();
-                      debugPrint(navStack);
+                      debugPrint(navStack.toString());
                       Navigator.pop(context);
                       analytics.logEvent(
                           name: 'upload_setup',

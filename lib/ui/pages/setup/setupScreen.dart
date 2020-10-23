@@ -26,7 +26,7 @@ class SetupScreen extends StatefulWidget {
 class _SetupScreenState extends State<SetupScreen> {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -76,7 +76,7 @@ class _SetupPageState extends State<SetupPage> {
   int pageNumber = 0;
   void showPremiumPopUp(Function func) {
     if (!main.prefs.get("premium")) {
-      Navigator.pushNamed(context, PremiumRoute);
+      Navigator.pushNamed(context, premiumRoute);
     } else {
       func();
     }
@@ -171,11 +171,11 @@ class _SetupPageState extends State<SetupPage> {
                     onTap: () {
                       if (pageNumber == 5) {
                         showPremiumPopUp(() {
-                          Navigator.pushNamed(context, SetupViewRoute,
+                          Navigator.pushNamed(context, setupViewRoute,
                               arguments: [pageNumber]);
                         });
                       } else {
-                        Navigator.pushNamed(context, SetupViewRoute,
+                        Navigator.pushNamed(context, setupViewRoute,
                             arguments: [pageNumber]);
                       }
                     },

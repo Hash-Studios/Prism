@@ -118,7 +118,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    debugPrint(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -526,7 +526,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
-                            debugPrint(navStack);
+                            debugPrint(navStack.toString());
                             Navigator.pop(context);
                           },
                           color: isLoading
@@ -783,7 +783,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                         ]);
                                                         Navigator.pushNamed(
                                                             context,
-                                                            PhotographerProfileRoute,
+                                                            photographerProfileRoute,
                                                             arguments: [
                                                               Data.wall["by"],
                                                               Data.wall[
@@ -986,7 +986,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             child: IconButton(
                               onPressed: () {
                                 navStack.removeLast();
-                                debugPrint(navStack);
+                                debugPrint(navStack.toString());
                                 Navigator.pop(context);
                               },
                               color: isLoading
@@ -1485,7 +1485,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                 child: IconButton(
                                   onPressed: () {
                                     navStack.removeLast();
-                                    debugPrint(navStack);
+                                    debugPrint(navStack.toString());
                                     Navigator.pop(context);
                                   },
                                   color: isLoading
