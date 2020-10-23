@@ -1,6 +1,6 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as WData;
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+    as wdata;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/router.dart';
@@ -28,7 +28,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   String selectedProvider;
-  var selectedProviders;
+  SearchProviderMenuItem selectedProviders;
   final List providers = [
     SearchProviderMenuItem(title: 'WallHaven', icon: JamIcons.arrow_right),
     SearchProviderMenuItem(title: 'Pexels', icon: JamIcons.arrow_right)
@@ -55,7 +55,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     isSubmitted = false;
     selectedProvider = "WallHaven";
-    selectedProviders = providers[0];
+    selectedProviders = providers[0] as SearchProviderMenuItem;
     super.initState();
   }
 
@@ -66,12 +66,10 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           appBar: AppBar(
-            excludeHeaderSemantics: false,
             automaticallyImplyLeading: false,
             elevation: 0,
             titleSpacing: 0,
             title: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Padding(
@@ -96,7 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               controller: searchController,
                               decoration: InputDecoration(
                                 contentPadding:
-                                    EdgeInsets.only(left: 30, top: 15),
+                                    const EdgeInsets.only(left: 30, top: 15),
                                 border: InputBorder.none,
                                 disabledBorder: InputBorder.none,
                                 enabledBorder: InputBorder.none,
@@ -116,11 +114,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                 setState(() {
                                   isSubmitted = true;
                                   if (selectedProvider == "WallHaven") {
-                                    WData.wallsS = [];
-                                    _future = WData.getWallsbyQuery(tex);
+                                    wdata.wallsS = [];
+                                    _future = wdata.getWallsbyQuery(tex);
                                   } else if (selectedProvider == "Pexels") {
-                                    PData.wallsPS = [];
-                                    _future = PData.getWallsPbyQuery(tex);
+                                    pdata.wallsPS = [];
+                                    _future = pdata.getWallsPbyQuery(tex);
                                   }
                                 });
                               },
@@ -134,7 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.1,
                   child: PopupMenuButton(
-                    icon: Icon(JamIcons.more_vertical),
+                    icon: const Icon(JamIcons.more_vertical),
                     elevation: 4,
                     initialValue: selectedProviders,
                     onCanceled: () {
@@ -143,18 +141,18 @@ class _SearchScreenState extends State<SearchScreen> {
                     tooltip: 'Providers',
                     onSelected: (choice) {
                       setState(() {
-                        selectedProviders = choice;
-                        selectedProvider = choice.title;
+                        selectedProviders = choice as SearchProviderMenuItem;
+                        selectedProvider = choice.title.toString();
                         if (searchController.text != "") {
                           isSubmitted = true;
                           if (choice.title == "WallHaven") {
-                            WData.wallsS = [];
+                            wdata.wallsS = [];
                             _future =
-                                WData.getWallsbyQuery(searchController.text);
+                                wdata.getWallsbyQuery(searchController.text);
                           } else if (choice.title == "Pexels") {
-                            PData.wallsPS = [];
+                            pdata.wallsPS = [];
                             _future =
-                                PData.getWallsPbyQuery(searchController.text);
+                                pdata.getWallsPbyQuery(searchController.text);
                           }
                         }
                       });
@@ -169,9 +167,9 @@ class _SearchScreenState extends State<SearchScreen> {
                           value: choice,
                           child: Row(
                             children: <Widget>[
-                              Icon(choice.icon),
-                              SizedBox(width: 10),
-                              Text(choice.title),
+                              Icon(choice.icon as IconData),
+                              const SizedBox(width: 10),
+                              Text(choice.title.toString()),
                             ],
                           ),
                         );
@@ -182,62 +180,62 @@ class _SearchScreenState extends State<SearchScreen> {
               ],
             ),
             bottom: PreferredSize(
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: 53,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: tags.length,
-                    itemBuilder: (context, index) {
-                      return Align(
-                        alignment: Alignment.center,
-                        child: Stack(
-                          children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
-                              child: ActionChip(
-                                  pressElevation: 5,
-                                  padding: EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                  backgroundColor:
-                                      searchController.text.toLowerCase() ==
-                                              tags[index].toLowerCase()
-                                          ? Theme.of(context).accentColor
-                                          : Theme.of(context).hintColor,
-                                  label: Text(tags[index],
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headline4
-                                          .copyWith(
-                                              color: searchController.text
-                                                          .toLowerCase() ==
-                                                      tags[index].toLowerCase()
-                                                  ? Theme.of(context)
-                                                      .primaryColor
-                                                  : Theme.of(context)
-                                                      .accentColor)),
-                                  onPressed: () {
-                                    setState(() {
-                                      searchController.text = tags[index];
-                                      isSubmitted = true;
-                                      if (selectedProvider == "WallHaven") {
-                                        WData.wallsS = [];
-                                        _future =
-                                            WData.getWallsbyQuery(tags[index]);
-                                      } else if (selectedProvider == "Pexels") {
-                                        PData.wallsPS = [];
-                                        _future =
-                                            PData.getWallsPbyQuery(tags[index]);
-                                      }
-                                    });
-                                  }),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+              preferredSize: const Size(double.infinity, 54),
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width,
+                height: 53,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: tags.length,
+                  itemBuilder: (context, index) {
+                    return Align(
+                      child: Stack(
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
+                            child: ActionChip(
+                                pressElevation: 5,
+                                padding:
+                                    const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                backgroundColor:
+                                    searchController.text.toLowerCase() ==
+                                            tags[index].toLowerCase()
+                                        ? Theme.of(context).accentColor
+                                        : Theme.of(context).hintColor,
+                                label: Text(tags[index],
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headline4
+                                        .copyWith(
+                                            color: searchController.text
+                                                        .toLowerCase() ==
+                                                    tags[index].toLowerCase()
+                                                ? Theme.of(context).primaryColor
+                                                : Theme.of(context)
+                                                    .accentColor)),
+                                onPressed: () {
+                                  setState(() {
+                                    searchController.text = tags[index];
+                                    isSubmitted = true;
+                                    if (selectedProvider == "WallHaven") {
+                                      wdata.wallsS = [];
+                                      _future =
+                                          wdata.getWallsbyQuery(tags[index]);
+                                    } else if (selectedProvider == "Pexels") {
+                                      pdata.wallsPS = [];
+                                      _future =
+                                          pdata.getWallsPbyQuery(tags[index]);
+                                    }
+                                  });
+                                }),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                preferredSize: Size(double.infinity, 54)),
+              ),
+            ),
           ),
           body: BottomBar(
             child: isSubmitted
@@ -288,7 +286,7 @@ class SearchLoader extends StatefulWidget {
   final Future future;
   final String query;
   final String selectedProvider;
-  SearchLoader(
+  const SearchLoader(
       {@required this.future,
       @required this.query,
       @required this.selectedProvider});
@@ -302,12 +300,12 @@ class _SearchLoaderState extends State<SearchLoader> {
   @override
   void initState() {
     if (widget.selectedProvider == "WallHaven") {
-      WData.wallsS = [];
-      WData.pageGetQuery = 1;
+      wdata.wallsS = [];
+      wdata.pageGetQuery = 1;
       _future = widget.future;
     } else if (widget.selectedProvider == "Pexels") {
-      PData.wallsPS = [];
-      PData.pageGetQueryP = 1;
+      pdata.wallsPS = [];
+      pdata.pageGetQueryP = 1;
       _future = widget.future;
     }
 
@@ -321,12 +319,12 @@ class _SearchLoaderState extends State<SearchLoader> {
       builder: (ctx, snapshot) {
         if (snapshot == null) {
           debugPrint("snapshot null");
-          return LoadingCards();
+          return const LoadingCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
           debugPrint("snapshot none, waiting");
-          return LoadingCards();
+          return const LoadingCards();
         } else {
           return SearchGrid(
             query: widget.query,
