@@ -40,8 +40,9 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
@@ -325,8 +326,8 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
               if (index == PData.wallsP.length - 1) {
                 return FlatButton(
                     color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnTheme() ==
-                            ThemeType.dark
+                                .returnThemeType() ==
+                            "Dark"
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(

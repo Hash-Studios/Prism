@@ -42,8 +42,9 @@ class _WallHavenGridState extends State<WallHavenGrid>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
@@ -244,7 +245,8 @@ class _WallHavenGridState extends State<WallHavenGrid>
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
                                             child: Text(
-                                              globals.topTitleText[i].toString(),
+                                              globals.topTitleText[i]
+                                                  .toString(),
                                               textAlign: TextAlign.center,
                                               maxLines: 1,
                                               style: Theme.of(context)
@@ -330,8 +332,8 @@ class _WallHavenGridState extends State<WallHavenGrid>
               if (index == wData.walls.length - 1) {
                 return FlatButton(
                     color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnTheme() ==
-                            ThemeType.dark
+                                .returnThemeType() ==
+                            "Dark"
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(

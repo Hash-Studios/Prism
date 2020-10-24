@@ -39,7 +39,8 @@ class _GeneralListState extends State<GeneralList> {
         ListTile(
           onTap: () {
             Navigator.pushNamed(context, themeViewRoute, arguments: [
-              Provider.of<ThemeModel>(context, listen: false).currentTheme
+              Provider.of<ThemeModel>(context, listen: false).currentTheme,
+              Color(main.prefs.get("mainAccentColor") as int)
             ]);
           },
           leading: const Icon(JamIcons.wrench),
@@ -53,29 +54,6 @@ class _GeneralListState extends State<GeneralList> {
           subtitle: const Text(
             "Toggle app theme",
             style: TextStyle(fontSize: 12),
-          ),
-        ),
-        ListTile(
-          onTap: () {
-            showAccentColors(context);
-          },
-          leading: const Icon(JamIcons.brush),
-          title: Text(
-            "Theme Accent Color",
-            style: TextStyle(
-                color: Theme.of(context).accentColor,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
-          ),
-          subtitle: const Text(
-            "Change app accent color",
-            style: TextStyle(fontSize: 12),
-          ),
-          trailing: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              backgroundColor: Color(main.prefs.get("mainAccentColor") as int),
-            ),
           ),
         ),
         ListTile(

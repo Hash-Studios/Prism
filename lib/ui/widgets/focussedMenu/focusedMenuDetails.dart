@@ -135,8 +135,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 },
                 child: Container(
                   color: Provider.of<ThemeModel>(context, listen: false)
-                              .returnTheme() ==
-                          ThemeType.dark
+                              .returnThemeType() ==
+                         "Dark"
                       ? Colors.black.withOpacity(0.75)
                       : Colors.white.withOpacity(0.75),
                 )),

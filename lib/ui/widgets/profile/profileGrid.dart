@@ -33,8 +33,9 @@ class _ProfileGridState extends State<ProfileGrid>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
@@ -107,8 +108,8 @@ class _ProfileGridState extends State<ProfileGrid>
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModel>(context, listen: false)
-                                    .returnTheme() ==
-                                ThemeType.dark
+                                    .returnThemeType() ==
+                                "Dark"
                             ? SvgPicture.string(
                                 postsDark.replaceAll(
                                     "E57697",
