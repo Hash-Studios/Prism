@@ -67,8 +67,8 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
               SizedBox(
                 width: MediaQuery.of(context).size.width,
                 child: Provider.of<ThemeModel>(context, listen: false)
-                            .returnTheme() ==
-                        ThemeType.dark
+                            .returnThemeType() ==
+                        "Dark"
                     ? SvgPicture.string(
                         setupDark.replaceAll(
                             "E57697",
