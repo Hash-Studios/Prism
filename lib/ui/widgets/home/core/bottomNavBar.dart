@@ -451,9 +451,7 @@ class UploadBottomPanel extends StatefulWidget {
 
 class _UploadBottomPanelState extends State<UploadBottomPanel> {
   File _wallpaper;
-  File _setup;
   final picker = ImagePicker();
-  final picker2 = ImagePicker();
   @override
   void initState() {
     super.initState();
@@ -468,18 +466,6 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       Navigator.pop(context);
       Future.delayed(const Duration()).then((value) =>
           Navigator.pushNamed(context, editWallRoute, arguments: [_wallpaper]));
-    }
-  }
-
-  Future getSetup() async {
-    final pickedFile = await picker2.getImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _setup = File(pickedFile.path);
-      });
-      Navigator.pop(context);
-      Future.delayed(const Duration()).then((value) =>
-          Navigator.pushNamed(context, uploadSetupRoute, arguments: [_setup]));
     }
   }
 
@@ -502,10 +488,13 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Icon(
-                  JamIcons.chevron_down,
-                  color: Theme.of(context).accentColor,
+                padding: const EdgeInsets.all(12.0),
+                child: Container(
+                  height: 5,
+                  width: 30,
+                  decoration: BoxDecoration(
+                      color: Theme.of(context).hintColor,
+                      borderRadius: BorderRadius.circular(500)),
                 ),
               )
             ],
@@ -515,7 +504,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             "Upload",
             style: Theme.of(context).textTheme.headline2,
           ),
-          const Spacer(),
+          const Spacer(flex: 2),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -603,8 +592,10 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
-                      onTap: () async {
-                        await getSetup();
+                      onTap: () {
+                        Navigator.pop(context);
+                        Future.delayed(const Duration()).then((value) =>
+                            Navigator.pushNamed(context, setupGuidelinesRoute));
                       },
                       child: Container(
                         width: width / 2 - 20,
@@ -696,7 +687,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
               ),
             ],
           ),
-          const Spacer(),
+          const Spacer(flex: 2),
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
             child: Container(
@@ -711,6 +702,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
               ),
             ),
           ),
+          const Spacer(),
         ],
       ),
     );

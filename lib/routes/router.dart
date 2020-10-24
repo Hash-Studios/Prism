@@ -23,6 +23,7 @@ import 'package:Prism/ui/pages/share/shareWallViewScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:Prism/ui/pages/home/core/notificationScreen.dart';
 import 'package:Prism/ui/pages/upload/editWallScreen.dart';
+import 'package:Prism/ui/pages/upload/setupGuidelines.dart';
 import 'package:Prism/ui/pages/upload/uploadSetupScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
 import 'package:flutter/cupertino.dart';
@@ -197,6 +198,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               UploadSetupScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
+    case setupGuidelinesRoute:
+      navStack.add("Setup Guidelines");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: setupGuidelinesRoute);
+      return CupertinoPageRoute(
+          builder: (context) => const SetupGuidelinesScreen(),
           fullscreenDialog: true);
     case uploadWallRoute:
       navStack.add("Add");
