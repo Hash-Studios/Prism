@@ -24,11 +24,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final day = DateFormat('EEEE').format(DateTime.now());
     final month = DateFormat('MMMM').format(DateTime.now());
     final dayNo = DateFormat('d').format(DateTime.now());
-    final suffix = dayNo[dayNo.length - 1] as int == 1
+    final suffix = dayNo[dayNo.length - 1] == "1"
         ? "ˢᵗ"
-        : dayNo[dayNo.length - 1] as int == 2
+        : dayNo[dayNo.length - 1] == "2"
             ? "ⁿᵈ"
-            : dayNo[dayNo.length - 1] as int == 3
+            : dayNo[dayNo.length - 1] == "3"
                 ? "ʳᵈ"
                 : "ᵗʰ";
     return Material(
@@ -117,12 +117,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     "assets/images/messages.png",
                     width: MediaQuery.of(context).size.width * 0.14,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 1.0),
-                    child: Image.asset(
-                      "assets/images/prism.png",
-                      width: MediaQuery.of(context).size.width * 0.14,
-                    ),
+                  Image.asset(
+                    "assets/images/prism.png",
+                    width: MediaQuery.of(context).size.width * 0.14,
                   ),
                   Image.asset(
                     "assets/images/playstore.png",
