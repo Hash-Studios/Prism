@@ -580,7 +580,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     "Wallpapers",
                     style: TextStyle(
                         fontSize: 16,
-                        color: config.Colors().mainAccentColor(1),
+                        color: Theme.of(context).accentColor,
                         fontWeight: FontWeight.bold),
                   )
                 ],
@@ -661,7 +661,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                         "Setups",
                         style: TextStyle(
                             fontSize: 16,
-                            color: config.Colors().mainAccentColor(1),
+                            color: Theme.of(context).accentColor,
                             fontWeight: FontWeight.bold),
                       ),
                       Container(
@@ -669,14 +669,14 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                         decoration: BoxDecoration(
                             color: config.Colors().mainAccentColor(1),
                             borderRadius: BorderRadius.circular(500)),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
                               vertical: 1.0, horizontal: 4),
                           child: Text(
                             "BETA",
                             style: TextStyle(
                               fontSize: 10,
-                              color: Colors.white,
+                              color: Theme.of(context).accentColor,
                             ),
                           ),
                         ),

@@ -28,7 +28,7 @@ import 'package:Prism/theme/config.dart' as config;
 
 Box prefs;
 Directory dir;
-bool darkMode;
+String currentThemeID;
 bool hqThumbs;
 bool optimisedWallpapers;
 void main() {
@@ -55,12 +55,8 @@ void main() {
     } else {
       prefs.put('hqThumbs', false);
     }
-    darkMode = prefs.get('darkMode') == true ?? true;
-    if (darkMode) {
-      prefs.put('darkMode', true);
-    } else {
-      prefs.put('darkMode', false);
-    }
+    currentThemeID = prefs.get('themeID')?.toString() ?? "kDarkTheme";
+    prefs.put("themeID", currentThemeID);
     optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? true;
     if (optimisedWallpapers) {
       prefs.put('optimisedWallpapers', true);
@@ -91,9 +87,8 @@ void main() {
                           create: (context) => ProfileWallProvider(),
                         ),
                         ChangeNotifierProvider<ThemeModel>(
-                          create: (context) => ThemeModel(
-                              darkMode ? kDarkTheme : kLightTheme,
-                              darkMode ? ThemeType.dark : ThemeType.light),
+                          create: (context) =>
+                              ThemeModel(themes[currentThemeID]),
                         ),
                       ],
                       child: MyApp(),
@@ -168,12 +163,8 @@ class _RestartWidgetState extends State<RestartWidget> {
       key = UniqueKey();
     });
     Hive.openBox('prefs').then((prefs) {
-      darkMode = prefs.get('darkMode') == true ?? true;
-      if (darkMode) {
-        prefs.put('darkMode', true);
-      } else {
-        prefs.put('darkMode', false);
-      }
+      currentThemeID = prefs.get('themeID')?.toString() ?? "kDarkTheme";
+      prefs.put("themeID", currentThemeID);
     });
   }
 

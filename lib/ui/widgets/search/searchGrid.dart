@@ -38,8 +38,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
@@ -160,8 +161,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               if (index == wData.wallsS.length - 1 && index >= 23) {
                 return FlatButton(
                     color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnTheme() ==
-                            ThemeType.dark
+                                .returnThemeType() ==
+                            "Dark"
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(
@@ -182,8 +183,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               if (index == pData.wallsPS.length - 1 && index >= 23) {
                 return FlatButton(
                     color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnTheme() ==
-                            ThemeType.dark
+                                .returnThemeType() ==
+                            "Dark"
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(

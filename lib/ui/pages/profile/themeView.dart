@@ -8,6 +8,31 @@ import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/analytics/analytics_service.dart';
 
+List<Color> accentColors = [
+  const Color(0xFFFF0000),
+  const Color(0xFFF44436),
+  const Color(0xFFe91e63),
+  const Color(0xFF9c27b0),
+  const Color(0xFF673ab7),
+  const Color(0xFF0000FF),
+  const Color(0xFF1976D2),
+  const Color(0xFF03a9f4),
+  const Color(0xFF00bcd4),
+  const Color(0xFF009688),
+  const Color(0xFF4caf50),
+  const Color(0xFF00FF00),
+  const Color(0xFF8bc34a),
+  const Color(0xFFcddc39),
+  const Color(0xFFffeb3b),
+  const Color(0xFFffc107),
+  const Color(0xFFff9800),
+  const Color(0xFFff5722),
+  const Color(0xFF795548),
+  const Color(0xFF9e9e9e),
+  const Color(0xFF607d8b),
+  const Color(0xFFE57697),
+];
+
 class ThemeView extends StatefulWidget {
   final List arguments;
   const ThemeView({@required this.arguments});
@@ -17,9 +42,11 @@ class ThemeView extends StatefulWidget {
 
 class _ThemeViewState extends State<ThemeView> {
   ThemeData currentTheme;
+  Color selectedAccentColor;
   @override
   void initState() {
     currentTheme = widget.arguments[0] as ThemeData;
+    selectedAccentColor = widget.arguments[1] as Color;
     super.initState();
   }
 
@@ -27,7 +54,8 @@ class _ThemeViewState extends State<ThemeView> {
     if (Provider.of<ThemeModel>(context, listen: false).currentTheme ==
         currentTheme) {
     } else {
-      Provider.of<ThemeModel>(context, listen: false).toggleTheme();
+      Provider.of<ThemeModel>(context, listen: false)
+          .changeThemeByThemeData(currentTheme);
     }
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
@@ -47,7 +75,8 @@ class _ThemeViewState extends State<ThemeView> {
                         .currentTheme ==
                     currentTheme) {
                 } else {
-                  Provider.of<ThemeModel>(context, listen: false).toggleTheme();
+                  Provider.of<ThemeModel>(context, listen: false)
+                      .changeThemeByThemeData(currentTheme);
                 }
                 navStack.removeLast();
                 debugPrint(navStack.toString());
@@ -60,6 +89,19 @@ class _ThemeViewState extends State<ThemeView> {
                   size: 30,
                 ),
                 onPressed: () {
+                  final accentColor = int.parse(selectedAccentColor
+                      .toString()
+                      .replaceAll("MaterialColor(primary value: Color(0xff", "")
+                      .replaceAll("Color(", "")
+                      .replaceAll(")", ""));
+                  final hexString = selectedAccentColor
+                      .toString()
+                      .replaceAll("MaterialColor(primary value: Color(0xff", "")
+                      .replaceAll("Color(0xff", "")
+                      .replaceAll(")", "");
+                  main.prefs.put("mainAccentColor", accentColor);
+                  analytics.logEvent(
+                      name: "accent_changed", parameters: {'color': hexString});
                   main.RestartWidget.restartApp(context);
                 })
           ],
@@ -80,8 +122,8 @@ class _ThemeViewState extends State<ThemeView> {
                   AnimatedOpacity(
                     duration: const Duration(milliseconds: 300),
                     opacity: Provider.of<ThemeModel>(context, listen: false)
-                                .returnTheme() ==
-                            ThemeType.dark
+                                .returnThemeType() ==
+                            "Dark"
                         ? 1
                         : 0,
                     child: Container(
@@ -115,8 +157,8 @@ class _ThemeViewState extends State<ThemeView> {
                   AnimatedOpacity(
                     duration: const Duration(milliseconds: 300),
                     opacity: Provider.of<ThemeModel>(context, listen: false)
-                                .returnTheme() ==
-                            ThemeType.dark
+                                .returnThemeType() ==
+                            "Dark"
                         ? 0
                         : 1,
                     child: Container(
@@ -150,45 +192,80 @@ class _ThemeViewState extends State<ThemeView> {
                 ],
               ),
             ),
-            AnimatedToggle(
-              values: currentTheme == kDarkTheme
-                  ? ['Dark', 'Light']
-                  : ['Light', 'Dark'],
-              textColor: Theme.of(context).accentColor,
-              backgroundColor: Theme.of(context).hintColor,
-              buttonColor: Theme.of(context).primaryColor,
-              shadows: Provider.of<ThemeModel>(context, listen: false)
-                          .returnTheme() ==
-                      ThemeType.dark
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(.8),
-                        blurRadius: 38,
-                        offset: const Offset(0, 19),
-                      ),
-                    ]
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(.15),
-                        blurRadius: 38,
-                        offset: const Offset(0, 19),
-                      ),
-                    ],
-              onToggleCallback: (index) {
-                Provider.of<ThemeModel>(context, listen: false).toggleTheme();
-                main.prefs.get("darkMode") == null
-                    ? analytics.logEvent(
-                        name: 'theme_changed', parameters: {'type': 'dark'})
-                    : main.prefs.get("darkMode") as bool
-                        ? analytics.logEvent(
-                            name: 'theme_changed',
-                            parameters: {'type': 'light'})
-                        : analytics.logEvent(
-                            name: 'theme_changed',
-                            parameters: {'type': 'dark'});
-                debugPrint("Theme Changed");
-              },
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.07,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: themes.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      Provider.of<ThemeModel>(context, listen: false)
+                          .changeThemeByID(themes.keys.toList()[index]);
+                      print(selectedAccentColor);
+                      setState(() {
+                        selectedAccentColor = Color(int.parse(
+                            Provider.of<ThemeModel>(context, listen: false)
+                                .currentTheme
+                                .errorColor
+                                .toString()
+                                .replaceAll(
+                                    "MaterialColor(primary value: Color(0xff",
+                                    "")
+                                .replaceAll("Color(", "")
+                                .replaceAll(")", "")));
+                      });
+                      print(selectedAccentColor);
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(JamIcons.brightness),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            themes.keys.toList()[index],
+                            style: Theme.of(context).textTheme.subtitle2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.06,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: accentColors.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedAccentColor = accentColors[index];
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.white38,
+                        ),
+                        color: accentColors[index],
+                        shape: BoxShape.circle,
+                      ),
+                      child: const SizedBox(
+                        width: 41,
+                        height: 41,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
           ],
         ),
       ),

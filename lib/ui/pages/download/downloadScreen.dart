@@ -142,8 +142,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModel>(context, listen: false)
-                                    .returnTheme() ==
-                                ThemeType.dark
+                                    .returnThemeType() ==
+                                "Dark"
                             ? SvgPicture.string(
                                 downloadsDark.replaceAll(
                                     "E57697",
