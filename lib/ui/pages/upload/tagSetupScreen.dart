@@ -15,14 +15,14 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 
-class UploadSetupScreen extends StatefulWidget {
+class TagSetupScreen extends StatefulWidget {
   final List arguments;
-  const UploadSetupScreen({this.arguments});
+  const TagSetupScreen({this.arguments});
   @override
-  _UploadSetupScreenState createState() => _UploadSetupScreenState();
+  _TagSetupScreenState createState() => _TagSetupScreenState();
 }
 
-class _UploadSetupScreenState extends State<UploadSetupScreen> {
+class _TagSetupScreenState extends State<TagSetupScreen> {
   bool isUploading;
   bool isProcessing;
   File image;
