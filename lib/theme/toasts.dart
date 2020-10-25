@@ -24,7 +24,7 @@ void color(Color color) {
   Fluttertoast.showToast(
     msg: "Color code copied to clipboard",
     toastLength: Toast.LENGTH_LONG,
-    gravity: ToastGravity.BOTTOM,
+    gravity: ToastGravity.CENTER,
     textColor: color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
     backgroundColor: color,
   );
