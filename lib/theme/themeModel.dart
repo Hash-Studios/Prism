@@ -4,10 +4,12 @@ import 'package:Prism/main.dart' as main;
 
 // enum ThemeType { light, dark }
 Map<String, ThemeData> themes = {
-  "kLightTheme": kLightTheme,
-  "kDarkTheme": kDarkTheme,
-  "kLightTheme2": kLightTheme2,
-  "kDarkTheme2": kDarkTheme2
+  "kLFrosty White": kLightTheme,
+  "kDMaterial Dark": kDarkTheme,
+  "kLBlue Island": kLightTheme2,
+  "kDAMOLED Black": kDarkTheme2,
+  "kLRed Thunder": kLightTheme3,
+  "kLTeal Sea": kLightTheme4
 };
 
 class ThemeModel extends ChangeNotifier {
@@ -65,6 +67,13 @@ class ThemeModel extends ChangeNotifier {
       (element) => themes[element] == themeData,
       orElse: () => null,
     );
+  }
+
+  int returnThemeIndex(ThemeData themeData) {
+    return themes.keys.toList().indexOf(themes.keys.firstWhere(
+          (element) => themes[element] == themeData,
+          orElse: () => null,
+        ));
   }
 
   String returnThemeType() {

@@ -1,14 +1,17 @@
+import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/profile/animatedThemeSwitch.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/analytics/analytics_service.dart';
 
 List<Color> accentColors = [
+  const Color(0xFFE57697),
   const Color(0xFFFF0000),
   const Color(0xFFF44436),
   const Color(0xFFe91e63),
@@ -30,7 +33,8 @@ List<Color> accentColors = [
   const Color(0xFF795548),
   const Color(0xFF9e9e9e),
   const Color(0xFF607d8b),
-  const Color(0xFFE57697),
+  const Color(0xFF000000),
+  const Color(0xFFFFFFFF),
 ];
 
 class ThemeView extends StatefulWidget {
@@ -43,10 +47,12 @@ class ThemeView extends StatefulWidget {
 class _ThemeViewState extends State<ThemeView> {
   ThemeData currentTheme;
   Color selectedAccentColor;
+  int selectedTheme;
   @override
   void initState() {
     currentTheme = widget.arguments[0] as ThemeData;
     selectedAccentColor = widget.arguments[1] as Color;
+    selectedTheme = widget.arguments[2] as int;
     super.initState();
   }
 
@@ -117,79 +123,64 @@ class _ThemeViewState extends State<ThemeView> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
             Center(
-              child: Stack(
-                children: <Widget>[
-                  AnimatedOpacity(
-                    duration: const Duration(milliseconds: 300),
-                    opacity: Provider.of<ThemeModel>(context, listen: false)
-                                .returnThemeType() ==
-                            "Dark"
-                        ? 1
-                        : 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(17),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(.9),
-                            blurRadius: 38,
-                            offset: const Offset(0, 19),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withOpacity(.8),
-                            blurRadius: 12,
-                            offset: const Offset(0, 15),
-                          )
-                        ],
-                        image: const DecorationImage(
-                            image: AssetImage(
-                              "assets/images/dark_theme.jpg",
-                            ),
-                            fit: BoxFit.fitWidth),
-                      ),
-                      width: MediaQuery.of(context).size.height *
-                          0.6 *
-                          0.52068473609,
-                      height: MediaQuery.of(context).size.height * 0.6,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.circular(17),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.15),
+                      blurRadius: 38,
+                      offset: const Offset(0, 19),
                     ),
-                  ),
-                  AnimatedOpacity(
-                    duration: const Duration(milliseconds: 300),
-                    opacity: Provider.of<ThemeModel>(context, listen: false)
-                                .returnThemeType() ==
-                            "Dark"
-                        ? 0
-                        : 1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(17),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(.15),
-                            blurRadius: 38,
-                            offset: const Offset(0, 19),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withOpacity(.10),
-                            blurRadius: 12,
-                            offset: const Offset(0, 15),
-                          )
-                        ],
-                        image: const DecorationImage(
-                            image: AssetImage(
-                              "assets/images/light_theme.jpg",
-                            ),
-                            fit: BoxFit.fitWidth),
-                      ),
-                      width: MediaQuery.of(context).size.height *
-                          0.6 *
-                          0.52068473609,
-                      height: MediaQuery.of(context).size.height * 0.6,
-                    ),
-                  ),
-                ],
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.10),
+                      blurRadius: 12,
+                      offset: const Offset(0, 15),
+                    )
+                  ],
+                ),
+                width: MediaQuery.of(context).size.height * 0.6 * 0.52068473609,
+                height: MediaQuery.of(context).size.height * 0.6,
+                child: SvgPicture.string(themePicture
+                    .replaceAll(
+                        "181818",
+                        Theme.of(context)
+                            .primaryColor
+                            .value
+                            .toRadixString(16)
+                            .toString()
+                            .substring(2))
+                    .replaceAll(
+                        "E57697",
+                        selectedAccentColor.value
+                            .toRadixString(16)
+                            .toString()
+                            .substring(2))
+                    .replaceAll(
+                        "F0F0F0",
+                        Theme.of(context)
+                            .accentColor
+                            .value
+                            .toRadixString(16)
+                            .toString()
+                            .substring(2))
+                    .replaceAll(
+                        "2F2F2F",
+                        Theme.of(context)
+                            .hintColor
+                            .value
+                            .toRadixString(16)
+                            .toString()
+                            .substring(2))),
+              ),
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                "Themes",
+                style: Theme.of(context).textTheme.headline4,
               ),
             ),
             Container(
@@ -205,6 +196,7 @@ class _ThemeViewState extends State<ThemeView> {
                           .changeThemeByID(themes.keys.toList()[index]);
                       print(selectedAccentColor);
                       setState(() {
+                        selectedTheme = index;
                         selectedAccentColor = Color(int.parse(
                             Provider.of<ThemeModel>(context, listen: false)
                                 .currentTheme
@@ -218,17 +210,52 @@ class _ThemeViewState extends State<ThemeView> {
                       });
                       print(selectedAccentColor);
                     },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Stack(
                       children: [
-                        const Icon(JamIcons.brightness),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            themes.keys.toList()[index],
-                            style: Theme.of(context).textTheme.subtitle2,
+                        Container(
+                          margin: const EdgeInsets.all(4),
+                          width: MediaQuery.of(context).size.width * 0.3,
+                          height: MediaQuery.of(context).size.height * 0.06,
+                          decoration: BoxDecoration(
+                              border: Border.all(),
+                              borderRadius: BorderRadius.circular(10)),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(JamIcons.brush_f),
+                              Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Text(
+                                  themes.keys.toList()[index].substring(2),
+                                  style: Theme.of(context).textTheme.subtitle2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        index == selectedTheme
+                            ? Container(
+                                margin: const EdgeInsets.all(4),
+                                width: MediaQuery.of(context).size.width * 0.3,
+                                height:
+                                    MediaQuery.of(context).size.height * 0.06,
+                                decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .accentColor
+                                        .withOpacity(0.6),
+                                    border: Border.all(),
+                                    borderRadius: BorderRadius.circular(10)),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      JamIcons.check,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Container(),
                       ],
                     ),
                   );
@@ -237,7 +264,15 @@ class _ThemeViewState extends State<ThemeView> {
             ),
             Container(
               width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height * 0.06,
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                "Accent Color",
+                style: Theme.of(context).textTheme.headline4,
+              ),
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.055,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: accentColors.length,
@@ -248,19 +283,44 @@ class _ThemeViewState extends State<ThemeView> {
                         selectedAccentColor = accentColors[index];
                       });
                     },
-                    child: Container(
-                      margin: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.white38,
+                    child: Stack(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: selectedAccentColor == accentColors[index]
+                                  ? Colors.white
+                                  : Colors.white38,
+                            ),
+                            color: accentColors[index],
+                            shape: BoxShape.circle,
+                          ),
+                          child: const SizedBox(
+                            width: 41,
+                            height: 41,
+                          ),
                         ),
-                        color: accentColors[index],
-                        shape: BoxShape.circle,
-                      ),
-                      child: const SizedBox(
-                        width: 41,
-                        height: 41,
-                      ),
+                        selectedAccentColor == accentColors[index]
+                            ? Container(
+                                margin: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.6),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: SizedBox(
+                                  width: 41,
+                                  height: 41,
+                                  child: Icon(
+                                    JamIcons.check,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              )
+                            : Container(),
+                      ],
                     ),
                   );
                 },
