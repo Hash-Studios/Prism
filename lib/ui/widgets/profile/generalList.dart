@@ -40,7 +40,10 @@ class _GeneralListState extends State<GeneralList> {
           onTap: () {
             Navigator.pushNamed(context, themeViewRoute, arguments: [
               Provider.of<ThemeModel>(context, listen: false).currentTheme,
-              Color(main.prefs.get("mainAccentColor") as int)
+              Color(main.prefs.get("mainAccentColor") as int),
+              Provider.of<ThemeModel>(context, listen: false).returnThemeIndex(
+                Provider.of<ThemeModel>(context, listen: false).currentTheme,
+              )
             ]);
           },
           leading: const Icon(JamIcons.wrench),
