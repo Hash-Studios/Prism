@@ -15,6 +15,7 @@ import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
+import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -55,6 +56,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
   PanelController panelController = PanelController();
   ImageProvider<Object> image;
   bool panelClosed = true;
+  bool panelCollapsed = true;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -147,6 +149,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  setState(() {
+                    panelCollapsed = false;
+                  });
                   if (panelClosed) {
                     debugPrint('Screenshot Starting');
                     if (colorChanged) {
@@ -188,6 +193,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                 },
                 onPanelClosed: () {
                   setState(() {
+                    panelCollapsed = true;
+                  });
+                  setState(() {
                     panelClosed = true;
                   });
                 },
@@ -197,7 +205,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                   topRight: Radius.circular(20),
                 ),
                 boxShadow: const [],
-                collapsed: CollapsedPanel(panelClosed: panelClosed),
+                collapsed: CollapsedPanel(panelCollapsed: panelCollapsed),
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.00,
@@ -216,7 +224,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         duration: const Duration(milliseconds: 750),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
-                          color: panelClosed
+                          color: panelCollapsed
                               ? Theme.of(context).primaryColor.withOpacity(1)
                               : Theme.of(context).primaryColor.withOpacity(.5),
                         ),
@@ -241,7 +249,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       padding: const EdgeInsets.all(10.0),
                                       child: AnimatedOpacity(
                                         duration: const Duration(),
-                                        opacity: panelClosed ? 0.0 : 1.0,
+                                        opacity: panelCollapsed ? 0.0 : 1.0,
                                         child: Icon(
                                           JamIcons.chevron_down,
                                           color: Theme.of(context).accentColor,
@@ -476,7 +484,14 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             wallhaven:
                                                 WData.wall ?? WallPaper(),
                                             trash: false,
-                                          )
+                                          ),
+                                          ShareButton(
+                                              id: WData.wall.id.toString(),
+                                              provider: provider,
+                                              url: WData.wall.path.toString(),
+                                              thumbUrl: WData
+                                                  .wall.thumbs["original"]
+                                                  .toString())
                                         ],
                                       ),
                                     ),
@@ -636,6 +651,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                       isLoading ? Theme.of(context).primaryColor : accent,
                   body: SlidingUpPanel(
                     onPanelOpened: () {
+                      setState(() {
+                        panelCollapsed = false;
+                      });
                       if (panelClosed) {
                         debugPrint('Screenshot Starting');
                         if (colorChanged) {
@@ -679,6 +697,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                     },
                     onPanelClosed: () {
                       setState(() {
+                        panelCollapsed = true;
+                      });
+                      setState(() {
                         panelClosed = true;
                       });
                     },
@@ -688,7 +709,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                       topRight: Radius.circular(20),
                     ),
                     boxShadow: const [],
-                    collapsed: CollapsedPanel(panelClosed: panelClosed),
+                    collapsed: CollapsedPanel(panelCollapsed: panelCollapsed),
                     minHeight: MediaQuery.of(context).size.height / 20,
                     parallaxEnabled: true,
                     parallaxOffset: 0.00,
@@ -707,7 +728,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                             duration: const Duration(milliseconds: 750),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(30),
-                              color: panelClosed
+                              color: panelCollapsed
                                   ? Theme.of(context)
                                       .primaryColor
                                       .withOpacity(1)
@@ -737,7 +758,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                           padding: const EdgeInsets.all(10.0),
                                           child: AnimatedOpacity(
                                             duration: const Duration(),
-                                            opacity: panelClosed ? 0.0 : 1.0,
+                                            opacity: panelCollapsed ? 0.0 : 1.0,
                                             child: Icon(
                                               JamIcons.chevron_down,
                                               color:
@@ -843,7 +864,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       CrossAxisAlignment.end,
                                                   children: <Widget>[
                                                     SizedBox(
-                                                      width: 200,
+                                                      width: 160,
                                                       child: Align(
                                                         alignment: Alignment
                                                             .centerRight,
@@ -999,7 +1020,17 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                 provider: "Prism",
                                                 prism: Data.wall ?? {},
                                                 trash: false,
-                                              )
+                                              ),
+                                              ShareButton(
+                                                  id: Data.wall["id"]
+                                                      .toString(),
+                                                  provider: provider,
+                                                  url: Data
+                                                      .wall["wallpaper_url"]
+                                                      .toString(),
+                                                  thumbUrl: Data
+                                                      .wall["wallpaper_thumb"]
+                                                      .toString())
                                             ],
                                           ),
                                         ),
@@ -1163,6 +1194,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           isLoading ? Theme.of(context).primaryColor : accent,
                       body: SlidingUpPanel(
                         onPanelOpened: () {
+                          setState(() {
+                            panelCollapsed = false;
+                          });
                           if (panelClosed) {
                             debugPrint('Screenshot Starting');
                             if (colorChanged) {
@@ -1206,6 +1240,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                         },
                         onPanelClosed: () {
                           setState(() {
+                            panelCollapsed = true;
+                          });
+                          setState(() {
                             panelClosed = true;
                           });
                         },
@@ -1215,7 +1252,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           topRight: Radius.circular(20),
                         ),
                         boxShadow: const [],
-                        collapsed: CollapsedPanel(panelClosed: panelClosed),
+                        collapsed:
+                            CollapsedPanel(panelCollapsed: panelCollapsed),
                         minHeight: MediaQuery.of(context).size.height / 20,
                         parallaxEnabled: true,
                         parallaxOffset: 0.00,
@@ -1235,7 +1273,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   duration: const Duration(milliseconds: 750),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(30),
-                                    color: panelClosed
+                                    color: panelCollapsed
                                         ? Theme.of(context)
                                             .primaryColor
                                             .withOpacity(1)
@@ -1266,8 +1304,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     const EdgeInsets.all(10.0),
                                                 child: AnimatedOpacity(
                                                   duration: const Duration(),
-                                                  opacity:
-                                                      panelClosed ? 0.0 : 1.0,
+                                                  opacity: panelCollapsed
+                                                      ? 0.0
+                                                      : 1.0,
                                                   child: Icon(
                                                     JamIcons.chevron_down,
                                                     color: Theme.of(context)
@@ -1530,7 +1569,16 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       pexels: PData.wall ??
                                                           WallPaperP(),
                                                       trash: false,
-                                                    )
+                                                    ),
+                                                    ShareButton(
+                                                        id: PData.wall.id,
+                                                        provider: provider,
+                                                        url: PData.wall
+                                                            .src["original"]
+                                                            .toString(),
+                                                        thumbUrl: PData
+                                                            .wall.src["medium"]
+                                                            .toString())
                                                   ],
                                                 ),
                                               ),
@@ -1699,10 +1747,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
 }
 
 class CollapsedPanel extends StatelessWidget {
-  final bool panelClosed;
+  final bool panelCollapsed;
   const CollapsedPanel({
     Key key,
-    this.panelClosed,
+    this.panelCollapsed,
   }) : super(key: key);
 
   @override
@@ -1715,7 +1763,7 @@ class CollapsedPanel extends StatelessWidget {
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
         ),
-        color: panelClosed
+        color: panelCollapsed
             ? Theme.of(context).primaryColor.withOpacity(1)
             : Theme.of(context).primaryColor.withOpacity(0),
       ),
@@ -1725,7 +1773,7 @@ class CollapsedPanel extends StatelessWidget {
         child: Center(
             child: AnimatedOpacity(
           duration: const Duration(),
-          opacity: panelClosed ? 1.0 : 0.0,
+          opacity: panelCollapsed ? 1.0 : 0.0,
           child: Icon(
             JamIcons.chevron_up,
             color: Theme.of(context).accentColor,

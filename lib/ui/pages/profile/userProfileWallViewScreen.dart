@@ -50,6 +50,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
   PanelController panelController = PanelController();
   AnimationController shakeController;
   bool panelClosed = true;
+  bool panelCollapsed = true;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -121,6 +122,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
           backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
           body: SlidingUpPanel(
             onPanelOpened: () {
+              setState(() {
+                panelCollapsed = false;
+              });
               if (panelClosed) {
                 debugPrint('Screenshot Starting');
                 if (colorChanged) {
@@ -162,6 +166,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
             },
             onPanelClosed: () {
               setState(() {
+                panelCollapsed = true;
+              });
+              setState(() {
                 panelClosed = true;
               });
             },
@@ -171,7 +178,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
               topRight: Radius.circular(20),
             ),
             boxShadow: const [],
-            collapsed: CollapsedPanel(panelClosed: panelClosed),
+            collapsed: CollapsedPanel(panelCollapsed: panelCollapsed),
             minHeight: MediaQuery.of(context).size.height / 20,
             parallaxEnabled: true,
             parallaxOffset: 0.00,
@@ -190,7 +197,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                     duration: const Duration(milliseconds: 750),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
-                      color: panelClosed
+                      color: panelCollapsed
                           ? Theme.of(context).primaryColor.withOpacity(1)
                           : Theme.of(context).primaryColor.withOpacity(.5),
                     ),
@@ -202,7 +209,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           padding: const EdgeInsets.all(10.0),
                           child: AnimatedOpacity(
                             duration: const Duration(),
-                            opacity: panelClosed ? 0.0 : 1.0,
+                            opacity: panelCollapsed ? 0.0 : 1.0,
                             child: Icon(
                               JamIcons.chevron_down,
                               color: Theme.of(context).accentColor,
@@ -240,7 +247,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                     Row(
                                       children: [
                                         Icon(
-                                          JamIcons.camera,
+                                          JamIcons.upload,
                                           size: 20,
                                           color: Theme.of(context)
                                               .accentColor
@@ -562,10 +569,10 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
 }
 
 class CollapsedPanel extends StatelessWidget {
-  final bool panelClosed;
+  final bool panelCollapsed;
   const CollapsedPanel({
     Key key,
-    this.panelClosed,
+    this.panelCollapsed,
   }) : super(key: key);
 
   @override
@@ -578,7 +585,7 @@ class CollapsedPanel extends StatelessWidget {
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
         ),
-        color: panelClosed
+        color: panelCollapsed
             ? Theme.of(context).primaryColor.withOpacity(1)
             : Theme.of(context).primaryColor.withOpacity(0),
       ),
@@ -588,7 +595,7 @@ class CollapsedPanel extends StatelessWidget {
         child: Center(
             child: AnimatedOpacity(
           duration: const Duration(),
-          opacity: panelClosed ? 1.0 : 0.0,
+          opacity: panelCollapsed ? 1.0 : 0.0,
           child: Icon(
             JamIcons.chevron_up,
             color: Theme.of(context).accentColor,
