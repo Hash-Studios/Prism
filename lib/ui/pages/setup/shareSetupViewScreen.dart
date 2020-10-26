@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:Prism/data/setups/provider/setupProvider.dart' as sdata;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -38,6 +40,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
   List<Color> colors;
   PanelController panelController = PanelController();
   AnimationController shakeController;
+  bool panelCollapsed = true;
 
   @override
   void initState() {
@@ -103,402 +106,499 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                       topRight: Radius.circular(20),
                     ),
                     boxShadow: const [],
-                    collapsed: Container(
-                      decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
-                          ),
-                          color: config.Colors().secondDarkColor(1)),
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height / 20,
-                        child: const Center(
-                            child: Icon(
-                          JamIcons.chevron_up,
-                          color: Colors.white,
-                        )),
-                      ),
-                    ),
+                    collapsed: CollapsedPanel(panelCollapsed: panelCollapsed),
                     minHeight: MediaQuery.of(context).size.height / 20,
                     parallaxEnabled: true,
-                    parallaxOffset: 0.54,
-                    color: config.Colors().secondDarkColor(1),
-                    maxHeight: MediaQuery.of(context).size.height * .46,
+                    parallaxOffset: 0.00,
+                    color: Colors.transparent,
+                    maxHeight: MediaQuery.of(context).size.height * .43,
                     controller: panelController,
+                    onPanelOpened: () {
+                      setState(() {
+                        panelCollapsed = false;
+                      });
+                    },
+                    onPanelClosed: () {
+                      setState(() {
+                        panelCollapsed = true;
+                      });
+                    },
                     panel: Container(
-                      height: MediaQuery.of(context).size.height * .42,
+                      margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                      height: MediaQuery.of(context).size.height * .43,
                       width: MediaQuery.of(context).size.width,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
-                        color: config.Colors().secondDarkColor(1),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          const Center(
-                              child: Padding(
-                            padding: EdgeInsets.all(10.0),
-                            child: Icon(
-                              JamIcons.chevron_down,
-                              color: Colors.white,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 750),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              color: panelCollapsed
+                                  ? Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(1)
+                                  : Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(.5),
                             ),
-                          )),
-                          Expanded(
-                            flex: 4,
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(35, 0, 35, 5),
-                                  child: Text(
-                                    name.toString().toUpperCase(),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headline1
-                                        .copyWith(
-                                            fontSize: 30, color: Colors.white),
+                                Center(
+                                    child: Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(),
+                                    opacity: panelCollapsed ? 0.0 : 1.0,
+                                    child: Icon(
+                                      JamIcons.chevron_down,
+                                      color: Theme.of(context).accentColor,
+                                    ),
                                   ),
-                                ),
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                                  child: Text(
-                                    sdata.setup["desc"].toString(),
-                                    style:
-                                        Theme.of(context).textTheme.headline6,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            flex: 6,
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: <Widget>[
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
+                                )),
+                                Expanded(
+                                  flex: 4,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: <Widget>[
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(
-                                            0, 5, 0, 10),
+                                            35, 0, 35, 5),
                                         child: Text(
-                                          sdata.setup["id"]
-                                              .toString()
-                                              .toUpperCase(),
+                                          name.toString().toUpperCase(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText1,
+                                              .headline1
+                                              .copyWith(
+                                                  fontSize: 30,
+                                                  color: Theme.of(context)
+                                                      .accentColor),
                                         ),
                                       ),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            JamIcons.google_play_circle,
-                                            size: 20,
-                                            color: Colors.white70,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.32,
-                                            child: Text(
-                                              sdata.setup["icon"].toString(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText2,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(
-                                        height: 5,
-                                      ),
-                                      Row(
-                                        children: [
-                                          sdata.setup["widget"] == ""
-                                              ? Container()
-                                              : const Icon(
-                                                  JamIcons.google_play,
-                                                  size: 20,
-                                                  color: Colors.white70,
-                                                ),
-                                          const SizedBox(width: 10),
-                                          Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.32,
-                                            child: Text(
-                                              sdata.setup["widget"].toString(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText2,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: <Widget>[
-                                      ActionChip(
-                                          label: Text(
-                                            sdata.setup["by"].toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 5, horizontal: 5),
-                                          avatar: CircleAvatar(
-                                            backgroundImage:
-                                                CachedNetworkImageProvider(sdata
-                                                    .setup["userPhoto"]
-                                                    .toString()),
-                                          ),
-                                          labelPadding:
-                                              const EdgeInsets.fromLTRB(
-                                                  7, 3, 7, 3),
-                                          onPressed: () {
-                                            SystemChrome
-                                                .setEnabledSystemUIOverlays([
-                                              SystemUiOverlay.top,
-                                              SystemUiOverlay.bottom
-                                            ]);
-                                            Navigator.pushNamed(context,
-                                                photographerProfileRoute,
-                                                arguments: [
-                                                  sdata.setup["by"],
-                                                  sdata.setup["email"],
-                                                  sdata.setup["userPhoto"],
-                                                  false,
-                                                  "",
-                                                  ""
-                                                ]);
-                                          }),
-                                      const SizedBox(height: 5),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            sdata.setup["wallpaper_provider"]
-                                                .toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          const Icon(
-                                            JamIcons.database,
-                                            size: 20,
-                                            color: Colors.white70,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          main.prefs.get('premium') as bool
-                              ? sdata.setup["widget"] == ""
-                                  ? Expanded(
-                                      flex: 5,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: <Widget>[
-                                          DownloadButton(
-                                            link: sdata.setup["wallpaper_url"]
-                                                .toString(),
-                                            colorChanged: false,
-                                          ),
-                                          SetWallpaperButton(
-                                            url: sdata.setup["wallpaper_url"]
-                                                .toString(),
-                                            colorChanged: false,
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              launch(sdata.setup["icon_url"]
-                                                  .toString());
-                                            },
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context)
-                                                    .primaryColor,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                      color: Colors.black
-                                                          .withOpacity(.25),
-                                                      blurRadius: 4,
-                                                      offset:
-                                                          const Offset(0, 4))
-                                                ],
-                                                borderRadius:
-                                                    BorderRadius.circular(500),
-                                              ),
-                                              padding: const EdgeInsets.all(17),
-                                              child: Icon(
-                                                JamIcons.google_play_circle,
-                                                color: Theme.of(context)
-                                                    .accentColor,
-                                                size: 30,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  : Expanded(
-                                      flex: 5,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: <Widget>[
-                                          DownloadButton(
-                                            link: sdata.setup["wallpaper_url"]
-                                                .toString(),
-                                            colorChanged: false,
-                                          ),
-                                          SetWallpaperButton(
-                                            url: sdata.setup["wallpaper_url"]
-                                                .toString(),
-                                            colorChanged: false,
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              launch(sdata.setup["icon_url"]
-                                                  .toString());
-                                            },
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context)
-                                                    .primaryColor,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                      color: Colors.black
-                                                          .withOpacity(.25),
-                                                      blurRadius: 4,
-                                                      offset:
-                                                          const Offset(0, 4))
-                                                ],
-                                                borderRadius:
-                                                    BorderRadius.circular(500),
-                                              ),
-                                              padding: const EdgeInsets.all(17),
-                                              child: Icon(
-                                                JamIcons.google_play_circle,
-                                                color: Theme.of(context)
-                                                    .accentColor,
-                                                size: 30,
-                                              ),
-                                            ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              launch(sdata.setup["widget_url"]
-                                                  .toString());
-                                            },
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context)
-                                                    .primaryColor,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                      color: Colors.black
-                                                          .withOpacity(.25),
-                                                      blurRadius: 4,
-                                                      offset:
-                                                          const Offset(0, 4))
-                                                ],
-                                                borderRadius:
-                                                    BorderRadius.circular(500),
-                                              ),
-                                              padding: const EdgeInsets.all(17),
-                                              child: Icon(
-                                                JamIcons.google_play,
-                                                color: Theme.of(context)
-                                                    .accentColor,
-                                                size: 30,
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    )
-                              : Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () async {
-                                          toasts.codeSend(
-                                              "Applying Setups require Premium");
-                                          Navigator.pushNamed(
-                                              context, premiumRoute);
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                JamIcons.stop_sign,
-                                                color: Theme.of(context)
-                                                    .accentColor,
-                                                size: 30,
-                                              ),
-                                              const SizedBox(
-                                                width: 4,
-                                              ),
-                                              Text(
-                                                "Premium Required",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline4,
-                                              ),
-                                            ],
-                                          ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            35, 0, 35, 0),
+                                        child: Text(
+                                          sdata.setup["desc"].toString(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headline6
+                                              .copyWith(
+                                                  color: Theme.of(context)
+                                                      .accentColor),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                        ],
+                                Expanded(
+                                  flex: 6,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        35, 0, 35, 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: <Widget>[
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      0, 5, 0, 10),
+                                              child: Text(
+                                                sdata.setup["id"]
+                                                    .toString()
+                                                    .toUpperCase(),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText1
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
+                                              ),
+                                            ),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.google_play_circle,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Container(
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.32,
+                                                  child: Text(
+                                                    sdata.setup["icon"]
+                                                        .toString(),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2
+                                                        .copyWith(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(
+                                              height: 5,
+                                            ),
+                                            Row(
+                                              children: [
+                                                sdata.setup["widget"] == ""
+                                                    ? Container()
+                                                    : Icon(
+                                                        JamIcons.google_play,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor
+                                                            .withOpacity(.7),
+                                                      ),
+                                                const SizedBox(width: 10),
+                                                Container(
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.32,
+                                                  child: Text(
+                                                    sdata.setup["widget"]
+                                                        .toString(),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2
+                                                        .copyWith(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: <Widget>[
+                                            SizedBox(
+                                              width: 160,
+                                              child: Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: ActionChip(
+                                                    label: Text(
+                                                      sdata.setup["by"]
+                                                          .toString(),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyText2
+                                                          .copyWith(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor),
+                                                    ),
+                                                    padding: const EdgeInsets
+                                                            .symmetric(
+                                                        vertical: 5,
+                                                        horizontal: 5),
+                                                    avatar: CircleAvatar(
+                                                      backgroundImage:
+                                                          CachedNetworkImageProvider(
+                                                              sdata.setup[
+                                                                      "userPhoto"]
+                                                                  .toString()),
+                                                    ),
+                                                    labelPadding:
+                                                        const EdgeInsets
+                                                                .fromLTRB(
+                                                            7, 3, 7, 3),
+                                                    onPressed: () {
+                                                      SystemChrome
+                                                          .setEnabledSystemUIOverlays([
+                                                        SystemUiOverlay.top,
+                                                        SystemUiOverlay.bottom
+                                                      ]);
+                                                      Navigator.pushNamed(
+                                                          context,
+                                                          photographerProfileRoute,
+                                                          arguments: [
+                                                            sdata.setup["by"],
+                                                            sdata
+                                                                .setup["email"],
+                                                            sdata.setup[
+                                                                "userPhoto"],
+                                                            false,
+                                                            "",
+                                                            ""
+                                                          ]);
+                                                    }),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  sdata.setup[
+                                                          "wallpaper_provider"]
+                                                      .toString(),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Icon(
+                                                  JamIcons.database,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                main.prefs.get('premium') as bool
+                                    ? sdata.setup["widget"] == ""
+                                        ? Expanded(
+                                            flex: 5,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: <Widget>[
+                                                DownloadButton(
+                                                  link: sdata
+                                                      .setup["wallpaper_url"]
+                                                      .toString(),
+                                                  colorChanged: false,
+                                                ),
+                                                SetWallpaperButton(
+                                                  url: sdata
+                                                      .setup["wallpaper_url"]
+                                                      .toString(),
+                                                  colorChanged: false,
+                                                ),
+                                                GestureDetector(
+                                                  onTap: () async {
+                                                    launch(sdata
+                                                        .setup["icon_url"]
+                                                        .toString());
+                                                  },
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .25),
+                                                            blurRadius: 4,
+                                                            offset:
+                                                                const Offset(
+                                                                    0, 4))
+                                                      ],
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              500),
+                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            17),
+                                                    child: Icon(
+                                                      JamIcons
+                                                          .google_play_circle,
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                      size: 30,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : Expanded(
+                                            flex: 5,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: <Widget>[
+                                                DownloadButton(
+                                                  link: sdata
+                                                      .setup["wallpaper_url"]
+                                                      .toString(),
+                                                  colorChanged: false,
+                                                ),
+                                                SetWallpaperButton(
+                                                  url: sdata
+                                                      .setup["wallpaper_url"]
+                                                      .toString(),
+                                                  colorChanged: false,
+                                                ),
+                                                GestureDetector(
+                                                  onTap: () async {
+                                                    launch(sdata
+                                                        .setup["icon_url"]
+                                                        .toString());
+                                                  },
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .25),
+                                                            blurRadius: 4,
+                                                            offset:
+                                                                const Offset(
+                                                                    0, 4))
+                                                      ],
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              500),
+                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            17),
+                                                    child: Icon(
+                                                      JamIcons
+                                                          .google_play_circle,
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                      size: 30,
+                                                    ),
+                                                  ),
+                                                ),
+                                                GestureDetector(
+                                                  onTap: () async {
+                                                    launch(sdata
+                                                        .setup["widget_url"]
+                                                        .toString());
+                                                  },
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    .25),
+                                                            blurRadius: 4,
+                                                            offset:
+                                                                const Offset(
+                                                                    0, 4))
+                                                      ],
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              500),
+                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            17),
+                                                    child: Icon(
+                                                      JamIcons.google_play,
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                      size: 30,
+                                                    ),
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          )
+                                    : Expanded(
+                                        flex: 5,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () async {
+                                                toasts.codeSend(
+                                                    "Applying Setups require Premium");
+                                                Navigator.pushNamed(
+                                                    context, premiumRoute);
+                                              },
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .primaryColor,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.25),
+                                                        blurRadius: 4,
+                                                        offset:
+                                                            const Offset(0, 4))
+                                                  ],
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          500),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.all(17),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      JamIcons.stop_sign,
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                      size: 30,
+                                                    ),
+                                                    const SizedBox(
+                                                      width: 4,
+                                                    ),
+                                                    Text(
+                                                      "Premium Required",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .headline4
+                                                          .copyWith(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     body: Stack(
@@ -603,6 +703,44 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
             }
           },
         ),
+      ),
+    );
+  }
+}
+
+class CollapsedPanel extends StatelessWidget {
+  final bool panelCollapsed;
+  const CollapsedPanel({
+    Key key,
+    this.panelCollapsed,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 750),
+      margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        color: panelCollapsed
+            ? Theme.of(context).primaryColor.withOpacity(1)
+            : Theme.of(context).primaryColor.withOpacity(0),
+      ),
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height / 30,
+        child: Center(
+            child: AnimatedOpacity(
+          duration: const Duration(),
+          opacity: panelCollapsed ? 1.0 : 0.0,
+          child: Icon(
+            JamIcons.chevron_up,
+            color: Theme.of(context).accentColor,
+          ),
+        )),
       ),
     );
   }
