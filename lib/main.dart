@@ -55,7 +55,7 @@ void main() {
     } else {
       prefs.put('hqThumbs', false);
     }
-    currentThemeID = prefs.get('themeID')?.toString() ?? "kDarkTheme";
+    currentThemeID = prefs.get('themeID')?.toString() ?? "kDMaterial Dark";
     prefs.put("themeID", currentThemeID);
     optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? true;
     if (optimisedWallpapers) {
@@ -163,7 +163,7 @@ class _RestartWidgetState extends State<RestartWidget> {
       key = UniqueKey();
     });
     Hive.openBox('prefs').then((prefs) {
-      currentThemeID = prefs.get('themeID')?.toString() ?? "kDarkTheme";
+      currentThemeID = prefs.get('themeID')?.toString() ?? "kDMaterial Dark";
       prefs.put("themeID", currentThemeID);
     });
   }
