@@ -77,7 +77,9 @@ void showContributorDetails(BuildContext context, String username) {
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyText2
-                                    .copyWith(fontSize: 20),
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor,
+                                        fontSize: 20),
                               ),
                             ),
                             Container(

@@ -11,8 +11,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 final List<String> supportPurchase = ['support', 'support_more', 'support_max'];
 
 class StudioList extends StatefulWidget {
-  final ScrollController scrollController;
-  const StudioList({this.scrollController});
+  const StudioList();
   @override
   _StudioListState createState() => _StudioListState();
 }
@@ -157,24 +156,6 @@ class _StudioListState extends State<StudioList> {
       children: <Widget>[
         ListTile(
             leading: const Icon(
-              JamIcons.luggage,
-            ),
-            title: Text(
-              "Wanna work with us?",
-              style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: const Text(
-              "We are recruiting Flutter developers",
-              style: TextStyle(fontSize: 12),
-            ),
-            onTap: () {
-              launch("https://forms.gle/nSt4QtiQVVaZvhdA8");
-            }),
-        ListTile(
-            leading: const Icon(
               JamIcons.coffee,
             ),
             title: Text(
@@ -191,115 +172,6 @@ class _StudioListState extends State<StudioList> {
             onTap: () {
               onSupport(context);
             }),
-        ExpansionTile(
-          leading: const Icon(
-            JamIcons.users,
-          ),
-          title: Text(
-            "Meet the awesome team",
-            style: TextStyle(
-                color: Theme.of(context).accentColor,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
-          ),
-          subtitle: Text(
-            "Check out the cool devs!",
-            style:
-                TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
-          ),
-          children: [
-            ListTile(
-                leading: const CircleAvatar(
-                  backgroundImage: AssetImage("assets/images/AB.jpg"),
-                ),
-                title: Text(
-                  "LiquidatorCoder",
-                  style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
-                ),
-                subtitle: const Text(
-                  "Abhay Maurya",
-                  style: TextStyle(fontSize: 12),
-                ),
-                onTap: () async {
-                  launch("https://github.com/LiquidatorCoder");
-                }),
-            ListTile(
-                leading: const CircleAvatar(
-                  backgroundImage: AssetImage("assets/images/AK.jpg"),
-                ),
-                title: Text(
-                  "CodeNameAkshay",
-                  style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
-                ),
-                subtitle: const Text(
-                  "Akshay Maurya",
-                  style: TextStyle(fontSize: 12),
-                ),
-                onTap: () async {
-                  launch("https://github.com/codenameakshay");
-                }),
-            ListTile(
-                leading: const CircleAvatar(
-                  backgroundImage: AssetImage("assets/images/PT.jpg"),
-                ),
-                title: Text(
-                  "UnHired-Coder",
-                  style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
-                ),
-                subtitle: const Text(
-                  "Pratyush Tiwari",
-                  style: TextStyle(fontSize: 12),
-                ),
-                onTap: () async {
-                  launch("https://github.com/UnHired-Coder");
-                }),
-            ListTile(
-                leading: const CircleAvatar(
-                  backgroundImage: AssetImage("assets/images/AY.jpg"),
-                ),
-                title: Text(
-                  "MrHYDRA-6469",
-                  style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
-                ),
-                subtitle: const Text(
-                  "Arpit Yadav",
-                  style: TextStyle(fontSize: 12),
-                ),
-                onTap: () async {
-                  launch("https://github.com/MrHYDRA-6469");
-                }),
-            ListTile(
-                leading: const CircleAvatar(
-                  backgroundImage: AssetImage("assets/images/AT.jpg"),
-                ),
-                title: Text(
-                  "AyushTevatia99",
-                  style: TextStyle(
-                      color: Theme.of(context).accentColor,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: "Proxima Nova"),
-                ),
-                subtitle: const Text(
-                  "Ayush Tevatia",
-                  style: TextStyle(fontSize: 12),
-                ),
-                onTap: () async {
-                  launch("https://github.com/AyushTevatia99");
-                }),
-          ],
-        ),
         ListTile(
             leading: const Icon(JamIcons.info),
             title: Text(
