@@ -1699,30 +1699,29 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
 }
 
 class CollapsedPanel extends StatelessWidget {
+  final bool panelClosed;
   const CollapsedPanel({
     Key key,
-    @required this.panelClosed,
+    this.panelClosed,
   }) : super(key: key);
-
-  final bool panelClosed;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 750),
-      color: panelClosed
-          ? Theme.of(context).primaryColor.withOpacity(1)
-          : Theme.of(context).primaryColor.withOpacity(0),
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
       decoration: BoxDecoration(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-          color: Theme.of(context).primaryColor),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        color: panelClosed
+            ? Theme.of(context).primaryColor.withOpacity(1)
+            : Theme.of(context).primaryColor.withOpacity(0),
+      ),
       child: SizedBox(
         width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height / 20,
+        height: MediaQuery.of(context).size.height / 30,
         child: Center(
             child: AnimatedOpacity(
           duration: const Duration(),
