@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -170,235 +171,277 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
               topRight: Radius.circular(20),
             ),
             boxShadow: const [],
-            collapsed: Container(
-              decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                  color: config.Colors().secondDarkColor(1)),
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height / 20,
-                child: const Center(
-                    child: Icon(
-                  JamIcons.chevron_up,
-                  color: Colors.white,
-                )),
-              ),
-            ),
+            collapsed: CollapsedPanel(panelClosed: panelClosed),
             minHeight: MediaQuery.of(context).size.height / 20,
             parallaxEnabled: true,
-            parallaxOffset: 0.54,
-            color: config.Colors().secondDarkColor(1),
-            maxHeight: MediaQuery.of(context).size.height * .46,
+            parallaxOffset: 0.00,
+            color: Colors.transparent,
+            maxHeight: MediaQuery.of(context).size.height * .43,
             controller: panelController,
             panel: Container(
-              height: MediaQuery.of(context).size.height * .42,
+              margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              height: MediaQuery.of(context).size.height * .43,
               width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                color: config.Colors().secondDarkColor(1),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const Center(
-                      child: Padding(
-                    padding: EdgeInsets.all(10.0),
-                    child: Icon(
-                      JamIcons.chevron_down,
-                      color: Colors.white,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 750),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      color: panelClosed
+                          ? Theme.of(context).primaryColor.withOpacity(1)
+                          : Theme.of(context).primaryColor.withOpacity(.5),
                     ),
-                  )),
-                  ColorBar(colors: colors),
-                  Expanded(
-                    flex: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: <Widget>[
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Center(
+                            child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: AnimatedOpacity(
+                            duration: const Duration(),
+                            opacity: panelClosed ? 0.0 : 1.0,
+                            child: Icon(
+                              JamIcons.chevron_down,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                        )),
+                        ColorBar(colors: colors),
+                        Expanded(
+                          flex: 8,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: <Widget>[
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          0, 5, 0, 10),
+                                      child: Text(
+                                        Provider.of<ProfileWallProvider>(
+                                                context,
+                                                listen: false)
+                                            .profileWalls[index]["id"]
+                                            .toString()
+                                            .toUpperCase(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1
+                                            .copyWith(
+                                                color: Theme.of(context)
+                                                    .accentColor),
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          JamIcons.camera,
+                                          size: 20,
+                                          color: Theme.of(context)
+                                              .accentColor
+                                              .withOpacity(.7),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          Provider.of<ProfileWallProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .profileWalls[index]["by"]
+                                              .toString(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2
+                                              .copyWith(
+                                                  color: Theme.of(context)
+                                                      .accentColor),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          JamIcons.arrow_circle_right,
+                                          size: 20,
+                                          color: Theme.of(context)
+                                              .accentColor
+                                              .withOpacity(.7),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          Provider.of<ProfileWallProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .profileWalls[index]["desc"]
+                                              .toString(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2
+                                              .copyWith(
+                                                  color: Theme.of(context)
+                                                      .accentColor),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          JamIcons.save,
+                                          size: 20,
+                                          color: Theme.of(context)
+                                              .accentColor
+                                              .withOpacity(.7),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          Provider.of<ProfileWallProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .profileWalls[index]["size"]
+                                              .toString(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2
+                                              .copyWith(
+                                                  color: Theme.of(context)
+                                                      .accentColor),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: <Widget>[
+                                    Row(
+                                      children: [
+                                        Text(
+                                          Provider.of<ProfileWallProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .profileWalls[index]["resolution"]
+                                              .toString(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2
+                                              .copyWith(
+                                                  color: Theme.of(context)
+                                                      .accentColor),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Icon(
+                                          JamIcons.set_square,
+                                          size: 20,
+                                          color: Theme.of(context)
+                                              .accentColor
+                                              .withOpacity(.7),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          Provider.of<ProfileWallProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .profileWalls[index]
+                                                  ["wallpaper_provider"]
+                                              .toString(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2
+                                              .copyWith(
+                                                  color: Theme.of(context)
+                                                      .accentColor),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Icon(
+                                          JamIcons.database,
+                                          size: 20,
+                                          color: Theme.of(context)
+                                              .accentColor
+                                              .withOpacity(.7),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 5,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: <Widget>[
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                child: Text(
-                                  Provider.of<ProfileWallProvider>(context,
+                              DownloadButton(
+                                colorChanged: colorChanged,
+                                link: screenshotTaken
+                                    ? _imageFile.path
+                                    : Provider.of<ProfileWallProvider>(context,
+                                            listen: false)
+                                        .profileWalls[index]["wallpaper_url"]
+                                        .toString(),
+                              ),
+                              SetWallpaperButton(
+                                colorChanged: colorChanged,
+                                url: screenshotTaken
+                                    ? _imageFile.path
+                                    : Provider.of<ProfileWallProvider>(context,
+                                            listen: false)
+                                        .profileWalls[index]["wallpaper_url"]
+                                        .toString(),
+                              ),
+                              FavouriteWallpaperButton(
+                                id: Provider.of<ProfileWallProvider>(context,
+                                        listen: false)
+                                    .profileWalls[index]["id"]
+                                    .toString(),
+                                provider: Provider.of<ProfileWallProvider>(
+                                        context,
+                                        listen: false)
+                                    .profileWalls[index]["wallpaper_provider"]
+                                    .toString(),
+                                trash: false,
+                              ),
+                              ShareButton(
+                                  id: Provider.of<ProfileWallProvider>(context,
                                           listen: false)
                                       .profileWalls[index]["id"]
-                                      .toString()
-                                      .toUpperCase(),
-                                  style: Theme.of(context).textTheme.bodyText1,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    JamIcons.camera,
-                                    size: 20,
-                                    color: Colors.white70,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    Provider.of<ProfileWallProvider>(context,
-                                            listen: false)
-                                        .profileWalls[index]["by"]
-                                        .toString(),
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 5),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    JamIcons.arrow_circle_right,
-                                    size: 20,
-                                    color: Colors.white70,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    Provider.of<ProfileWallProvider>(context,
-                                            listen: false)
-                                        .profileWalls[index]["desc"]
-                                        .toString(),
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 5),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    JamIcons.save,
-                                    size: 20,
-                                    color: Colors.white70,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    Provider.of<ProfileWallProvider>(context,
-                                            listen: false)
-                                        .profileWalls[index]["size"]
-                                        .toString(),
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
-                                  ),
-                                ],
-                              ),
+                                      .toString(),
+                                  provider: Provider.of<ProfileWallProvider>(
+                                          context,
+                                          listen: false)
+                                      .profileWalls[index]["wallpaper_provider"]
+                                      .toString(),
+                                  url: Provider.of<ProfileWallProvider>(context,
+                                          listen: false)
+                                      .profileWalls[index]["wallpaper_url"]
+                                      .toString(),
+                                  thumbUrl: Provider.of<ProfileWallProvider>(
+                                          context,
+                                          listen: false)
+                                      .profileWalls[index]["wallpaper_thumb"]
+                                      .toString())
                             ],
                           ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: <Widget>[
-                              Row(
-                                children: [
-                                  Text(
-                                    Provider.of<ProfileWallProvider>(context,
-                                            listen: false)
-                                        .profileWalls[index]["resolution"]
-                                        .toString(),
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  const Icon(
-                                    JamIcons.set_square,
-                                    size: 20,
-                                    color: Colors.white70,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 5),
-                              Row(
-                                children: [
-                                  Text(
-                                    Provider.of<ProfileWallProvider>(context,
-                                            listen: false)
-                                        .profileWalls[index]
-                                            ["wallpaper_provider"]
-                                        .toString(),
-                                    style:
-                                        Theme.of(context).textTheme.bodyText2,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  const Icon(
-                                    JamIcons.database,
-                                    size: 20,
-                                    color: Colors.white70,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: <Widget>[
-                        DownloadButton(
-                          colorChanged: colorChanged,
-                          link: screenshotTaken
-                              ? _imageFile.path
-                              : Provider.of<ProfileWallProvider>(context,
-                                      listen: false)
-                                  .profileWalls[index]["wallpaper_url"]
-                                  .toString(),
                         ),
-                        SetWallpaperButton(
-                          colorChanged: colorChanged,
-                          url: screenshotTaken
-                              ? _imageFile.path
-                              : Provider.of<ProfileWallProvider>(context,
-                                      listen: false)
-                                  .profileWalls[index]["wallpaper_url"]
-                                  .toString(),
-                        ),
-                        FavouriteWallpaperButton(
-                          id: Provider.of<ProfileWallProvider>(context,
-                                  listen: false)
-                              .profileWalls[index]["id"]
-                              .toString(),
-                          provider: Provider.of<ProfileWallProvider>(context,
-                                  listen: false)
-                              .profileWalls[index]["wallpaper_provider"]
-                              .toString(),
-                          trash: false,
-                        ),
-                        ShareButton(
-                            id: Provider.of<ProfileWallProvider>(context,
-                                    listen: false)
-                                .profileWalls[index]["id"]
-                                .toString(),
-                            provider: Provider.of<ProfileWallProvider>(context,
-                                    listen: false)
-                                .profileWalls[index]["wallpaper_provider"]
-                                .toString(),
-                            url: Provider.of<ProfileWallProvider>(context,
-                                    listen: false)
-                                .profileWalls[index]["wallpaper_url"]
-                                .toString(),
-                            thumbUrl: Provider.of<ProfileWallProvider>(context,
-                                    listen: false)
-                                .profileWalls[index]["wallpaper_thumb"]
-                                .toString())
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
             body: Stack(
@@ -544,5 +587,44 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
             ),
           ),
         ));
+  }
+}
+
+class CollapsedPanel extends StatelessWidget {
+  const CollapsedPanel({
+    Key key,
+    @required this.panelClosed,
+  }) : super(key: key);
+
+  final bool panelClosed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 750),
+      color: panelClosed
+          ? Theme.of(context).primaryColor.withOpacity(1)
+          : Theme.of(context).primaryColor.withOpacity(0),
+      margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+      decoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+          color: Theme.of(context).primaryColor),
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height / 20,
+        child: Center(
+            child: AnimatedOpacity(
+          duration: const Duration(),
+          opacity: panelClosed ? 1.0 : 0.0,
+          child: Icon(
+            JamIcons.chevron_up,
+            color: Theme.of(context).accentColor,
+          ),
+        )),
+      ),
+    );
   }
 }
