@@ -79,7 +79,7 @@ class ThemeModel extends ChangeNotifier {
   String returnThemeType() {
     final String themeNow = themes.keys.firstWhere(
       (element) => themes[element] == currentTheme,
-      orElse: () => "kDarkTheme",
+      orElse: () => "kDMaterial Dark",
     );
     if (themeNow[1] == "L") {
       return "Light";

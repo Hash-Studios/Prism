@@ -23,3 +23,4 @@ const String photographerProfileRoute = '/phprofile';
 const String notificationsRoute = '/notifications';
 const String collectionViewRoute = '/collectionsview';
 const String shareSetupViewRoute = '/sharesetups';
+const String aboutRoute = '/about';

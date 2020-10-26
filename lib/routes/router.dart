@@ -8,6 +8,7 @@ import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/wallpaperScreen.dart';
+import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/pages/profile/photographerProfile.dart';
 import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
@@ -214,6 +215,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           builder: (context) =>
               UploadWallScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
+    case aboutRoute:
+      navStack.add("About Prism");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: aboutRoute);
+      return CupertinoPageRoute(
+          builder: (context) => AboutScreen(), fullscreenDialog: true);
     default:
       navStack.add("undefined");
       debugPrint(navStack.toString());
