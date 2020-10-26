@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/theme/config.dart' as config;
 
 class PexelsGrid extends StatefulWidget {
   final String provider;
@@ -266,16 +267,27 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [0, 1, 2, 3, 4].map((i) {
-                      return Container(
-                        width: 8.0,
-                        height: 8.0,
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOutCubic,
+                        width: _current == i ? 8.0 : 7.0,
+                        height: _current == i ? 8.0 : 7.0,
                         margin: const EdgeInsets.symmetric(
                             vertical: 14.0, horizontal: 2.0),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: _current == i
-                              ? const Color(0xFFFFFFFF)
-                              : Theme.of(context).primaryColor.withOpacity(0.4),
+                              ? config.Colors().mainAccentColor(1)
+                              : config.Colors()
+                                  .mainAccentColor(1)
+                                  .withOpacity(0),
+                          border: Border.all(
+                            color: _current == i
+                                ? config.Colors()
+                                    .mainAccentColor(1)
+                                    .withOpacity(0)
+                                : config.Colors().mainAccentColor(1),
+                          ),
                         ),
                       );
                     }).toList(),
