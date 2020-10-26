@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
@@ -53,6 +54,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
   ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
   bool panelClosed = true;
+  bool panelCollapsed = true;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -128,6 +130,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  setState(() {
+                    panelCollapsed = false;
+                  });
                   if (panelClosed) {
                     debugPrint('Screenshot Starting');
                     setState(() {
@@ -171,6 +176,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                 },
                 onPanelClosed: () {
                   setState(() {
+                    panelCollapsed = true;
+                  });
+                  setState(() {
                     panelClosed = true;
                   });
                 },
@@ -180,230 +188,270 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   topRight: Radius.circular(20),
                 ),
                 boxShadow: const [],
-                collapsed: Container(
-                  decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                      color: config.Colors().secondDarkColor(1)),
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height / 20,
-                    child: const Center(
-                        child: Icon(
-                      JamIcons.chevron_up,
-                      color: Colors.white,
-                    )),
-                  ),
-                ),
+                collapsed: CollapsedPanel(panelCollapsed: panelCollapsed),
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
-                parallaxOffset: 0.54,
-                color: config.Colors().secondDarkColor(1),
-                maxHeight: MediaQuery.of(context).size.height * .46,
+                parallaxOffset: 0.00,
+                color: Colors.transparent,
+                maxHeight: MediaQuery.of(context).size.height * .43,
                 controller: panelController,
                 panel: Container(
-                  height: MediaQuery.of(context).size.height * .46,
+                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                  height: MediaQuery.of(context).size.height * .43,
                   width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    color: config.Colors().secondDarkColor(1),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const Center(
-                          child: Padding(
-                        padding: EdgeInsets.all(10.0),
-                        child: Icon(
-                          JamIcons.chevron_down,
-                          color: Colors.white,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 750),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          color: panelCollapsed
+                              ? Theme.of(context).primaryColor.withOpacity(1)
+                              : Theme.of(context).primaryColor.withOpacity(.5),
                         ),
-                      )),
-                      ColorBar(colors: colors),
-                      Expanded(
-                        flex: 4,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: <Widget>[
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                    child: Text(
-                                      wdata.wallsS[index].id
-                                          .toString()
-                                          .toUpperCase(),
-                                      style:
-                                          Theme.of(context).textTheme.bodyText1,
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        JamIcons.eye,
-                                        size: 20,
-                                        color: Colors.white70,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        wdata.wallsS[index].views.toString(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        JamIcons.heart_f,
-                                        size: 20,
-                                        color: Colors.white70,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        wdata.wallsS[index].favourites
-                                            .toString(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        JamIcons.save,
-                                        size: 20,
-                                        color: Colors.white70,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Center(
+                                child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: AnimatedOpacity(
+                                duration: const Duration(),
+                                opacity: panelCollapsed ? 0.0 : 1.0,
+                                child: Icon(
+                                  JamIcons.chevron_down,
+                                  color: Theme.of(context).accentColor,
+                                ),
                               ),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: <Widget>[
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          wdata.wallsS[index].category
-                                                  .toString()[0]
-                                                  .toUpperCase() +
-                                              wdata.wallsS[index].category
-                                                  .toString()
-                                                  .substring(1),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2,
+                            )),
+                            ColorBar(colors: colors),
+                            Expanded(
+                              flex: 8,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: <Widget>[
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              0, 5, 0, 10),
+                                          child: Text(
+                                            wdata.wallsS[index].id
+                                                .toString()
+                                                .toUpperCase(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText1
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
                                         ),
-                                        const SizedBox(width: 10),
-                                        const Icon(
-                                          JamIcons.unordered_list,
-                                          size: 20,
-                                          color: Colors.white70,
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.eye,
+                                              size: 20,
+                                              color: Theme.of(context)
+                                                  .accentColor
+                                                  .withOpacity(.7),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              wdata.wallsS[index].views
+                                                  .toString(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2
+                                                  .copyWith(
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.heart_f,
+                                              size: 20,
+                                              color: Theme.of(context)
+                                                  .accentColor
+                                                  .withOpacity(.7),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              wdata.wallsS[index].favourites
+                                                  .toString(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2
+                                                  .copyWith(
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              JamIcons.save,
+                                              size: 20,
+                                              color: Theme.of(context)
+                                                  .accentColor
+                                                  .withOpacity(.7),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2
+                                                  .copyWith(
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: <Widget>[
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              0, 0, 0, 0),
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                wdata.wallsS[index].category
+                                                        .toString()[0]
+                                                        .toUpperCase() +
+                                                    wdata.wallsS[index].category
+                                                        .toString()
+                                                        .substring(1),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.unordered_list,
+                                                size: 20,
+                                                color: Theme.of(context)
+                                                    .accentColor
+                                                    .withOpacity(.7),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              wdata.wallsS[index].resolution
+                                                  .toString(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2
+                                                  .copyWith(
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Icon(
+                                              JamIcons.set_square,
+                                              size: 20,
+                                              color: Theme.of(context)
+                                                  .accentColor
+                                                  .withOpacity(.7),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              query
+                                                      .toString()[0]
+                                                      .toUpperCase() +
+                                                  query.toString().substring(1),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText2
+                                                  .copyWith(
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Icon(
+                                              JamIcons.search,
+                                              size: 20,
+                                              color: Theme.of(context)
+                                                  .accentColor
+                                                  .withOpacity(.7),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 5,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: <Widget>[
+                                  DownloadButton(
+                                    colorChanged: colorChanged,
+                                    link: screenshotTaken
+                                        ? _imageFile.path
+                                        : wdata.wallsS[index].path.toString(),
                                   ),
-                                  const SizedBox(height: 5),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        wdata.wallsS[index].resolution
-                                            .toString(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      const Icon(
-                                        JamIcons.set_square,
-                                        size: 20,
-                                        color: Colors.white70,
-                                      ),
-                                    ],
+                                  SetWallpaperButton(
+                                      colorChanged: colorChanged,
+                                      url: screenshotTaken
+                                          ? _imageFile.path
+                                          : wdata.wallsS[index].path),
+                                  FavouriteWallpaperButton(
+                                    id: wdata.wallsS[index].id.toString(),
+                                    provider: "WallHaven",
+                                    wallhaven: wdata.wallsS[index],
+                                    trash: false,
                                   ),
-                                  const SizedBox(height: 5),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        query.toString()[0].toUpperCase() +
-                                            query.toString().substring(1),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      const Icon(
-                                        JamIcons.search,
-                                        size: 20,
-                                        color: Colors.white70,
-                                      ),
-                                    ],
-                                  ),
+                                  ShareButton(
+                                      id: wdata.wallsS[index].id,
+                                      provider: "WallHaven",
+                                      url: wdata.wallsS[index].path,
+                                      thumbUrl: wdata
+                                          .wallsS[index].thumbs["original"]
+                                          .toString())
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: <Widget>[
-                            DownloadButton(
-                              colorChanged: colorChanged,
-                              link: screenshotTaken
-                                  ? _imageFile.path
-                                  : wdata.wallsS[index].path.toString(),
                             ),
-                            SetWallpaperButton(
-                                colorChanged: colorChanged,
-                                url: screenshotTaken
-                                    ? _imageFile.path
-                                    : wdata.wallsS[index].path),
-                            FavouriteWallpaperButton(
-                              id: wdata.wallsS[index].id.toString(),
-                              provider: "WallHaven",
-                              wallhaven: wdata.wallsS[index],
-                              trash: false,
-                            ),
-                            ShareButton(
-                                id: wdata.wallsS[index].id,
-                                provider: "WallHaven",
-                                url: wdata.wallsS[index].path,
-                                thumbUrl: wdata.wallsS[index].thumbs["original"]
-                                    .toString())
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 body: Stack(
@@ -553,6 +601,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   isLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  setState(() {
+                    panelCollapsed = false;
+                  });
                   if (panelClosed) {
                     debugPrint('Screenshot Starting');
                     setState(() {
@@ -596,6 +647,9 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                 },
                 onPanelClosed: () {
                   setState(() {
+                    panelCollapsed = true;
+                  });
+                  setState(() {
                     panelClosed = true;
                   });
                 },
@@ -605,249 +659,284 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                   topRight: Radius.circular(20),
                 ),
                 boxShadow: const [],
-                collapsed: Container(
-                  decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                      color: config.Colors().secondDarkColor(1)),
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height / 20,
-                    child: const Center(
-                        child: Icon(
-                      JamIcons.chevron_up,
-                      color: Colors.white,
-                    )),
-                  ),
-                ),
+                collapsed: CollapsedPanel(panelCollapsed: panelCollapsed),
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
-                parallaxOffset: 0.54,
-                color: config.Colors().secondDarkColor(1),
-                maxHeight: MediaQuery.of(context).size.height * .46,
+                parallaxOffset: 0.00,
+                color: Colors.transparent,
+                maxHeight: MediaQuery.of(context).size.height * .43,
                 controller: panelController,
                 panel: Container(
-                  height: MediaQuery.of(context).size.height * .46,
+                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                  height: MediaQuery.of(context).size.height * .43,
                   width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    color: config.Colors().secondDarkColor(1),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const Center(
-                          child: Padding(
-                        padding: EdgeInsets.all(10.0),
-                        child: Icon(
-                          JamIcons.chevron_down,
-                          color: Colors.white,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 750),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          color: panelCollapsed
+                              ? Theme.of(context).primaryColor.withOpacity(1)
+                              : Theme.of(context).primaryColor.withOpacity(.5),
                         ),
-                      )),
-                      ColorBar(colors: colors),
-                      Expanded(
-                        flex: 4,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                child: Container(
-                                  width: MediaQuery.of(context).size.width * .8,
-                                  child: Text(
-                                    pdata.wallsPS[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length > 8
-                                        ? pdata.wallsPS[index].url
-                                                .toString()
-                                                .replaceAll(
-                                                    "https://www.pexels.com/photo/", "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")[0]
-                                                .toUpperCase() +
-                                            pdata.wallsPS[index].url
-                                                .toString()
-                                                .replaceAll(
-                                                    "https://www.pexels.com/photo/", "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")
-                                                .substring(
-                                                    1,
-                                                    pdata.wallsPS[index].url
-                                                            .toString()
-                                                            .replaceAll(
-                                                                "https://www.pexels.com/photo/", "")
-                                                            .replaceAll(
-                                                                "-", " ")
-                                                            .replaceAll("/", "")
-                                                            .length -
-                                                        7)
-                                        : pdata.wallsPS[index].url
-                                                .toString()
-                                                .replaceAll(
-                                                    "https://www.pexels.com/photo/", "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")[0]
-                                                .toUpperCase() +
-                                            pdata.wallsPS[index].url
-                                                .toString()
-                                                .replaceAll(
-                                                    "https://www.pexels.com/photo/",
-                                                    "")
-                                                .replaceAll("-", " ")
-                                                .replaceAll("/", "")
-                                                .substring(1),
-                                    style:
-                                        Theme.of(context).textTheme.bodyText1,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                  ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Center(
+                                child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: AnimatedOpacity(
+                                duration: const Duration(),
+                                opacity: panelCollapsed ? 0.0 : 1.0,
+                                child: Icon(
+                                  JamIcons.chevron_down,
+                                  color: Theme.of(context).accentColor,
                                 ),
                               ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: <Widget>[
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      GestureDetector(
-                                        onTap: () {
-                                          launch(pdata.wallsPS[index].url);
-                                        },
-                                        child: Row(
-                                          children: [
-                                            const Icon(
-                                              JamIcons.camera,
-                                              size: 20,
-                                              color: Colors.white70,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  .4,
-                                              child: Text(
-                                                pdata
-                                                    .wallsPS[index].photographer
-                                                    .toString(),
-                                                textAlign: TextAlign.left,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyText2,
+                            )),
+                            ColorBar(colors: colors),
+                            Expanded(
+                              flex: 8,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          0, 5, 0, 10),
+                                      child: Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                .8,
+                                        child: Text(
+                                          pdata.wallsPS[index].url
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .length >
+                                                  8
+                                              ? pdata.wallsPS[index].url
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")[0]
+                                                      .toUpperCase() +
+                                                  pdata.wallsPS[index].url
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .substring(
+                                                          1,
+                                                          pdata.wallsPS[index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                              7)
+                                              : pdata.wallsPS[index].url
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")[0]
+                                                      .toUpperCase() +
+                                                  pdata.wallsPS[index].url
+                                                      .toString()
+                                                      .replaceAll(
+                                                          "https://www.pexels.com/photo/", "")
+                                                      .replaceAll("-", " ")
+                                                      .replaceAll("/", "")
+                                                      .substring(1),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText1
+                                              .copyWith(
+                                                  color: Theme.of(context)
+                                                      .accentColor),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        ),
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: <Widget>[
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            GestureDetector(
+                                              onTap: () {
+                                                launch(
+                                                    pdata.wallsPS[index].url);
+                                              },
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.camera,
+                                                    size: 20,
+                                                    color: Theme.of(context)
+                                                        .accentColor
+                                                        .withOpacity(.7),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Container(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            .4,
+                                                    child: Text(
+                                                      pdata.wallsPS[index]
+                                                          .photographer
+                                                          .toString(),
+                                                      textAlign: TextAlign.left,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyText2
+                                                          .copyWith(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.set_square,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  "${pdata.wallsPS[index].width.toString()}x${pdata.wallsPS[index].height.toString()}",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
-                                      ),
-                                      const SizedBox(height: 5),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            JamIcons.set_square,
-                                            size: 20,
-                                            color: Colors.white70,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            "${pdata.wallsPS[index].width.toString()}x${pdata.wallsPS[index].height.toString()}",
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: <Widget>[
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  pdata.wallsPS[index].id
+                                                      .toString(),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Icon(
+                                                  JamIcons.info,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  query.toString(),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Icon(
+                                                  JamIcons.database,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 5,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: <Widget>[
+                                  DownloadButton(
+                                      colorChanged: colorChanged,
+                                      link: screenshotTaken
+                                          ? _imageFile.path
+                                          : pdata.wallsPS[index].src["original"]
+                                              .toString()),
+                                  SetWallpaperButton(
+                                      colorChanged: colorChanged,
+                                      url: screenshotTaken
+                                          ? _imageFile.path
+                                          : pdata.wallsPS[index].src["original"]
+                                              .toString()),
+                                  FavouriteWallpaperButton(
+                                    id: pdata.wallsPS[index].id.toString(),
+                                    provider: "Pexels",
+                                    pexels: pdata.wallsPS[index],
+                                    trash: false,
                                   ),
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: <Widget>[
-                                      Row(
-                                        children: [
-                                          Text(
-                                            pdata.wallsPS[index].id.toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          const Icon(
-                                            JamIcons.info,
-                                            size: 20,
-                                            color: Colors.white70,
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 5),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            query.toString(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          const Icon(
-                                            JamIcons.database,
-                                            size: 20,
-                                            color: Colors.white70,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                  ShareButton(
+                                      id: pdata.wallsPS[index].id,
+                                      provider: selectedProvider,
+                                      url: pdata.wallsPS[index].src["original"]
+                                          .toString(),
+                                      thumbUrl: pdata
+                                          .wallsPS[index].src["medium"]
+                                          .toString())
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: <Widget>[
-                            DownloadButton(
-                                colorChanged: colorChanged,
-                                link: screenshotTaken
-                                    ? _imageFile.path
-                                    : pdata.wallsPS[index].src["original"]
-                                        .toString()),
-                            SetWallpaperButton(
-                                colorChanged: colorChanged,
-                                url: screenshotTaken
-                                    ? _imageFile.path
-                                    : pdata.wallsPS[index].src["original"]
-                                        .toString()),
-                            FavouriteWallpaperButton(
-                              id: pdata.wallsPS[index].id.toString(),
-                              provider: "Pexels",
-                              pexels: pdata.wallsPS[index],
-                              trash: false,
                             ),
-                            ShareButton(
-                                id: pdata.wallsPS[index].id,
-                                provider: selectedProvider,
-                                url: pdata.wallsPS[index].src["original"]
-                                    .toString(),
-                                thumbUrl: pdata.wallsPS[index].src["medium"]
-                                    .toString())
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 body: Stack(
@@ -991,6 +1080,44 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                 ),
               ),
             ),
+    );
+  }
+}
+
+class CollapsedPanel extends StatelessWidget {
+  final bool panelCollapsed;
+  const CollapsedPanel({
+    Key key,
+    this.panelCollapsed,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 750),
+      margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        color: panelCollapsed
+            ? Theme.of(context).primaryColor.withOpacity(1)
+            : Theme.of(context).primaryColor.withOpacity(0),
+      ),
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height / 30,
+        child: Center(
+            child: AnimatedOpacity(
+          duration: const Duration(),
+          opacity: panelCollapsed ? 1.0 : 0.0,
+          child: Icon(
+            JamIcons.chevron_up,
+            color: Theme.of(context).accentColor,
+          ),
+        )),
+      ),
     );
   }
 }
