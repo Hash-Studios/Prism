@@ -23,28 +23,10 @@ class PrismList extends StatelessWidget {
             fontFamily: "Proxima Nova"),
       ),
       subtitle: Text(
-        "Connect with Prism community",
+        "Share Prism, report bugs",
         style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
       ),
       children: [
-        ListTile(
-            leading: const Icon(
-              JamIcons.paper_plane,
-            ),
-            title: Text(
-              "Prism on Telegram",
-              style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: const Text(
-              "Discuss with community.",
-              style: TextStyle(fontSize: 12),
-            ),
-            onTap: () {
-              launch("https://t.me/PrismWallpapers");
-            }),
         ListTile(
             leading: const Icon(
               JamIcons.info,
@@ -62,25 +44,6 @@ class PrismList extends StatelessWidget {
             ),
             onTap: () {
               showChangelog(context, () {});
-            }),
-        ListTile(
-            leading: const Icon(
-              JamIcons.star,
-            ),
-            title: Text(
-              "Rate Prism!",
-              style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: const Text(
-              "If you like Prism, please consider rating it.",
-              style: TextStyle(fontSize: 12),
-            ),
-            onTap: () {
-              launch(
-                  "https://play.google.com/store/apps/details?id=com.hash.prism");
             }),
         ListTile(
             leading: const Icon(
@@ -103,24 +66,6 @@ class PrismList extends StatelessWidget {
             }),
         ListTile(
             leading: const Icon(
-              JamIcons.twitter,
-            ),
-            title: Text(
-              "Follow Prism on Twitter",
-              style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: const Text(
-              "We regularly share setups, wallpapers & organise giveaways.",
-              style: TextStyle(fontSize: 12),
-            ),
-            onTap: () {
-              launch("https://twitter.com/PrismWallpapers");
-            }),
-        ListTile(
-            leading: const Icon(
               JamIcons.users,
             ),
             title: Text(
@@ -137,24 +82,6 @@ class PrismList extends StatelessWidget {
             onTap: () {
               launch(
                   "https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md");
-            }),
-        ListTile(
-            leading: const Icon(
-              JamIcons.github,
-            ),
-            title: Text(
-              "View Prism on GitHub!",
-              style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: const Text(
-              "Check out the code or contribute yourself",
-              style: TextStyle(fontSize: 12),
-            ),
-            onTap: () async {
-              launch("https://github.com/LiquidatorCoder/Prism");
             }),
         ListTile(
             leading: const Icon(
@@ -241,22 +168,6 @@ class PrismList extends StatelessWidget {
                 ),
               );
             }),
-        ListTile(
-            leading: const Icon(
-              JamIcons.computer_alt,
-            ),
-            title: Text(
-              "Version",
-              style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: Text(
-              "v${globals.currentAppVersion}+${globals.currentAppVersionCode}",
-              style: const TextStyle(fontSize: 12),
-            ),
-            onTap: () {}),
         ListTile(
             leading: const Icon(
               JamIcons.bug,

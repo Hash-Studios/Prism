@@ -424,8 +424,8 @@ class _ProfileChildState extends State<ProfileChild> {
                         DownloadList(),
                         GeneralList(),
                         UserList(),
+                        const StudioList(),
                         PrismList(),
-                        StudioList(scrollController: controller),
                       ])
                     ]),
                   ),
@@ -476,8 +476,8 @@ class _ProfileChildState extends State<ProfileChild> {
                     DownloadList(),
                     GeneralList(),
                     UserList(),
-                    PrismList(),
                     const StudioList(),
+                    PrismList(),
                   ]))
                 ]),
               ));

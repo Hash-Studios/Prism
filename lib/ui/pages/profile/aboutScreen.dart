@@ -1,4 +1,5 @@
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/contriPopUp.dart';
@@ -21,201 +22,217 @@ class AboutScreen extends StatelessWidget {
     return listContri;
   }
 
+  Future<bool> onWillPop() async {
+    if (navStack.length > 1) navStack.removeLast();
+    debugPrint(navStack.toString());
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "About",
-          style: Theme.of(context).textTheme.headline3,
+    return WillPopScope(
+      onWillPop: onWillPop,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            "About",
+            style: Theme.of(context).textTheme.headline3,
+          ),
         ),
-      ),
-      backgroundColor: Theme.of(context).primaryColor,
-      body: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: ListView(
-            children: [
-              const SizedBox(
-                height: 20,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SvgPicture.string(
-                  prismRoundedSquareIcon,
-                  height: 70,
+        backgroundColor: Theme.of(context).primaryColor,
+        body: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            child: ListView(
+              children: [
+                const SizedBox(
+                  height: 20,
                 ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              Text(
-                "Prism Wallpapers",
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyText2,
-              ),
-              Text(
-                "Version ${globals.currentAppVersion}+${globals.currentAppVersionCode}",
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyText2.copyWith(
-                    color: Theme.of(context).accentColor.withOpacity(0.5)),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              Container(
-                width: MediaQuery.of(context).size.width * 0.6,
-                child: Text(
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SvgPicture.string(
+                    prismRoundedSquareIcon,
+                    height: 70,
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Text(
+                  "Prism Wallpapers",
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyText2
+                      .copyWith(color: Theme.of(context).accentColor),
+                ),
+                Text(
+                  "Version ${globals.currentAppVersion}+${globals.currentAppVersionCode}",
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyText2.copyWith(
+                      color: Theme.of(context).accentColor.withOpacity(0.5)),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Text(
                   "A feature-rich wallpaper and setup manager for Android.",
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyText2.copyWith(
                       color: Theme.of(context).accentColor.withOpacity(0.5)),
                 ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              Wrap(
-                alignment: WrapAlignment.center,
-                children: [
-                  const ActionButton(
-                    icon: JamIcons.github_circle,
-                    text: "GITHUB",
-                    link: "https://www.github.com/Hash-Studios/Prism",
-                  ),
-                  const ActionButton(
-                    icon: JamIcons.star_full,
-                    text: "RATE",
-                    link:
-                        "https://play.google.com/store/apps/details?id=com.hash.prism",
-                  ),
-                  const ActionButton(
-                    icon: JamIcons.twitter_circle,
-                    text: "TWITTER",
-                    link: "https://twitter.com/PrismWallpapers",
-                  ),
-                  const ActionButton(
-                    icon: JamIcons.instagram,
-                    text: "INSTAGRAM",
-                    link: "https://www.instagram.com/prismwallpapers",
-                  ),
-                  const ActionButton(
-                    icon: JamIcons.paper_plane,
-                    text: "TELEGRAM",
-                    link: "http://t.me/PrismWallpapers",
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              const Divider(),
-              Container(
-                padding: const EdgeInsets.only(top: 4, bottom: 12),
-                width: MediaQuery.of(context).size.width * 0.9,
-                child: Text(
-                  "The Team",
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headline3,
+                const SizedBox(
+                  height: 10,
                 ),
-              ),
-              FutureBuilder<List<Contributor>>(
-                future: printStream(),
-                builder: (context, snapshot) {
-                  if (snapshot == null) {
-                    debugPrint("snapshot null");
-                    return SizedBox(
-                        height: 250, child: Center(child: Loader()));
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting ||
-                      snapshot.connectionState == ConnectionState.none) {
-                    debugPrint("snapshot none, waiting");
-                    return SizedBox(
-                        height: 250, child: Center(child: Loader()));
-                  } else {
-                    final List<Widget> tiles = [];
-                    tiles.add(Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ContributorWidget(
-                          contributor: snapshot.data[1],
-                          radius: 35,
-                        ),
-                        ContributorWidget(
-                          contributor: snapshot.data[0],
-                          radius: 45,
-                        ),
-                        ContributorWidget(
-                          contributor: snapshot.data[2],
-                          radius: 35,
-                        ),
-                      ],
-                    ));
-                    tiles.add(
-                      const SizedBox(
-                        height: 10,
-                      ),
-                    );
-                    tiles.add(
-                      const Divider(),
-                    );
-                    tiles.add(
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        child: Text(
-                          "Other Contributors",
-                          style: Theme.of(context).textTheme.headline3,
-                        ),
-                      ),
-                    );
-                    for (final Contributor c in snapshot.data) {
-                      if (snapshot.data.indexOf(c) == 0 ||
-                          snapshot.data.indexOf(c) == 1 ||
-                          snapshot.data.indexOf(c) == 2) {
-                      } else {
-                        tiles.add(ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage:
-                                CachedNetworkImageProvider(c.avatarUrl),
-                          ),
-                          title: Text(
-                            c.login,
-                            style: Theme.of(context).textTheme.bodyText2,
-                          ),
-                          subtitle: Text(
-                            c.contributions == 1
-                                ? "${c.contributions} commit"
-                                : "${c.contributions} commits",
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyText2
-                                .copyWith(
-                                    color: Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.5)),
-                          ),
-                          onTap: () {
-                            launch(c.htmlUrl);
-                          },
-                        ));
-                      }
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  children: [
+                    const ActionButton(
+                      icon: JamIcons.github_circle,
+                      text: "GITHUB",
+                      link: "https://www.github.com/Hash-Studios/Prism",
+                    ),
+                    const ActionButton(
+                      icon: JamIcons.star_full,
+                      text: "RATE",
+                      link:
+                          "https://play.google.com/store/apps/details?id=com.hash.prism",
+                    ),
+                    const ActionButton(
+                      icon: JamIcons.twitter_circle,
+                      text: "TWITTER",
+                      link: "https://twitter.com/PrismWallpapers",
+                    ),
+                    const ActionButton(
+                      icon: JamIcons.instagram,
+                      text: "INSTAGRAM",
+                      link: "https://www.instagram.com/prismwallpapers",
+                    ),
+                    const ActionButton(
+                      icon: JamIcons.paper_plane,
+                      text: "TELEGRAM",
+                      link: "http://t.me/PrismWallpapers",
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                const Divider(),
+                Container(
+                  padding: const EdgeInsets.only(top: 4, bottom: 12),
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  child: Text(
+                    "The Team",
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headline3,
+                  ),
+                ),
+                FutureBuilder<List<Contributor>>(
+                  future: printStream(),
+                  builder: (context, snapshot) {
+                    if (snapshot == null) {
+                      debugPrint("snapshot null");
+                      return SizedBox(
+                          height: 250, child: Center(child: Loader()));
                     }
-                    return Column(children: tiles);
-                  }
-                },
-              ),
-              const Divider(),
-            ],
-          )),
-      bottomNavigationBar: Container(
-        width: MediaQuery.of(context).size.width,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            "Made with ❤ in India!",
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyText2,
+                    if (snapshot.connectionState == ConnectionState.waiting ||
+                        snapshot.connectionState == ConnectionState.none) {
+                      debugPrint("snapshot none, waiting");
+                      return SizedBox(
+                          height: 250, child: Center(child: Loader()));
+                    } else {
+                      final List<Widget> tiles = [];
+                      tiles.add(Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ContributorWidget(
+                            contributor: snapshot.data[1],
+                            radius: 35,
+                          ),
+                          ContributorWidget(
+                            contributor: snapshot.data[0],
+                            radius: 45,
+                          ),
+                          ContributorWidget(
+                            contributor: snapshot.data[2],
+                            radius: 35,
+                          ),
+                        ],
+                      ));
+                      tiles.add(
+                        const SizedBox(
+                          height: 10,
+                        ),
+                      );
+                      tiles.add(
+                        const Divider(),
+                      );
+                      tiles.add(
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          child: Text(
+                            "Other Contributors",
+                            style: Theme.of(context).textTheme.headline3,
+                          ),
+                        ),
+                      );
+                      for (final Contributor c in snapshot.data) {
+                        if (snapshot.data.indexOf(c) == 0 ||
+                            snapshot.data.indexOf(c) == 1 ||
+                            snapshot.data.indexOf(c) == 2) {
+                        } else {
+                          tiles.add(ListTile(
+                            leading: CircleAvatar(
+                              backgroundImage:
+                                  CachedNetworkImageProvider(c.avatarUrl),
+                            ),
+                            title: Text(
+                              c.login,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                            ),
+                            subtitle: Text(
+                              c.contributions == 1
+                                  ? "${c.contributions} commit"
+                                  : "${c.contributions} commits",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2
+                                  .copyWith(
+                                      color: Theme.of(context)
+                                          .accentColor
+                                          .withOpacity(0.5)),
+                            ),
+                            onTap: () {
+                              launch(c.htmlUrl);
+                            },
+                          ));
+                        }
+                      }
+                      return Column(children: tiles);
+                    }
+                  },
+                ),
+                const Divider(),
+              ],
+            )),
+        bottomNavigationBar: Container(
+          width: MediaQuery.of(context).size.width,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              "Made with ❤ in India!",
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyText2
+                  .copyWith(color: Theme.of(context).accentColor),
+            ),
           ),
         ),
       ),
@@ -254,7 +271,10 @@ class ContributorWidget extends StatelessWidget {
               contributor.login,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyText2,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyText2
+                  .copyWith(color: Theme.of(context).accentColor),
             ),
           ),
           Container(
@@ -291,10 +311,9 @@ class ActionButton extends StatelessWidget {
           label: Text(
             text,
             textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .bodyText2
-                .copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.bodyText2.copyWith(
+                color: Theme.of(context).accentColor,
+                fontWeight: FontWeight.bold),
           ),
           onPressed: () {
             launch(link);
