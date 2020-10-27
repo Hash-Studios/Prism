@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:share/share.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class SharePrismScreen extends StatefulWidget {
   @override
@@ -50,16 +51,32 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
         body: Container(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
-            child: ListView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(
                   height: 20,
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
                   child: Center(
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width / 2,
+                      height: 70,
+                      child: const FlareActor(
+                        "assets/animations/Text.flr",
+                        animation: "Untitled",
+                      ),
+                    ),
+                  ),
+                ),
+                //TODO Replace the animation with Share animation
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
+                  child: Center(
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width / 2,
+                      height: 70,
                       child: const FlareActor(
                         "assets/animations/Text.flr",
                         animation: "Untitled",
@@ -73,22 +90,26 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 Text(
                   "Share Prism with friends",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyText2
-                      .copyWith(color: Theme.of(context).accentColor),
-                ),
-                Text(
-                  "Get 50 coins when your friend launches the app from the link!",
-                  textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyText2.copyWith(
-                      color: Theme.of(context).accentColor.withOpacity(0.5)),
+                      fontSize: 18, color: Theme.of(context).accentColor),
                 ),
-                Text(
-                  "They also get 50 coins, which you can spend on exclusives.",
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyText2.copyWith(
-                      color: Theme.of(context).accentColor.withOpacity(0.5)),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "Get 50 coins when your friend launches the app from the link!",
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyText2.copyWith(
+                        color: Theme.of(context).accentColor.withOpacity(0.5)),
+                  ),
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "They also get 50 coins, which you can spend on exclusives.",
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyText2.copyWith(
+                        color: Theme.of(context).accentColor.withOpacity(0.5)),
+                  ),
                 ),
                 const SizedBox(
                   height: 10,
@@ -96,9 +117,15 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 FlatButton(
                   disabledColor: Theme.of(context).accentColor.withOpacity(0.5),
                   shape: const StadiumBorder(),
-                  color: config.Colors().mainAccentColor(1),
+                  color: link == ""
+                      ? Theme.of(context).accentColor.withOpacity(0.5)
+                      : config.Colors().mainAccentColor(1),
                   onPressed: link == ""
-                      ? null
+                      ? () {
+                          toasts.error(
+                            "Sign in to generate unique referral link!",
+                          );
+                        }
                       : () {
                           Share.share(link);
                         },
@@ -109,6 +136,9 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                       color: Colors.white,
                     ),
                   ),
+                ),
+                const SizedBox(
+                  height: 10,
                 ),
                 const SizedBox(
                   height: 15,
