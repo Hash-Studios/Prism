@@ -18,7 +18,7 @@ class SplashWidget extends StatelessWidget {
     remoteConfig = await RemoteConfig.instance;
     await remoteConfig.setConfigSettings(RemoteConfigSettings());
     await remoteConfig.setDefaults(<String, dynamic>{
-      'categories': categories.toString(),
+      'newCategories': categories.toString(),
       'currentVersion': globals.currentAppVersion.toString(),
       'versionDesc':
           "Prism Premium is here, for the personalisaton lords!^*^Setups are here! Change the way of personalisation.^*^Favourites moved to profile.",
@@ -43,7 +43,7 @@ class SplashWidget extends StatelessWidget {
     globals.topTitleText.shuffle();
     final cList = [];
     var tempVar = remoteConfig
-        .getString('categories')
+        .getString('newCategories')
         .replaceAll('[', "")
         .replaceAll(']', "")
         .split("},");
