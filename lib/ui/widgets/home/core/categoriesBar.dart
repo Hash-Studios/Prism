@@ -176,42 +176,17 @@ class _CategoriesBarState extends State<CategoriesBar> {
             ),
           ),
           SizedBox(
-              child: PopupMenuButton(
-            icon: const Icon(JamIcons.more_vertical),
-            elevation: 4,
-            initialValue: Provider.of<CategorySupplier>(context).selectedChoice,
-            onCanceled: () {
-              debugPrint('You have not chossed anything');
-            },
-            tooltip: 'Categories',
-            onSelected: (choice) {
-              Provider.of<CategorySupplier>(context, listen: false)
-                  .changeSelectedChoice(choice as CategoryMenu);
-              Provider.of<CategorySupplier>(context, listen: false)
-                  .changeWallpaperFuture(choice as CategoryMenu, "r");
-              PM.pageController.animateToPage(0,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeInCubic);
-            },
-            itemBuilder: (BuildContext context) {
-              return choices.map((choice) {
-                return PopupMenuItem(
-                  textStyle: Theme.of(context)
-                      .textTheme
-                      .headline4
-                      .copyWith(color: Theme.of(context).accentColor),
-                  value: choice,
-                  child: Row(
-                    children: <Widget>[
-                      Icon(choice.icon as IconData),
-                      const SizedBox(width: 10),
-                      Text(choice.name.toString()),
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-          ))
+            child: IconButton(
+              icon: const Icon(JamIcons.more_vertical),
+              onPressed: () {
+                showCategories(
+                    context,
+                    Provider.of<CategorySupplier>(context, listen: false)
+                        .selectedChoice);
+              },
+              tooltip: 'Categories',
+            ),
+          )
         ],
       ),
     );
