@@ -2,48 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/main.dart' as main;
 
-// enum ThemeType { light, dark }
 Map<String, ThemeData> themes = {
   "kLFrost White": kLightTheme,
   "kDMaterial Dark": kDarkTheme,
-  "kLCream": kLightTheme2,
+  "kLCoffee": kLightTheme2,
   "kDJust Black": kDarkTheme2,
-  "kLSkin": kLightTheme3,
+  "kLRose": kLightTheme3,
   "kLCotton Blue": kLightTheme4,
-  "kDOlive": kLightTheme3,
-  "kDDeep Ocean": kLightTheme3,
-  "kDJungle": kLightTheme3,
-  "kDPepper": kLightTheme3,
-  "kDSky": kLightTheme3,
-  "kLSteel": kLightTheme3,
+  "kDOlive": kDarkTheme3,
+  "kDDeep Ocean": kDarkTheme4,
+  "kDJungle": kDarkTheme5,
+  "kDPepper": kDarkTheme6,
+  "kDSky": kDarkTheme7,
+  "kDSteel": kDarkTheme8,
 };
 
 class ThemeModel extends ChangeNotifier {
   ThemeData currentTheme = kDarkTheme;
-  // ThemeType themeType = ThemeType.dark;
 
   ThemeModel(
     this.currentTheme,
-    // this.themeType
   );
-
-  // void toggleTheme() {
-  //   if (themeType == ThemeType.dark) {
-  //     main.prefs.put("darkMode", false);
-  //     currentTheme = kLightTheme;
-  //     themeType = ThemeType.light;
-  //     debugPrint(main.prefs.get("darkMode").toString());
-  //     return notifyListeners();
-  //   }
-
-  //   if (themeType == ThemeType.light) {
-  //     main.prefs.put("darkMode", true);
-  //     currentTheme = kDarkTheme;
-  //     themeType = ThemeType.dark;
-  //     debugPrint(main.prefs.get("darkMode").toString());
-  //     return notifyListeners();
-  //   }
-  // }
 
   void changeAccentColor(int accentColor) {
     debugPrint(accentColor.toString());
@@ -65,9 +44,6 @@ class ThemeModel extends ChangeNotifier {
     return notifyListeners();
   }
 
-  // ThemeType returnTheme() {
-  //   return themeType;
-  // }
   String returnTheme(ThemeData themeData) {
     return themes.keys.firstWhere(
       (element) => themes[element] == themeData,

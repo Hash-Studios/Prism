@@ -34,7 +34,6 @@ List<Color> accentColors = [
   const Color(0xFF9e9e9e),
   const Color(0xFF607d8b),
   const Color(0xFF000000),
-  const Color(0xFFFFFFFF),
 ];
 
 class ThemeView extends StatefulWidget {
@@ -139,40 +138,45 @@ class _ThemeViewState extends State<ThemeView> {
                     )
                   ],
                 ),
-                width:
-                    MediaQuery.of(context).size.height * 0.55 * 0.52068473609,
+                width: MediaQuery.of(context).size.height * 0.55 * 0.4993924666,
                 height: MediaQuery.of(context).size.height * 0.55,
-                child: SvgPicture.string(themePicture
-                    .replaceAll(
-                        "181818",
-                        Theme.of(context)
-                            .primaryColor
-                            .value
-                            .toRadixString(16)
-                            .toString()
-                            .substring(2))
-                    .replaceAll(
-                        "E57697",
-                        selectedAccentColor.value
-                            .toRadixString(16)
-                            .toString()
-                            .substring(2))
-                    .replaceAll(
-                        "F0F0F0",
-                        Theme.of(context)
-                            .accentColor
-                            .value
-                            .toRadixString(16)
-                            .toString()
-                            .substring(2))
-                    .replaceAll(
-                        "2F2F2F",
-                        Theme.of(context)
-                            .hintColor
-                            .value
-                            .toRadixString(16)
-                            .toString()
-                            .substring(2))),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(17),
+                  child: SvgPicture.string(
+                    themePicture
+                        .replaceAll(
+                            "181818",
+                            Theme.of(context)
+                                .primaryColor
+                                .value
+                                .toRadixString(16)
+                                .toString()
+                                .substring(2))
+                        .replaceAll(
+                            "E57697",
+                            selectedAccentColor.value
+                                .toRadixString(16)
+                                .toString()
+                                .substring(2))
+                        .replaceAll(
+                            "F0F0F0",
+                            Theme.of(context)
+                                .accentColor
+                                .value
+                                .toRadixString(16)
+                                .toString()
+                                .substring(2))
+                        .replaceAll(
+                            "2F2F2F",
+                            Theme.of(context)
+                                .hintColor
+                                .value
+                                .toRadixString(16)
+                                .toString()
+                                .substring(2)),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
             ),
             const Divider(),
