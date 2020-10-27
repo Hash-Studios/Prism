@@ -119,6 +119,7 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
       controller: controller,
       headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
         SliverAppBar(
+          primary: false,
           backgroundColor: Theme.of(context).primaryColor,
           automaticallyImplyLeading: false,
           expandedHeight: 200,

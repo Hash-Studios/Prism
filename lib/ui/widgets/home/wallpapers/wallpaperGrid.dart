@@ -117,6 +117,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
         controller: controller,
         headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
               SliverAppBar(
+                primary: false,
                 backgroundColor: Theme.of(context).primaryColor,
                 automaticallyImplyLeading: false,
                 titleSpacing: 0,
