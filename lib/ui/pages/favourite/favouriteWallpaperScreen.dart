@@ -884,7 +884,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             onPanUpdate: (details) {
                               if (details.delta.dy < -10) {
                                 panelController.open();
-                                HapticFeedback.vibrate();
+                                // HapticFeedback.vibrate();
                               }
                             },
                             onLongPress: () {
@@ -1473,7 +1473,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             onPanUpdate: (details) {
                               if (details.delta.dy < -10) {
                                 panelController.open();
-                                HapticFeedback.vibrate();
+                                // HapticFeedback.vibrate();
                               }
                             },
                             onLongPress: () {

@@ -514,7 +514,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           return GestureDetector(
                             onPanUpdate: (details) {
                               if (details.delta.dy < -10) {
-                                HapticFeedback.vibrate();
+                                // HapticFeedback.vibrate();
                                 panelController.open();
                               }
                             },
@@ -888,12 +888,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                             Data.wall["email"],
                                                                             Data.wall["userPhoto"],
                                                                             false,
-                                                                            Data.wall[
-                                                                    "twitter"] ??
-                                                                "",
-                                                            Data.wall[
-                                                                    "instagram"] ??
-                                                                ""
+                                                                            Data.wall["twitter"] ??
+                                                                                "",
+                                                                            Data.wall["instagram"] ??
+                                                                                ""
                                                                           ]);
                                                                     },
                                                           padding:
@@ -1057,7 +1055,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               return GestureDetector(
                                 onPanUpdate: (details) {
                                   if (details.delta.dy < -10) {
-                                    HapticFeedback.vibrate();
+                                    // HapticFeedback.vibrate();
                                     panelController.open();
                                   }
                                 },
@@ -1605,7 +1603,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   return GestureDetector(
                                     onPanUpdate: (details) {
                                       if (details.delta.dy < -10) {
-                                        HapticFeedback.vibrate();
+                                        // HapticFeedback.vibrate();
                                         panelController.open();
                                       }
                                     },

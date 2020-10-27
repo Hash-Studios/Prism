@@ -703,7 +703,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                             onPanUpdate: (details) {
                               if (details.delta.dy < -10) {
                                 panelController.open();
-                                HapticFeedback.vibrate();
+                                // HapticFeedback.vibrate();
                               }
                             },
                             onLongPress: () {
@@ -1203,7 +1203,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                 onPanUpdate: (details) {
                                   if (details.delta.dy < -10) {
                                     panelController.open();
-                                    HapticFeedback.vibrate();
+                                    // HapticFeedback.vibrate();
                                   }
                                 },
                                 onLongPress: () {
@@ -1723,7 +1723,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   return GestureDetector(
                                     onPanUpdate: (details) {
                                       if (details.delta.dy < -10) {
-                                        HapticFeedback.vibrate();
+                                        // HapticFeedback.vibrate();
                                         panelController.open();
                                       }
                                     },
@@ -2265,7 +2265,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           return GestureDetector(
                                             onPanUpdate: (details) {
                                               if (details.delta.dy < -10) {
-                                                HapticFeedback.vibrate();
+                                                // HapticFeedback.vibrate();
                                                 panelController.open();
                                               }
                                             },
@@ -2829,7 +2829,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       return GestureDetector(
                                         onPanUpdate: (details) {
                                           if (details.delta.dy < -10) {
-                                            HapticFeedback.vibrate();
+                                            // HapticFeedback.vibrate();
                                             panelController.open();
                                           }
                                         },
