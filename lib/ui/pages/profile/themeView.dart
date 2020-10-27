@@ -75,7 +75,7 @@ class _ThemeViewState extends State<ThemeView> {
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-              icon: const Icon(JamIcons.chevron_left),
+              icon: const Icon(JamIcons.close),
               onPressed: () {
                 if (Provider.of<ThemeModel>(context, listen: false)
                         .currentTheme ==
@@ -111,11 +111,10 @@ class _ThemeViewState extends State<ThemeView> {
                   main.RestartWidget.restartApp(context);
                 })
           ],
-          centerTitle: true,
           elevation: 0,
           title: Text(
             "Pick a Theme",
-            style: Theme.of(context).textTheme.headline2,
+            style: Theme.of(context).textTheme.headline3,
           ),
         ),
         backgroundColor: Theme.of(context).primaryColor,
@@ -140,8 +139,9 @@ class _ThemeViewState extends State<ThemeView> {
                     )
                   ],
                 ),
-                width: MediaQuery.of(context).size.height * 0.6 * 0.52068473609,
-                height: MediaQuery.of(context).size.height * 0.6,
+                width:
+                    MediaQuery.of(context).size.height * 0.55 * 0.52068473609,
+                height: MediaQuery.of(context).size.height * 0.55,
                 child: SvgPicture.string(themePicture
                     .replaceAll(
                         "181818",
@@ -175,9 +175,10 @@ class _ThemeViewState extends State<ThemeView> {
                             .substring(2))),
               ),
             ),
+            const Divider(),
             Container(
               width: MediaQuery.of(context).size.width,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 "Themes",
                 style: Theme.of(context).textTheme.headline4,
@@ -190,15 +191,21 @@ class _ThemeViewState extends State<ThemeView> {
                 scrollDirection: Axis.horizontal,
                 itemCount: themes.length,
                 itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      Provider.of<ThemeModel>(context, listen: false)
-                          .changeThemeByID(themes.keys.toList()[index]);
-                      print(selectedAccentColor);
-                      setState(() {
-                        selectedTheme = index;
-                        selectedAccentColor = Color(int.parse(
-                            Provider.of<ThemeModel>(context, listen: false)
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 0, 4),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: MaterialButton(
+                        color: Theme.of(context).hintColor,
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          Provider.of<ThemeModel>(context, listen: false)
+                              .changeThemeByID(themes.keys.toList()[index]);
+                          debugPrint(selectedAccentColor.toString());
+                          setState(() {
+                            selectedTheme = index;
+                            selectedAccentColor = Color(int.parse(Provider.of<
+                                    ThemeModel>(context, listen: false)
                                 .currentTheme
                                 .errorColor
                                 .toString()
@@ -207,64 +214,71 @@ class _ThemeViewState extends State<ThemeView> {
                                     "")
                                 .replaceAll("Color(", "")
                                 .replaceAll(")", "")));
-                      });
-                      print(selectedAccentColor);
-                    },
-                    child: Stack(
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.all(4),
-                          width: MediaQuery.of(context).size.width * 0.3,
-                          height: MediaQuery.of(context).size.height * 0.06,
-                          decoration: BoxDecoration(
-                              border: Border.all(),
-                              borderRadius: BorderRadius.circular(10)),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(JamIcons.brush_f),
-                              Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Text(
-                                  themes.keys.toList()[index].substring(2),
-                                  style: Theme.of(context).textTheme.subtitle2,
-                                ),
+                          });
+                          debugPrint(selectedAccentColor.toString());
+                        },
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.height * 0.06,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black12),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            ],
-                          ),
-                        ),
-                        index == selectedTheme
-                            ? Container(
-                                margin: const EdgeInsets.all(4),
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                height:
-                                    MediaQuery.of(context).size.height * 0.06,
-                                decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.6),
-                                    border: Border.all(),
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      JamIcons.check,
-                                      color: Theme.of(context).primaryColor,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(JamIcons.brush_f),
+                                  Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Text(
+                                      themes.keys.toList()[index].substring(2),
+                                      style:
+                                          Theme.of(context).textTheme.subtitle2,
                                     ),
-                                  ],
-                                ),
-                              )
-                            : Container(),
-                      ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            index == selectedTheme
+                                ? Container(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.3,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.06,
+                                    decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .accentColor
+                                            .withOpacity(0.5),
+                                        border:
+                                            Border.all(color: Colors.black45),
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          JamIcons.check,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : Container(),
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 },
               ),
             ),
+            const Divider(),
             Container(
               width: MediaQuery.of(context).size.width,
-              padding: EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 "Accent Color",
                 style: Theme.of(context).textTheme.headline4,
@@ -286,7 +300,7 @@ class _ThemeViewState extends State<ThemeView> {
                     child: Stack(
                       children: [
                         Container(
-                          margin: const EdgeInsets.all(5),
+                          margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                           decoration: BoxDecoration(
                             border: Border.all(
                               color: selectedAccentColor == accentColors[index]
@@ -303,7 +317,7 @@ class _ThemeViewState extends State<ThemeView> {
                         ),
                         selectedAccentColor == accentColors[index]
                             ? Container(
-                                margin: const EdgeInsets.all(5),
+                                margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
                                 decoration: BoxDecoration(
                                   color: Theme.of(context)
                                       .accentColor

@@ -4,12 +4,18 @@ import 'package:Prism/main.dart' as main;
 
 // enum ThemeType { light, dark }
 Map<String, ThemeData> themes = {
-  "kLFrosty White": kLightTheme,
+  "kLFrost White": kLightTheme,
   "kDMaterial Dark": kDarkTheme,
-  "kLBlue Island": kLightTheme2,
-  "kDAMOLED Black": kDarkTheme2,
-  "kLRed Thunder": kLightTheme3,
-  "kLTeal Sea": kLightTheme4
+  "kLCream": kLightTheme2,
+  "kDJust Black": kDarkTheme2,
+  "kLSkin": kLightTheme3,
+  "kLCotton Blue": kLightTheme4,
+  "kDOlive": kLightTheme3,
+  "kDDeep Ocean": kLightTheme3,
+  "kDJungle": kLightTheme3,
+  "kDPepper": kLightTheme3,
+  "kDSky": kLightTheme3,
+  "kLSteel": kLightTheme3,
 };
 
 class ThemeModel extends ChangeNotifier {
