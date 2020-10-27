@@ -346,8 +346,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                             sdata.setup[
                                                                 "userPhoto"],
                                                             false,
-                                                            "",
-                                                            ""
+                                                            sdata.setup[
+                                                                    "twitter"] ??
+                                                                "",
+                                                            sdata.setup[
+                                                                    "instagram"] ??
+                                                                ""
                                                           ]);
                                                     }),
                                               ),

@@ -325,8 +325,18 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           .setups[index]
                                                       ["userPhoto"],
                                                   false,
-                                                  "",
-                                                  ""
+                                                  Provider.of<SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .setups[index]
+                                                          ["twitter"] ??
+                                                      "",
+                                                  Provider.of<SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .setups[index]
+                                                          ["instagram"] ??
+                                                      ""
                                                 ]);
                                           }),
                                     ),
