@@ -1,16 +1,34 @@
-import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/animated/loader.dart';
-import 'package:Prism/ui/widgets/popup/contriPopUp.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:Prism/global/globals.dart' as globals;
-import 'package:github/github.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/config.dart' as config;
+import 'package:share/share.dart';
 
-class SharePrismScreen extends StatelessWidget {
+class SharePrismScreen extends StatefulWidget {
+  @override
+  _SharePrismScreenState createState() => _SharePrismScreenState();
+}
+
+class _SharePrismScreenState extends State<SharePrismScreen> {
+  String link = "";
+  @override
+  void initState() {
+    super.initState();
+    getLink();
+  }
+
+  Future<void> getLink() async {
+    if (main.prefs.get("id") == "" || main.prefs.get("id") == null) {
+    } else {
+      await createSharingPrismLink(main.prefs.get("id").toString())
+          .then((value) => setState(() {
+                link = value;
+              }));
+    }
+  }
+
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
@@ -38,17 +56,22 @@ class SharePrismScreen extends StatelessWidget {
                   height: 20,
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SvgPicture.string(
-                    prismRoundedSquareIcon,
-                    height: 70,
+                  padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                  child: Center(
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width / 2,
+                      child: const FlareActor(
+                        "assets/animations/Text.flr",
+                        animation: "Untitled",
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(
                   height: 10,
                 ),
                 Text(
-                  "Prism Wallpapers",
+                  "Share Prism with friends",
                   textAlign: TextAlign.center,
                   style: Theme.of(context)
                       .textTheme
@@ -56,16 +79,13 @@ class SharePrismScreen extends StatelessWidget {
                       .copyWith(color: Theme.of(context).accentColor),
                 ),
                 Text(
-                  "Version ${globals.currentAppVersion}+${globals.currentAppVersionCode}",
+                  "Get 50 coins when your friend launches the app from the link!",
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyText2.copyWith(
                       color: Theme.of(context).accentColor.withOpacity(0.5)),
-                ),
-                const SizedBox(
-                  height: 10,
                 ),
                 Text(
-                  "A feature-rich wallpaper and setup manager for Android.",
+                  "They also get 50 coins, which you can spend on exclusives.",
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyText2.copyWith(
                       color: Theme.of(context).accentColor.withOpacity(0.5)),
@@ -73,7 +93,26 @@ class SharePrismScreen extends StatelessWidget {
                 const SizedBox(
                   height: 10,
                 ),
-                const Divider(),
+                FlatButton(
+                  disabledColor: Theme.of(context).accentColor.withOpacity(0.5),
+                  shape: const StadiumBorder(),
+                  color: config.Colors().mainAccentColor(1),
+                  onPressed: link == ""
+                      ? null
+                      : () {
+                          Share.share(link);
+                        },
+                  child: const Text(
+                    'SHARE INVITE',
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  height: 15,
+                ),
               ],
             )),
       ),
