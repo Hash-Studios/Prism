@@ -95,3 +95,31 @@ Future<void> createSetupDynamicLink(
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
   debugPrint(shortUrl.toString());
 }
+
+Future<String> createSharingPrismLink(String userID) async {
+  final DynamicLinkParameters parameters = DynamicLinkParameters(
+      socialMetaTagParameters: SocialMetaTagParameters(
+          title: "Prism Wallpapers",
+          imageUrl: Uri.parse(
+              "https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"),
+          description:
+              "Download Prism from my link to get 50 coins instantly!"),
+      dynamicLinkParametersOptions: DynamicLinkParametersOptions(
+          shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
+      uriPrefix: 'https://prismwallpapers.page.link',
+      link: Uri.parse('http://prism.hash.com/refer?userID=$userID'),
+      androidParameters: AndroidParameters(
+        packageName: 'com.hash.prism',
+        minimumVersion: 1,
+      ),
+      iosParameters: IosParameters(
+        bundleId: 'com.hash.prism',
+        minimumVersion: '1.0.1',
+        appStoreId: '1405860595',
+      ));
+  final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
+  final Uri shortUrl = shortDynamicLink.shortUrl;
+  analytics.logShare(contentType: 'prismShare', itemId: userID, method: 'link');
+  debugPrint(shortUrl.toString());
+  return shortUrl.toString();
+}

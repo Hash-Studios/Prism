@@ -24,3 +24,4 @@ const String notificationsRoute = '/notifications';
 const String collectionViewRoute = '/collectionsview';
 const String shareSetupViewRoute = '/sharesetups';
 const String aboutRoute = '/about';
+const String sharePrismRoute = '/shareprism';

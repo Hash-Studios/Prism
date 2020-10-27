@@ -13,6 +13,7 @@ import 'package:Prism/ui/pages/profile/photographerProfile.dart';
 import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
 import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
+import 'package:Prism/ui/pages/profile/sharePrismScreen.dart';
 import 'package:Prism/ui/pages/profile/themeView.dart';
 import 'package:Prism/ui/pages/profile/userProfileWallViewScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
@@ -221,6 +222,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: aboutRoute);
       return CupertinoPageRoute(
           builder: (context) => AboutScreen(), fullscreenDialog: true);
+    case sharePrismRoute:
+      navStack.add("Share Prism");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: sharePrismRoute);
+      return CupertinoPageRoute(
+          builder: (context) => SharePrismScreen(), fullscreenDialog: true);
     default:
       navStack.add("undefined");
       debugPrint(navStack.toString());
