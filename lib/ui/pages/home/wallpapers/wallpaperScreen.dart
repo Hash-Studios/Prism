@@ -1053,8 +1053,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                   index]
                                                               ["userPhoto"],
                                                           false,
-                                                          "",
-                                                          ""
+                                                          data.subPrismWalls[index]["twitter"]??"",
+                                                    data.subPrismWalls[index]["instagram"]??""
                                                         ]);
                                                   },
                                                   padding: const EdgeInsets

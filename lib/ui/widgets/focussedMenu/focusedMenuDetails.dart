@@ -406,8 +406,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     Data.subPrismWalls[widget
                                                         .index]["userPhoto"],
                                                     false,
-                                                    "",
-                                                    ""
+                                                    Data.subPrismWalls[widget
+                                                        .index]["twitter"]??"",
+                                                    Data.subPrismWalls[widget
+                                                        .index]["instagram"]??""
                                                   ]);
                                             }),
                                         Padding(

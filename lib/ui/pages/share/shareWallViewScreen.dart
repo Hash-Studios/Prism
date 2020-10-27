@@ -888,8 +888,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                             Data.wall["email"],
                                                                             Data.wall["userPhoto"],
                                                                             false,
-                                                                            "",
-                                                                            ""
+                                                                            Data.wall[
+                                                                    "twitter"] ??
+                                                                "",
+                                                            Data.wall[
+                                                                    "instagram"] ??
+                                                                ""
                                                                           ]);
                                                                     },
                                                           padding:

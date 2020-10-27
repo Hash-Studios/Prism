@@ -28,6 +28,8 @@ Future<void> createRecord(
     'review': review,
     'createdAt': DateTime.now(),
     'collections': ["community"],
+    'twitter': main.prefs.get('twitter') ?? "",
+    'instagram': main.prefs.get('instagram') ?? "",
   });
   if (main.prefs.get('premium') == true) {
     toasts.codeSend("Succesfully uploaded");
@@ -66,6 +68,8 @@ Future<void> createSetup(
     'desc': setupDesc,
     'review': review,
     'created_at': DateTime.now(),
+    'twitter': main.prefs.get('twitter') ?? "",
+    'instagram': main.prefs.get('instagram') ?? "",
   });
   toasts.codeSend("Your setup is submitted, and is under review.");
 }
