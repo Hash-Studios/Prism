@@ -523,7 +523,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                       onPanUpdate: (details) {
                         if (details.delta.dy < -10) {
                           panelController.open();
-                          HapticFeedback.vibrate();
+                          // HapticFeedback.vibrate();
                         }
                       },
                       onLongPress: () {

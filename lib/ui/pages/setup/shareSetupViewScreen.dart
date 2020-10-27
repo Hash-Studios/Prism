@@ -617,7 +617,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                 onPanUpdate: (details) {
                                   if (details.delta.dy < -10) {
                                     panelController.open();
-                                    HapticFeedback.vibrate();
+                                    // HapticFeedback.vibrate();
                                   }
                                 },
                                 onLongPress: () {
