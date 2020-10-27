@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:device_info/device_info.dart';
@@ -61,8 +62,7 @@ class PrismList extends StatelessWidget {
               style: TextStyle(fontSize: 12),
             ),
             onTap: () {
-              Share.share(
-                  'Hey check out this amazing wallpaper app Prism https://play.google.com/store/apps/details?id=com.hash.prism');
+              Navigator.pushNamed(context, sharePrismRoute);
             }),
         ListTile(
             leading: const Icon(

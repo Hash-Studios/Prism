@@ -15,7 +15,7 @@ class AboutScreen extends StatelessWidget {
     final github = GitHub();
     final Stream<Contributor> contri = github.repositories
         .listContributors(RepositorySlug("Hash-Studios", "Prism"));
-    List<Contributor> listContri = [];
+    final List<Contributor> listContri = [];
     await for (final value in contri) {
       listContri.add(value);
     }
@@ -86,29 +86,29 @@ class AboutScreen extends StatelessWidget {
                 ),
                 Wrap(
                   alignment: WrapAlignment.center,
-                  children: [
-                    const ActionButton(
+                  children: const [
+                    ActionButton(
                       icon: JamIcons.github_circle,
                       text: "GITHUB",
                       link: "https://www.github.com/Hash-Studios/Prism",
                     ),
-                    const ActionButton(
+                    ActionButton(
                       icon: JamIcons.star_full,
                       text: "RATE",
                       link:
                           "https://play.google.com/store/apps/details?id=com.hash.prism",
                     ),
-                    const ActionButton(
+                    ActionButton(
                       icon: JamIcons.twitter_circle,
                       text: "TWITTER",
                       link: "https://twitter.com/PrismWallpapers",
                     ),
-                    const ActionButton(
+                    ActionButton(
                       icon: JamIcons.instagram,
                       text: "INSTAGRAM",
                       link: "https://www.instagram.com/prismwallpapers",
                     ),
-                    const ActionButton(
+                    ActionButton(
                       icon: JamIcons.paper_plane,
                       text: "TELEGRAM",
                       link: "http://t.me/PrismWallpapers",
