@@ -186,6 +186,9 @@ class _PageManagerState extends State<PageManager> {
                         ]);
                   }));
         linkOpened = 1;
+      } else if (deepLink.pathSegments[0] == "refer") {
+        //TODO write code to add coins in friend/user account
+        linkOpened = 1;
       } else {}
       debugPrint("opened while closed altogether via deep link2345");
     }
