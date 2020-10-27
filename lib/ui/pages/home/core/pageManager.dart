@@ -3,11 +3,13 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/globals.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
-import 'package:Prism/ui/pages/undefinedScreen.dart';
+import 'package:Prism/ui/pages/setup/setupScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
+import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
@@ -16,7 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:rate_my_app/rate_my_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
@@ -25,12 +26,21 @@ import 'package:Prism/main.dart' as main;
 
 PageController pageController = PageController();
 
-class PageManager extends StatefulWidget {
+class PageManager extends StatelessWidget {
   @override
-  _PageManagerState createState() => _PageManagerState();
+  Widget build(BuildContext context) {
+    return BottomBar(
+      child: PageManagerChild(),
+    );
+  }
 }
 
-class _PageManagerState extends State<PageManager> {
+class PageManagerChild extends StatefulWidget {
+  @override
+  _PageManagerChildState createState() => _PageManagerChildState();
+}
+
+class _PageManagerChildState extends State<PageManagerChild> {
   int page = 0;
   int linkOpened = 0;
   bool result = true;
@@ -246,6 +256,8 @@ class _PageManagerState extends State<PageManager> {
   @override
   Widget build(BuildContext context) {
     Future.delayed(const Duration(seconds: 1), () => initDynamicLinks(context));
+    final ScrollController _scrollController =
+        InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
       onWillPop: () async {
         if (page != 0) {
@@ -255,48 +267,132 @@ class _PageManagerState extends State<PageManager> {
         }
         return false;
       },
-      child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          appBar: PreferredSize(
-            preferredSize: const Size(double.infinity, 55),
-            child: CategoriesBar(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height),
-          ),
-          body: Stack(
-            children: <Widget>[
-              BottomBar(
-                child: PageView.builder(
-                    onPageChanged: (index) {
-                      debugPrint("Index cat: ${index.toString()}");
-                      setState(() {
-                        page = index;
-                      });
-                      categoryController.scrollToIndex(index,
-                          preferPosition: AutoScrollPosition.begin);
-                      if (index == 0) {
-                        Provider.of<TabProvider>(context, listen: false)
-                            .updateSelectedTab("Wallpapers");
-                      } else if (index == 1) {
-                        Provider.of<TabProvider>(context, listen: false)
-                            .updateSelectedTab("Collections");
-                      }
-                    },
-                    controller: pageController,
-                    itemCount: 2,
-                    itemBuilder: (context, index) {
-                      debugPrint("Index : ${index.toString()}");
-                      if (index == 0) {
-                        return const HomeScreen();
-                      } else if (index == 1) {
-                        return const CollectionScreen();
-                      }
-                      return const UndefinedScreen();
-                    }),
-              ),
-              if (!result) ConnectivityWidget() else Container(),
-            ],
-          )),
+      child: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          body: NestedScrollView(
+              // controller: _scrollController,
+              headerSliverBuilder:
+                  (BuildContext context, bool innerBoxIsScrolled) {
+                return <Widget>[
+                  SliverAppBar(
+                    floating: true,
+                    flexibleSpace: PreferredSize(
+                      preferredSize: const Size(double.infinity, 55),
+                      child: CategoriesBar(
+                          width: MediaQuery.of(context).size.width,
+                          height: MediaQuery.of(context).size.height),
+                    ),
+                    bottom: TabBar(
+                        indicatorColor: Theme.of(context).accentColor,
+                        indicatorSize: TabBarIndicatorSize.label,
+                        unselectedLabelColor:
+                            const Color(0xFFFFFFFF).withOpacity(0.5),
+                        labelColor: const Color(0xFFFFFFFF),
+                        tabs: [
+                          Tab(
+                            icon: Icon(
+                              JamIcons.picture,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                          Tab(
+                            icon: Icon(
+                              JamIcons.instant_picture,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                          Tab(
+                            icon: Icon(
+                              JamIcons.pictures,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          )
+                        ]),
+                  ),
+                  // SliverAppBar(
+                  //   backgroundColor: config.Colors().mainAccentColor(1),
+                  //   automaticallyImplyLeading: false,
+                  //   pinned: true,
+                  //   titleSpacing: 0,
+                  //   title: SizedBox(
+                  //     width: MediaQuery.of(context).size.width,
+                  //     height: 55,
+                  //     child: Container(
+                  //       color: Theme.of(context).primaryColor,
+                  //       child: SizedBox.expand(
+                  //         child: TabBar(
+                  //             indicatorColor: Theme.of(context).accentColor,
+                  //             indicatorSize: TabBarIndicatorSize.label,
+                  //             unselectedLabelColor:
+                  //                 const Color(0xFFFFFFFF).withOpacity(0.5),
+                  //             labelColor: const Color(0xFFFFFFFF),
+                  //             tabs: [
+                  //               Tab(
+                  //                 icon: Icon(
+                  //                   JamIcons.heart_f,
+                  //                   color: Theme.of(context).accentColor,
+                  //                 ),
+                  //               ),
+                  //               Tab(
+                  //                 icon: Icon(
+                  //                   JamIcons.picture,
+                  //                   color: Theme.of(context).accentColor,
+                  //                 ),
+                  //               ),
+                  //               Tab(
+                  //                 icon: Icon(
+                  //                   JamIcons.settings_alt,
+                  //                   color: Theme.of(context).accentColor,
+                  //                 ),
+                  //               )
+                  //             ]),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
+                ];
+              },
+              body: Stack(
+                children: <Widget>[
+                  TabBarView(children: [
+                    HomeScreen(),
+                    CollectionScreen(),
+                    SetupScreen()
+                  ]),
+                  if (!result) ConnectivityWidget() else Container(),
+                ],
+              )),
+        ),
+      ),
     );
   }
 }
+
+// PageView.builder(
+//                       onPageChanged: (index) {
+//                         debugPrint("Index cat: ${index.toString()}");
+//                         setState(() {
+//                           page = index;
+//                         });
+//                         categoryController.scrollToIndex(index,
+//                             preferPosition: AutoScrollPosition.begin);
+//                         if (index == 0) {
+//                           Provider.of<TabProvider>(context, listen: false)
+//                               .updateSelectedTab("Wallpapers");
+//                         } else if (index == 1) {
+//                           Provider.of<TabProvider>(context, listen: false)
+//                               .updateSelectedTab("Collections");
+//                         }
+//                       },
+//                       controller: pageController,
+//                       itemCount: 2,
+//                       itemBuilder: (context, index) {
+//                         debugPrint("Index : ${index.toString()}");
+//                         if (index == 0) {
+//                           return const HomeScreen();
+//                         } else if (index == 1) {
+//                           return const CollectionScreen();
+//                         }
+//                         return const UndefinedScreen();
+//                       }),

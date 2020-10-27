@@ -128,115 +128,45 @@ class _CategoriesBarState extends State<CategoriesBar> {
       titleSpacing: 0,
       title: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.1,
             height: 100,
-            child: IconButton(
-              icon: noNotification
-                  ? const Icon(JamIcons.bell)
-                  : Stack(children: <Widget>[
-                      const Icon(JamIcons.bell_f),
-                      Positioned(
-                        top: 0.0,
-                        right: 0.0,
-                        child: Icon(
-                          Icons.brightness_1,
-                          size: 9.0,
-                          color: config.Colors().mainAccentColor(1),
-                        ),
-                      )
-                    ]),
-              onPressed: () {
-                setState(() {
-                  noNotification = true;
-                });
-                Navigator.pushNamed(context, notificationsRoute);
-              },
-            ),
-          ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.7,
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              controller: globals.categoryController,
-              itemCount: Provider.of<TabProvider>(context).tabs.length,
-              itemBuilder: (context, index) {
-                return _wrapScrollTag(
-                  index: index,
-                  child: Align(
-                    child: Stack(
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.all(5),
-                          child: AnimatedCrossFade(
-                            duration: const Duration(milliseconds: 300),
-                            firstCurve: Curves.easeIn,
-                            secondCurve: Curves.easeIn,
-                            secondChild: ActionChip(
-                                backgroundColor: Theme.of(context).hintColor,
-                                pressElevation: 5,
-                                padding:
-                                    const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                label: Text(
-                                    Provider.of<TabProvider>(context)
-                                        .tabs[index],
-                                    style:
-                                        Theme.of(context).textTheme.headline4),
-                                onPressed: () {
-                                  switch (Provider.of<TabProvider>(context,
-                                          listen: false)
-                                      .tabs[index]) {
-                                    case "Wallpapers":
-                                      PM.pageController.animateToPage(0,
-                                          duration:
-                                              const Duration(milliseconds: 200),
-                                          curve: Curves.easeInCubic);
-                                      break;
-                                    case "Collections":
-                                      PM.pageController.animateToPage(1,
-                                          duration:
-                                              const Duration(milliseconds: 200),
-                                          curve: Curves.easeInCubic);
-                                      break;
-                                    default:
-                                      break;
-                                  }
-                                }),
-                            crossFadeState:
-                                Provider.of<TabProvider>(context).tabs[index] ==
-                                        Provider.of<TabProvider>(context)
-                                            .selectedTab
-                                    ? CrossFadeState.showFirst
-                                    : CrossFadeState.showSecond,
-                            firstChild: ActionChip(
-                                pressElevation: 5,
-                                padding:
-                                    const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                                backgroundColor: Theme.of(context).accentColor,
-                                label: Text(
-                                    Provider.of<TabProvider>(context)
-                                        .tabs[index],
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headline4
-                                        .copyWith(
-                                            color: Theme.of(context)
-                                                .primaryColor)),
-                                onPressed: () {}),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: IconButton(
+                icon: noNotification
+                    ? const Icon(JamIcons.bell)
+                    : Stack(children: <Widget>[
+                        const Icon(JamIcons.bell_f),
+                        Positioned(
+                          top: 0.0,
+                          right: 0.0,
+                          child: Icon(
+                            Icons.brightness_1,
+                            size: 9.0,
+                            color: config.Colors().mainAccentColor(1),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                        )
+                      ]),
+                onPressed: () {
+                  setState(() {
+                    noNotification = true;
+                  });
+                  Navigator.pushNamed(context, notificationsRoute);
+                },
+              ),
             ),
           ),
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.1,
-            height: 100,
+            width: MediaQuery.of(context).size.width * 0.6,
+            child: Text(
+              "PRISM",
+              style:
+                  TextStyle(fontSize: 22, color: Theme.of(context).accentColor),
+            ),
+          ),
+          SizedBox(
             child: IconButton(
               icon: const Icon(JamIcons.brush),
               tooltip: 'Search by color',
@@ -246,19 +176,42 @@ class _CategoriesBarState extends State<CategoriesBar> {
             ),
           ),
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.1,
-            height: 100,
-            child: IconButton(
-              icon: const Icon(JamIcons.more_vertical),
-              onPressed: () {
-                showCategories(
-                    context,
-                    Provider.of<CategorySupplier>(context, listen: false)
-                        .selectedChoice);
-              },
-              tooltip: 'Categories',
-            ),
-          )
+              child: PopupMenuButton(
+            icon: const Icon(JamIcons.more_vertical),
+            elevation: 4,
+            initialValue: Provider.of<CategorySupplier>(context).selectedChoice,
+            onCanceled: () {
+              debugPrint('You have not chossed anything');
+            },
+            tooltip: 'Categories',
+            onSelected: (choice) {
+              Provider.of<CategorySupplier>(context, listen: false)
+                  .changeSelectedChoice(choice as CategoryMenu);
+              Provider.of<CategorySupplier>(context, listen: false)
+                  .changeWallpaperFuture(choice as CategoryMenu, "r");
+              PM.pageController.animateToPage(0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInCubic);
+            },
+            itemBuilder: (BuildContext context) {
+              return choices.map((choice) {
+                return PopupMenuItem(
+                  textStyle: Theme.of(context)
+                      .textTheme
+                      .headline4
+                      .copyWith(color: Theme.of(context).accentColor),
+                  value: choice,
+                  child: Row(
+                    children: <Widget>[
+                      Icon(choice.icon as IconData),
+                      const SizedBox(width: 10),
+                      Text(choice.name.toString()),
+                    ],
+                  ),
+                );
+              }).toList();
+            },
+          ))
         ],
       ),
     );
