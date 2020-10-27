@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/gitkey.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:github/github.dart';
 import 'package:path/path.dart' as Path;
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
@@ -85,16 +88,21 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       isProcessing = false;
     });
     try {
-      final StorageReference storageReference =
-          FirebaseStorage.instance.ref().child(Path.basename(image.path));
-      final StorageUploadTask uploadTask = storageReference.putFile(image);
-      await uploadTask.onComplete;
+      final String base64Image = base64Encode(imageBytes);
+      final github = GitHub(auth: Authentication.withToken(token));
+      await github.repositories
+          .createFile(
+              RepositorySlug(gitUserName, repoName2),
+              CreateFile(
+                  message: Path.basename(image.path),
+                  content: base64Image,
+                  path: Path.basename(image.path)))
+          .then((value) => setState(() {
+                imageURL = value.content.downloadUrl;
+              }));
       debugPrint('File Uploaded');
-      storageReference.getDownloadURL().then((fileURL) {
-        setState(() {
-          imageURL = fileURL.toString();
-          isUploading = false;
-        });
+      setState(() {
+        isUploading = false;
       });
     } catch (e) {
       debugPrint(e.toString());
