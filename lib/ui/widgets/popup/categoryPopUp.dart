@@ -1,6 +1,7 @@
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
@@ -51,7 +52,8 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                               color: config.Colors().mainAccentColor(1),
                               borderRadius: BorderRadius.circular(10),
                               image: DecorationImage(
-                                image: NetworkImage(choice.image as String),
+                                image: CachedNetworkImageProvider(
+                                    choice.image as String),
                                 fit: BoxFit.cover,
                               ),
                             ),
