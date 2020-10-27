@@ -12,7 +12,7 @@ final List choices = categories
       (category) => CategoryMenu(
         name: category['name'].toString(),
         provider: category['provider'].toString(),
-        icon: JamIcons.arrow_right,
+        image: category['image'].toString(),
       ),
     )
     .toList();

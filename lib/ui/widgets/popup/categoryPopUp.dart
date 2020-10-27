@@ -50,10 +50,10 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                             decoration: BoxDecoration(
                               color: config.Colors().mainAccentColor(1),
                               borderRadius: BorderRadius.circular(10),
-                              // image: DecorationImage(
-                              //   image: NetworkImage(choice.image as String),
-                              //   fit: BoxFit.cover,
-                              // ),
+                              image: DecorationImage(
+                                image: NetworkImage(choice.image as String),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
