@@ -2,13 +2,12 @@ import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
-import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/widgets/home/core/tutorials.dart';
 import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:Prism/ui/widgets/popup/tutorialCompletePopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
 import 'package:Prism/global/globals.dart' as globals;
@@ -40,9 +39,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
     globals.height = widget.height;
     globals.width = widget.width;
     initTargets(targets, widget.width, widget.height);
-    if (!globals.updateChecked) {
-      _checkUpdate();
-    }
+    checkForUpdate();
     noNotification = checkNewNotification();
     if (isNew) {
       Future.delayed(const Duration()).then(
@@ -110,78 +107,16 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   //Check for update if available
-  String currentAppVersion = globals.currentAppVersion;
-  Future<void> _checkUpdate() async {
-    debugPrint("checking for update");
-    try {
-      debugPrint("Current App Version :$currentAppVersion");
-      debugPrint("Latest Version :${remoteConfig.getString("currentVersion")}");
-      setState(() {
-        if (currentAppVersion !=
-            remoteConfig.getString("currentVersion").toString()) {
-          setState(() {
-            globals.updateAvailable = true;
-            globals.versionInfo = {
-              "version_number":
-                  remoteConfig.getString("currentVersion").toString(),
-              "version_desc": remoteConfig.getString("versionDesc").toString(),
-            };
-          });
-          final Box<List> box = Hive.box('notifications');
-          for (final i in box.get('notifications') ?? []) {
-            if (i.url ==
-                "https://play.google.com/store/apps/details?id=com.hash.prism") {
-              globals.updateAlerted = true;
-            }
-          }
-          if (globals.updateAvailable) {
-            if (!globals.updateAlerted) {
-              writeNotifications({
-                'notification': {
-                  'title':
-                      'New version ${globals.versionInfo["version_number"]} Available!',
-                  'body': 'Update now available on the Google Play Store.',
-                },
-                'data': {
-                  'imageUrl':
-                      "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
-                  'url':
-                      "https://play.google.com/store/apps/details?id=com.hash.prism",
-                }
-              });
-              Future.delayed(const Duration())
-                  .then((value) => noNotification = checkNewNotification());
-              final snackBar = SnackBar(
-                behavior: SnackBarBehavior.floating,
-                content: Text(
-                    'New version ${globals.versionInfo["version_number"]} Available!'),
-                action: SnackBarAction(
-                  label: 'VIEW',
-                  textColor: config.Colors().mainAccentColor(1),
-                  onPressed: () {
-                    Navigator.pushNamed(context, notificationsRoute);
-                  },
-                ),
-              );
-              Scaffold.of(context).showSnackBar(snackBar);
-            } else {
-              debugPrint("Updated is alreday alerted!");
-            }
-          } else {
-            debugPrint("No update");
-          }
-        } else {
-          setState(() {
-            globals.updateAvailable = false;
-          });
-        }
-      });
-    } catch (e) {
-      debugPrint("Error while checking for updates! :$e");
-    }
-    setState(() {
-      globals.updateChecked = true;
-    });
+  Future<void> checkForUpdate() async {
+    InAppUpdate.checkForUpdate().then((info) {
+      if (info.updateAvailable == true) {
+        InAppUpdate.performImmediateUpdate().catchError((e) => _showError(e));
+      }
+    }).catchError((e) => _showError(e));
+  }
+
+  void _showError(dynamic exception) {
+    debugPrint(exception.toString());
   }
 
   @override
