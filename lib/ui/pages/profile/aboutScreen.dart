@@ -34,6 +34,11 @@ class AboutScreen extends StatelessWidget {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+              icon: const Icon(JamIcons.close),
+              onPressed: () {
+                Navigator.pop(context);
+              }),
           title: Text(
             "About",
             style: Theme.of(context).textTheme.headline3,
