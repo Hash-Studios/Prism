@@ -271,7 +271,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: <Widget>[
                                   SizedBox(
-                                    width: 160,
+                                    width: 150,
                                     child: Align(
                                       alignment: Alignment.centerRight,
                                       child: ActionChip(
@@ -280,6 +280,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     listen: false)
                                                 .setups[index]["by"]
                                                 .toString(),
+                                            overflow: TextOverflow.ellipsis,
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2
