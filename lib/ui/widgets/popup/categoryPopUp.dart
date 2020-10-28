@@ -71,7 +71,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                                           listen: false)
                                       .changeWallpaperFuture(
                                           choice as CategoryMenu, "r");
-                                  PM.pageController.animateToPage(0,
+                                  PM.tabController.animateTo(0,
                                       duration:
                                           const Duration(milliseconds: 200),
                                       curve: Curves.easeInCubic);
