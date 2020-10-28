@@ -61,7 +61,9 @@ class HomeSetupPage extends StatefulWidget {
 class _HomeSetupPageState extends State<HomeSetupPage> {
   int pageNumber = 0;
   void showPremiumPopUp(Function func) {
-    if (main.prefs.get("premium") == false) {
+    print(main.prefs.get("premium"));
+    if (main.prefs.get("premium") == false ||
+        main.prefs.get("premium") == null) {
       Navigator.pushNamed(context, premiumRoute);
     } else {
       func();
@@ -210,8 +212,8 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                               boxShadow: pageNumber == index
                                                   ? Provider.of<ThemeModel>(
                                                                   context)
-                                                              .currentTheme ==
-                                                          kLightTheme
+                                                              .returnThemeType() ==
+                                                          "Dark"
                                                       ? [
                                                           BoxShadow(
                                                             color: Colors.black
