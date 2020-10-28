@@ -6,7 +6,7 @@ Map<String, ThemeData> themes = {
   "kLFrost White": kLightTheme,
   "kDMaterial Dark": kDarkTheme,
   "kLCoffee": kLightTheme2,
-  "kDJust Black": kDarkTheme2,
+  "kDAMOLED": kDarkTheme2,
   "kLRose": kLightTheme3,
   "kLCotton Blue": kLightTheme4,
   "kDOlive": kDarkTheme3,
