@@ -222,7 +222,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: setupTagRoute);
       return CupertinoPageRoute(
-          builder: (context) => const TagSetupScreen(), fullscreenDialog: true);
+          builder: (context) =>
+              TagSetupScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case uploadWallRoute:
       navStack.add("Add");
       debugPrint(navStack.toString());
