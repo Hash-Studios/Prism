@@ -185,7 +185,9 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                   radius: 20,
                   child: main.prefs.get("googleimage") == null
                       ? Container()
-                      : Image.network(main.prefs.get("googleimage").toString()),
+                      : ClipOval(
+                          child: Image.network(
+                              main.prefs.get("googleimage").toString())),
                 ),
               ),
               const Spacer(),
@@ -289,6 +291,9 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               )
             ],
           ),
+          const Divider(
+            height: 1,
+          ),
           ListTile(
             title: Text(
               "Tag widgets, icon packs",
@@ -300,6 +305,9 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
             ),
             onTap: () {},
           ),
+          const Divider(
+            height: 1,
+          ),
           ListTile(
             title: Text(
               "Add wallpaper",
@@ -310,6 +318,9 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               ),
             ),
             onTap: () {},
+          ),
+          const Divider(
+            height: 1,
           ),
           ListTile(
             title: Text(
