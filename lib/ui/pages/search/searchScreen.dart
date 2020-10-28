@@ -132,7 +132,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.1,
                   child: PopupMenuButton(
-                    icon: const Icon(JamIcons.more_vertical),
+                    icon: Icon(JamIcons.more_vertical,
+                        color: Theme.of(context).accentColor),
                     elevation: 4,
                     initialValue: selectedProviders,
                     onCanceled: () {

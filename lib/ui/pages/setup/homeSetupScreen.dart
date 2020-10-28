@@ -24,12 +24,6 @@ class HomeSetupScreen extends StatefulWidget {
 }
 
 class _HomeSetupScreenState extends State<HomeSetupScreen> {
-  Future<bool> onWillPop() async {
-    navStack.removeLast();
-    debugPrint(navStack.toString());
-    return true;
-  }
-
   final PageController controller = PageController(
     viewportFraction: 0.78,
   );
@@ -43,14 +37,9 @@ class _HomeSetupScreenState extends State<HomeSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        body: BottomBar(
-          child: HomeSetupPage(future: future, controller: controller),
-        ),
-      ),
+    return Scaffold(
+      backgroundColor: Theme.of(context).primaryColor,
+      body: HomeSetupPage(future: future, controller: controller),
     );
   }
 }
@@ -89,17 +78,6 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
           child: Container(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height * 0.3,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  config.Colors().mainAccentColor(1),
-                  Theme.of(context).primaryColor
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0, 1],
-              ),
-            ),
             child: Align(
               alignment: Alignment.topLeft,
               child: Container(
@@ -144,7 +122,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
         ),
         Padding(
           padding:
-              EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
+              EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.06),
           child: FutureBuilder(
               future: widget.future,
               builder: (context, snapshot) {
@@ -223,11 +201,11 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
-                                                0.712,
+                                                0.642,
                                             height: MediaQuery.of(context)
                                                     .size
                                                     .height *
-                                                0.72,
+                                                0.62,
                                             decoration: BoxDecoration(
                                               boxShadow: pageNumber == index
                                                   ? Provider.of<ThemeModel>(
@@ -289,11 +267,11 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                           width: MediaQuery.of(context)
                                                   .size
                                                   .width *
-                                              0.712,
+                                              0.642,
                                           height: MediaQuery.of(context)
                                                   .size
                                                   .height *
-                                              0.72,
+                                              0.62,
                                           child: Center(
                                             child: CircularProgressIndicator(
                                                 valueColor:
@@ -335,11 +313,11 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                           width: MediaQuery.of(context)
                                                   .size
                                                   .width *
-                                              0.712,
+                                              0.642,
                                           height: MediaQuery.of(context)
                                                   .size
                                                   .height *
-                                              0.72,
+                                              0.62,
                                           decoration: BoxDecoration(
                                             boxShadow: pageNumber == index
                                                 ? Provider.of<ThemeModel>(
@@ -427,11 +405,11 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                                 width: MediaQuery.of(context)
                                                         .size
                                                         .width *
-                                                    0.712,
+                                                    0.642,
                                                 height: MediaQuery.of(context)
                                                         .size
                                                         .height *
-                                                    0.72,
+                                                    0.62,
                                                 decoration: BoxDecoration(
                                                   boxShadow: pageNumber == index
                                                       ? Provider.of<ThemeModel>(
@@ -497,11 +475,11 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                               width: MediaQuery.of(context)
                                                       .size
                                                       .width *
-                                                  0.712,
+                                                  0.642,
                                               height: MediaQuery.of(context)
                                                       .size
                                                       .height *
-                                                  0.72,
+                                                  0.62,
                                               child: Center(
                                                 child:
                                                     CircularProgressIndicator(
