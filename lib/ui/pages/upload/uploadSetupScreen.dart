@@ -168,7 +168,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                 "Post",
                 style: TextStyle(
                   color: !isProcessing && !isUploading
-                      ? config.Colors().mainAccentColor(1)
+                      ? config.Colors().accentColor(1)
                       : Theme.of(context).hintColor,
                   fontWeight: FontWeight.normal,
                 ),
@@ -336,7 +336,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w100,
-                color: Theme.of(context).accentColor.withOpacity(0.6),
+                color: Theme.of(context).accentColor.withOpacity(0.7),
               ),
             ),
           )

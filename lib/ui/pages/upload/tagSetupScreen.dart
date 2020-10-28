@@ -74,9 +74,9 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
               child: Text(
                 "Tag",
                 style: TextStyle(
-                  color: config.Colors().mainAccentColor(1),
+                  color: config.Colors().accentColor(1),
                   // color: !isProcessing && !isUploading
-                  //     ? config.Colors().mainAccentColor(1)
+                  //     ? config.Colors().accentColor(1)
                   //     : Theme.of(context).hintColor,
                   fontWeight: FontWeight.normal,
                 ),
@@ -127,7 +127,7 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w100,
-                          color: Theme.of(context).accentColor.withOpacity(0.6),
+                          color: Theme.of(context).accentColor.withOpacity(0.7),
                         ),
                       ),
                     ),
@@ -161,6 +161,7 @@ class _TagState extends State<Tag> {
   Color color;
   String link;
   String name;
+  String desc;
 
   @override
   void initState() {
