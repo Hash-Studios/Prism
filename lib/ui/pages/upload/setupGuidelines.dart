@@ -44,6 +44,8 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
         _setup = File(pickedFile.path);
       });
       Navigator.pop(context);
+      if (navStack.length > 1) navStack.removeLast();
+      debugPrint(navStack.toString());
       Future.delayed(const Duration()).then((value) =>
           Navigator.pushNamed(context, uploadSetupRoute, arguments: [_setup]));
     }

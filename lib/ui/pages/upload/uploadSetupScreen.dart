@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/gitkey.dart';
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -303,7 +304,12 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                 color: Theme.of(context).accentColor,
               ),
             ),
-            onTap: () {},
+            onTap: () {
+              Navigator.pushNamed(context, setupTagRoute, arguments: [
+                image,
+                MediaQuery.of(context).size.height * 0.7,
+              ]);
+            },
           ),
           const Divider(
             height: 1,
