@@ -6,6 +6,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
+import 'package:Prism/ui/pages/setup/homeSetupScreen.dart';
 import 'package:Prism/ui/pages/setup/setupScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
@@ -24,7 +25,8 @@ import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 
-PageController pageController = PageController();
+// PageController pageController = PageController();
+TabController tabController;
 
 class PageManager extends StatelessWidget {
   @override
@@ -40,7 +42,8 @@ class PageManagerChild extends StatefulWidget {
   _PageManagerChildState createState() => _PageManagerChildState();
 }
 
-class _PageManagerChildState extends State<PageManagerChild> {
+class _PageManagerChildState extends State<PageManagerChild>
+    with SingleTickerProviderStateMixin {
   int page = 0;
   int linkOpened = 0;
   bool result = true;
@@ -69,6 +72,7 @@ class _PageManagerChildState extends State<PageManagerChild> {
   @override
   void initState() {
     super.initState();
+    tabController = TabController(length: 3, vsync: this);
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     Provider.of<TabProvider>(context, listen: false)
@@ -256,114 +260,110 @@ class _PageManagerChildState extends State<PageManagerChild> {
   @override
   Widget build(BuildContext context) {
     Future.delayed(const Duration(seconds: 1), () => initDynamicLinks(context));
-    final ScrollController _scrollController =
-        InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
       onWillPop: () async {
-        if (page != 0) {
-          pageController.jumpTo(0);
+        if (tabController.index != 0) {
+          tabController.animateTo(0);
         } else {
           return true;
         }
         return false;
       },
-      child: DefaultTabController(
-        length: 3,
-        child: Scaffold(
-          body: NestedScrollView(
-              // controller: _scrollController,
-              headerSliverBuilder:
-                  (BuildContext context, bool innerBoxIsScrolled) {
-                return <Widget>[
-                  SliverAppBar(
-                    floating: true,
-                    flexibleSpace: PreferredSize(
-                      preferredSize: const Size(double.infinity, 55),
-                      child: CategoriesBar(
-                          width: MediaQuery.of(context).size.width,
-                          height: MediaQuery.of(context).size.height),
-                    ),
-                    bottom: TabBar(
-                        indicatorColor: Theme.of(context).accentColor,
-                        indicatorSize: TabBarIndicatorSize.label,
-                        unselectedLabelColor:
-                            const Color(0xFFFFFFFF).withOpacity(0.5),
-                        labelColor: const Color(0xFFFFFFFF),
-                        tabs: [
-                          Tab(
-                            icon: Icon(
-                              JamIcons.picture,
-                              color: Theme.of(context).accentColor,
-                            ),
-                          ),
-                          Tab(
-                            icon: Icon(
-                              JamIcons.instant_picture,
-                              color: Theme.of(context).accentColor,
-                            ),
-                          ),
-                          Tab(
-                            icon: Icon(
-                              JamIcons.pictures,
-                              color: Theme.of(context).accentColor,
-                            ),
-                          )
-                        ]),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).primaryColor,
+        body: NestedScrollView(
+            headerSliverBuilder:
+                (BuildContext context, bool innerBoxIsScrolled) {
+              return <Widget>[
+                SliverAppBar(
+                  floating: true,
+                  flexibleSpace: PreferredSize(
+                    preferredSize: const Size(double.infinity, 55),
+                    child: CategoriesBar(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height),
                   ),
-                  // SliverAppBar(
-                  //   backgroundColor: config.Colors().mainAccentColor(1),
-                  //   automaticallyImplyLeading: false,
-                  //   pinned: true,
-                  //   titleSpacing: 0,
-                  //   title: SizedBox(
-                  //     width: MediaQuery.of(context).size.width,
-                  //     height: 55,
-                  //     child: Container(
-                  //       color: Theme.of(context).primaryColor,
-                  //       child: SizedBox.expand(
-                  //         child: TabBar(
-                  //             indicatorColor: Theme.of(context).accentColor,
-                  //             indicatorSize: TabBarIndicatorSize.label,
-                  //             unselectedLabelColor:
-                  //                 const Color(0xFFFFFFFF).withOpacity(0.5),
-                  //             labelColor: const Color(0xFFFFFFFF),
-                  //             tabs: [
-                  //               Tab(
-                  //                 icon: Icon(
-                  //                   JamIcons.heart_f,
-                  //                   color: Theme.of(context).accentColor,
-                  //                 ),
-                  //               ),
-                  //               Tab(
-                  //                 icon: Icon(
-                  //                   JamIcons.picture,
-                  //                   color: Theme.of(context).accentColor,
-                  //                 ),
-                  //               ),
-                  //               Tab(
-                  //                 icon: Icon(
-                  //                   JamIcons.settings_alt,
-                  //                   color: Theme.of(context).accentColor,
-                  //                 ),
-                  //               )
-                  //             ]),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
-                ];
-              },
-              body: Stack(
-                children: <Widget>[
-                  TabBarView(children: [
-                    HomeScreen(),
-                    CollectionScreen(),
-                    SetupScreen()
-                  ]),
-                  if (!result) ConnectivityWidget() else Container(),
-                ],
-              )),
-        ),
+                  bottom: TabBar(
+                      controller: tabController,
+                      indicatorColor: Theme.of(context).accentColor,
+                      indicatorSize: TabBarIndicatorSize.label,
+                      // unselectedLabelColor:
+                      // const Color(0xFFFFFFFF).withOpacity(0.5),
+                      // labelColor: const Color(0xFFFFFFFF),
+                      tabs: [
+                        Tab(
+                          icon: Icon(
+                            JamIcons.picture,
+                            color: Theme.of(context).accentColor,
+                          ),
+                        ),
+                        Tab(
+                          icon: Icon(
+                            JamIcons.instant_picture,
+                            color: Theme.of(context).accentColor,
+                          ),
+                        ),
+                        Tab(
+                          icon: Icon(
+                            JamIcons.pictures,
+                            color: Theme.of(context).accentColor,
+                          ),
+                        )
+                      ]),
+                ),
+                // SliverAppBar(
+                //   backgroundColor: config.Colors().mainAccentColor(1),
+                //   automaticallyImplyLeading: false,
+                //   pinned: true,
+                //   titleSpacing: 0,
+                //   title: SizedBox(
+                //     width: MediaQuery.of(context).size.width,
+                //     height: 55,
+                //     child: Container(
+                //       color: Theme.of(context).primaryColor,
+                //       child: SizedBox.expand(
+                //         child: TabBar(
+                //             indicatorColor: Theme.of(context).accentColor,
+                //             indicatorSize: TabBarIndicatorSize.label,
+                //             unselectedLabelColor:
+                //                 const Color(0xFFFFFFFF).withOpacity(0.5),
+                //             labelColor: const Color(0xFFFFFFFF),
+                //             tabs: [
+                //               Tab(
+                //                 icon: Icon(
+                //                   JamIcons.heart_f,
+                //                   color: Theme.of(context).accentColor,
+                //                 ),
+                //               ),
+                //               Tab(
+                //                 icon: Icon(
+                //                   JamIcons.picture,
+                //                   color: Theme.of(context).accentColor,
+                //                 ),
+                //               ),
+                //               Tab(
+                //                 icon: Icon(
+                //                   JamIcons.settings_alt,
+                //                   color: Theme.of(context).accentColor,
+                //                 ),
+                //               )
+                //             ]),
+                //       ),
+                //     ),
+                //   ),
+                // ),
+              ];
+            },
+            body: Stack(
+              children: <Widget>[
+                TabBarView(controller: tabController, children: [
+                  HomeScreen(),
+                  HomeSetupScreen(),
+                  CollectionScreen()
+                ]),
+                if (!result) ConnectivityWidget() else Container(),
+              ],
+            )),
       ),
     );
   }

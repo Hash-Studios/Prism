@@ -130,7 +130,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
       child: GridView.builder(
         controller: controller,
         physics: const ScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+        padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
         itemCount:
             CData.collectionNames.isEmpty ? 11 : CData.collectionNames.length,
         shrinkWrap: true,

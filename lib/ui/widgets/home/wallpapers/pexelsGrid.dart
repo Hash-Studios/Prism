@@ -115,316 +115,319 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
     final CarouselController carouselController = CarouselController();
-    return NestedScrollView(
-      controller: controller,
-      headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
-        SliverAppBar(
-          primary: false,
-          backgroundColor: Theme.of(context).primaryColor,
-          automaticallyImplyLeading: false,
-          expandedHeight: 200,
-          flexibleSpace: SizedBox(
-            child: Stack(
-              alignment: AlignmentDirectional.bottomEnd,
-              children: <Widget>[
-                CarouselSlider.builder(
-                  carouselController: carouselController,
-                  itemCount: 5,
-                  options: CarouselOptions(
-                      height: 200,
-                      autoPlay: true,
-                      autoPlayInterval: const Duration(seconds: 3),
-                      onPageChanged: (index, reason) {
-                        if (mounted) {
-                          setState(() {
-                            _current = index;
-                          });
-                        }
-                      }),
-                  itemBuilder: (BuildContext context, int i) => i == 4
-                      ? Container(
-                          width: MediaQuery.of(context).size.width,
-                          margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
-                          child: GestureDetector(
-                            onTap: () {
-                              launch("https://twitter.com/PrismWallpapers");
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: const DecorationImage(
-                                      image: CachedNetworkImageProvider(
-                                          "https://unblast.com/wp-content/uploads/2018/08/Gradient-Mesh-21.jpg"),
-                                      fit: BoxFit.cover)),
-                              child: Center(
-                                child: Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  color: Colors.black.withOpacity(0.4),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      "FOLLOW US ON TWITTER",
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headline2
-                                          .copyWith(
-                                              fontSize: 20,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold),
+    return Padding(
+      padding: const EdgeInsets.only(top: 5.0),
+      child: NestedScrollView(
+        controller: controller,
+        headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
+          SliverAppBar(
+            primary: false,
+            backgroundColor: Theme.of(context).primaryColor,
+            automaticallyImplyLeading: false,
+            expandedHeight: 200,
+            flexibleSpace: SizedBox(
+              child: Stack(
+                alignment: AlignmentDirectional.bottomEnd,
+                children: <Widget>[
+                  CarouselSlider.builder(
+                    carouselController: carouselController,
+                    itemCount: 5,
+                    options: CarouselOptions(
+                        height: 200,
+                        autoPlay: true,
+                        autoPlayInterval: const Duration(seconds: 3),
+                        onPageChanged: (index, reason) {
+                          if (mounted) {
+                            setState(() {
+                              _current = index;
+                            });
+                          }
+                        }),
+                    itemBuilder: (BuildContext context, int i) => i == 4
+                        ? Container(
+                            width: MediaQuery.of(context).size.width,
+                            margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
+                            child: GestureDetector(
+                              onTap: () {
+                                launch("https://twitter.com/PrismWallpapers");
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: animation.value,
+                                    borderRadius: BorderRadius.circular(20),
+                                    image: const DecorationImage(
+                                        image: CachedNetworkImageProvider(
+                                            "https://unblast.com/wp-content/uploads/2018/08/Gradient-Mesh-21.jpg"),
+                                        fit: BoxFit.cover)),
+                                child: Center(
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    color: Colors.black.withOpacity(0.4),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        "FOLLOW US ON TWITTER",
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline2
+                                            .copyWith(
+                                                fontSize: 20,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
+                          )
+                        : Container(
+                            width: MediaQuery.of(context).size.width,
+                            margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
+                            child: GestureDetector(
+                              onTap: () {
+                                if (PData.wallsP == []) {
+                                } else {
+                                  Navigator.pushNamed(context, wallpaperRoute,
+                                      arguments: [
+                                        widget.provider,
+                                        i,
+                                        PData.wallsP[i].src["small"]
+                                      ]);
+                                }
+                              },
+                              onLongPress: () {
+                                setState(() {
+                                  longTapIndex = i;
+                                });
+                                shakeController.forward(from: 0.0);
+                                if (PData.wallsP == []) {
+                                } else {
+                                  HapticFeedback.vibrate();
+                                  createDynamicLink(
+                                      PData.wallsP[i].id,
+                                      widget.provider,
+                                      PData.wallsP[i].src["original"].toString(),
+                                      PData.wallsP[i].src["medium"].toString());
+                                }
+                              },
+                              child: Padding(
+                                padding: i == longTapIndex
+                                    ? EdgeInsets.symmetric(
+                                        vertical: offsetAnimation.value / 2,
+                                        horizontal: offsetAnimation.value)
+                                    : const EdgeInsets.all(0),
+                                child: PData.wallsP.isEmpty
+                                    ? Container(
+                                        decoration: BoxDecoration(
+                                          color: animation.value,
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                      )
+                                    : Container(
+                                        decoration: BoxDecoration(
+                                            color: animation.value,
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            image: DecorationImage(
+                                                image: CachedNetworkImageProvider(
+                                                    PData.wallsP[i].src["medium"]
+                                                        .toString()),
+                                                fit: BoxFit.cover)),
+                                        child: Center(
+                                          child: Container(
+                                            width:
+                                                MediaQuery.of(context).size.width,
+                                            color: Colors.black.withOpacity(0.4),
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                globals.topTitleText[i]
+                                                    .toString(),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 1,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .headline2
+                                                    .copyWith(
+                                                        color: Colors.white,
+                                                        fontSize: 20,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ),
                           ),
-                        )
-                      : Container(
-                          width: MediaQuery.of(context).size.width,
-                          margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
-                          child: GestureDetector(
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [0, 1, 2, 3, 4].map((i) {
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
+                          width: _current == i ? 8.0 : 7.0,
+                          height: _current == i ? 8.0 : 7.0,
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 14.0, horizontal: 2.0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _current == i
+                                ? config.Colors().mainAccentColor(1)
+                                : config.Colors()
+                                    .mainAccentColor(1)
+                                    .withOpacity(0),
+                            border: Border.all(
+                              color: _current == i
+                                  ? config.Colors()
+                                      .mainAccentColor(1)
+                                      .withOpacity(0)
+                                  : config.Colors().mainAccentColor(1),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        body: RefreshIndicator(
+          backgroundColor: Theme.of(context).primaryColor,
+          key: refreshHomeKey,
+          onRefresh: refreshList,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (scrollInfo.metrics.pixels ==
+                  scrollInfo.metrics.maxScrollExtent) {
+                if (!seeMoreLoader) {
+                  Provider.of<CategorySupplier>(context, listen: false)
+                      .changeWallpaperFuture(
+                          Provider.of<CategorySupplier>(context, listen: false)
+                              .selectedChoice,
+                          "s");
+                  setState(() {
+                    seeMoreLoader = true;
+                    Future.delayed(const Duration(seconds: 4))
+                        .then((value) => seeMoreLoader = false);
+                  });
+                }
+              }
+              return false;
+            },
+            child: GridView.builder(
+              padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+              itemCount: PData.wallsP.isEmpty ? 20 : PData.wallsP.length - 4,
+              shrinkWrap: true,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent:
+                      MediaQuery.of(context).orientation == Orientation.portrait
+                          ? 300
+                          : 250,
+                  childAspectRatio: 0.6625,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8),
+              itemBuilder: (context, index) {
+                index = index + 4;
+                if (index == PData.wallsP.length - 1) {
+                  return FlatButton(
+                      color: Provider.of<ThemeModel>(context, listen: false)
+                                  .returnThemeType() ==
+                              "Dark"
+                          ? Colors.white10
+                          : Colors.black.withOpacity(.1),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      onPressed: () {
+                        if (!seeMoreLoader) {
+                          Provider.of<CategorySupplier>(context, listen: false)
+                              .changeWallpaperFuture(
+                                  Provider.of<CategorySupplier>(context,
+                                          listen: false)
+                                      .selectedChoice,
+                                  "s");
+                          setState(() {
+                            seeMoreLoader = true;
+                            Future.delayed(const Duration(seconds: 4))
+                                .then((value) => seeMoreLoader = false);
+                          });
+                        }
+                      },
+                      child: !seeMoreLoader ? const Text("See more") : Loader());
+                }
+
+                return FocusedMenuHolder(
+                    provider: widget.provider,
+                    index: index,
+                    child: AnimatedBuilder(
+                        animation: offsetAnimation,
+                        builder: (buildContext, child) {
+                          if (offsetAnimation.value < 0.0) {
+                            debugPrint('${offsetAnimation.value + 8.0}');
+                          }
+                          return GestureDetector(
                             onTap: () {
                               if (PData.wallsP == []) {
                               } else {
                                 Navigator.pushNamed(context, wallpaperRoute,
                                     arguments: [
                                       widget.provider,
-                                      i,
-                                      PData.wallsP[i].src["small"]
+                                      index,
+                                      PData.wallsP[index].src["small"]
                                     ]);
                               }
                             },
                             onLongPress: () {
                               setState(() {
-                                longTapIndex = i;
+                                longTapIndex = index;
                               });
                               shakeController.forward(from: 0.0);
                               if (PData.wallsP == []) {
                               } else {
                                 HapticFeedback.vibrate();
                                 createDynamicLink(
-                                    PData.wallsP[i].id,
+                                    PData.wallsP[index].id,
                                     widget.provider,
-                                    PData.wallsP[i].src["original"].toString(),
-                                    PData.wallsP[i].src["medium"].toString());
+                                    PData.wallsP[index].src["original"]
+                                        .toString(),
+                                    PData.wallsP[index].src["medium"].toString());
                               }
                             },
                             child: Padding(
-                              padding: i == longTapIndex
+                              padding: index == longTapIndex
                                   ? EdgeInsets.symmetric(
                                       vertical: offsetAnimation.value / 2,
                                       horizontal: offsetAnimation.value)
                                   : const EdgeInsets.all(0),
-                              child: PData.wallsP.isEmpty
-                                  ? Container(
-                                      decoration: BoxDecoration(
+                              child: Container(
+                                decoration: PData.wallsP.isEmpty
+                                    ? BoxDecoration(
                                         color: animation.value,
                                         borderRadius: BorderRadius.circular(20),
-                                      ),
-                                    )
-                                  : Container(
-                                      decoration: BoxDecoration(
-                                          color: animation.value,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                          image: DecorationImage(
-                                              image: CachedNetworkImageProvider(
-                                                  PData.wallsP[i].src["medium"]
-                                                      .toString()),
-                                              fit: BoxFit.cover)),
-                                      child: Center(
-                                        child: Container(
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          color: Colors.black.withOpacity(0.4),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(
-                                              globals.topTitleText[i]
-                                                  .toString(),
-                                              textAlign: TextAlign.center,
-                                              maxLines: 1,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headline2
-                                                  .copyWith(
-                                                      color: Colors.white,
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                      )
+                                    : BoxDecoration(
+                                        color: animation.value,
+                                        borderRadius: BorderRadius.circular(20),
+                                        image: DecorationImage(
+                                            image: CachedNetworkImageProvider(
+                                                PData.wallsP[index].src["medium"]
+                                                    .toString()),
+                                            fit: BoxFit.cover)),
+                              ),
                             ),
-                          ),
-                        ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [0, 1, 2, 3, 4].map((i) {
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeOutCubic,
-                        width: _current == i ? 8.0 : 7.0,
-                        height: _current == i ? 8.0 : 7.0,
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 14.0, horizontal: 2.0),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _current == i
-                              ? config.Colors().mainAccentColor(1)
-                              : config.Colors()
-                                  .mainAccentColor(1)
-                                  .withOpacity(0),
-                          border: Border.all(
-                            color: _current == i
-                                ? config.Colors()
-                                    .mainAccentColor(1)
-                                    .withOpacity(0)
-                                : config.Colors().mainAccentColor(1),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
+                          );
+                        }));
+              },
             ),
-          ),
-        ),
-      ],
-      body: RefreshIndicator(
-        backgroundColor: Theme.of(context).primaryColor,
-        key: refreshHomeKey,
-        onRefresh: refreshList,
-        child: NotificationListener<ScrollNotification>(
-          onNotification: (ScrollNotification scrollInfo) {
-            if (scrollInfo.metrics.pixels ==
-                scrollInfo.metrics.maxScrollExtent) {
-              if (!seeMoreLoader) {
-                Provider.of<CategorySupplier>(context, listen: false)
-                    .changeWallpaperFuture(
-                        Provider.of<CategorySupplier>(context, listen: false)
-                            .selectedChoice,
-                        "s");
-                setState(() {
-                  seeMoreLoader = true;
-                  Future.delayed(const Duration(seconds: 4))
-                      .then((value) => seeMoreLoader = false);
-                });
-              }
-            }
-            return false;
-          },
-          child: GridView.builder(
-            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-            itemCount: PData.wallsP.isEmpty ? 20 : PData.wallsP.length - 4,
-            shrinkWrap: true,
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent:
-                    MediaQuery.of(context).orientation == Orientation.portrait
-                        ? 300
-                        : 250,
-                childAspectRatio: 0.6625,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8),
-            itemBuilder: (context, index) {
-              index = index + 4;
-              if (index == PData.wallsP.length - 1) {
-                return FlatButton(
-                    color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnThemeType() ==
-                            "Dark"
-                        ? Colors.white10
-                        : Colors.black.withOpacity(.1),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                    onPressed: () {
-                      if (!seeMoreLoader) {
-                        Provider.of<CategorySupplier>(context, listen: false)
-                            .changeWallpaperFuture(
-                                Provider.of<CategorySupplier>(context,
-                                        listen: false)
-                                    .selectedChoice,
-                                "s");
-                        setState(() {
-                          seeMoreLoader = true;
-                          Future.delayed(const Duration(seconds: 4))
-                              .then((value) => seeMoreLoader = false);
-                        });
-                      }
-                    },
-                    child: !seeMoreLoader ? const Text("See more") : Loader());
-              }
-
-              return FocusedMenuHolder(
-                  provider: widget.provider,
-                  index: index,
-                  child: AnimatedBuilder(
-                      animation: offsetAnimation,
-                      builder: (buildContext, child) {
-                        if (offsetAnimation.value < 0.0) {
-                          debugPrint('${offsetAnimation.value + 8.0}');
-                        }
-                        return GestureDetector(
-                          onTap: () {
-                            if (PData.wallsP == []) {
-                            } else {
-                              Navigator.pushNamed(context, wallpaperRoute,
-                                  arguments: [
-                                    widget.provider,
-                                    index,
-                                    PData.wallsP[index].src["small"]
-                                  ]);
-                            }
-                          },
-                          onLongPress: () {
-                            setState(() {
-                              longTapIndex = index;
-                            });
-                            shakeController.forward(from: 0.0);
-                            if (PData.wallsP == []) {
-                            } else {
-                              HapticFeedback.vibrate();
-                              createDynamicLink(
-                                  PData.wallsP[index].id,
-                                  widget.provider,
-                                  PData.wallsP[index].src["original"]
-                                      .toString(),
-                                  PData.wallsP[index].src["medium"].toString());
-                            }
-                          },
-                          child: Padding(
-                            padding: index == longTapIndex
-                                ? EdgeInsets.symmetric(
-                                    vertical: offsetAnimation.value / 2,
-                                    horizontal: offsetAnimation.value)
-                                : const EdgeInsets.all(0),
-                            child: Container(
-                              decoration: PData.wallsP.isEmpty
-                                  ? BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                    )
-                                  : BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                              PData.wallsP[index].src["medium"]
-                                                  .toString()),
-                                          fit: BoxFit.cover)),
-                            ),
-                          ),
-                        );
-                      }));
-            },
           ),
         ),
       ),

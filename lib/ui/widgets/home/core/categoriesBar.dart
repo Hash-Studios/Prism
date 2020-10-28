@@ -127,18 +127,46 @@ class _CategoriesBarState extends State<CategoriesBar> {
       elevation: 0,
       titleSpacing: 0,
       title: Row(
-        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.6,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                "PRISM",
+                style: TextStyle(
+                    fontSize: 22, color: Theme.of(context).accentColor),
+              ),
+            ),
+          ),
+          SizedBox(
+            child: IconButton(
+              icon: Icon(
+                JamIcons.brush,
+                color: Theme.of(context).accentColor,
+              ),
+              tooltip: 'Search by color',
+              onPressed: () {
+                showColors(context);
+              },
+            ),
+          ),
           SizedBox(
             height: 100,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4.0),
               child: IconButton(
                 icon: noNotification
-                    ? const Icon(JamIcons.bell)
+                    ? Icon(
+                        JamIcons.bell,
+                        color: Theme.of(context).accentColor,
+                      )
                     : Stack(children: <Widget>[
-                        const Icon(JamIcons.bell_f),
+                        Icon(
+                          JamIcons.bell_f,
+                          color: Theme.of(context).accentColor,
+                        ),
                         Positioned(
                           top: 0.0,
                           right: 0.0,
@@ -159,25 +187,11 @@ class _CategoriesBarState extends State<CategoriesBar> {
             ),
           ),
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.6,
-            child: Text(
-              "PRISM",
-              style:
-                  TextStyle(fontSize: 22, color: Theme.of(context).accentColor),
-            ),
-          ),
-          SizedBox(
             child: IconButton(
-              icon: const Icon(JamIcons.brush),
-              tooltip: 'Search by color',
-              onPressed: () {
-                showColors(context);
-              },
-            ),
-          ),
-          SizedBox(
-            child: IconButton(
-              icon: const Icon(JamIcons.more_vertical),
+              icon: Icon(
+                JamIcons.more_vertical,
+                color: Theme.of(context).accentColor,
+              ),
               onPressed: () {
                 showCategories(
                     context,
