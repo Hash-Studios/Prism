@@ -15,6 +15,7 @@ const String uploadWallRoute = '/uploadw';
 const String editWallRoute = '/editw';
 const String uploadSetupRoute = '/uploadsetups';
 const String setupGuidelinesRoute = '/setupguidelines';
+const String setupTagRoute = '/setuptag';
 const String profileWallViewRoute = '/profilew';
 const String userProfileWallViewRoute = '/uprofilew';
 const String themeViewRoute = '/themes';
