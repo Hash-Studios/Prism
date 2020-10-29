@@ -164,54 +164,50 @@ class Tag extends StatefulWidget {
 }
 
 class _TagState extends State<Tag> {
-  double xPosition = 0;
-  double yPosition = 0;
   bool visibility = true;
   Color color;
-  String link;
-  String name;
-  String desc;
+  WidgetTag _widgetTag;
 
   @override
   void initState() {
     color = Colors.black87;
     super.initState();
     setState(() {
-      xPosition = widget.x;
-      yPosition = widget.y;
+      _widgetTag.positionX = widget.x;
+      _widgetTag.positionY = widget.y;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: yPosition,
-      left: xPosition,
+      top: _widgetTag.positionY,
+      left: _widgetTag.positionX,
       child: GestureDetector(
         onLongPress: () {
           setState(() {
             visibility = false;
-            xPosition = 10000;
-            yPosition = 10000;
+            _widgetTag.positionX = 10000;
+            _widgetTag.positionY = 10000;
             color = Colors.transparent;
           });
           HapticFeedback.lightImpact();
         },
         onPanUpdate: (tapInfo) {
           setState(() {
-            xPosition += tapInfo.delta.dx;
-            yPosition += tapInfo.delta.dy;
-            if (xPosition + 70 >= widget.xBound) {
-              xPosition = widget.xBound - 70;
+            _widgetTag.positionX += tapInfo.delta.dx;
+            _widgetTag.positionY += tapInfo.delta.dy;
+            if (_widgetTag.positionX + 70 >= widget.xBound) {
+              _widgetTag.positionX = widget.xBound - 70;
             }
-            if (yPosition + 30 >= widget.yBound) {
-              yPosition = widget.yBound - 30;
+            if (_widgetTag.positionY + 30 >= widget.yBound) {
+              _widgetTag.positionY = widget.yBound - 30;
             }
-            if (xPosition <= 0) {
-              xPosition = 0;
+            if (_widgetTag.positionX <= 0) {
+              _widgetTag.positionX = 0;
             }
-            if (yPosition <= 0) {
-              yPosition = 0;
+            if (_widgetTag.positionY <= 0) {
+              _widgetTag.positionY = 0;
             }
           });
         },
@@ -229,4 +225,19 @@ class _TagState extends State<Tag> {
       ),
     );
   }
+}
+
+class WidgetTag {
+  String link;
+  String name;
+  String desc;
+  double positionX;
+  double positionY;
+  WidgetTag({
+    @required this.link,
+    @required this.name,
+    @required this.desc,
+    @required this.positionX,
+    @required this.positionY,
+  });
 }

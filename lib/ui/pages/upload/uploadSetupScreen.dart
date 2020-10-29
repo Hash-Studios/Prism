@@ -4,11 +4,8 @@ import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:github/github.dart';
 import 'package:path/path.dart' as Path;
 import 'package:Prism/routes/router.dart';
@@ -341,7 +338,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           ListTile(
             title: Text(
               main.prefs.get('premium') == true
-                  ? "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. Your photo will be visible in the profile/community section."
+                  ? "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. Your setup will be visible in the setups section."
                   : "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your setup will be visible in the setups section.",
               style: TextStyle(
                 fontSize: 11,
