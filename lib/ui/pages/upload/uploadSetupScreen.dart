@@ -45,6 +45,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   String wallpaperThumb;
   bool review;
   List<int> imageBytes;
+  List<Widget> tags = [];
+
   @override
   void initState() {
     super.initState();
@@ -304,11 +306,19 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                 color: Theme.of(context).accentColor,
               ),
             ),
-            onTap: () {
-              Navigator.pushNamed(context, setupTagRoute, arguments: [
+            onTap: () async {
+              final returnedTags =
+                  await Navigator.pushNamed(context, setupTagRoute, arguments: [
                 image,
                 MediaQuery.of(context).size.height * 0.7,
-              ]);
+                tags,
+              ]) as List<Widget>;
+
+              if (returnedTags != null) {
+                setState(() {
+                  tags = returnedTags;
+                });
+              }
             },
           ),
           const Divider(
