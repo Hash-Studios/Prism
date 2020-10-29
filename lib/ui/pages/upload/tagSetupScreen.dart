@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:Prism/routes/router.dart';
@@ -7,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:flutter/services.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 List<Widget> tags = [];
 
@@ -29,6 +29,7 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
   void initState() {
     super.initState();
     tags = [];
+    tags = widget.arguments[2] as List<Widget> ?? [];
     image = widget.arguments[0] as File;
     displayHeightOfImage = widget.arguments[1].round() as int;
     _imageProcess();
@@ -70,14 +71,22 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                print(tags.length);
+                if (tags.isEmpty) {
+                  toasts.error("Please add a tag to continue");
+                } else {
+                  setState(() {
+                    Navigator.pop(context, tags);
+                  });
+                }
+              },
               child: Text(
                 "Tag",
                 style: TextStyle(
-                  color: config.Colors().accentColor(1),
-                  // color: !isProcessing && !isUploading
-                  //     ? config.Colors().accentColor(1)
-                  //     : Theme.of(context).hintColor,
+                  color: tags.isEmpty
+                      ? Theme.of(context).hintColor
+                      : config.Colors().accentColor(1),
                   fontWeight: FontWeight.normal,
                 ),
               ),
@@ -206,15 +215,17 @@ class _TagState extends State<Tag> {
             }
           });
         },
-        child: Container(
-          width: 70,
-          height: 30,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Text("Hello KWGT"),
-        ),
+        child: visibility
+            ? Container(
+                width: 70,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text("Hello KWGT"),
+              )
+            : Container(),
       ),
     );
   }
