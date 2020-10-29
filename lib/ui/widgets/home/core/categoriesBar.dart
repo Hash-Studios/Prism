@@ -1,12 +1,14 @@
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
+import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/core/tutorials.dart';
 import 'package:Prism/ui/widgets/popup/categoryPopUp.dart';
 import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:Prism/ui/widgets/popup/tutorialCompletePopUp.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:provider/provider.dart';
@@ -126,83 +128,75 @@ class _CategoriesBarState extends State<CategoriesBar> {
       automaticallyImplyLeading: false,
       elevation: 0,
       titleSpacing: 0,
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.6,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                "PRISM",
-                style: TextStyle(
-                    fontSize: 22, color: Theme.of(context).accentColor),
+      title: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          height: 30,
+          width: 120,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: SvgPicture.string(
+              prismTextLogo.replaceAll(
+                "black",
+                "#${Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2)}",
               ),
             ),
           ),
-          SizedBox(
-            child: IconButton(
-              icon: Icon(
-                JamIcons.brush,
-                color: Theme.of(context).accentColor,
-              ),
-              tooltip: 'Search by color',
-              onPressed: () {
-                showColors(context);
-              },
-            ),
-          ),
-          SizedBox(
-            height: 100,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: IconButton(
-                icon: noNotification
-                    ? Icon(
-                        JamIcons.bell,
-                        color: Theme.of(context).accentColor,
-                      )
-                    : Stack(children: <Widget>[
-                        Icon(
-                          JamIcons.bell_f,
-                          color: Theme.of(context).accentColor,
-                        ),
-                        Positioned(
-                          top: 0.0,
-                          right: 0.0,
-                          child: Icon(
-                            Icons.brightness_1,
-                            size: 9.0,
-                            color: config.Colors().mainAccentColor(1),
-                          ),
-                        )
-                      ]),
-                onPressed: () {
-                  setState(() {
-                    noNotification = true;
-                  });
-                  Navigator.pushNamed(context, notificationsRoute);
-                },
-              ),
-            ),
-          ),
-          SizedBox(
-            child: IconButton(
-              icon: Icon(
-                JamIcons.more_vertical,
-                color: Theme.of(context).accentColor,
-              ),
-              onPressed: () {
-                showCategories(
-                    context,
-                    Provider.of<CategorySupplier>(context, listen: false)
-                        .selectedChoice);
-              },
-              tooltip: 'Categories',
-            ),
-          )
-        ],
+        ),
       ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            JamIcons.brush,
+            color: Theme.of(context).accentColor,
+          ),
+          tooltip: 'Search by color',
+          onPressed: () {
+            showColors(context);
+          },
+        ),
+        IconButton(
+          icon: noNotification
+              ? Icon(
+                  JamIcons.bell,
+                  color: Theme.of(context).accentColor,
+                )
+              : Stack(children: <Widget>[
+                  Icon(
+                    JamIcons.bell_f,
+                    color: Theme.of(context).accentColor,
+                  ),
+                  Positioned(
+                    top: 0.0,
+                    right: 0.0,
+                    child: Icon(
+                      Icons.brightness_1,
+                      size: 9.0,
+                      color: config.Colors().mainAccentColor(1),
+                    ),
+                  )
+                ]),
+          onPressed: () {
+            setState(() {
+              noNotification = true;
+            });
+            Navigator.pushNamed(context, notificationsRoute);
+          },
+        ),
+        IconButton(
+          icon: Icon(
+            JamIcons.grid,
+            color: Theme.of(context).accentColor,
+          ),
+          onPressed: () {
+            showCategories(
+                context,
+                Provider.of<CategorySupplier>(context, listen: false)
+                    .selectedChoice);
+          },
+          tooltip: 'Categories',
+        )
+      ],
     );
   }
 }
