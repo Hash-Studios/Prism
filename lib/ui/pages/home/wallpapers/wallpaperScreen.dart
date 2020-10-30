@@ -7,6 +7,7 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/pages/home/wallpapers/filtersExample.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
@@ -1226,7 +1227,17 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               ],
                                             )
                                           : idx == 0
-                                              ? Container()
+                                              ? FlatButton(
+                                                  onPressed: () {
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(
+                                                      builder: (context) {
+                                                        return FiltersExample();
+                                                      },
+                                                    ));
+                                                  },
+                                                  child: Text("HI"),
+                                                )
                                               : Container();
                                     },
                                   ),
