@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:Prism/routes/router.dart';
@@ -8,7 +9,7 @@ import 'package:Prism/theme/config.dart' as config;
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
-List<Widget> tags = [];
+List<Widget> tempTags = [];
 
 class TagSetupScreen extends StatefulWidget {
   final List arguments;
@@ -28,8 +29,8 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
   @override
   void initState() {
     super.initState();
-    tags = [];
-    tags = widget.arguments[2] as List<Widget> ?? [];
+    tempTags = [];
+    tempTags = widget.arguments[2] as List<Widget> ?? [];
     image = widget.arguments[0] as File;
     displayHeightOfImage = widget.arguments[1].round() as int;
     _imageProcess();
@@ -69,22 +70,24 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
             "Tag Widgets",
             style: TextStyle(color: Theme.of(context).accentColor),
           ),
+          automaticallyImplyLeading: false,
           actions: [
             TextButton(
               onPressed: () {
-                print(tags.length);
-                if (tags.isEmpty) {
+                print(tempTags.length);
+                if (tempTags.isEmpty) {
                   toasts.error("Please add a tag to continue");
                 } else {
+                  // tags.add(value)
                   setState(() {
-                    Navigator.pop(context, tags);
+                    Navigator.pop(context, tempTags);
                   });
                 }
               },
               child: Text(
                 "Tag",
                 style: TextStyle(
-                  color: tags.isEmpty
+                  color: tempTags.isEmpty
                       ? Theme.of(context).hintColor
                       : config.Colors().accentColor(1),
                   fontWeight: FontWeight.normal,
@@ -104,18 +107,23 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
                     debugPrint(details.globalPosition.dx.toString());
                     debugPrint(details.globalPosition.dy.toString());
                     setState(() {
-                      tags.add(Tag(
-                        x: details.globalPosition.dx - 80,
-                        y: details.globalPosition.dy - 90,
+                      tempTags.add(Tag(
                         xBound: double.parse(displayWidthOfImage.toString()),
                         yBound: double.parse(displayHeightOfImage.toString()),
+                        widgetTag: WidgetTag(
+                            positionX: details.globalPosition.dx - 80,
+                            positionY: details.globalPosition.dy - 90,
+                            name: "Default",
+                            link: "",
+                            desc: "",
+                            visible: true),
                       ));
                     });
                   },
                   onTap: () async {},
                   child: Image.file(image, fit: BoxFit.contain),
                 ),
-                for (var tag in tags) tag,
+                for (var tag in tempTags) tag,
               ],
             ),
           ),
@@ -149,69 +157,61 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
 }
 
 class Tag extends StatefulWidget {
-  final double x;
-  final double y;
   final double xBound;
   final double yBound;
-  const Tag({
-    @required this.x,
-    @required this.y,
+  WidgetTag widgetTag;
+  Tag({
     @required this.xBound,
     @required this.yBound,
+    @required this.widgetTag,
   });
   @override
   _TagState createState() => _TagState();
 }
 
 class _TagState extends State<Tag> {
-  bool visibility = true;
   Color color;
-  WidgetTag _widgetTag;
 
   @override
   void initState() {
     color = Colors.black87;
     super.initState();
-    setState(() {
-      _widgetTag.positionX = widget.x;
-      _widgetTag.positionY = widget.y;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: _widgetTag.positionY,
-      left: _widgetTag.positionX,
+      top: widget.widgetTag.positionY,
+      left: widget.widgetTag.positionX,
       child: GestureDetector(
         onLongPress: () {
           setState(() {
-            visibility = false;
-            _widgetTag.positionX = 10000;
-            _widgetTag.positionY = 10000;
+            widget.widgetTag.visible = false;
+            widget.widgetTag.positionX = 10000;
+            widget.widgetTag.positionY = 10000;
             color = Colors.transparent;
           });
           HapticFeedback.lightImpact();
         },
         onPanUpdate: (tapInfo) {
           setState(() {
-            _widgetTag.positionX += tapInfo.delta.dx;
-            _widgetTag.positionY += tapInfo.delta.dy;
-            if (_widgetTag.positionX + 70 >= widget.xBound) {
-              _widgetTag.positionX = widget.xBound - 70;
+            widget.widgetTag.positionX += tapInfo.delta.dx;
+            widget.widgetTag.positionY += tapInfo.delta.dy;
+            if (widget.widgetTag.positionX + 70 >= widget.xBound) {
+              widget.widgetTag.positionX = widget.xBound - 70;
             }
-            if (_widgetTag.positionY + 30 >= widget.yBound) {
-              _widgetTag.positionY = widget.yBound - 30;
+            if (widget.widgetTag.positionY + 30 >= widget.yBound) {
+              widget.widgetTag.positionY = widget.yBound - 30;
             }
-            if (_widgetTag.positionX <= 0) {
-              _widgetTag.positionX = 0;
+            if (widget.widgetTag.positionX <= 0) {
+              widget.widgetTag.positionX = 0;
             }
-            if (_widgetTag.positionY <= 0) {
-              _widgetTag.positionY = 0;
+            if (widget.widgetTag.positionY <= 0) {
+              widget.widgetTag.positionY = 0;
             }
           });
         },
-        child: visibility
+        child: widget.widgetTag.visible
             ? Container(
                 width: 70,
                 height: 30,
@@ -219,7 +219,7 @@ class _TagState extends State<Tag> {
                   color: color,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text("Hello KWGT"),
+                child: Text(widget.widgetTag.name),
               )
             : Container(),
       ),
@@ -233,11 +233,12 @@ class WidgetTag {
   String desc;
   double positionX;
   double positionY;
-  WidgetTag({
-    @required this.link,
-    @required this.name,
-    @required this.desc,
-    @required this.positionX,
-    @required this.positionY,
-  });
+  bool visible;
+  WidgetTag(
+      {@required this.link,
+      @required this.name,
+      @required this.desc,
+      @required this.positionX,
+      @required this.positionY,
+      @required this.visible});
 }
