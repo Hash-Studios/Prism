@@ -54,14 +54,14 @@ class _ShareButtonState extends State<ShareButton> {
             child: Icon(
               JamIcons.share_alt,
               color: Theme.of(context).accentColor,
-              size: 30,
+              size: 20,
             ),
           ),
           Positioned(
               top: 0,
               left: 0,
-              height: 63,
-              width: 63,
+              height: 53,
+              width: 53,
               child:
                   isLoading ? const CircularProgressIndicator() : Container())
         ],

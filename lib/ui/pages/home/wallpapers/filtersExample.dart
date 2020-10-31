@@ -8,6 +8,8 @@ import 'package:image/image.dart' as imageLib;
 import 'package:image_picker/image_picker.dart';
 
 class FiltersExample extends StatefulWidget {
+  final File image;
+  const FiltersExample({@required this.image});
   @override
   _FiltersExampleState createState() => _FiltersExampleState();
 }
@@ -18,14 +20,15 @@ class _FiltersExampleState extends State<FiltersExample> {
   List<Filter> filters = presetFiltersList;
   File imageFile;
   final picker = ImagePicker();
+  @override
+  void initState() {
+    super.initState();
+    setState(() {
+      imageFile = widget.image;
+    });
+  }
 
   Future getImage(BuildContext context) async {
-    pickedFile = await picker.getImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        imageFile = File(pickedFile.path);
-      });
-    }
     fileName = basename(imageFile.path);
     var image = imageLib.decodeImage(imageFile.readAsBytesSync());
     image = imageLib.copyResize(image, width: 600);
