@@ -10,10 +10,12 @@ import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 List<Widget> tempTags = [];
+final TextEditingController searchController = TextEditingController();
 
 class TagSetupScreen extends StatefulWidget {
   final List arguments;
   const TagSetupScreen({this.arguments});
+
   @override
   _TagSetupScreenState createState() => _TagSetupScreenState();
 }
@@ -25,15 +27,25 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
   int displayHeightOfImage;
   int displayWidthOfImage;
   double scale;
+  FocusNode textFocusNode;
+  String defaultText;
 
   @override
   void initState() {
     super.initState();
+    textFocusNode = FocusNode();
+    defaultText = "Default";
     tempTags = [];
     tempTags = widget.arguments[2] as List<Widget> ?? [];
     image = widget.arguments[0] as File;
     displayHeightOfImage = widget.arguments[1].round() as int;
     _imageProcess();
+  }
+
+  @override
+  void dispose() {
+    textFocusNode.dispose();
+    super.dispose();
   }
 
   Future<bool> onWillPop() async {
@@ -69,6 +81,65 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
           title: Text(
             "Tag Widgets",
             style: TextStyle(color: Theme.of(context).accentColor),
+          ),
+          bottom: PreferredSize(
+            preferredSize: const Size(double.infinity, 54),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 6.0),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.96,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(500),
+                                color: Theme.of(context).hintColor),
+                            child: TextField(
+                              cursorColor: config.Colors().mainAccentColor(1),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline5
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor),
+                              controller: searchController,
+                              focusNode: textFocusNode,
+                              decoration: InputDecoration(
+                                contentPadding:
+                                    const EdgeInsets.only(left: 30, top: 15),
+                                border: InputBorder.none,
+                                disabledBorder: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                hintText: "Search",
+                                hintStyle: Theme.of(context)
+                                    .textTheme
+                                    .headline5
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                                suffixIcon: Icon(
+                                  JamIcons.search,
+                                  color: Theme.of(context).accentColor,
+                                ),
+                              ),
+                              onSubmitted: (tex) {
+                                setState(() {
+                                  defaultText = tex;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           automaticallyImplyLeading: false,
           actions: [
@@ -113,12 +184,13 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
                         widgetTag: WidgetTag(
                             positionX: details.globalPosition.dx - 80,
                             positionY: details.globalPosition.dy - 90,
-                            name: "Default",
+                            name: defaultText,
                             link: "",
                             desc: "",
                             visible: true),
                       ));
                     });
+                    textFocusNode.requestFocus();
                   },
                   onTap: () async {},
                   child: Image.file(image, fit: BoxFit.contain),
