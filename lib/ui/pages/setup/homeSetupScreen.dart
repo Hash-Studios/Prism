@@ -6,6 +6,7 @@ import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -62,11 +63,22 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
   int pageNumber = 0;
   void showPremiumPopUp(Function func) {
     print(main.prefs.get("premium"));
-    if (main.prefs.get("premium") == false ||
-        main.prefs.get("premium") == null) {
-      Navigator.pushNamed(context, premiumRoute);
+    if (main.prefs.get("isLoggedin") == false) {
+      googleSignInPopUp(context, () {
+        if (main.prefs.get("premium") == false ||
+            main.prefs.get("premium") == null) {
+          Navigator.pushNamed(context, premiumRoute);
+        } else {
+          func();
+        }
+      });
     } else {
-      func();
+      if (main.prefs.get("premium") == false ||
+          main.prefs.get("premium") == null) {
+        Navigator.pushNamed(context, premiumRoute);
+      } else {
+        func();
+      }
     }
   }
 
