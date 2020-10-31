@@ -136,7 +136,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 child: Container(
                   color: Provider.of<ThemeModel>(context, listen: false)
                               .returnThemeType() ==
-                         "Dark"
+                          "Dark"
                       ? Colors.black.withOpacity(0.75)
                       : Colors.white.withOpacity(0.75),
                 )),
@@ -173,7 +173,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                         width: widget.childSize.width,
                         height: widget.childSize.height * 6 / 10,
                         decoration: BoxDecoration(
-                          color: config.Colors().secondDarkColor(1),
+                          color: Theme.of(context).hintColor,
                           borderRadius:
                               const BorderRadius.all(Radius.circular(20.0)),
                         ),
@@ -302,8 +302,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                   },
                                   child: Container(
                                     decoration: BoxDecoration(
-                                        color:
-                                            config.Colors().secondDarkColor(1),
+                                        color: Theme.of(context).hintColor,
                                         borderRadius: const BorderRadius.only(
                                             topLeft: Radius.circular(20),
                                             bottomRight: Radius.circular(20))),
@@ -345,7 +344,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                             width: widget.childSize.width,
                             height: widget.childSize.height * 6 / 10,
                             decoration: BoxDecoration(
-                              color: config.Colors().secondDarkColor(1),
+                              color: Theme.of(context).hintColor,
                               borderRadius:
                                   const BorderRadius.all(Radius.circular(20.0)),
                             ),
@@ -406,10 +405,14 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     Data.subPrismWalls[widget
                                                         .index]["userPhoto"],
                                                     false,
-                                                    Data.subPrismWalls[widget
-                                                        .index]["twitter"]??"",
-                                                    Data.subPrismWalls[widget
-                                                        .index]["instagram"]??""
+                                                    Data.subPrismWalls[
+                                                                widget.index]
+                                                            ["twitter"] ??
+                                                        "",
+                                                    Data.subPrismWalls[
+                                                                widget.index]
+                                                            ["instagram"] ??
+                                                        ""
                                                   ]);
                                             }),
                                         Padding(
@@ -472,8 +475,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       },
                                       child: Container(
                                         decoration: BoxDecoration(
-                                            color: config.Colors()
-                                                .secondDarkColor(1),
+                                            color: Theme.of(context).hintColor,
                                             borderRadius:
                                                 const BorderRadius.only(
                                                     topLeft:
@@ -518,7 +520,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                 width: widget.childSize.width,
                                 height: widget.childSize.height * 6 / 10,
                                 decoration: BoxDecoration(
-                                  color: config.Colors().secondDarkColor(1),
+                                  color: Theme.of(context).hintColor,
                                   borderRadius: const BorderRadius.all(
                                       Radius.circular(20.0)),
                                 ),
@@ -641,8 +643,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           },
                                           child: Container(
                                             decoration: BoxDecoration(
-                                                color: config.Colors()
-                                                    .secondDarkColor(1),
+                                                color:
+                                                    Theme.of(context).hintColor,
                                                 borderRadius:
                                                     const BorderRadius.only(
                                                         topLeft:
@@ -688,7 +690,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     width: widget.childSize.width,
                                     height: widget.childSize.height * 6 / 10,
                                     decoration: BoxDecoration(
-                                      color: config.Colors().secondDarkColor(1),
+                                      color: Theme.of(context).hintColor,
                                       borderRadius: const BorderRadius.all(
                                           Radius.circular(20.0)),
                                     ),
@@ -802,8 +804,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               },
                                               child: Container(
                                                 decoration: BoxDecoration(
-                                                    color: config.Colors()
-                                                        .secondDarkColor(1),
+                                                    color: Theme.of(context)
+                                                        .hintColor,
                                                     borderRadius:
                                                         const BorderRadius.only(
                                                             topLeft:
@@ -853,8 +855,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         height:
                                             widget.childSize.height * 6 / 10,
                                         decoration: BoxDecoration(
-                                          color: config.Colors()
-                                              .secondDarkColor(1),
+                                          color: Theme.of(context).hintColor,
                                           borderRadius: const BorderRadius.all(
                                               Radius.circular(20.0)),
                                         ),
@@ -977,8 +978,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   },
                                                   child: Container(
                                                     decoration: BoxDecoration(
-                                                        color: config.Colors()
-                                                            .secondDarkColor(1),
+                                                        color: Theme.of(context)
+                                                            .hintColor,
                                                         borderRadius:
                                                             const BorderRadius
                                                                     .only(
@@ -1039,8 +1040,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         6 /
                                                         8,
                                                 decoration: BoxDecoration(
-                                                  color: config.Colors()
-                                                      .secondDarkColor(1),
+                                                  color: Theme.of(context)
+                                                      .hintColor,
                                                   borderRadius:
                                                       const BorderRadius.all(
                                                           Radius.circular(
@@ -1279,8 +1280,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         6 /
                                                         8,
                                                     decoration: BoxDecoration(
-                                                      color: config.Colors()
-                                                          .secondDarkColor(1),
+                                                      color: Theme.of(context)
+                                                          .hintColor,
                                                       borderRadius:
                                                           const BorderRadius
                                                                   .all(
@@ -1872,8 +1873,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             height:
                                                 widget.childSize.height * 6 / 8,
                                             decoration: BoxDecoration(
-                                              color: config.Colors()
-                                                  .secondDarkColor(1),
+                                              color:
+                                                  Theme.of(context).hintColor,
                                               borderRadius:
                                                   const BorderRadius.all(
                                                       Radius.circular(20.0)),

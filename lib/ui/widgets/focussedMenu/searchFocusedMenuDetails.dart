@@ -97,15 +97,12 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                 },
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
-                  child: Container(
-                    color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnThemeType() ==
-                            "Dark"
-                        ? Colors.black.withOpacity(0.75)
-                        : Colors.white.withOpacity(0.75),
-                  ),
+                child: Container(
+                  color: Provider.of<ThemeModel>(context, listen: false)
+                              .returnThemeType() ==
+                          "Dark"
+                      ? Colors.black.withOpacity(0.75)
+                      : Colors.white.withOpacity(0.75),
                 )),
             Positioned(
                 top: childOffset.dy,
@@ -138,7 +135,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                     width: childSize.width,
                     height: childSize.height * 6 / 8,
                     decoration: BoxDecoration(
-                      color: config.Colors().secondDarkColor(1),
+                      color: Theme.of(context).hintColor,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(20.0)),
                     ),
@@ -255,7 +252,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: config.Colors().secondDarkColor(1),
+                                    color: Theme.of(context).hintColor,
                                     borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20))),
@@ -294,7 +291,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                     width: childSize.width,
                     height: childSize.height * 6 / 10,
                     decoration: BoxDecoration(
-                      color: config.Colors().secondDarkColor(1),
+                      color: Theme.of(context).hintColor,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(20.0)),
                     ),
@@ -404,7 +401,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: config.Colors().secondDarkColor(1),
+                                    color: Theme.of(context).hintColor,
                                     borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20))),
