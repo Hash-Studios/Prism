@@ -1,3 +1,4 @@
+import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
@@ -8,27 +9,10 @@ import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
 final FirebaseMessaging f = FirebaseMessaging();
-
-void writeNotifications(Map<String, dynamic> message) {
-  final Box<List> box = Hive.box('notifications');
-  var notifications = box.get('notifications');
-  notifications ??= [];
-  notifications.add(NotifData(
-      title: message['notification']['title'] as String ?? "Notification",
-      desc: message['notification']['body'] as String ?? "",
-      imageUrl: message['data']['imageUrl'] as String ??
-          "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
-      pageName: message['data']['pageName'] as String,
-      arguments: message['data']['arguments'] as List ?? [],
-      url: message['data']['url'] as String ?? ""));
-  box.put('notifications', notifications);
-}
 
 Future<dynamic> myBackgroundMessageHandler(Map<String, dynamic> message) {
   writeNotifications(message);
@@ -82,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     f.getToken().then((value) {
-      debugPrint(value);
+      debugPrint("FCM Token $value");
       Firestore.instance.collection('tokens').document(value).setData({
         "devtoken": value.toString(),
         "createdAt": DateTime.now().toIso8601String()

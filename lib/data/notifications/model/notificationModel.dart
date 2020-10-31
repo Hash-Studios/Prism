@@ -15,6 +15,8 @@ class NotifData {
   final List arguments;
   @HiveField(5)
   final String url;
+  @HiveField(6)
+  final DateTime createdAt;
 
   NotifData(
       {this.pageName,
@@ -22,5 +24,6 @@ class NotifData {
       this.desc,
       this.imageUrl,
       this.arguments,
-      this.url});
+      this.url,
+      this.createdAt});
 }
