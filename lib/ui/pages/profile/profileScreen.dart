@@ -478,6 +478,16 @@ class _ProfileChildState extends State<ProfileChild> {
                     UserList(),
                     const StudioList(),
                     PrismList(),
+                    const SizedBox(
+                      height: 300,
+                    ),
+                    const SizedBox(
+                      height: 300,
+                      child: FlareActor(
+                        "assets/animations/Update.flr",
+                        animation: "update",
+                      ),
+                    ),
                   ]))
                 ]),
               ));
