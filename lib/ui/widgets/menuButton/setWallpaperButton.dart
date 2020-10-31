@@ -231,6 +231,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     showDialog(
       context: context,
       child: AlertDialog(
+        backgroundColor: Theme.of(context).hintColor,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(
             Radius.circular(20),
