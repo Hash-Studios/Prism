@@ -5,7 +5,6 @@ import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
@@ -34,8 +33,6 @@ bool optimisedWallpapers;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
-  Crashlytics.instance.enableInDevMode = false;
-  FlutterError.onError = Crashlytics.instance.recordFlutterError;
   GestureBinding.instance.resamplingEnabled = true;
   getApplicationDocumentsDirectory().then((dir) async {
     Hive.init(dir.path);
@@ -95,7 +92,7 @@ void main() {
                     ),
                   ),
                 );
-              }, onError: Crashlytics.instance.recordError));
+              }));
     }
   });
 }
