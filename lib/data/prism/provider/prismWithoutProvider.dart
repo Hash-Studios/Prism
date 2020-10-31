@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 final Firestore databaseReference = Firestore.instance;
 List prismWalls;
@@ -15,6 +16,7 @@ Future<List> getPrismWalls() async {
     if ((box.get('wallpapers') == null) ||
         (box.get('wallpapers') == [] || box.get('date') == null)) {
       debugPrint("Refetching whole collection");
+      toasts.error("Refetching whole collection");
       prismWalls = [];
       subPrismWalls = [];
       await databaseReference
@@ -55,6 +57,7 @@ Future<List> getPrismWalls() async {
           DateTime.now(),
         )) {
       debugPrint("Refetching part of collection");
+      toasts.error("Refetching part of collection");
       prismWalls = [];
       subPrismWalls = [];
       final prevWalls = box.get('wallpapers') as List;
@@ -98,6 +101,7 @@ Future<List> getPrismWalls() async {
       }
     } else {
       debugPrint("Community : Data Fetched from cache");
+      toasts.error("Data fetched from cache");
       prismWalls = [];
       subPrismWalls = [];
       prismWalls = box.get('wallpapers') as List;
