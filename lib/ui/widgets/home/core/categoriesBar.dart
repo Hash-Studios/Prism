@@ -1,3 +1,4 @@
+import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
@@ -38,6 +39,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
   @override
   void initState() {
     isNew = true;
+    fetchNotifications();
     super.initState();
     globals.height = widget.height;
     globals.width = widget.width;
@@ -48,6 +50,11 @@ class _CategoriesBarState extends State<CategoriesBar> {
       Future.delayed(const Duration()).then(
           (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
     }
+  }
+
+  Future<void> fetchNotifications() async {
+    await getNotifications();
+    setState(() {});
   }
 
   String textSkip = "SKIP";

@@ -207,51 +207,43 @@ class NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: <Widget>[
-          ExpansionTile(
-            leading: CircleAvatar(
-              backgroundImage: NetworkImage(notification.imageUrl ??
-                  "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg"),
-            ),
-            backgroundColor: Theme.of(context).primaryColor,
-            title: Text(
-              notification.title,
-              style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: Text(
-              notification.desc,
-              style:
-                  TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
-            ),
-            children: <Widget>[
-              InkWell(
-                onTap: () {
-                  if (notification.url == "") {
-                    if (notification.pageName != null) {
-                      Navigator.pushNamed(context, notification.pageName,
-                          arguments: notification.arguments);
-                    }
-                  } else {
-                    launch(notification.url);
-                  }
-                },
-                child: Ink(
-                  child: CachedNetworkImage(
-                    imageUrl: notification.imageUrl ??
-                        "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              )
-            ],
-          )
-        ],
+    return ExpansionTile(
+      leading: const CircleAvatar(
+        backgroundImage: AssetImage("assets/images/prism.png"),
       ),
+      backgroundColor: Theme.of(context).primaryColor,
+      title: Text(
+        notification.title,
+        style: TextStyle(
+            color: Theme.of(context).accentColor,
+            fontWeight: FontWeight.w500,
+            fontFamily: "Proxima Nova"),
+      ),
+      subtitle: Text(
+        notification.desc,
+        style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
+      ),
+      children: <Widget>[
+        InkWell(
+          onTap: () {
+            if (notification.url == "") {
+              if (notification.pageName != null) {
+                Navigator.pushNamed(context, notification.pageName,
+                    arguments: notification.arguments);
+              }
+            } else {
+              launch(notification.url);
+            }
+          },
+          child: Ink(
+            child: CachedNetworkImage(
+              imageUrl: notification.imageUrl ??
+                  "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
+              fit: BoxFit.cover,
+            ),
+          ),
+        )
+      ],
     );
   }
 }
