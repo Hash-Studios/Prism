@@ -271,128 +271,49 @@ class _PageManagerChildState extends State<PageManagerChild>
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
-        body: NestedScrollView(
-            headerSliverBuilder:
-                (BuildContext context, bool innerBoxIsScrolled) {
-              return <Widget>[
-                SliverAppBar(
-                  floating: true,
-                  flexibleSpace: PreferredSize(
-                    preferredSize: const Size(double.infinity, 55),
-                    child: CategoriesBar(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height),
+        appBar: AppBar(
+          flexibleSpace: PreferredSize(
+            preferredSize: const Size(double.infinity, 55),
+            child: CategoriesBar(
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height),
+          ),
+          bottom: TabBar(
+              controller: tabController,
+              indicatorColor: Theme.of(context).accentColor,
+              indicatorSize: TabBarIndicatorSize.label,
+              tabs: [
+                Tab(
+                  icon: Icon(
+                    JamIcons.picture,
+                    color: Theme.of(context).accentColor,
                   ),
-                  bottom: TabBar(
-                      controller: tabController,
-                      indicatorColor: Theme.of(context).accentColor,
-                      indicatorSize: TabBarIndicatorSize.label,
-                      // unselectedLabelColor:
-                      // const Color(0xFFFFFFFF).withOpacity(0.5),
-                      // labelColor: const Color(0xFFFFFFFF),
-                      tabs: [
-                        Tab(
-                          icon: Icon(
-                            JamIcons.picture,
-                            color: Theme.of(context).accentColor,
-                          ),
-                        ),
-                        Tab(
-                          icon: Icon(
-                            JamIcons.instant_picture,
-                            color: Theme.of(context).accentColor,
-                          ),
-                        ),
-                        Tab(
-                          icon: Icon(
-                            JamIcons.pictures,
-                            color: Theme.of(context).accentColor,
-                          ),
-                        )
-                      ]),
                 ),
-                // SliverAppBar(
-                //   backgroundColor: config.Colors().mainAccentColor(1),
-                //   automaticallyImplyLeading: false,
-                //   pinned: true,
-                //   titleSpacing: 0,
-                //   title: SizedBox(
-                //     width: MediaQuery.of(context).size.width,
-                //     height: 55,
-                //     child: Container(
-                //       color: Theme.of(context).primaryColor,
-                //       child: SizedBox.expand(
-                //         child: TabBar(
-                //             indicatorColor: Theme.of(context).accentColor,
-                //             indicatorSize: TabBarIndicatorSize.label,
-                //             unselectedLabelColor:
-                //                 const Color(0xFFFFFFFF).withOpacity(0.5),
-                //             labelColor: const Color(0xFFFFFFFF),
-                //             tabs: [
-                //               Tab(
-                //                 icon: Icon(
-                //                   JamIcons.heart_f,
-                //                   color: Theme.of(context).accentColor,
-                //                 ),
-                //               ),
-                //               Tab(
-                //                 icon: Icon(
-                //                   JamIcons.picture,
-                //                   color: Theme.of(context).accentColor,
-                //                 ),
-                //               ),
-                //               Tab(
-                //                 icon: Icon(
-                //                   JamIcons.settings_alt,
-                //                   color: Theme.of(context).accentColor,
-                //                 ),
-                //               )
-                //             ]),
-                //       ),
-                //     ),
-                //   ),
-                // ),
-              ];
-            },
-            body: Stack(
-              children: <Widget>[
-                TabBarView(controller: tabController, children: [
-                  HomeScreen(),
-                  HomeSetupScreen(),
-                  CollectionScreen()
-                ]),
-                if (!result) ConnectivityWidget() else Container(),
-              ],
-            )),
+                Tab(
+                  icon: Icon(
+                    JamIcons.instant_picture,
+                    color: Theme.of(context).accentColor,
+                  ),
+                ),
+                Tab(
+                  icon: Icon(
+                    JamIcons.pictures,
+                    color: Theme.of(context).accentColor,
+                  ),
+                )
+              ]),
+        ),
+        body: Stack(
+          children: <Widget>[
+            TabBarView(controller: tabController, children: [
+              const HomeScreen(),
+              const HomeSetupScreen(),
+              const CollectionScreen()
+            ]),
+            if (!result) ConnectivityWidget() else Container(),
+          ],
+        ),
       ),
     );
   }
 }
-
-// PageView.builder(
-//                       onPageChanged: (index) {
-//                         debugPrint("Index cat: ${index.toString()}");
-//                         setState(() {
-//                           page = index;
-//                         });
-//                         categoryController.scrollToIndex(index,
-//                             preferPosition: AutoScrollPosition.begin);
-//                         if (index == 0) {
-//                           Provider.of<TabProvider>(context, listen: false)
-//                               .updateSelectedTab("Wallpapers");
-//                         } else if (index == 1) {
-//                           Provider.of<TabProvider>(context, listen: false)
-//                               .updateSelectedTab("Collections");
-//                         }
-//                       },
-//                       controller: pageController,
-//                       itemCount: 2,
-//                       itemBuilder: (context, index) {
-//                         debugPrint("Index : ${index.toString()}");
-//                         if (index == 0) {
-//                           return const HomeScreen();
-//                         } else if (index == 1) {
-//                           return const CollectionScreen();
-//                         }
-//                         return const UndefinedScreen();
-//                       }),
