@@ -5,6 +5,7 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,28 +13,6 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'components.dart';
 
 PurchaserInfo _purchaserInfo;
-
-Future<void> initPlatformState() async {
-  appData.isPro = false;
-
-  await Purchases.setDebugLogsEnabled(true);
-  await Purchases.setup(apiKey, appUserId: main.prefs.get('id') as String);
-
-  PurchaserInfo purchaserInfo;
-  try {
-    purchaserInfo = await Purchases.getPurchaserInfo();
-    debugPrint(purchaserInfo.toString());
-    if (purchaserInfo.entitlements.all['prism_premium'] != null) {
-      appData.isPro = purchaserInfo.entitlements.all['prism_premium'].isActive;
-    } else {
-      appData.isPro = false;
-    }
-  } on PlatformException catch (e) {
-    debugPrint(e.toString());
-  }
-
-  debugPrint('#### is user pro? ${appData.isPro}');
-}
 
 Future<void> checkPremium() async {
   appData.isPro = false;
@@ -67,8 +46,32 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   @override
   void initState() {
     super.initState();
-    fetchData();
     initPlatformState();
+    fetchData();
+  }
+
+  Future<void> initPlatformState() async {
+    appData.isPro = false;
+
+    await Purchases.setDebugLogsEnabled(true);
+    await Purchases.setup(apiKey, appUserId: main.prefs.get('id') as String);
+
+    PurchaserInfo purchaserInfo;
+    try {
+      purchaserInfo = await Purchases.getPurchaserInfo();
+      debugPrint(purchaserInfo.toString());
+      if (purchaserInfo.entitlements.all['prism_premium'] != null) {
+        appData.isPro =
+            purchaserInfo.entitlements.all['prism_premium'].isActive;
+      } else {
+        appData.isPro = false;
+      }
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+    }
+
+    debugPrint('#### is user pro? ${appData.isPro}');
+    setState(() {});
   }
 
   Future<void> fetchData() async {
@@ -99,11 +102,11 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       return WillPopScope(
         onWillPop: onWillPop,
         child: Scaffold(
-            backgroundColor: Theme.of(context).primaryColor,
-            body: const Center(
-                child: Text(
-              "Loading...",
-            ))),
+          backgroundColor: Theme.of(context).primaryColor,
+          body: Center(
+            child: Loader(),
+          ),
+        ),
       );
     } else {
       if (_purchaserInfo.entitlements.all.isNotEmpty &&
@@ -440,28 +443,17 @@ class _UpsellScreenState extends State<UpsellScreen> {
           );
         }
       }
-    }
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    } else {
+      return WillPopScope(
+        onWillPop: onWillPop,
+        child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: const Text("Purchase"),
-            leading: IconButton(
-              icon: const Icon(JamIcons.close),
-              onPressed: () {
-                if (navStack.length > 1) navStack.removeLast();
-                debugPrint(navStack.toString());
-                Navigator.pop(context);
-              },
-            ),
+          body: Center(
+            child: Loader(),
           ),
-          body: const Center(
-              child: Text(
-            "Loading...",
-          ))),
-    );
+        ),
+      );
+    }
   }
 }
 
