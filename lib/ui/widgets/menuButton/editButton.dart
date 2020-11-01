@@ -1,12 +1,11 @@
 import 'dart:io';
 
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
-import 'package:photofilters/photofilters.dart';
-import 'package:Prism/main.dart' as main;
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image/image.dart' as imageLib;
+import 'package:image/image.dart' as imagelib;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
@@ -35,13 +34,7 @@ class _EditButtonState extends State<EditButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        if (main.prefs.get("isLoggedin") == false) {
-          googleSignInPopUp(context, () {
-            onEdit(widget.url);
-          });
-        } else {
-          onEdit(widget.url);
-        }
+        onEdit(widget.url);
       },
       child: Stack(
         children: [
@@ -90,17 +83,11 @@ class _EditButtonState extends State<EditButton> {
       imageData = filePathAndName;
       isLoading = false;
     });
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PhotoFilterSelector(
-          title: const Text("Photo Filter Example"),
-          image: imageLib.decodeImage(File(imageData).readAsBytesSync()),
-          filters: presetFiltersList,
-          filename: path.basename(File(imageData).path),
-          fit: BoxFit.contain,
-        ),
-      ),
-    );
+    SystemChrome.setEnabledSystemUIOverlays(
+        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+    Navigator.pushNamed(context, wallpaperFilterRoute, arguments: [
+      imagelib.decodeImage(File(imageData).readAsBytesSync()),
+      path.basename(File(imageData).path),
+    ]);
   }
 }
