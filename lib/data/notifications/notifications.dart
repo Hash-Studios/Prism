@@ -2,6 +2,7 @@ import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
+import 'package:Prism/main.dart' as main;
 
 final Firestore databaseReference = Firestore.instance;
 Future<void> getNotifications() async {
@@ -18,7 +19,18 @@ Future<void> getNotifications() async {
       for (final f in value.documents) {
         Map<String, dynamic> map;
         map = f.data;
-        writeNotifications(map);
+        if (map['modifier'] == "free") {
+          if (main.prefs.get('premium') == false ||
+              main.prefs.get('premium') == null) {
+            writeNotifications(map);
+          }
+        } else if (map['modifier'] == "premium") {
+          if (main.prefs.get('premium') == true) {
+            writeNotifications(map);
+          }
+        } else if (map['modifier'] == "all") {
+          writeNotifications(map);
+        }
       }
       debugPrint(
           "-------- ${value.documents.length} new notifications added ---------");
@@ -54,8 +66,21 @@ Future<void> getNotifications() async {
             }
           }
           if (unique) {
-            counter++;
-            writeNotifications(map);
+            if (map['modifier'] == "free") {
+              if (main.prefs.get('premium') == false ||
+                  main.prefs.get('premium') == null) {
+                counter++;
+                writeNotifications(map);
+              }
+            } else if (map['modifier'] == "premium") {
+              if (main.prefs.get('premium') == true) {
+                counter++;
+                writeNotifications(map);
+              }
+            } else if (map['modifier'] == "all") {
+              counter++;
+              writeNotifications(map);
+            }
           }
         }
       }
@@ -77,14 +102,15 @@ void writeNotifications(Map<String, dynamic> message) {
   notifications ??= [];
   notifications.add(
     NotifData(
-        title: message['notification']['title'] as String ?? "Notification",
-        desc: message['notification']['body'] as String ?? "",
-        imageUrl: message['data']['imageUrl'] as String ??
-            "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
-        pageName: message['data']['pageName'] as String,
-        arguments: message['data']['arguments'] as List ?? [],
-        url: message['data']['url'] as String ?? "",
-        createdAt: (message['createdAt'] as Timestamp).toDate()),
+      title: message['notification']['title'] as String ?? "Notification",
+      desc: message['notification']['body'] as String ?? "",
+      imageUrl: message['data']['imageUrl'] as String ??
+          "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
+      pageName: message['data']['pageName'] as String,
+      arguments: message['data']['arguments'] as List ?? [],
+      url: message['data']['url'] as String ?? "",
+      createdAt: (message['createdAt'] as Timestamp).toDate(),
+    ),
   );
   box.put('notifications', notifications);
 }
