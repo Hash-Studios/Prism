@@ -4,9 +4,11 @@ import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:github/github.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as Path;
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
@@ -38,11 +40,53 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   String id;
   String tempid;
   TextEditingController wallpaperUrl = TextEditingController();
+  String wallpaperUploadLink;
+  TextEditingController wallpaperAppName = TextEditingController();
+  TextEditingController wallpaperAppWallName = TextEditingController();
+  TextEditingController wallpaperAppLink = TextEditingController();
   String wallpaperProvider;
   String wallpaperThumb;
   bool review;
   List<int> imageBytes;
   List<Widget> tags = [];
+  FocusNode textFocusNode;
+  int groupValue = 0;
+  bool wallpaperUploaded = false;
+  final Map<int, Widget> logoWidgets = <int, Widget>{
+    0: Padding(
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(JamIcons.link),
+          Text("Link"),
+        ],
+      ),
+    ),
+    1: Padding(
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(JamIcons.upload),
+          Text("Upload"),
+        ],
+      ),
+    ),
+    2: Padding(
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(JamIcons.android),
+          Text("App"),
+        ],
+      ),
+    )
+  };
 
   @override
   void initState() {
@@ -136,7 +180,13 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                   ? () async {
                       if (setupName.text == "" ||
                           setupDesc.text == "" ||
-                          wallpaperUrl.text == "" ||
+                          (wallpaperUploaded == false &&
+                              (wallpaperUrl.text == "" ||
+                                  wallpaperUrl.text == null) &&
+                              ((wallpaperAppLink.text == "" ||
+                                      wallpaperAppLink.text == null) ||
+                                  (wallpaperAppName.text == "" ||
+                                      wallpaperAppName.text == null))) ||
                           iconName.text == "" ||
                           iconURL.text == "") {
                         toasts.error("Please fill all required fields!");
@@ -152,7 +202,18 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             imageURL,
                             wallpaperProvider,
                             wallpaperThumb,
-                            wallpaperUrl.text,
+                            wallpaperUploaded == true
+                                ? wallpaperUploadLink
+                                : wallpaperAppName.text != "" &&
+                                        wallpaperAppName.text != null &&
+                                        wallpaperAppLink.text != "" &&
+                                        wallpaperAppLink.text != null
+                                    ? [
+                                        wallpaperAppName.text,
+                                        wallpaperAppLink.text,
+                                        wallpaperAppWallName.text
+                                      ]
+                                    : wallpaperUrl.text,
                             iconName.text,
                             iconURL.text,
                             widgetName.text,
@@ -321,7 +382,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           const Divider(
             height: 1,
           ),
-          ListTile(
+          ExpansionTile(
             title: Text(
               "Add wallpaper",
               style: TextStyle(
@@ -330,7 +391,237 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                 color: Theme.of(context).accentColor,
               ),
             ),
-            onTap: () {},
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CupertinoSegmentedControl(
+                    children: logoWidgets,
+                    groupValue: groupValue,
+                    borderColor: Theme.of(context).accentColor,
+                    pressedColor: Theme.of(context).hintColor,
+                    unselectedColor: Theme.of(context).primaryColor,
+                    selectedColor: Theme.of(context).accentColor,
+                    padding: EdgeInsets.zero,
+                    onValueChanged: (int val) {
+                      setState(() {
+                        groupValue = val;
+                      });
+                    }),
+              ),
+              groupValue == 0
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: Theme.of(context).hintColor),
+                        child: TextField(
+                          cursorColor: config.Colors().mainAccentColor(1),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline5
+                              .copyWith(color: Theme.of(context).accentColor),
+                          controller: wallpaperUrl,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding:
+                                const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write wallpaper link...",
+                            hintStyle: Theme.of(context)
+                                .textTheme
+                                .headline5
+                                .copyWith(color: Theme.of(context).accentColor),
+                            suffixIcon: Icon(
+                              JamIcons.picture,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                          onSubmitted: (tex) {
+                            // setState(() {
+                            //   defaultText = tex;
+                            // });
+                          },
+                        ),
+                      ),
+                    )
+                  : groupValue == 1
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                          child: FloatingActionButton.extended(
+                            backgroundColor: wallpaperUploaded == true
+                                ? Theme.of(context).hintColor
+                                : config.Colors().mainAccentColor(1),
+                            onPressed: wallpaperUploaded == true
+                                ? null
+                                : () async {
+                                    final pickedFile = await ImagePicker()
+                                        .getImage(source: ImageSource.gallery);
+                                    if (pickedFile != null) {
+                                      Future.delayed(const Duration())
+                                          .then((value) async {
+                                        final link = await Navigator.pushNamed(
+                                            context, uploadWallRoute,
+                                            arguments: [File(pickedFile.path)]);
+                                        if (link != null) {
+                                          setState(() {
+                                            wallpaperUploadLink =
+                                                link.toString();
+                                            wallpaperUploaded = true;
+                                          });
+                                        }
+                                      });
+                                    }
+                                  },
+                            label: Text(
+                              wallpaperUploaded == true ? "Uploaded" : "Upload",
+                              style: TextStyle(
+                                  color: Theme.of(context).accentColor,
+                                  fontWeight: FontWeight.normal),
+                            ),
+                            icon: Icon(
+                              JamIcons.upload,
+                              color: Theme.of(context).accentColor,
+                            ),
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(500),
+                                    color: Theme.of(context).hintColor),
+                                child: TextField(
+                                  cursorColor:
+                                      config.Colors().mainAccentColor(1),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline5
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                  controller: wallpaperAppName,
+                                  focusNode: textFocusNode,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.only(
+                                        left: 30, top: 15),
+                                    border: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    hintText: "Write wallpaper app name...",
+                                    hintStyle: Theme.of(context)
+                                        .textTheme
+                                        .headline5
+                                        .copyWith(
+                                            color:
+                                                Theme.of(context).accentColor),
+                                    suffixIcon: Icon(
+                                      JamIcons.android,
+                                      color: Theme.of(context).accentColor,
+                                    ),
+                                  ),
+                                  onSubmitted: (tex) {
+                                    // setState(() {
+                                    //   defaultText = tex;
+                                    // });
+                                  },
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(500),
+                                    color: Theme.of(context).hintColor),
+                                child: TextField(
+                                  cursorColor:
+                                      config.Colors().mainAccentColor(1),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline5
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                  controller: wallpaperAppLink,
+                                  focusNode: textFocusNode,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.only(
+                                        left: 30, top: 15),
+                                    border: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    hintText: "Write app link...",
+                                    hintStyle: Theme.of(context)
+                                        .textTheme
+                                        .headline5
+                                        .copyWith(
+                                            color:
+                                                Theme.of(context).accentColor),
+                                    suffixIcon: Icon(
+                                      JamIcons.google_play,
+                                      color: Theme.of(context).accentColor,
+                                    ),
+                                  ),
+                                  onSubmitted: (tex) {
+                                    // setState(() {
+                                    //   defaultText = tex;
+                                    // });
+                                  },
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(500),
+                                    color: Theme.of(context).hintColor),
+                                child: TextField(
+                                  cursorColor:
+                                      config.Colors().mainAccentColor(1),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline5
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                  controller: wallpaperAppWallName,
+                                  focusNode: textFocusNode,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.only(
+                                        left: 30, top: 15),
+                                    border: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    hintText: "Write wallpaper name (optional)",
+                                    hintStyle: Theme.of(context)
+                                        .textTheme
+                                        .headline5
+                                        .copyWith(
+                                            color:
+                                                Theme.of(context).accentColor),
+                                    suffixIcon: Icon(
+                                      JamIcons.picture,
+                                      color: Theme.of(context).accentColor,
+                                    ),
+                                  ),
+                                  onSubmitted: (tex) {
+                                    // setState(() {
+                                    //   defaultText = tex;
+                                    // });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+            ],
           ),
           const Divider(
             height: 1,
