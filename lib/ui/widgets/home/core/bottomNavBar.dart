@@ -225,7 +225,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Home"
-                            ? config.Colors().mainAccentColor(1)
+                            ? config.Colors().mainAccentColor(1) == Colors.black
+                                ? Colors.white
+                                : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Home"
@@ -272,7 +274,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Search"
-                            ? config.Colors().mainAccentColor(1)
+                            ? config.Colors().mainAccentColor(1) == Colors.black
+                                ? Colors.white
+                                : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Search"
@@ -301,6 +305,14 @@ class _BottomNavBarState extends State<BottomNavBar>
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: Container(
                 decoration: BoxDecoration(
+                    border: Border.all(
+                      color: config.Colors().mainAccentColor(1) == Colors.black
+                          ? Colors.white
+                          : config.Colors().mainAccentColor(1),
+                      width: config.Colors().mainAccentColor(1) == Colors.black
+                          ? 1
+                          : 0,
+                    ),
                     color: config.Colors().mainAccentColor(1),
                     borderRadius: BorderRadius.circular(500)),
                 child: IconButton(
@@ -317,7 +329,10 @@ class _BottomNavBarState extends State<BottomNavBar>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(500),
                           color: navStack.last == "Add"
-                              ? config.Colors().mainAccentColor(1)
+                              ? config.Colors().mainAccentColor(1) ==
+                                      Colors.black
+                                  ? Colors.white
+                                  : config.Colors().mainAccentColor(1)
                               : Theme.of(context).accentColor,
                         ),
                         margin: navStack.last == "Add"
@@ -359,7 +374,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Setups"
-                            ? config.Colors().mainAccentColor(1)
+                            ? config.Colors().mainAccentColor(1) == Colors.black
+                                ? Colors.white
+                                : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Setups"
@@ -408,7 +425,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Profile"
-                            ? config.Colors().mainAccentColor(1)
+                            ? config.Colors().mainAccentColor(1) == Colors.black
+                                ? Colors.white
+                                : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Profile"
