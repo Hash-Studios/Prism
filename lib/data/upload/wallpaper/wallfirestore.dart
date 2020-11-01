@@ -62,7 +62,7 @@ Future<void> createSetup(
     String imageURL,
     String wallpaperProvider,
     String wallpaperThumb,
-    String wallpaperUrl,
+    dynamic wallpaperUrl,
     String iconName,
     String iconURL,
     String widgetName,
