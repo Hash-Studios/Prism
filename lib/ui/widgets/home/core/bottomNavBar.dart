@@ -655,33 +655,12 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                       ),
                     ),
                   ),
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        "Setups",
-                        style: TextStyle(
-                            fontSize: 16,
-                            color: Theme.of(context).accentColor,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.only(left: 3),
-                        decoration: BoxDecoration(
-                            color: config.Colors().mainAccentColor(1),
-                            borderRadius: BorderRadius.circular(500)),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 1.0, horizontal: 4),
-                          child: Text(
-                            "BETA",
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Theme.of(context).accentColor,
-                            ),
-                          ),
-                        ),
-                      )
-                    ],
+                  Text(
+                    "Setups",
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.bold),
                   )
                 ],
               ),
