@@ -682,7 +682,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       url: wdata.walls[index].path,
                                       thumbUrl: wdata
                                           .walls[index].thumbs["original"]
-                                          .toString())
+                                          .toString()),
+                                  EditButton(
+                                    url: wdata.walls[index].path,
+                                  ),
                                 ],
                               ),
                             ),
@@ -1712,7 +1715,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   .toString(),
                                               thumbUrl: pdata
                                                   .wallsP[index].src["medium"]
-                                                  .toString())
+                                                  .toString()),
+                                          EditButton(
+                                            url: pdata
+                                                .wallsP[index].src["original"]
+                                                .toString(),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -2252,7 +2260,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                       .toString(),
                                                   thumbUrl: pdata.wallsC[index]
                                                       .src["medium"]
-                                                      .toString())
+                                                      .toString()),
+                                              EditButton(
+                                                url: pdata.wallsC[index]
+                                                    .src["original"]
+                                                    .toString(),
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -2818,7 +2831,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                   url: wdata.wallsS[index].path,
                                                   thumbUrl: wdata.wallsS[index]
                                                       .thumbs["original"]
-                                                      .toString())
+                                                      .toString()),
+                                              EditButton(
+                                                url: wdata.wallsS[index].path,
+                                              ),
                                             ],
                                           ),
                                         ),

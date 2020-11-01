@@ -6,6 +6,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
+import 'package:Prism/ui/widgets/menuButton/editButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
@@ -441,7 +442,13 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                           context,
                                           listen: false)
                                       .profileWalls[index]["wallpaper_thumb"]
-                                      .toString())
+                                      .toString()),
+                              EditButton(
+                                url: Provider.of<ProfileWallProvider>(context,
+                                        listen: false)
+                                    .profileWalls[index]["wallpaper_url"]
+                                    .toString(),
+                              ),
                             ],
                           ),
                         ),
