@@ -21,11 +21,12 @@ Future<void> getNotifications() async {
         writeNotifications(map);
       }
       debugPrint(
-          "-------- ${value.documents.length} new notifications ---------");
+          "-------- ${value.documents.length} new notifications added ---------");
       box.put(
         'date',
         [DateTime.now()],
       );
+      debugPrint("-------- ${DateTime.now()} Fetch Time ---------");
     }).catchError((e) {
       debugPrint(e.toString());
       debugPrint("-------- Notifications fetch error ---------");
@@ -45,8 +46,17 @@ Future<void> getNotifications() async {
                 .toDate()
                 .compareTo(box.get('date')[0] as DateTime) >
             0) {
-          counter++;
-          writeNotifications(map);
+          bool unique = true;
+          for (final notification in box.get('notifications')) {
+            if (map['notification']['title'].toString() ==
+                notification['notification']['title'].toString()) {
+              unique = false;
+            }
+          }
+          if (unique) {
+            counter++;
+            writeNotifications(map);
+          }
         }
       }
       debugPrint("-------- $counter new notifications ---------");
@@ -54,6 +64,7 @@ Future<void> getNotifications() async {
         'date',
         [DateTime.now()],
       );
+      debugPrint("-------- ${DateTime.now()} Fetch Time ---------");
     });
   } else {
     debugPrint("-------- No need to refresh --------");
