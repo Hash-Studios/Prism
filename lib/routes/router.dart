@@ -7,6 +7,7 @@ import 'package:Prism/ui/pages/download/downloadWallpaperViewScreen.dart';
 import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
+import 'package:Prism/ui/pages/home/wallpapers/wallpaperFilterScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/wallpaperScreen.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/pages/profile/photographerProfile.dart';
@@ -31,6 +32,7 @@ import 'package:Prism/ui/pages/upload/uploadSetupScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as imagelib;
 
 List<String> navStack = ["Home"];
 
@@ -245,6 +247,16 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: sharePrismRoute);
       return CupertinoPageRoute(
           builder: (context) => SharePrismScreen(), fullscreenDialog: true);
+    case wallpaperFilterRoute:
+      navStack.add("Wallpaper Filter");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: wallpaperFilterRoute);
+      return CupertinoPageRoute(
+          builder: (context) => WallpaperFilterScreen(
+                image: (settings.arguments as List)[0] as imagelib.Image,
+                filename: (settings.arguments as List)[1] as String,
+              ),
+          fullscreenDialog: true);
     default:
       navStack.add("undefined");
       debugPrint(navStack.toString());
