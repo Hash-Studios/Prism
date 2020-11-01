@@ -1,6 +1,7 @@
 import 'package:Prism/main.dart' as main;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:intl/intl.dart';
 
 Firestore firestore = Firestore.instance;
 Future<void> createRecord(
@@ -31,6 +32,24 @@ Future<void> createRecord(
     'twitter': main.prefs.get('twitter') ?? "",
     'instagram': main.prefs.get('instagram') ?? "",
   });
+  int wallsUploaded = main.prefs.get("wallsUploaded") as int ?? 0;
+  if (main.prefs.get('date') !=
+      DateFormat("yy-MM-dd").format(
+        DateTime.now(),
+      )) {
+    wallsUploaded = 0;
+  }
+  main.prefs.put(
+    'date',
+    DateFormat("yy-MM-dd").format(
+      DateTime.now(),
+    ),
+  );
+  wallsUploaded++;
+  main.prefs.put("wallsUploaded", wallsUploaded);
+  if (wallsUploaded > 5) {
+    toasts.codeSend("Please try to upload less than 5 walls a day.");
+  }
   if (main.prefs.get('premium') == true) {
     toasts.codeSend("Succesfully uploaded");
   } else {
