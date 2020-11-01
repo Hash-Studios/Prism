@@ -13,7 +13,7 @@ Map wall;
 Future<Map> getCollections() async {
   if (navStack.last == "Home") {
     final box = Hive.box('collections');
-    debugPrint(box.get('collections').toString());
+    // debugPrint(box.get('collections').toString());
     if ((box.get('date') !=
             DateFormat("yy-MM-dd").format(
               DateTime.now(),
