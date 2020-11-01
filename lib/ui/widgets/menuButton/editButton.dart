@@ -34,7 +34,9 @@ class _EditButtonState extends State<EditButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        onEdit(widget.url);
+        if (!isLoading) {
+          onEdit(widget.url);
+        }
       },
       child: Stack(
         children: [

@@ -67,7 +67,9 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: config.Colors().mainAccentColor(1),
+            color: config.Colors().mainAccentColor(1) == Colors.black
+                ? const Color(0xFFE57697)
+                : config.Colors().mainAccentColor(1),
           ),
           child: const SizedBox(
             width: 55,
