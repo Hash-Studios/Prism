@@ -9,6 +9,7 @@ import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
+import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -195,6 +196,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 )
               : const Center(child: Text('No new notifications')),
         ),
+        floatingActionButton: notifications.isNotEmpty
+            ? FloatingActionButton(
+                mini: true,
+                onPressed: () {
+                  setState(() {
+                    notifications = [];
+                    final Box<List> box = Hive.box('notifications');
+                    box.put('notifications', notifications);
+                  });
+                },
+                child: const Icon(JamIcons.trash),
+              )
+            : Container(),
       ),
     );
   }
@@ -204,6 +218,31 @@ class NotificationCard extends StatelessWidget {
   final NotifData notification;
 
   const NotificationCard({this.notification});
+
+  static String stringForDatetime(DateTime dt) {
+    var dtInLocal = dt.toLocal();
+    var now = DateTime.now().toLocal();
+    var dateString = "";
+
+    var diff = now.difference(dtInLocal);
+
+    if (now.day == dtInLocal.day) {
+      var todayFormat = DateFormat("h:mm a");
+      dateString += todayFormat.format(dtInLocal);
+    } else if ((diff.inDays) == 1 ||
+        (diff.inSeconds < 86400 && now.day != dtInLocal.day)) {
+      var yesterdayFormat = DateFormat("h:mm a");
+      dateString += "Yesterday, " + yesterdayFormat.format(dtInLocal);
+    } else if (now.year == dtInLocal.year && diff.inDays > 1) {
+      var monthFormat = DateFormat("MMM d");
+      dateString += monthFormat.format(dtInLocal);
+    } else {
+      var yearFormat = DateFormat("MMM d y");
+      dateString += yearFormat.format(dtInLocal);
+    }
+
+    return dateString;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -236,10 +275,28 @@ class NotificationCard extends StatelessWidget {
             }
           },
           child: Ink(
-            child: CachedNetworkImage(
-              imageUrl: notification.imageUrl ??
-                  "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
-              fit: BoxFit.cover,
+            child: Stack(
+              children: [
+                CachedNetworkImage(
+                  imageUrl: notification.imageUrl ??
+                      "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
+                  fit: BoxFit.cover,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Text(
+                      stringForDatetime(notification.createdAt),
+                      style: const TextStyle(
+                        backgroundColor: Colors.white24,
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         )

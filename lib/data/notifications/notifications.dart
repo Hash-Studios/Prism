@@ -49,7 +49,7 @@ Future<void> getNotifications() async {
           bool unique = true;
           for (final notification in box.get('notifications')) {
             if (map['notification']['title'].toString() ==
-                notification['notification']['title'].toString()) {
+                notification.title.toString()) {
               unique = false;
             }
           }
