@@ -188,36 +188,36 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
-  void showPremiumPopUp(Function func) {
-    if (main.prefs.get("isLoggedin") == false) {
-      toasts.codeSend("Variants are a premium feature.");
-      googleSignInPopUp(context, () {
-        if (main.prefs.get("premium") == false) {
-          Navigator.pushNamed(context, premiumRoute);
-        } else {
-          func();
-        }
-      });
-    } else {
-      if (main.prefs.get("premium") == false) {
-        toasts.codeSend("Variants are a premium feature.");
-        Navigator.pushNamed(context, premiumRoute);
-      } else {
-        func();
-      }
-    }
-  }
+  // void showPremiumPopUp(Function func) {
+  //   if (main.prefs.get("isLoggedin") == false) {
+  //     toasts.codeSend("Variants are a premium feature.");
+  //     googleSignInPopUp(context, () {
+  //       if (main.prefs.get("premium") == false) {
+  //         Navigator.pushNamed(context, premiumRoute);
+  //       } else {
+  //         func();
+  //       }
+  //     });
+  //   } else {
+  //     if (main.prefs.get("premium") == false) {
+  //       toasts.codeSend("Variants are a premium feature.");
+  //       Navigator.pushNamed(context, premiumRoute);
+  //     } else {
+  //       func();
+  //     }
+  //   }
+  // }
 
   Future<void> onPaint() async {
     HapticFeedback.vibrate();
     if (widget.colorChanged) {
-      showPremiumPopUp(() async {
-        setState(() {
-          isLoading = true;
-        });
-        Future.delayed(const Duration(seconds: 1))
-            .then((value) => _setWallPaper());
+      // showPremiumPopUp(() async {
+      setState(() {
+        isLoading = true;
       });
+      Future.delayed(const Duration(seconds: 1))
+          .then((value) => _setWallPaper());
+      // });
     } else {
       setState(() {
         isLoading = true;
@@ -267,13 +267,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                             HapticFeedback.vibrate();
                             Navigator.of(context).pop();
                             if (widget.colorChanged) {
-                              showPremiumPopUp(() async {
-                                setState(() {
-                                  isLoading = true;
-                                });
-                                Future.delayed(const Duration(seconds: 1))
-                                    .then((value) => _setHomeWallPaper());
+                              // showPremiumPopUp(() async {
+                              setState(() {
+                                isLoading = true;
                               });
+                              Future.delayed(const Duration(seconds: 1))
+                                  .then((value) => _setHomeWallPaper());
+                              // });
                             } else {
                               setState(() {
                                 isLoading = true;
@@ -287,13 +287,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                                 HapticFeedback.vibrate();
                                 Navigator.of(context).pop();
                                 if (widget.colorChanged) {
-                                  showPremiumPopUp(() async {
-                                    setState(() {
-                                      isLoading = true;
-                                    });
-                                    Future.delayed(const Duration(seconds: 1))
-                                        .then((value) => _setLockWallPaper());
+                                  // showPremiumPopUp(() async {
+                                  setState(() {
+                                    isLoading = true;
                                   });
+                                  Future.delayed(const Duration(seconds: 1))
+                                      .then((value) => _setLockWallPaper());
+                                  // });
                                 } else {
                                   setState(() {
                                     isLoading = true;
@@ -306,13 +306,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                                 HapticFeedback.vibrate();
                                 Navigator.of(context).pop();
                                 if (widget.colorChanged) {
-                                  showPremiumPopUp(() async {
-                                    setState(() {
-                                      isLoading = true;
-                                    });
-                                    Future.delayed(const Duration(seconds: 1))
-                                        .then((value) => _setBothWallPaper());
+                                  // showPremiumPopUp(() async {
+                                  setState(() {
+                                    isLoading = true;
                                   });
+                                  Future.delayed(const Duration(seconds: 1))
+                                      .then((value) => _setBothWallPaper());
+                                  // });
                                 } else {
                                   setState(() {
                                     isLoading = true;
