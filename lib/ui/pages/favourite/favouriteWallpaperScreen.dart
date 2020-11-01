@@ -6,6 +6,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
+import 'package:Prism/ui/widgets/menuButton/editButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
@@ -862,7 +863,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               context,
                                               listen: false)
                                           .liked[index]["thumb"]
-                                          .toString())
+                                          .toString()),
+                                           EditButton(
+                                                url: Provider.of<FavouriteProvider>(
+                                              context,
+                                              listen: false)
+                                          .liked[index]["url"]
+                                          .toString(),
+                                              ),
                                 ],
                               ),
                             ),
@@ -1320,7 +1328,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                             context,
                                                             listen: false)
                                                         .liked[index]["thumb"]
-                                                        .toString())
+                                                        .toString()),
+                                                        EditButton(
+                                                url:  Provider.of<FavouriteProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .liked[index]["url"]
+                                                    .toString(),
+                                              ),
                                           ]
                                         : <Widget>[
                                             DownloadButton(

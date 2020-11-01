@@ -13,6 +13,7 @@ import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
+import 'package:Prism/ui/widgets/menuButton/editButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
@@ -491,7 +492,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                               url: WData.wall.path.toString(),
                                               thumbUrl: WData
                                                   .wall.thumbs["original"]
-                                                  .toString())
+                                                  .toString()),
+                                          EditButton(
+                                            url: WData.wall.path.toString(),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -1032,7 +1036,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       .toString(),
                                                   thumbUrl: Data
                                                       .wall["wallpaper_thumb"]
-                                                      .toString())
+                                                      .toString()),
+                                              EditButton(
+                                                url: Data.wall["wallpaper_url"]
+                                                    .toString(),
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -1580,7 +1588,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                             .toString(),
                                                         thumbUrl: PData
                                                             .wall.src["medium"]
-                                                            .toString())
+                                                            .toString()),
+                                                    EditButton(
+                                                      url: PData
+                                                          .wall.src["original"]
+                                                          .toString(),
+                                                    ),
                                                   ],
                                                 ),
                                               ),

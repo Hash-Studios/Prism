@@ -8,6 +8,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/home/core/colorBar.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
+import 'package:Prism/ui/widgets/menuButton/editButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
@@ -444,7 +445,10 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                       url: wdata.wallsS[index].path,
                                       thumbUrl: wdata
                                           .wallsS[index].thumbs["original"]
-                                          .toString())
+                                          .toString()),
+                                  EditButton(
+                                    url: wdata.wallsS[index].path,
+                                  ),
                                 ],
                               ),
                             ),
@@ -929,7 +933,11 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                           .toString(),
                                       thumbUrl: pdata
                                           .wallsPS[index].src["medium"]
-                                          .toString())
+                                          .toString()),
+                                  EditButton(
+                                    url: pdata.wallsPS[index].src["original"]
+                                        .toString(),
+                                  ),
                                 ],
                               ),
                             ),
