@@ -67,6 +67,8 @@ Future<void> createSetup(
     String iconURL,
     String widgetName,
     String widgetURL,
+    String widgetName2,
+    String widgetURL2,
     String setupName,
     String setupDesc,
     bool review) async {
@@ -83,6 +85,8 @@ Future<void> createSetup(
     'icon_url': iconURL,
     'widget': widgetName,
     'widget_url': widgetURL,
+    'widget2': widgetName2,
+    'widget_url2': widgetURL2,
     'name': setupName,
     'desc': setupDesc,
     'review': review,
