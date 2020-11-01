@@ -58,7 +58,7 @@ class _EditButtonState extends State<EditButton> {
             ),
             padding: const EdgeInsets.all(17),
             child: Icon(
-              JamIcons.settings_alt,
+              JamIcons.pencil,
               color: Theme.of(context).accentColor,
               size: 20,
             ),

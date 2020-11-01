@@ -61,8 +61,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   PanelController panelController = PanelController();
   bool panelClosed = true;
   bool panelCollapsed = true;
-  final PageController _pageController = PageController(initialPage: 1);
-  int _current = 1;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -906,11 +904,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                     parallaxEnabled: true,
                     parallaxOffset: 0.00,
                     color: Colors.transparent,
-                    maxHeight: MediaQuery.of(context).size.height * .45,
+                    maxHeight: MediaQuery.of(context).size.height * .43,
                     controller: panelController,
                     panel: Container(
                       margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                      height: MediaQuery.of(context).size.height * .45,
+                      height: MediaQuery.of(context).size.height * .43,
                       width: MediaQuery.of(context).size.width,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(30),
@@ -943,293 +941,215 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                     ),
                                   ),
                                 )),
+                                ColorBar(colors: colors),
                                 Expanded(
-                                  flex: 13,
-                                  child: PageView.builder(
-                                    controller: _pageController,
-                                    onPageChanged: (value) {
-                                      setState(() {
-                                        _current = value;
-                                      });
-                                    },
-                                    itemCount: 3,
-                                    itemBuilder: (context, idx) {
-                                      return idx == 1
-                                          ? Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                  flex: 8,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        35, 0, 35, 10),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: <Widget>[
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      0, 5, 0, 10),
+                                              child: Text(
+                                                data.subPrismWalls[index]["id"]
+                                                    .toString()
+                                                    .toUpperCase(),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText1
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Row(
                                               children: [
-                                                ColorBar(colors: colors),
-                                                Expanded(
-                                                  flex: 8,
-                                                  child: Padding(
-                                                    padding: const EdgeInsets
-                                                            .fromLTRB(
-                                                        35, 0, 35, 10),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .end,
-                                                      children: <Widget>[
-                                                        Column(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: <Widget>[
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                          .fromLTRB(
-                                                                      0,
-                                                                      5,
-                                                                      0,
-                                                                      10),
-                                                              child: Text(
-                                                                data.subPrismWalls[
-                                                                        index]
-                                                                        ["id"]
-                                                                    .toString()
-                                                                    .toUpperCase(),
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyText1
-                                                                    .copyWith(
-                                                                        color: Theme.of(context)
-                                                                            .accentColor),
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                                height: 5),
-                                                            Row(
-                                                              children: [
-                                                                Icon(
-                                                                  JamIcons
-                                                                      .arrow_circle_right,
-                                                                  size: 20,
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor
-                                                                      .withOpacity(
-                                                                          .7),
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 10),
-                                                                Text(
-                                                                  data.subPrismWalls[
-                                                                          index]
-                                                                          [
-                                                                          "desc"]
-                                                                      .toString(),
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodyText2
-                                                                      .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).accentColor),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            const SizedBox(
-                                                                height: 5),
-                                                            Row(
-                                                              children: [
-                                                                Icon(
-                                                                  JamIcons.save,
-                                                                  size: 20,
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor
-                                                                      .withOpacity(
-                                                                          .7),
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 10),
-                                                                Text(
-                                                                  data.subPrismWalls[
-                                                                          index]
-                                                                          [
-                                                                          "size"]
-                                                                      .toString(),
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodyText2
-                                                                      .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).accentColor),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Column(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .end,
-                                                          children: <Widget>[
-                                                            SizedBox(
-                                                              width: 160,
-                                                              child: Align(
-                                                                alignment: Alignment
-                                                                    .centerRight,
-                                                                child:
-                                                                    ActionChip(
-                                                                  onPressed:
-                                                                      () {
-                                                                    SystemChrome
-                                                                        .setEnabledSystemUIOverlays([
-                                                                      SystemUiOverlay
-                                                                          .top,
-                                                                      SystemUiOverlay
-                                                                          .bottom
-                                                                    ]);
-                                                                    Navigator.pushNamed(
-                                                                        context,
-                                                                        photographerProfileRoute,
-                                                                        arguments: [
-                                                                          data.subPrismWalls[index]
-                                                                              [
-                                                                              "by"],
-                                                                          data.subPrismWalls[index]
-                                                                              [
-                                                                              "email"],
-                                                                          data.subPrismWalls[index]
-                                                                              [
-                                                                              "userPhoto"],
-                                                                          false,
-                                                                          data.subPrismWalls[index]["twitter"] ??
-                                                                              "",
-                                                                          data.subPrismWalls[index]["instagram"] ??
-                                                                              ""
-                                                                        ]);
-                                                                  },
-                                                                  padding: const EdgeInsets
-                                                                          .symmetric(
-                                                                      vertical:
-                                                                          5,
-                                                                      horizontal:
-                                                                          5),
-                                                                  avatar:
-                                                                      CircleAvatar(
-                                                                    backgroundImage: CachedNetworkImageProvider(data
-                                                                        .subPrismWalls[
-                                                                            index]
-                                                                            [
-                                                                            "userPhoto"]
-                                                                        .toString()),
-                                                                  ),
-                                                                  labelPadding:
-                                                                      const EdgeInsets
-                                                                              .fromLTRB(
-                                                                          7,
-                                                                          3,
-                                                                          7,
-                                                                          3),
-                                                                  label: Text(
-                                                                    data.subPrismWalls[
-                                                                            index]
-                                                                            [
-                                                                            "by"]
-                                                                        .toString(),
-                                                                    style: Theme.of(
-                                                                            context)
-                                                                        .textTheme
-                                                                        .bodyText2
-                                                                        .copyWith(
-                                                                            color: Theme.of(context)
-                                                                                .accentColor)
-                                                                        .copyWith(
-                                                                            fontSize:
-                                                                                16),
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .ellipsis,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                                height: 5),
-                                                            Row(
-                                                              children: [
-                                                                Text(
-                                                                  data.subPrismWalls[
-                                                                          index]
-                                                                          [
-                                                                          "resolution"]
-                                                                      .toString(),
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodyText2
-                                                                      .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).accentColor),
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 10),
-                                                                Icon(
-                                                                  JamIcons
-                                                                      .set_square,
-                                                                  size: 20,
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor
-                                                                      .withOpacity(
-                                                                          .7),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            const SizedBox(
-                                                                height: 5),
-                                                            Row(
-                                                              children: [
-                                                                Text(
-                                                                  provider
-                                                                      .toString(),
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodyText2
-                                                                      .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).accentColor),
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 10),
-                                                                Icon(
-                                                                  JamIcons
-                                                                      .database,
-                                                                  size: 20,
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor
-                                                                      .withOpacity(
-                                                                          .7),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
+                                                Icon(
+                                                  JamIcons.arrow_circle_right,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  data.subPrismWalls[index]
+                                                          ["desc"]
+                                                      .toString(),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
                                                 ),
                                               ],
-                                            )
-                                          : idx == 0
-                                              ? Container()
-                                              : Container();
-                                    },
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.save,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  data.subPrismWalls[index]
+                                                          ["size"]
+                                                      .toString(),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: <Widget>[
+                                            SizedBox(
+                                              width: 160,
+                                              child: Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: ActionChip(
+                                                  onPressed: () {
+                                                    SystemChrome
+                                                        .setEnabledSystemUIOverlays([
+                                                      SystemUiOverlay.top,
+                                                      SystemUiOverlay.bottom
+                                                    ]);
+                                                    Navigator.pushNamed(context,
+                                                        photographerProfileRoute,
+                                                        arguments: [
+                                                          data.subPrismWalls[
+                                                              index]["by"],
+                                                          data.subPrismWalls[
+                                                              index]["email"],
+                                                          data.subPrismWalls[
+                                                                  index]
+                                                              ["userPhoto"],
+                                                          false,
+                                                          data.subPrismWalls[
+                                                                      index]
+                                                                  ["twitter"] ??
+                                                              "",
+                                                          data.subPrismWalls[
+                                                                      index][
+                                                                  "instagram"] ??
+                                                              ""
+                                                        ]);
+                                                  },
+                                                  padding: const EdgeInsets
+                                                          .symmetric(
+                                                      vertical: 5,
+                                                      horizontal: 5),
+                                                  avatar: CircleAvatar(
+                                                    backgroundImage:
+                                                        CachedNetworkImageProvider(
+                                                            data
+                                                                .subPrismWalls[
+                                                                    index][
+                                                                    "userPhoto"]
+                                                                .toString()),
+                                                  ),
+                                                  labelPadding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          7, 3, 7, 3),
+                                                  label: Text(
+                                                    data.subPrismWalls[index]
+                                                            ["by"]
+                                                        .toString(),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2
+                                                        .copyWith(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor)
+                                                        .copyWith(fontSize: 16),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  data.subPrismWalls[index]
+                                                          ["resolution"]
+                                                      .toString(),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Icon(
+                                                  JamIcons.set_square,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  provider.toString(),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Icon(
+                                                  JamIcons.database,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                                 Expanded(
@@ -1268,44 +1188,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               .toString(),
                                           thumbUrl: data.subPrismWalls[index]
                                                   ["wallpaper_thumb"]
-                                              .toString()),EditButton(url:data.subPrismWalls[index]
+                                              .toString()),
+                                      EditButton(
+                                          url: data.subPrismWalls[index]
                                                   ["wallpaper_url"]
                                               .toString()),
                                     ],
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [0, 1, 2].map((i) {
-                                      return AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 250),
-                                        curve: Curves.easeOutCubic,
-                                        width: _current == i ? 8.0 : 7.0,
-                                        height: _current == i ? 8.0 : 7.0,
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 14.0, horizontal: 2.0),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: _current == i
-                                              ? config.Colors()
-                                                  .mainAccentColor(1)
-                                              : config.Colors()
-                                                  .mainAccentColor(1)
-                                                  .withOpacity(0),
-                                          border: Border.all(
-                                            color: _current == i
-                                                ? config.Colors()
-                                                    .mainAccentColor(1)
-                                                    .withOpacity(0)
-                                                : config.Colors()
-                                                    .mainAccentColor(1),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
                                   ),
                                 )
                               ],
