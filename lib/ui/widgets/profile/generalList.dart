@@ -81,6 +81,8 @@ class _GeneralListState extends State<GeneralList> {
               await Hive.openBox('wallpapers');
               await Hive.box('collections').deleteFromDisk();
               await Hive.openBox('collections');
+              await Hive.box('setups').deleteFromDisk();
+              await Hive.openBox('setups');
               toasts.codeSend("Cleared cache!");
             }),
         SwitchListTile(
