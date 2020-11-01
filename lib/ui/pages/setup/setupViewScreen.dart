@@ -373,139 +373,314 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                           ),
                         ),
                       ),
-                      Provider.of<SetupProvider>(context, listen: false)
-                                  .setups[index]["widget"] ==
-                              ""
-                          ? Expanded(
-                              flex: 5,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: <Widget>[
-                                  DownloadButton(
-                                    link: Provider.of<SetupProvider>(context,
-                                            listen: false)
-                                        .setups[index]["wallpaper_url"]
-                                        .toString(),
-                                    colorChanged: false,
+                      Provider.of<SetupProvider>(context, listen: false).setups[index]["widget"] == "" ||
+                              Provider.of<SetupProvider>(context, listen: false)
+                                      .setups[index]["widget"] ==
+                                  null
+                          ? Provider.of<SetupProvider>(context, listen: false)
+                                          .setups[index]["widget2"] ==
+                                      "" ||
+                                  Provider.of<SetupProvider>(context, listen: false)
+                                          .setups[index]["widget2"] ==
+                                      null
+                              ? Expanded(
+                                  flex: 5,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      ModifiedDownloadButton(index: index),
+                                      ModifiedSetWallpaperButton(index: index),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          launch(Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["icon_url"]
+                                              .toString());
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.25),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 4))
+                                            ],
+                                            borderRadius:
+                                                BorderRadius.circular(500),
+                                          ),
+                                          padding: const EdgeInsets.all(17),
+                                          child: Icon(
+                                            JamIcons.google_play_circle,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      )
+                                    ],
                                   ),
-                                  SetWallpaperButton(
-                                    url: Provider.of<SetupProvider>(context,
-                                            listen: false)
-                                        .setups[index]["wallpaper_url"]
-                                        .toString(),
-                                    colorChanged: false,
+                                )
+                              : Expanded(
+                                  flex: 5,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: <Widget>[
+                                      ModifiedDownloadButton(index: index),
+                                      ModifiedSetWallpaperButton(index: index),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          launch(Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["icon_url"]
+                                              .toString());
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.25),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 4))
+                                            ],
+                                            borderRadius:
+                                                BorderRadius.circular(500),
+                                          ),
+                                          padding: const EdgeInsets.all(17),
+                                          child: Icon(
+                                            JamIcons.google_play_circle,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          launch(Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["widget_url2"]
+                                              .toString());
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.25),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 4))
+                                            ],
+                                            borderRadius:
+                                                BorderRadius.circular(500),
+                                          ),
+                                          padding: const EdgeInsets.all(17),
+                                          child: Icon(
+                                            JamIcons.google_play,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      )
+                                    ],
                                   ),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      launch(Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups[index]["icon_url"]
-                                          .toString());
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).primaryColor,
-                                        boxShadow: [
-                                          BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(.25),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 4))
-                                        ],
-                                        borderRadius:
-                                            BorderRadius.circular(500),
+                                )
+                          : Provider.of<SetupProvider>(context, listen: false)
+                                          .setups[index]["widget2"] ==
+                                      "" ||
+                                  Provider.of<SetupProvider>(context, listen: false)
+                                          .setups[index]["widget2"] ==
+                                      null
+                              ? Expanded(
+                                  flex: 5,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: <Widget>[
+                                      ModifiedDownloadButton(index: index),
+                                      ModifiedSetWallpaperButton(index: index),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          launch(Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["icon_url"]
+                                              .toString());
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.25),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 4))
+                                            ],
+                                            borderRadius:
+                                                BorderRadius.circular(500),
+                                          ),
+                                          padding: const EdgeInsets.all(17),
+                                          child: Icon(
+                                            JamIcons.google_play_circle,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                            size: 20,
+                                          ),
+                                        ),
                                       ),
-                                      padding: const EdgeInsets.all(17),
-                                      child: Icon(
-                                        JamIcons.google_play_circle,
-                                        color: Theme.of(context).accentColor,
-                                        size: 30,
-                                      ),
-                                    ),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          launch(Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["widget_url"]
+                                              .toString());
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.25),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 4))
+                                            ],
+                                            borderRadius:
+                                                BorderRadius.circular(500),
+                                          ),
+                                          padding: const EdgeInsets.all(17),
+                                          child: Icon(
+                                            JamIcons.google_play,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      )
+                                    ],
                                   ),
-                                ],
-                              ),
-                            )
-                          : Expanded(
-                              flex: 5,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: <Widget>[
-                                  DownloadButton(
-                                    link: Provider.of<SetupProvider>(context,
-                                            listen: false)
-                                        .setups[index]["wallpaper_url"]
-                                        .toString(),
-                                    colorChanged: false,
+                                )
+                              : Expanded(
+                                  flex: 5,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: <Widget>[
+                                      ModifiedDownloadButton(index: index),
+                                      ModifiedSetWallpaperButton(index: index),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          launch(Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["icon_url"]
+                                              .toString());
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.25),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 4))
+                                            ],
+                                            borderRadius:
+                                                BorderRadius.circular(500),
+                                          ),
+                                          padding: const EdgeInsets.all(17),
+                                          child: Icon(
+                                            JamIcons.google_play_circle,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          launch(Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["widget_url"]
+                                              .toString());
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.25),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 4))
+                                            ],
+                                            borderRadius:
+                                                BorderRadius.circular(500),
+                                          ),
+                                          padding: const EdgeInsets.all(17),
+                                          child: Icon(
+                                            JamIcons.google_play,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          launch(Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["widget_url2"]
+                                              .toString());
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(.25),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 4))
+                                            ],
+                                            borderRadius:
+                                                BorderRadius.circular(500),
+                                          ),
+                                          padding: const EdgeInsets.all(17),
+                                          child: Icon(
+                                            JamIcons.google_play,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      )
+                                    ],
                                   ),
-                                  SetWallpaperButton(
-                                    url: Provider.of<SetupProvider>(context,
-                                            listen: false)
-                                        .setups[index]["wallpaper_url"]
-                                        .toString(),
-                                    colorChanged: false,
-                                  ),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      launch(Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups[index]["icon_url"]
-                                          .toString());
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).primaryColor,
-                                        boxShadow: [
-                                          BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(.25),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 4))
-                                        ],
-                                        borderRadius:
-                                            BorderRadius.circular(500),
-                                      ),
-                                      padding: const EdgeInsets.all(17),
-                                      child: Icon(
-                                        JamIcons.google_play_circle,
-                                        color: Theme.of(context).accentColor,
-                                        size: 30,
-                                      ),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      launch(Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups[index]["widget_url"]
-                                          .toString());
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).primaryColor,
-                                        boxShadow: [
-                                          BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(.25),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 4))
-                                        ],
-                                        borderRadius:
-                                            BorderRadius.circular(500),
-                                      ),
-                                      padding: const EdgeInsets.all(17),
-                                      child: Icon(
-                                        JamIcons.google_play,
-                                        color: Theme.of(context).accentColor,
-                                        size: 30,
-                                      ),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
+                                ),
                     ],
                   ),
                 ),
@@ -634,6 +809,92 @@ class _SetupViewScreenState extends State<SetupViewScreen>
         ),
       ),
     );
+  }
+}
+
+class ModifiedDownloadButton extends StatelessWidget {
+  final int index;
+  const ModifiedDownloadButton({@required this.index});
+  @override
+  Widget build(BuildContext context) {
+    return Provider.of<SetupProvider>(context, listen: false)
+                .setups[index]["wallpaper_url"]
+                .toString()[0] !=
+            "["
+        ? DownloadButton(
+            link: Provider.of<SetupProvider>(context, listen: false)
+                .setups[index]["wallpaper_url"]
+                .toString(),
+            colorChanged: false,
+          )
+        : GestureDetector(
+            onTap: () async {
+              launch(Provider.of<SetupProvider>(context, listen: false)
+                  .setups[index]["wallpaper_url"][1]
+                  .toString());
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(.25),
+                      blurRadius: 4,
+                      offset: const Offset(0, 4))
+                ],
+                borderRadius: BorderRadius.circular(500),
+              ),
+              padding: const EdgeInsets.all(17),
+              child: Icon(
+                JamIcons.download,
+                color: Theme.of(context).accentColor,
+                size: 20,
+              ),
+            ),
+          );
+  }
+}
+
+class ModifiedSetWallpaperButton extends StatelessWidget {
+  final int index;
+  const ModifiedSetWallpaperButton({@required this.index});
+  @override
+  Widget build(BuildContext context) {
+    return Provider.of<SetupProvider>(context, listen: false)
+                .setups[index]["wallpaper_url"]
+                .toString()[0] !=
+            "["
+        ? SetWallpaperButton(
+            url: Provider.of<SetupProvider>(context, listen: false)
+                .setups[index]["wallpaper_url"]
+                .toString(),
+            colorChanged: false,
+          )
+        : GestureDetector(
+            onTap: () async {
+              launch(Provider.of<SetupProvider>(context, listen: false)
+                  .setups[index]["wallpaper_url"][1]
+                  .toString());
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(.25),
+                      blurRadius: 4,
+                      offset: const Offset(0, 4))
+                ],
+                borderRadius: BorderRadius.circular(500),
+              ),
+              padding: const EdgeInsets.all(17),
+              child: Icon(
+                JamIcons.picture,
+                color: Theme.of(context).accentColor,
+                size: 20,
+              ),
+            ),
+          );
   }
 }
 

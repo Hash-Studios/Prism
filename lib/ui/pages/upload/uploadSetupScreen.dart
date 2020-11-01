@@ -98,7 +98,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
         children: const [
-          Icon(JamIcons.google_play_circle),
+          Icon(JamIcons.google_play),
           Text("Widgets"),
         ],
       ),
@@ -109,7 +109,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         mainAxisSize: MainAxisSize.min,
         children: const [
-          Icon(JamIcons.google_play),
+          Icon(JamIcons.google_play_circle),
           Text("Icons"),
         ],
       ),
@@ -262,7 +262,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                 "Post",
                 style: TextStyle(
                   color: !isProcessing && !isUploading
-                      ? config.Colors().accentColor(1)
+                      ? config.Colors().mainAccentColor(1)
                       : Theme.of(context).hintColor,
                   fontWeight: FontWeight.normal,
                 ),
@@ -488,7 +488,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 suffixIcon: Icon(
-                                  JamIcons.google_play_circle,
+                                  JamIcons.google_play,
                                   color: Theme.of(context).accentColor,
                                 ),
                               ),
@@ -587,7 +587,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                               color: Theme.of(context)
                                                   .accentColor),
                                       suffixIcon: Icon(
-                                        JamIcons.google_play_circle,
+                                        JamIcons.google_play,
                                         color: Theme.of(context).accentColor,
                                       ),
                                     ),
@@ -674,7 +674,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 suffixIcon: Icon(
-                                  JamIcons.google_play,
+                                  JamIcons.google_play_circle,
                                   color: Theme.of(context).accentColor,
                                 ),
                               ),
