@@ -314,6 +314,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                               color: Theme.of(
                                                                       context)
                                                                   .accentColor),
+                                                      overflow:
+                                                          TextOverflow.fade,
                                                     ),
                                                     padding: const EdgeInsets
                                                             .symmetric(

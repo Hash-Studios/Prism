@@ -1095,8 +1095,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                     context)
                                                                 .accentColor)
                                                         .copyWith(fontSize: 16),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                    overflow: TextOverflow.fade,
                                                   ),
                                                 ),
                                               ),
@@ -2766,12 +2765,16 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     Row(
                                                       children: [
                                                         Text(
-                                                          provider
-                                                                  .toString()[0]
-                                                                  .toUpperCase() +
-                                                              provider
-                                                                  .toString()
-                                                                  .substring(1),
+                                                          provider.isNotEmpty
+                                                              ? provider
+                                                                      .toString()[
+                                                                          0]
+                                                                      .toUpperCase() +
+                                                                  provider
+                                                                      .toString()
+                                                                      .substring(
+                                                                          1)
+                                                              : "Search",
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
