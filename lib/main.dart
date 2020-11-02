@@ -16,6 +16,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/router.dart' as router;
+import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:hive/hive.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:path_provider/path_provider.dart';
@@ -103,6 +104,50 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  List<DisplayMode> modes = <DisplayMode>[];
+  DisplayMode selected;
+  Future<void> fetchModes() async {
+    try {
+      modes = await FlutterDisplayMode.supported;
+      modes.forEach(print);
+
+      /// On OnePlus 7 Pro:
+      /// #1 1080x2340 @ 60Hz
+      /// #2 1080x2340 @ 90Hz
+      /// #3 1440x3120 @ 90Hz
+      /// #4 1440x3120 @ 60Hz
+      /// On OnePlus 8 Pro:
+      /// #1 1080x2376 @ 60Hz
+      /// #2 1440x3168 @ 120Hz
+      /// #3 1440x3168 @ 60Hz
+      /// #4 1080x2376 @ 120Hz
+    } on PlatformException catch (e) {
+      print(e);
+
+      /// e.code =>
+      /// noAPI - No API support. Only Marshmallow and above.
+      /// noActivity - Activity is not available. Probably app is in background
+    }
+    selected =
+        modes.firstWhere((DisplayMode m) => m.selected, orElse: () => null);
+    // if (mounted) {
+    //   setState(() {});
+    // }
+  }
+
+  Future<DisplayMode> getCurrentMode() async {
+    return FlutterDisplayMode.current;
+  }
+
+  Future<void> setCurrentMode(int index) async {
+    await fetchModes();
+    if (modes.length > index - 1) {
+      await FlutterDisplayMode.setMode(modes[index]);
+    }
+    selected =
+        modes.firstWhere((DisplayMode m) => m.selected, orElse: () => null);
+  }
+
   Future<bool> getLoginStatus() async {
     prefs = await Hive.openBox('prefs');
     globals.gAuth.googleSignIn.isSignedIn().then((value) {
@@ -114,6 +159,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
+    setCurrentMode(1);
     getLoginStatus();
     super.initState();
   }
