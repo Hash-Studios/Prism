@@ -22,12 +22,16 @@ import 'package:Prism/main.dart' as main;
 
 class WallpaperFilterScreen extends StatefulWidget {
   final imagelib.Image image;
+  final imagelib.Image finalImage;
   final String filename;
+  final String finalFilename;
 
   const WallpaperFilterScreen({
     Key key,
     @required this.image,
+    @required this.finalImage,
     @required this.filename,
+    @required this.finalFilename,
   }) : super(key: key);
 
   @override
@@ -36,9 +40,11 @@ class WallpaperFilterScreen extends StatefulWidget {
 
 class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   String filename;
+  String finalFilename;
   Map<String, List<int>> cachedFilters = {};
   Filter _filter;
   imagelib.Image image;
+  imagelib.Image finalImage;
   bool loading;
 
   @override
@@ -47,7 +53,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     loading = false;
     _filter = presetFiltersList[0];
     filename = widget.filename;
+    finalFilename = widget.finalFilename;
     image = widget.image;
+    finalImage = widget.finalImage;
   }
 
   @override
@@ -56,6 +64,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<bool> onWillPop() async {
+    SystemChrome.setEnabledSystemUIOverlays([]);
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
     return true;
@@ -95,6 +104,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       debugPrint(e.toString());
     }
+    Navigator.of(context).pop();
   }
 
   Future<void> _setBothWallPaper(String url) async {
@@ -131,6 +141,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
       debugPrint(e.toString());
     }
+    Navigator.of(context).pop();
   }
 
   Future<void> _setLockWallPaper(String url) async {
@@ -167,6 +178,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
     }
+    Navigator.of(context).pop();
   }
 
   Future<void> _setHomeWallPaper(String url) async {
@@ -203,6 +215,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       analytics.logEvent(
           name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
     }
+    Navigator.of(context).pop();
   }
 
   void showPremiumPopUp(Function func) {
@@ -321,6 +334,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
+                SystemChrome.setEnabledSystemUIOverlays([]);
                 navStack.removeLast();
                 debugPrint(navStack.toString());
                 Navigator.pop(context);
@@ -332,6 +346,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 : IconButton(
                     icon: const Icon(JamIcons.check),
                     onPressed: () async {
+                      toasts.codeSend("Processing Wallpaper");
                       final imageFile = await saveFilteredImage();
                       onTapPaint(imageFile.path);
                     },
@@ -353,8 +368,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                         height: double.infinity,
                         child: _buildFilteredImage(
                           _filter,
-                          image,
-                          filename,
+                          finalImage,
+                          finalFilename,
                         ),
                       ),
                     ),
@@ -474,58 +489,71 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<File> get _localFile async {
     final path = await _localPath;
-    return File('$path/filtered_${_filter?.name ?? "_"}_$filename');
+    return File('$path/filtered_${_filter?.name ?? "_"}_$finalFilename');
   }
 
   Future<File> saveFilteredImage() async {
     final imageFile = await _localFile;
-    await imageFile.writeAsBytes(cachedFilters[_filter?.name ?? "_"]);
+    final List<int> finalFilterImageBytes =
+        await compute(applyFilter, <String, dynamic>{
+      "filter": _filter,
+      "image": finalImage,
+      "filename": finalFilename,
+    });
+    await imageFile.writeAsBytes(finalFilterImageBytes);
     return imageFile;
   }
 
   Widget _buildFilteredImage(
       Filter filter, imagelib.Image image, String filename) {
-    if (cachedFilters[filter?.name ?? "_"] == null) {
-      return FutureBuilder<List<int>>(
-        future: compute(applyFilter, <String, dynamic>{
-          "filter": filter,
-          "image": image,
-          "filename": filename,
-        }),
-        builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-              return Center(child: Loader());
-            case ConnectionState.active:
-            case ConnectionState.waiting:
-              return Center(child: Loader());
-            case ConnectionState.done:
-              if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
-              cachedFilters[filter?.name ?? "_"] = snapshot.data;
-              return PhotoView(
-                imageProvider: MemoryImage(
-                  snapshot.data as Uint8List,
-                ),
-                backgroundDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                ),
-              );
-          }
-          return null; // unreachable
-        },
-      );
-    } else {
-      return PhotoView(
-        imageProvider: MemoryImage(
-          cachedFilters[filter?.name ?? "_"] as Uint8List,
-        ),
-        backgroundDecoration: BoxDecoration(
-          color: Theme.of(context).primaryColor,
-        ),
-      );
-    }
+    return FutureBuilder<List<int>>(
+      future: compute(applyFilter, <String, dynamic>{
+        "filter": filter,
+        "image": image,
+        "filename": filename,
+      }),
+      builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+            return cachedFilters[filter?.name ?? "_"] == null
+                ? Center(child: Loader())
+                : PhotoView(
+                    imageProvider: MemoryImage(
+                      cachedFilters[filter?.name ?? "_"] as Uint8List,
+                    ),
+                    backgroundDecoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  );
+          case ConnectionState.active:
+          case ConnectionState.waiting:
+            return cachedFilters[filter?.name ?? "_"] == null
+                ? Center(child: Loader())
+                : PhotoView(
+                    imageProvider: MemoryImage(
+                      cachedFilters[filter?.name ?? "_"] as Uint8List,
+                    ),
+                    backgroundDecoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  );
+          case ConnectionState.done:
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+            cachedFilters[filter?.name ?? "_"] = snapshot.data;
+            return PhotoView(
+              imageProvider: MemoryImage(
+                snapshot.data as Uint8List,
+              ),
+              backgroundDecoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+            );
+        }
+        return null; // unreachable
+      },
+    );
   }
 }
 
