@@ -19,7 +19,7 @@ Future<Map> getCollections() async {
               DateTime.now(),
             )) ||
         (box.get('collections') == null) ||
-        (box.get('collections') == [])) {
+        (box.get('collections').toString() == "[]")) {
       wallpapersForCollections = [];
       collectionNames = {};
       collections = {};
