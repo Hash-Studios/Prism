@@ -280,7 +280,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     listen: false)
                                                 .setups[index]["by"]
                                                 .toString(),
-                                            overflow: TextOverflow.ellipsis,
+                                            overflow: TextOverflow.fade,
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyText2

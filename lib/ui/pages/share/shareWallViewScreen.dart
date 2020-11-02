@@ -931,7 +931,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                           .accentColor)
                                                                   .copyWith(
                                                                       fontSize:
-                                                                          16)),
+                                                                          16),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .fade),
                                                         ),
                                                       ),
                                                     ),
