@@ -46,12 +46,40 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   imagelib.Image image;
   imagelib.Image finalImage;
   bool loading;
+  List<Filter> selectedFilters = [
+    NoFilter(),
+    AdenFilter(),
+    AmaroFilter(),
+    BrannanFilter(),
+    BrooklynFilter(),
+    ClarendonFilter(),
+    DogpatchFilter(),
+    GinghamFilter(),
+    GinzaFilter(),
+    HefeFilter(),
+    HelenaFilter(),
+    HudsonFilter(),
+    InkwellFilter(),
+    JunoFilter(),
+    KelvinFilter(),
+    LarkFilter(),
+    LudwigFilter(),
+    MavenFilter(),
+    MayfairFilter(),
+    MoonFilter(),
+    ReyesFilter(),
+    SkylineFilter(),
+    SutroFilter(),
+    VesperFilter(),
+    WillowFilter(),
+    XProIIFilter(),
+  ];
 
   @override
   void initState() {
     super.initState();
     loading = false;
-    _filter = presetFiltersList[0];
+    _filter = selectedFilters[0];
     filename = widget.filename;
     finalFilename = widget.finalFilename;
     image = widget.image;
@@ -382,26 +410,44 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                         color: Theme.of(context).primaryColor,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: presetFiltersList.length,
+                          itemCount: selectedFilters.length,
                           itemBuilder: (BuildContext context, int index) {
                             return GestureDetector(
                               onTap: () => setState(() {
-                                _filter = presetFiltersList[index];
+                                _filter = selectedFilters[index];
                               }),
                               child: Container(
                                 padding: const EdgeInsets.fromLTRB(16, 8, 0, 8),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: <Widget>[
-                                    _buildFilterThumbnail(
-                                        presetFiltersList[index],
-                                        image,
-                                        filename),
+                                    Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        _buildFilterThumbnail(
+                                            selectedFilters[index],
+                                            image,
+                                            filename),
+                                        _filter == selectedFilters[index]
+                                            ? Container(
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          500),
+                                                  color: Colors.white,
+                                                ),
+                                                child: const Icon(
+                                                  JamIcons.check,
+                                                  color: Colors.black,
+                                                ))
+                                            : Container(),
+                                      ],
+                                    ),
                                     const SizedBox(
                                       height: 10.0,
                                     ),
                                     Text(
-                                      presetFiltersList[index].name,
+                                      selectedFilters[index].name,
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyText2
@@ -438,12 +484,15 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
             case ConnectionState.none:
             case ConnectionState.active:
             case ConnectionState.waiting:
-              return Container(
-                width: 90.0,
-                height: 140.0,
-                color: Theme.of(context).primaryColor,
-                child: Center(
-                  child: Loader(),
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 90.0,
+                  height: 140.0,
+                  color: Theme.of(context).primaryColor,
+                  child: Center(
+                    child: Loader(),
+                  ),
                 ),
               );
             case ConnectionState.done:
@@ -451,15 +500,18 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
               cachedFilters[filter?.name ?? "_"] = snapshot.data;
-              return Container(
-                width: 90.0,
-                height: 140.0,
-                color: Theme.of(context).primaryColor,
-                child: Image(
-                  image: MemoryImage(
-                    snapshot.data as Uint8List,
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 90.0,
+                  height: 140.0,
+                  color: Theme.of(context).primaryColor,
+                  child: Image(
+                    image: MemoryImage(
+                      snapshot.data as Uint8List,
+                    ),
+                    fit: BoxFit.cover,
                   ),
-                  fit: BoxFit.cover,
                 ),
               );
           }
@@ -467,15 +519,18 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         },
       );
     } else {
-      return Container(
-        width: 90.0,
-        height: 140.0,
-        color: Theme.of(context).primaryColor,
-        child: Image(
-          image: MemoryImage(
-            cachedFilters[filter?.name ?? "_"] as Uint8List,
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 90.0,
+          height: 140.0,
+          color: Theme.of(context).primaryColor,
+          child: Image(
+            image: MemoryImage(
+              cachedFilters[filter?.name ?? "_"] as Uint8List,
+            ),
+            fit: BoxFit.cover,
           ),
-          fit: BoxFit.cover,
         ),
       );
     }
