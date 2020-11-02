@@ -3,6 +3,7 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
@@ -75,8 +76,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Row(
                             children: [
                               Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                                padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
                                 child: Text(
                                   main.prefs.get("Subscriber") == false
                                       ? 'Subscribe to notifications?'
@@ -90,14 +90,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             ],
                           ),
                           const SizedBox(
-                            height: 25,
+                            height: 50,
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: <Widget>[
+                              Container(width: 10),
                               FlatButton(
                                 shape: const StadiumBorder(),
-                                color: config.Colors().mainAccentColor(1),
+                                color: main.prefs.get("Subscriber") == false
+                                    ? Theme.of(context).hintColor
+                                    : config.Colors().mainAccentColor(1),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
@@ -111,7 +114,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ),
                               FlatButton(
                                 shape: const StadiumBorder(),
-                                color: config.Colors().mainAccentColor(1),
+                                color: main.prefs.get("Subscriber") == false
+                                    ? config.Colors().mainAccentColor(1)
+                                    : Theme.of(context).hintColor,
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                   if (main.prefs.get("Subscriber") == false) {
@@ -136,9 +141,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 ),
                               ),
                             ],
-                          ),
-                          const SizedBox(
-                            height: 15,
                           ),
                         ],
                       ),
@@ -200,11 +202,85 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ? FloatingActionButton(
                 mini: true,
                 onPressed: () {
-                  setState(() {
-                    notifications = [];
-                    final Box<List> box = Hive.box('notifications');
-                    box.put('notifications', notifications);
-                  });
+                  final Dialog deleteNotificationsPopUp = Dialog(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(context).primaryColor),
+                      width: MediaQuery.of(context).size.width * .7,
+                      height: MediaQuery.of(context).size.height * .2,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Row(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
+                                child: Text(
+                                  'Delete all notifications?',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                      color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 50,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: <Widget>[
+                              Container(width: 10),
+                              FlatButton(
+                                shape: const StadiumBorder(),
+                                color: config.Colors().mainAccentColor(1),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text(
+                                  'NO',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              FlatButton(
+                                shape: const StadiumBorder(),
+                                color: Theme.of(context).hintColor,
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  setState(() {
+                                    notifications = [];
+                                    final Box<List> box =
+                                        Hive.box('notifications');
+                                    box.put('notifications', notifications);
+                                  });
+                                },
+                                child: const Text(
+                                  'YES',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) =>
+                          deleteNotificationsPopUp);
                 },
                 child: const Icon(JamIcons.trash),
               )
@@ -274,6 +350,9 @@ class NotificationCard extends StatelessWidget {
             } else {
               launch(notification.url);
             }
+          },
+          onLongPress: () {
+            HapticFeedback.lightImpact();
           },
           child: Ink(
             child: Stack(
