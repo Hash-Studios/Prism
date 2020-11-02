@@ -8,6 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as imagelib;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
+import 'package:flutter/foundation.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class EditButton extends StatefulWidget {
   final String url;
@@ -23,6 +25,7 @@ class EditButton extends StatefulWidget {
 class _EditButtonState extends State<EditButton> {
   bool isLoading;
   String imageData;
+  String imageThumbData;
 
   @override
   void initState() {
@@ -74,22 +77,40 @@ class _EditButtonState extends State<EditButton> {
     setState(() {
       isLoading = true;
     });
-    final response = await http.get(url); // <--2
+    toasts.codeSend("Loading Wallpaper");
+    final response = await http.get(url);
     final documentDirectory = await getApplicationDocumentsDirectory();
     final firstPath = "${documentDirectory.path}/images";
     final filePathAndName = "${documentDirectory.path}/images/pic.jpg";
-    await Directory(firstPath).create(recursive: true); // <-- 1
-    File file2 = File(filePathAndName); // <-- 2
-    file2.writeAsBytesSync(response.bodyBytes); // <-- 3
+    final filePathAndNameThumb =
+        "${documentDirectory.path}/images/picThumb.jpg";
+    await Directory(firstPath).create(recursive: true);
+    final File file2 = File(filePathAndName);
+    file2.writeAsBytesSync(response.bodyBytes);
+    final File file3 = File(filePathAndNameThumb);
+    final List<int> imageBytesThumb =
+        await compute<File, List<int>>(_resizeImage, file2);
+    file3.writeAsBytesSync(imageBytesThumb);
     setState(() {
       imageData = filePathAndName;
+      imageThumbData = filePathAndNameThumb;
       isLoading = false;
     });
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     Navigator.pushNamed(context, wallpaperFilterRoute, arguments: [
+      imagelib.decodeImage(File(imageThumbData).readAsBytesSync()),
       imagelib.decodeImage(File(imageData).readAsBytesSync()),
+      path.basename(File(imageThumbData).path),
       path.basename(File(imageData).path),
     ]);
+  }
+
+  static Future<List<int>> _resizeImage(File file) async {
+    final bytes = await file.readAsBytes();
+    final imagelib.Image image = imagelib.decodeImage(bytes);
+    final imagelib.Image resized = imagelib.copyResize(image, width: 300);
+    final List<int> resizedBytes = imagelib.encodeJpg(resized);
+    return resizedBytes;
   }
 }
