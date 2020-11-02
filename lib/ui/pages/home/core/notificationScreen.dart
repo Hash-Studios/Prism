@@ -196,7 +196,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     );
                   },
                 )
-              : const Center(child: Text('No new notifications')),
+              : Center(
+                  child: Text('No new notifications',
+                      style: TextStyle(color: Theme.of(context).accentColor))),
         ),
         floatingActionButton: notifications.isNotEmpty
             ? FloatingActionButton(
