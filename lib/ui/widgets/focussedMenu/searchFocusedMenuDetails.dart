@@ -207,37 +207,49 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     wdata.wallsS[index].id
                                         .toString()
                                         .toUpperCase(),
-                                    style:
-                                        Theme.of(context).textTheme.headline5,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headline5
+                                        .copyWith(
+                                            color:
+                                                Theme.of(context).accentColor),
                                   ),
                                 ),
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       JamIcons.eye,
                                       size: 20,
-                                      color: Colors.white70,
+                                      color: Theme.of(context).accentColor,
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
                                       "Views: ${wdata.wallsS[index].views.toString()}",
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(
+                                              color: Theme.of(context)
+                                                  .accentColor),
                                     ),
                                   ],
                                 ),
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       JamIcons.set_square,
                                       size: 20,
-                                      color: Colors.white70,
+                                      color: Theme.of(context).accentColor,
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
                                       wdata.wallsS[index].resolution,
-                                      style:
-                                          Theme.of(context).textTheme.bodyText2,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(
+                                              color: Theme.of(context)
+                                                  .accentColor),
                                     ),
                                   ],
                                 ),
@@ -257,11 +269,12 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                         topLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20))),
                                 padding: const EdgeInsets.all(0),
-                                child: const Padding(
-                                  padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                   child: Icon(
                                     JamIcons.close,
-                                    color: Colors.white,
+                                    color: Theme.of(context).accentColor,
                                   ),
                                 ),
                               ),
@@ -371,22 +384,30 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                                 .replaceAll("-", " ")
                                                 .replaceAll("/", "")
                                                 .substring(1),
-                                    style:
-                                        Theme.of(context).textTheme.headline5,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headline5
+                                        .copyWith(
+                                            color:
+                                                Theme.of(context).accentColor),
                                   ),
                                 ),
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       JamIcons.set_square,
-                                      color: Colors.white70,
+                                      color: Theme.of(context).accentColor,
                                       size: 20,
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
                                       "${pdata.wallsPS[index].width.toString()}x${pdata.wallsPS[index].height.toString()}",
-                                      style:
-                                          Theme.of(context).textTheme.headline6,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline6
+                                          .copyWith(
+                                              color: Theme.of(context)
+                                                  .accentColor),
                                     ),
                                   ],
                                 ),
@@ -406,11 +427,12 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                         topLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20))),
                                 padding: const EdgeInsets.all(0),
-                                child: const Padding(
-                                  padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(10, 5, 10, 5),
                                   child: Icon(
                                     JamIcons.close,
-                                    color: Colors.white,
+                                    color: Theme.of(context).accentColor,
                                   ),
                                 ),
                               ),

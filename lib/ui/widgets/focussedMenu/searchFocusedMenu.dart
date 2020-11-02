@@ -75,11 +75,11 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
                       topLeft: Radius.circular(20),
                       bottomRight: Radius.circular(20))),
               padding: const EdgeInsets.all(0),
-              child: const Padding(
-                padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                 child: Icon(
                   JamIcons.more_horizontal,
-                  color: Colors.white,
+                  color: Theme.of(context).accentColor,
                 ),
               ),
             ),
