@@ -9,7 +9,7 @@ class SetupProvider extends ChangeNotifier {
   Future<List> getDataBase() async {
     final box = Hive.box('setups');
     if ((box.get('setups') == null) ||
-        (box.get('setups') == [] || box.get('date') == null)) {
+        (box.get('setups').toString() == "[]" || box.get('date') == null)) {
       debugPrint("Refetching setups collection");
       setups = [];
       await databaseReference
@@ -50,6 +50,7 @@ class SetupProvider extends ChangeNotifier {
       debugPrint("Setups : Data Fetched from cache");
       setups = [];
       setups = box.get('setups') as List;
+      debugPrint(setups.length.toString());
     }
     return setups;
   }

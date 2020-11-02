@@ -14,9 +14,9 @@ Future<List> getPrismWalls() async {
   if (navStack.last == "Home") {
     final box = Hive.box('wallpapers');
     if ((box.get('wallpapers') == null) ||
-        (box.get('wallpapers') == [] || box.get('date') == null)) {
+        (box.get('wallpapers').toString() == "[]" || box.get('date') == null)) {
       debugPrint("Refetching whole collection");
-      toasts.error("Refetching whole collection");
+      // toasts.error("Refetching whole collection");
       prismWalls = [];
       subPrismWalls = [];
       await databaseReference
@@ -112,7 +112,7 @@ Future<List> getPrismWalls() async {
     // }
     else {
       debugPrint("Community : Data Fetched from cache");
-      toasts.error("Data fetched from cache");
+      // toasts.error("Data fetched from cache");
       prismWalls = [];
       subPrismWalls = [];
       prismWalls = box.get('wallpapers') as List;
