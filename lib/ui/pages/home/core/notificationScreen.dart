@@ -220,24 +220,24 @@ class NotificationCard extends StatelessWidget {
   const NotificationCard({this.notification});
 
   static String stringForDatetime(DateTime dt) {
-    var dtInLocal = dt.toLocal();
-    var now = DateTime.now().toLocal();
+    final dtInLocal = dt.toLocal();
+    final now = DateTime.now().toLocal();
     var dateString = "";
 
-    var diff = now.difference(dtInLocal);
+    final diff = now.difference(dtInLocal);
 
     if (now.day == dtInLocal.day) {
-      var todayFormat = DateFormat("h:mm a");
+      final todayFormat = DateFormat("h:mm a");
       dateString += todayFormat.format(dtInLocal);
     } else if ((diff.inDays) == 1 ||
         (diff.inSeconds < 86400 && now.day != dtInLocal.day)) {
-      var yesterdayFormat = DateFormat("h:mm a");
-      dateString += "Yesterday, " + yesterdayFormat.format(dtInLocal);
+      final yesterdayFormat = DateFormat("h:mm a");
+      dateString += "Yesterday, ${yesterdayFormat.format(dtInLocal)}";
     } else if (now.year == dtInLocal.year && diff.inDays > 1) {
-      var monthFormat = DateFormat("MMM d");
+      final monthFormat = DateFormat("MMM d");
       dateString += monthFormat.format(dtInLocal);
     } else {
-      var yearFormat = DateFormat("MMM d y");
+      final yearFormat = DateFormat("MMM d y");
       dateString += yearFormat.format(dtInLocal);
     }
 
@@ -247,6 +247,7 @@ class NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
+      initiallyExpanded: true,
       leading: const CircleAvatar(
         backgroundImage: AssetImage("assets/images/prism.png"),
       ),
