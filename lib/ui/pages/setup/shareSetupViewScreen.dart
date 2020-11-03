@@ -348,12 +348,22 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                             sdata.setup[
                                                                 "userPhoto"],
                                                             false,
-                                                            sdata.setup[
-                                                                    "twitter"] ??
-                                                                "",
-                                                            sdata.setup[
-                                                                    "instagram"] ??
-                                                                ""
+                                                            sdata.setup["twitter"] !=
+                                                                    null
+                                                                ? sdata.setup[
+                                                                        "twitter"]
+                                                                    .toString()
+                                                                    .split(
+                                                                        "https://www.twitter.com/")[1]
+                                                                : "",
+                                                            sdata.setup["instagram"] !=
+                                                                    null
+                                                                ? sdata.setup[
+                                                                        "instagram"]
+                                                                    .toString()
+                                                                    .split(
+                                                                        "https://www.instagram.com/")[1]
+                                                                : "",
                                                           ]);
                                                     }),
                                               ),

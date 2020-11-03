@@ -414,14 +414,28 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     Data.subPrismWalls[widget
                                                         .index]["userPhoto"],
                                                     false,
-                                                    Data.subPrismWalls[
+                                                    Data.subPrismWalls[widget
+                                                                    .index]
+                                                                ["twitter"] !=
+                                                            null
+                                                        ? Data.subPrismWalls[
                                                                 widget.index]
-                                                            ["twitter"] ??
-                                                        "",
-                                                    Data.subPrismWalls[
+                                                                ["twitter"]
+                                                            .toString()
+                                                            .split(
+                                                                "https://www.twitter.com/")[1]
+                                                        : "",
+                                                    Data.subPrismWalls[widget
+                                                                    .index]
+                                                                ["instagram"] !=
+                                                            null
+                                                        ? Data.subPrismWalls[
                                                                 widget.index]
-                                                            ["instagram"] ??
-                                                        ""
+                                                                ["instagram"]
+                                                            .toString()
+                                                            .split(
+                                                                "https://www.instagram.com/")[1]
+                                                        : "",
                                                   ]);
                                             }),
                                         Padding(
