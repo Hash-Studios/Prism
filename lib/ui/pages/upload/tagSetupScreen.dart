@@ -144,7 +144,7 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                print(tempTags.length);
+                debugPrint(tempTags.length.toString());
                 if (tempTags.isEmpty) {
                   toasts.error("Please add a tag to continue");
                 } else {
