@@ -20,11 +20,7 @@ import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
-import 'package:tutorial_coach_mark/animated_focus_light.dart';
-import 'package:tutorial_coach_mark/target_position.dart';
-import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
 
@@ -44,7 +40,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   }
 
   bool isNew;
-  List<TargetFocus> targets = [];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String provider;
   int index;
@@ -94,246 +89,12 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     }
   }
 
-  void initTargets() {
-    targets.add(TargetFocus(
-      identify: "Target 0",
-      targetPosition: TargetPosition(const Size(0, 0), const Offset(0, 0)),
-      contents: [
-        ContentTarget(
-            child: SizedBox(
-          height: globals.height,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Text(
-                "Variants are here.",
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 20.0),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 10.0),
-                child: RichText(
-                  text: const TextSpan(
-                      text: "➜ Tap on the wallpaper to quickly cycle between ",
-                      style: TextStyle(color: Colors.white),
-                      children: [
-                        TextSpan(
-                          text: "color variants.",
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        TextSpan(text: "\n\n"),
-                        TextSpan(text: "➜ Press and hold to "),
-                        TextSpan(
-                          text: "reset ",
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        TextSpan(text: "the variant.\n\n"),
-                        TextSpan(
-                            text:
-                                "➜ To set variants of a wallpaper, you need to be a "),
-                        TextSpan(
-                          text: "premium ",
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        TextSpan(text: "user."),
-                      ]),
-                ),
-              )
-            ],
-          ),
-        )),
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
-    targets.add(TargetFocus(
-      identify: "Target 1",
-      targetPosition: TargetPosition(
-          Size(globals.width, 100), Offset(0, globals.height / 2 + 70)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Text(
-                  "This is the color palette.",
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 20.0),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 10.0),
-                  child: RichText(
-                    text: const TextSpan(
-                        text: "➜ Tap on any color to find wallpapers with ",
-                        style: TextStyle(color: Colors.white),
-                        children: [
-                          TextSpan(
-                            text: "similar color.",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(text: "\n\n"),
-                          TextSpan(text: "➜ Press and hold any color to "),
-                          TextSpan(
-                            text: "copy ",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(text: "its color code.\n\n"),
-                        ]),
-                  ),
-                )
-              ],
-            )),
-      ],
-      shape: ShapeLightFocus.RRect,
-    ));
-    targets.add(TargetFocus(
-      identify: "Target 2",
-      targetPosition: TargetPosition(
-          Size(globals.width, 150), Offset(0, globals.height / 2 + 200)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Text(
-                  "This is the quick info section.",
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 20.0),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 10.0),
-                  child: RichText(
-                    text: const TextSpan(
-                        text: "➜ Tap on user name to ",
-                        style: TextStyle(color: Colors.white),
-                        children: [
-                          TextSpan(
-                            text: "view more wallpapers",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(text: " from them.\n\n"),
-                        ]),
-                  ),
-                )
-              ],
-            )),
-      ],
-      shape: ShapeLightFocus.RRect,
-    ));
-    targets.add(TargetFocus(
-      identify: "Target 3",
-      targetPosition: TargetPosition(
-          Size(globals.width, 100), Offset(0, globals.height / 2 + 335)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Text(
-                  "This is the quick action section.",
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 20.0),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 10.0),
-                  child: RichText(
-                    text: const TextSpan(
-                        text: "➜ Here you can ",
-                        style: TextStyle(color: Colors.white),
-                        children: [
-                          TextSpan(
-                            text: "download, apply, favourite",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(text: " and"),
-                          TextSpan(
-                            text: " share",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(text: " this wallpaper.\n\n"),
-                          TextSpan(
-                              text:
-                                  "➜ Press and hold apply wallpaper button to "),
-                          TextSpan(
-                            text: "crop and apply ",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(text: "this wallpaper.\n\n"),
-                        ]),
-                  ),
-                )
-              ],
-            )),
-      ],
-      shape: ShapeLightFocus.RRect,
-    ));
-  }
-
-  void showTutorial() {
-    TutorialCoachMark(context,
-        targets: targets,
-        colorShadow: config.Colors().mainAccentColor(1),
-        paddingFocus: 1,
-        opacityShadow: 0.9, finish: () {
-      debugPrint("finish");
-    }, clickTarget: (target) {
-      debugPrint(target.identify.toString());
-    }, clickSkip: () {
-      debugPrint("skip");
-    }).show();
-  }
-
-  void afterLayout(_) {
-    final newDevice2 = main.prefs.get("newDevice2");
-    if (newDevice2 == null || newDevice2 == true) {
-      Future.delayed(const Duration(milliseconds: 100), showTutorial);
-      panelController.open();
-      main.prefs.put("newDevice2", false);
-    } else {
-      main.prefs.put("newDevice2", false);
-    }
-  }
-
   @override
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     isNew = true;
     super.initState();
-    initTargets();
-    if (isNew) {
-      Future.delayed(const Duration()).then(
-          (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
-    }
     SystemChrome.setEnabledSystemUIOverlays([]);
     provider = widget.arguments[0] as String;
     index = widget.arguments[1] as int;

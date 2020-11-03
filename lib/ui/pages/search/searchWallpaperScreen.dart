@@ -18,7 +18,6 @@ import 'package:flutter/services.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
-import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
@@ -38,7 +37,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     return true;
   }
 
-  List<TargetFocus> targets = [];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String selectedProvider;
   String query;
