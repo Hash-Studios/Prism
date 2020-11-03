@@ -2,13 +2,12 @@ import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
-import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/pexelsTile.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -24,10 +23,8 @@ class PexelsGrid extends StatefulWidget {
 
 class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
   AnimationController _controller;
-  AnimationController shakeController;
   Animation<Color> animation;
   int _current = 0;
-  int longTapIndex;
   GlobalKey<RefreshIndicatorState> refreshHomeKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -35,8 +32,6 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    shakeController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -89,7 +84,6 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
   @override
   void dispose() {
     _controller?.dispose();
-    shakeController.dispose();
     super.dispose();
   }
 
@@ -104,14 +98,6 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: 8.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              shakeController.reverse();
-            }
-          });
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
     final CarouselController carouselController = CarouselController();
@@ -198,70 +184,48 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
                                       ]);
                                 }
                               },
-                              onLongPress: () {
-                                setState(() {
-                                  longTapIndex = i;
-                                });
-                                shakeController.forward(from: 0.0);
-                                if (PData.wallsP == []) {
-                                } else {
-                                  HapticFeedback.vibrate();
-                                  createDynamicLink(
-                                      PData.wallsP[i].id,
-                                      widget.provider,
-                                      PData.wallsP[i].src["original"].toString(),
-                                      PData.wallsP[i].src["medium"].toString());
-                                }
-                              },
-                              child: Padding(
-                                padding: i == longTapIndex
-                                    ? EdgeInsets.symmetric(
-                                        vertical: offsetAnimation.value / 2,
-                                        horizontal: offsetAnimation.value)
-                                    : const EdgeInsets.all(0),
-                                child: PData.wallsP.isEmpty
-                                    ? Container(
-                                        decoration: BoxDecoration(
+                              child: PData.wallsP.isEmpty
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                        color: animation.value,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                    )
+                                  : Container(
+                                      decoration: BoxDecoration(
                                           color: animation.value,
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                      )
-                                    : Container(
-                                        decoration: BoxDecoration(
-                                            color: animation.value,
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                            image: DecorationImage(
-                                                image: CachedNetworkImageProvider(
-                                                    PData.wallsP[i].src["medium"]
-                                                        .toString()),
-                                                fit: BoxFit.cover)),
-                                        child: Center(
-                                          child: Container(
-                                            width:
-                                                MediaQuery.of(context).size.width,
-                                            color: Colors.black.withOpacity(0.4),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Text(
-                                                globals.topTitleText[i]
-                                                    .toString(),
-                                                textAlign: TextAlign.center,
-                                                maxLines: 1,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline2
-                                                    .copyWith(
-                                                        color: Colors.white,
-                                                        fontSize: 20,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                              ),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          image: DecorationImage(
+                                              image: CachedNetworkImageProvider(
+                                                  PData.wallsP[i].src["medium"]
+                                                      .toString()),
+                                              fit: BoxFit.cover)),
+                                      child: Center(
+                                        child: Container(
+                                          width:
+                                              MediaQuery.of(context).size.width,
+                                          color: Colors.black.withOpacity(0.4),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              globals.topTitleText[i]
+                                                  .toString(),
+                                              textAlign: TextAlign.center,
+                                              maxLines: 1,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headline2
+                                                  .copyWith(
+                                                      color: Colors.white,
+                                                      fontSize: 20,
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                             ),
                                           ),
                                         ),
                                       ),
-                              ),
+                                    ),
                             ),
                           ),
                   ),
@@ -339,93 +303,37 @@ class _PexelsGridState extends State<PexelsGrid> with TickerProviderStateMixin {
               itemBuilder: (context, index) {
                 index = index + 4;
                 if (index == PData.wallsP.length - 1) {
-                  return FlatButton(
-                      color: Provider.of<ThemeModel>(context, listen: false)
-                                  .returnThemeType() ==
-                              "Dark"
-                          ? Colors.white10
-                          : Colors.black.withOpacity(.1),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
-                      onPressed: () {
-                        if (!seeMoreLoader) {
-                          Provider.of<CategorySupplier>(context, listen: false)
-                              .changeWallpaperFuture(
-                                  Provider.of<CategorySupplier>(context,
-                                          listen: false)
-                                      .selectedChoice,
-                                  "s");
-                          setState(() {
-                            seeMoreLoader = true;
-                            Future.delayed(const Duration(seconds: 4))
-                                .then((value) => seeMoreLoader = false);
-                          });
-                        }
-                      },
-                      child: !seeMoreLoader ? const Text("See more") : Loader());
+                  return SeeMoreButton(
+                    seeMoreLoader: seeMoreLoader,
+                    func: () {
+                      if (!seeMoreLoader) {
+                        Provider.of<CategorySupplier>(context, listen: false)
+                            .changeWallpaperFuture(
+                                Provider.of<CategorySupplier>(context,
+                                        listen: false)
+                                    .selectedChoice,
+                                "s");
+                        setState(() {
+                          seeMoreLoader = true;
+                          Future.delayed(const Duration(seconds: 4))
+                              .then((value) => seeMoreLoader = false);
+                        });
+                      }
+                    },
+                  );
                 }
 
                 return FocusedMenuHolder(
-                    provider: widget.provider,
-                    index: index,
-                    child: AnimatedBuilder(
-                        animation: offsetAnimation,
-                        builder: (buildContext, child) {
-                          if (offsetAnimation.value < 0.0) {
-                            debugPrint('${offsetAnimation.value + 8.0}');
-                          }
-                          return GestureDetector(
-                            onTap: () {
-                              if (PData.wallsP == []) {
-                              } else {
-                                Navigator.pushNamed(context, wallpaperRoute,
-                                    arguments: [
-                                      widget.provider,
-                                      index,
-                                      PData.wallsP[index].src["small"]
-                                    ]);
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                longTapIndex = index;
-                              });
-                              shakeController.forward(from: 0.0);
-                              if (PData.wallsP == []) {
-                              } else {
-                                HapticFeedback.vibrate();
-                                createDynamicLink(
-                                    PData.wallsP[index].id,
-                                    widget.provider,
-                                    PData.wallsP[index].src["original"]
-                                        .toString(),
-                                    PData.wallsP[index].src["medium"].toString());
-                              }
-                            },
-                            child: Padding(
-                              padding: index == longTapIndex
-                                  ? EdgeInsets.symmetric(
-                                      vertical: offsetAnimation.value / 2,
-                                      horizontal: offsetAnimation.value)
-                                  : const EdgeInsets.all(0),
-                              child: Container(
-                                decoration: PData.wallsP.isEmpty
-                                    ? BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                      )
-                                    : BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
-                                            image: CachedNetworkImageProvider(
-                                                PData.wallsP[index].src["medium"]
-                                                    .toString()),
-                                            fit: BoxFit.cover)),
-                              ),
-                            ),
-                          );
-                        }));
+                  provider: widget.provider,
+                  index: index,
+                  // child: AnimatedBuilder(
+                  //   animation: offsetAnimation,
+                  //   builder: (buildContext, child) {
+                  child: PexelsTile(
+                      widget: widget, animation: animation, index: index),
+                  //   },
+                  // ),
+                );
               },
             ),
           ),
