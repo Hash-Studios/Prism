@@ -130,25 +130,6 @@ class _GeneralListState extends State<GeneralList> {
             style: TextStyle(fontSize: 12),
           ),
         ),
-        ListTile(
-          onTap: () {
-            main.prefs.put("newDevice", true);
-            main.prefs.put("newDevice2", true);
-            main.RestartWidget.restartApp(context);
-          },
-          leading: const Icon(JamIcons.help),
-          title: Text(
-            "Show Tutorial",
-            style: TextStyle(
-                color: Theme.of(context).accentColor,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
-          ),
-          subtitle: const Text(
-            "Quick Guide to Prism",
-            style: TextStyle(fontSize: 12),
-          ),
-        ),
       ],
     );
   }

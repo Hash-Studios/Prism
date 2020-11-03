@@ -2,20 +2,14 @@ import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/home/core/tutorials.dart';
 import 'package:Prism/ui/widgets/popup/categoryPopUp.dart';
 import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
-import 'package:Prism/ui/widgets/popup/tutorialCompletePopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:tutorial_coach_mark/target_focus.dart';
-import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/config.dart' as config;
 
@@ -32,7 +26,6 @@ class CategoriesBar extends StatefulWidget {
 class _CategoriesBarState extends State<CategoriesBar> {
   bool isNew;
   bool noNotification = false;
-  List<TargetFocus> targets = [];
   @override
   void initState() {
     isNew = true;
@@ -40,53 +33,13 @@ class _CategoriesBarState extends State<CategoriesBar> {
     super.initState();
     globals.height = widget.height;
     globals.width = widget.width;
-    initTargets(targets, widget.width, widget.height);
     checkForUpdate();
     noNotification = checkNewNotification();
-    if (isNew) {
-      Future.delayed(const Duration()).then(
-          (value) => WidgetsBinding.instance.addPostFrameCallback(afterLayout));
-    }
   }
 
   Future<void> fetchNotifications() async {
     await getNotifications();
     setState(() {});
-  }
-
-  String textSkip = "SKIP";
-  void showTutorial() {
-    TutorialCoachMark(context,
-        targets: targets,
-        colorShadow: config.Colors().mainAccentColor(1),
-        textSkip: textSkip,
-        paddingFocus: 1,
-        opacityShadow: 0.9, finish: () {
-      debugPrint("finish");
-    }, clickTarget: (target) {
-      debugPrint(target.identify.toString());
-      if (target.identify == "Target 3") {
-        setState(() {
-          textSkip = "FINISH";
-        });
-      }
-      if (target.identify == "Target 4") {
-        Future.delayed(const Duration(milliseconds: 800))
-            .then((value) => showTutorialComplete(context));
-      }
-    }, clickSkip: () {
-      debugPrint("skip");
-    }).show();
-  }
-
-  void afterLayout(_) {
-    final newDevice = main.prefs.get("newDevice");
-    if (newDevice == null || newDevice == true) {
-      Future.delayed(const Duration(milliseconds: 100), showTutorial);
-      main.prefs.put("newDevice", false);
-    } else {
-      main.prefs.put("newDevice", false);
-    }
   }
 
   bool checkNewNotification() {
