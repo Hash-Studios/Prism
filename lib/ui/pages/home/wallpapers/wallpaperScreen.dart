@@ -1058,13 +1058,31 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                               ["userPhoto"],
                                                           false,
                                                           data.subPrismWalls[
-                                                                      index]
-                                                                  ["twitter"] ??
-                                                              "",
-                                                          data.subPrismWalls[
+                                                                          index]
+                                                                      [
+                                                                      "twitter"] !=
+                                                                  null
+                                                              ? data
+                                                                  .subPrismWalls[
                                                                       index][
-                                                                  "instagram"] ??
-                                                              ""
+                                                                      "twitter"]
+                                                                  .toString()
+                                                                  .split(
+                                                                      "https://www.twitter.com/")[1]
+                                                              : "",
+                                                          data.subPrismWalls[
+                                                                          index]
+                                                                      [
+                                                                      "instagram"] !=
+                                                                  null
+                                                              ? data
+                                                                  .subPrismWalls[
+                                                                      index][
+                                                                      "instagram"]
+                                                                  .toString()
+                                                                  .split(
+                                                                      "https://www.instagram.com/")[1]
+                                                              : "",
                                                         ]);
                                                   },
                                                   padding: const EdgeInsets

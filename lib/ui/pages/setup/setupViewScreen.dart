@@ -326,18 +326,32 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           .setups[index]
                                                       ["userPhoto"],
                                                   false,
+                                                 Provider.of<SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .setups[index]["twitter"] !=
+                                                                  null
+                                                              ? Provider.of<SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .setups[index]["twitter"]
+                                                                  .toString()
+                                                                  .split(
+                                                                      "https://www.twitter.com/")[1]
+                                                              : "",
                                                   Provider.of<SetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .setups[index]
-                                                          ["twitter"] ??
-                                                      "",
-                                                  Provider.of<SetupProvider>(
+                                                              .setups[index]["instagram"] !=
+                                                                  null
+                                                              ? Provider.of<SetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .setups[index]
-                                                          ["instagram"] ??
-                                                      ""
+                                                              .setups[index]["instagram"]
+                                                                  .toString()
+                                                                  .split(
+                                                                      "https://www.instagram.com/")[1]
+                                                              : "",
                                                 ]);
                                           }),
                                     ),
