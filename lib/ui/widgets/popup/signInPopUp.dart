@@ -96,7 +96,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: 20,
                 ),
                 Icon(
-                  JamIcons.instant_picture,
+                  JamIcons.upload,
                   size: 22,
                   color: config.Colors().mainAccentColor(1),
                 ),
@@ -106,7 +106,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Container(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
-                    "The ability to view setups.",
+                    "The ability to upload wallpapers.",
                     style: Theme.of(context)
                         .textTheme
                         .headline6
@@ -124,7 +124,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   width: 20,
                 ),
                 Icon(
-                  JamIcons.upload,
+                  JamIcons.instant_picture,
                   size: 22,
                   color: config.Colors().mainAccentColor(1),
                 ),
@@ -134,7 +134,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Container(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Text(
-                    "The ability to upload wallpapers.",
+                    "The ability to upload setups.",
                     style: Theme.of(context)
                         .textTheme
                         .headline6
