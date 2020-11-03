@@ -390,16 +390,16 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
-                  showGooglePopUp(() {
-                    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-                        statusBarColor:
-                            Color(main.prefs.get("mainAccentColor") as int)));
-                    navStack.last == "Setups"
-                        ? debugPrint("Currently on Setups")
-                        : navStack.last == "Home"
-                            ? Navigator.of(context).pushNamed(setupRoute)
-                            : Navigator.of(context).pushNamed(setupRoute);
-                  });
+                  // showGooglePopUp(() {
+                  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+                      statusBarColor:
+                          Color(main.prefs.get("mainAccentColor") as int)));
+                  navStack.last == "Setups"
+                      ? debugPrint("Currently on Setups")
+                      : navStack.last == "Home"
+                          ? Navigator.of(context).pushNamed(setupRoute)
+                          : Navigator.of(context).pushNamed(setupRoute);
+                  // });
                 },
               ),
             ),
