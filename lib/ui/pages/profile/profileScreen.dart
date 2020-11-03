@@ -478,13 +478,13 @@ class _ProfileChildState extends State<ProfileChild> {
                     const SizedBox(
                       height: 300,
                     ),
-                    const SizedBox(
-                      height: 300,
-                      child: FlareActor(
-                        "assets/animations/Update.flr",
-                        animation: "update",
-                      ),
-                    ),
+                    // const SizedBox(
+                    //   height: 300,
+                    //   child: FlareActor(
+                    //     "assets/animations/Update.flr",
+                    //     animation: "update",
+                    //   ),
+                    // ),
                   ]))
                 ]),
               ));
