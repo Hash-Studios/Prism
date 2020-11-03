@@ -3,6 +3,7 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/contriPopUp.dart';
+import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -224,6 +225,7 @@ class AboutScreen extends StatelessWidget {
                   },
                 ),
                 const Divider(),
+                PrismList(),
               ],
             )),
         bottomNavigationBar: Container(

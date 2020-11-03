@@ -8,7 +8,6 @@ import 'package:Prism/ui/widgets/favourite/favLoader.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
 import 'package:Prism/ui/widgets/profile/premiumList.dart';
-import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:Prism/ui/widgets/profile/studioList.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
@@ -425,7 +424,6 @@ class _ProfileChildState extends State<ProfileChild> {
                         GeneralList(),
                         UserList(),
                         const StudioList(),
-                        PrismList(),
                       ])
                     ]),
                   ),
@@ -477,7 +475,6 @@ class _ProfileChildState extends State<ProfileChild> {
                     GeneralList(),
                     UserList(),
                     const StudioList(),
-                    PrismList(),
                     const SizedBox(
                       height: 300,
                     ),
