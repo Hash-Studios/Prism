@@ -36,6 +36,8 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
           SizedBox(
             height: 400,
             child: Scrollbar(
+              radius: const Radius.circular(500),
+              thickness: 5,
               controller: controller,
               isAlwaysShown: true,
               child: ListView.builder(
