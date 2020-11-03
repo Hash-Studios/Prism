@@ -205,6 +205,35 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               width: 20,
                             ),
                             Icon(
+                              JamIcons.pictures,
+                              size: 22,
+                              color: config.Colors().mainAccentColor(1),
+                            ),
+                            const SizedBox(
+                              width: 20,
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "View exclusive collections & walls!",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                            ),
+                            Icon(
                               JamIcons.instant_picture,
                               size: 22,
                               color: config.Colors().mainAccentColor(1),
@@ -215,7 +244,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Container(
                               width: MediaQuery.of(context).size.width * 0.8,
                               child: Text(
-                                "Get more exclusive collections & setups!",
+                                "Unlock more than 5 setups!",
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline6
@@ -244,7 +273,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             Container(
                               width: MediaQuery.of(context).size.width * 0.8,
                               child: Text(
-                                "Directly set upto 5 variants of each wallpaper!",
+                                "Apply filters to wallpapers!",
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline6
