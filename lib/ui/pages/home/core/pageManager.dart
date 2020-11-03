@@ -72,7 +72,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 3, vsync: this);
+    tabController = TabController(length: 2, vsync: this);
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     Provider.of<TabProvider>(context, listen: false)
@@ -284,21 +284,35 @@ class _PageManagerChildState extends State<PageManagerChild>
               indicatorSize: TabBarIndicatorSize.label,
               tabs: [
                 Tab(
-                  icon: Icon(
-                    JamIcons.picture,
-                    color: Theme.of(context).accentColor,
+                  // icon: Icon(
+                  //   JamIcons.picture,
+                  //   color: Theme.of(context).accentColor,
+                  // ),
+                  child: Text(
+                    "Wallpapers",
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyText2
+                        .copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
+                // Tab(
+                //   icon: Icon(
+                //     JamIcons.instant_picture,
+                //     color: Theme.of(context).accentColor,
+                //   ),
+                // ),
                 Tab(
-                  icon: Icon(
-                    JamIcons.instant_picture,
-                    color: Theme.of(context).accentColor,
-                  ),
-                ),
-                Tab(
-                  icon: Icon(
-                    JamIcons.pictures,
-                    color: Theme.of(context).accentColor,
+                  // icon: Icon(
+                  //   JamIcons.pictures,
+                  //   color: Theme.of(context).accentColor,
+                  // ),
+                  child: Text(
+                    "Collections",
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyText2
+                        .copyWith(color: Theme.of(context).accentColor),
                   ),
                 )
               ]),
@@ -307,7 +321,7 @@ class _PageManagerChildState extends State<PageManagerChild>
           children: <Widget>[
             TabBarView(controller: tabController, children: [
               const HomeScreen(),
-              const HomeSetupScreen(),
+              // const HomeSetupScreen(),
               const CollectionScreen()
             ]),
             if (!result) ConnectivityWidget() else Container(),
