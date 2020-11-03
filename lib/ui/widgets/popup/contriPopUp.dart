@@ -3,10 +3,7 @@ import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/config.dart' as config;
-import 'package:Prism/main.dart' as main;
 import 'package:github/github.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 void showContributorDetails(BuildContext context, String username) {
   Future<User> getUser(String username) async {
@@ -15,7 +12,7 @@ void showContributorDetails(BuildContext context, String username) {
     await github.users.getUser(username).then((value) {
       user = value;
     });
-    print(user.blog);
+    debugPrint(user.blog);
     return user;
   }
 

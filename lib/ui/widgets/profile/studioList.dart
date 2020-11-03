@@ -5,7 +5,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 final List<String> supportPurchase = ['support', 'support_more', 'support_max'];
