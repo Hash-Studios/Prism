@@ -81,8 +81,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
       title: Align(
         alignment: Alignment.centerLeft,
         child: Container(
-          height: 30,
-          width: 120,
+          height: 26,
+          width: 110,
           child: Align(
             alignment: Alignment.centerLeft,
             child: SvgPicture.string(

@@ -1,6 +1,7 @@
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class HeadingChipBar extends StatefulWidget {
   final String current;
@@ -21,7 +22,14 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
           icon: const Icon(JamIcons.chevron_left),
           onPressed: () {
             Navigator.pop(context);
-            if (navStack.length > 1) navStack.removeLast();
+            if (navStack.length > 1) {
+              navStack.removeLast();
+              if ((navStack.last == "Wallpaper") ||
+                  (navStack.last == "Search Wallpaper") ||
+                  (navStack.last == "SharedWallpaper")) {
+                SystemChrome.setEnabledSystemUIOverlays([]);
+              }
+            }
             debugPrint(navStack.toString());
           }),
       title: SizedBox(

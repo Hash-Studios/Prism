@@ -5,6 +5,7 @@ import 'package:Prism/ui/widgets/home/wallpapers/colorLoader.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 class ColorScreen extends StatelessWidget {
   final List arguments;
@@ -26,6 +27,11 @@ class ColorScreen extends StatelessWidget {
         debugPrint(count.toString());
         for (int i = 0; i < count; i++) {
           Navigator.pop(context);
+        }
+        if ((navStack.last == "Wallpaper") ||
+            (navStack.last == "Search Wallpaper") ||
+            (navStack.last == "SharedWallpaper")) {
+          SystemChrome.setEnabledSystemUIOverlays([]);
         }
         return false;
       },
