@@ -10,21 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 class PrismList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      leading: const Icon(
-        JamIcons.cog,
-      ),
-      title: Text(
-        "Prism",
-        style: TextStyle(
-            color: Theme.of(context).accentColor,
-            fontWeight: FontWeight.w500,
-            fontFamily: "Proxima Nova"),
-      ),
-      subtitle: Text(
-        "Share Prism, report bugs",
-        style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
-      ),
+    return Column(
       children: [
         ListTile(
             leading: const Icon(

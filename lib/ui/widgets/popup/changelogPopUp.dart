@@ -39,6 +39,27 @@ void showChangelog(BuildContext context, Function func) {
               child: SingleChildScrollView(
                 controller: controller,
                 child: Column(mainAxisSize: MainAxisSize.min, children: const [
+                  ChangeVersion(number: 'v2.6.0'),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text: "Setup uploading is out of beta."),
+                  Change(icon: JamIcons.wrench, text: "All new themes!"),
+                  Change(
+                      icon: JamIcons.settings_alt,
+                      text: "Improved settings page."),
+                  Change(icon: JamIcons.home, text: "Redesigned home."),
+                  Change(icon: JamIcons.grid, text: "Redesigned categories."),
+                  Change(
+                      icon: JamIcons.filter, text: "Added wallpaper filters."),
+                  Change(icon: JamIcons.brush, text: "Variants are now free!"),
+                  Change(
+                      icon: JamIcons.database, text: "Improved data caching."),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Major bug fixes and improvements."),
+                  SizedBox(
+                    height: 15,
+                  ),
                   ChangeVersion(number: 'v2.5.7'),
                   Change(
                       icon: JamIcons.settings_alt,

@@ -2,8 +2,8 @@ import 'package:Prism/auth/google_auth.dart';
 import 'package:flutter/material.dart';
 
 GoogleAuth gAuth = GoogleAuth();
-String currentAppVersion = '2.5.7';
-String currentAppVersionCode = '19';
+String currentAppVersion = '2.6.0';
+String currentAppVersionCode = '51';
 bool updateChecked = false;
 bool updateAvailable = false;
 Map versionInfo = {};

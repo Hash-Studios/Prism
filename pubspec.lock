@@ -851,13 +851,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.2.0"
-  scroll_to_index:
-    dependency: "direct main"
-    description:
-      name: scroll_to_index
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.6"
   share:
     dependency: "direct main"
     description:
@@ -1017,13 +1010,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.1+2"
-  tutorial_coach_mark:
-    dependency: "direct main"
-    description:
-      name: tutorial_coach_mark
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.3.0"
   typed_data:
     dependency: transitive
     description:
