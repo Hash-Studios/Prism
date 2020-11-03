@@ -32,7 +32,6 @@ dependencies:
   firebase_dynamic_links: ^0.5.1
   firebase_messaging: ^6.0.16
   firebase_remote_config: ^0.3.1+1
-  firebase_storage: ^3.1.5
   flare_flutter: ^2.0.5
   flare_splash_screen: ^3.0.1
   flutter_displaymode: ^0.1.1

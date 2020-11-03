@@ -1,13 +1,10 @@
 import 'dart:io' show Platform;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
 
 class SetWallpaperButton extends StatefulWidget {
   final String url;

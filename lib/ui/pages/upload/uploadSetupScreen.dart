@@ -29,7 +29,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   bool isUploading;
   bool isProcessing;
   File image;
-  final ScrollController _scrollController = ScrollController();
   String imageURL;
   TextEditingController setupName = TextEditingController();
   TextEditingController setupDesc = TextEditingController();
