@@ -1,6 +1,4 @@
 import 'package:Prism/data/notifications/notifications.dart';
-import 'package:Prism/data/tabs/provider/tabsProvider.dart';
-import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -13,7 +11,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:tutorial_coach_mark/target_focus.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
@@ -92,13 +89,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
     }
   }
 
-  Widget _wrapScrollTag({int index, Widget child}) => AutoScrollTag(
-        key: ValueKey(index),
-        controller: globals.categoryController,
-        index: index,
-        highlightColor: Colors.black.withOpacity(0.1),
-        child: child,
-      );
   bool checkNewNotification() {
     final Box<List> box = Hive.box('notifications');
     var notifications = box.get('notifications');

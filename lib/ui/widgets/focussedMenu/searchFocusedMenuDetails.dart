@@ -10,7 +10,6 @@ import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/theme/config.dart' as config;
 
 class SearchFocusedMenuDetails extends StatelessWidget {
   final String selectedProvider;

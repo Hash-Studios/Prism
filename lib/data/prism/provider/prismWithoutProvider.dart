@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 
 final Firestore databaseReference = Firestore.instance;
 List prismWalls;

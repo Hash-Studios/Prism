@@ -1,9 +1,7 @@
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/widgets/profile/animatedThemeSwitch.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';

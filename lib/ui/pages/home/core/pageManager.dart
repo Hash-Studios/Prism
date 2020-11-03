@@ -1,16 +1,10 @@
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/data/tabs/provider/tabsProvider.dart';
-import 'package:Prism/global/globals.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
-import 'package:Prism/ui/pages/setup/homeSetupScreen.dart';
-import 'package:Prism/ui/pages/setup/setupScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
-import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
@@ -18,7 +12,6 @@ import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:rate_my_app/rate_my_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
@@ -75,8 +68,8 @@ class _PageManagerChildState extends State<PageManagerChild>
     tabController = TabController(length: 2, vsync: this);
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
-    Provider.of<TabProvider>(context, listen: false)
-        .updateSelectedTab("Wallpapers");
+    // Provider.of<TabProvider>(context, listen: false)
+    //     .updateSelectedTab("Wallpapers");
     checkConnection();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await rateMyApp.init();

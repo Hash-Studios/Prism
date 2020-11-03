@@ -1,12 +1,9 @@
 import 'package:Prism/data/setups/provider/setupProvider.dart';
-import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
-import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -63,7 +60,7 @@ class HomeSetupPage extends StatefulWidget {
 class _HomeSetupPageState extends State<HomeSetupPage> {
   int pageNumber = 0;
   void showPremiumPopUp(Function func) {
-    print(main.prefs.get("premium"));
+    debugPrint(main.prefs.get("premium").toString());
     if (main.prefs.get("isLoggedin") == false) {
       googleSignInPopUp(context, () {
         if (main.prefs.get("premium") == false ||

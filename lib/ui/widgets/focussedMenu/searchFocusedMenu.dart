@@ -1,7 +1,6 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/focussedMenu/searchFocusedMenuDetails.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/config.dart' as config;
 
 class SearchFocusedMenuHolder extends StatefulWidget {
   final String selectedProvider;

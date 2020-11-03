@@ -5,7 +5,6 @@ import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
-import 'package:Prism/data/tabs/provider/tabsProvider.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -70,9 +69,9 @@ void main() {
                   RestartWidget(
                     child: MultiProvider(
                       providers: [
-                        ChangeNotifierProvider<TabProvider>(
-                          create: (context) => TabProvider(),
-                        ),
+                        // ChangeNotifierProvider<TabProvider>(
+                        //   create: (context) => TabProvider(),
+                        // ),
                         ChangeNotifierProvider<FavouriteProvider>(
                           create: (context) => FavouriteProvider(),
                         ),
