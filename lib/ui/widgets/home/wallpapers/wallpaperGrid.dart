@@ -21,10 +21,10 @@ class WallpaperGrid extends StatefulWidget {
   _WallpaperGridState createState() => _WallpaperGridState();
 }
 
-class _WallpaperGridState extends State<WallpaperGrid>
-    with TickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+class _WallpaperGridState extends State<WallpaperGrid> {
+  // with TickerProviderStateMixin {
+  // AnimationController _controller;
+  // Animation<Color> animation;
   GlobalKey<RefreshIndicatorState> refreshHomeKey =
       GlobalKey<RefreshIndicatorState>();
   int _current = 0;
@@ -32,58 +32,58 @@ class _WallpaperGridState extends State<WallpaperGrid>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    animation = Provider.of<ThemeModel>(context, listen: false)
-                .returnThemeType() ==
-            "Dark"
-        ? TweenSequence<Color>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.white10,
-                  end: const Color(0x22FFFFFF),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: const Color(0x22FFFFFF),
-                  end: Colors.white10,
-                ),
-              ),
-            ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
-            [
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withOpacity(.1),
-                  end: Colors.black.withOpacity(.14),
-                ),
-              ),
-              TweenSequenceItem(
-                weight: 1.0,
-                tween: ColorTween(
-                  begin: Colors.black.withOpacity(.14),
-                  end: Colors.black.withOpacity(.1),
-                ),
-              ),
-            ],
-          ).animate(_controller)
-      ..addListener(() {
-        setState(() {});
-      });
-    _controller.repeat();
+    // _controller = AnimationController(
+    //   duration: const Duration(milliseconds: 800),
+    //   vsync: this,
+    // );
+    // animation = Provider.of<ThemeModel>(context, listen: false)
+    //             .returnThemeType() ==
+    //         "Dark"
+    //     ? TweenSequence<Color>(
+    //         [
+    //           TweenSequenceItem(
+    //             weight: 1.0,
+    //             tween: ColorTween(
+    //               begin: Colors.white10,
+    //               end: const Color(0x22FFFFFF),
+    //             ),
+    //           ),
+    //           TweenSequenceItem(
+    //             weight: 1.0,
+    //             tween: ColorTween(
+    //               begin: const Color(0x22FFFFFF),
+    //               end: Colors.white10,
+    //             ),
+    //           ),
+    //         ],
+    //       ).animate(_controller)
+    //     : TweenSequence<Color>(
+    //         [
+    //           TweenSequenceItem(
+    //             weight: 1.0,
+    //             tween: ColorTween(
+    //               begin: Colors.black.withOpacity(.1),
+    //               end: Colors.black.withOpacity(.14),
+    //             ),
+    //           ),
+    //           TweenSequenceItem(
+    //             weight: 1.0,
+    //             tween: ColorTween(
+    //               begin: Colors.black.withOpacity(.14),
+    //               end: Colors.black.withOpacity(.1),
+    //             ),
+    //           ),
+    //         ],
+    //       ).animate(_controller)
+    //   ..addListener(() {
+    //     setState(() {});
+    //   });
+    // _controller.repeat();
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    // _controller?.dispose();
     super.dispose();
   }
 
@@ -139,7 +139,12 @@ class _WallpaperGridState extends State<WallpaperGrid>
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: animation.value,
+                                    color: Provider.of<ThemeModel>(context,
+                                                    listen: false)
+                                                .returnThemeType() ==
+                                            "Dark"
+                                        ? Colors.white10
+                                        : Colors.black.withOpacity(.1),
                                     borderRadius: BorderRadius.circular(20),
                                     image: const DecorationImage(
                                         image: CachedNetworkImageProvider(
@@ -188,13 +193,24 @@ class _WallpaperGridState extends State<WallpaperGrid>
                               child: Data.subPrismWalls.isEmpty
                                   ? Container(
                                       decoration: BoxDecoration(
-                                        color: animation.value,
+                                        color: Provider.of<ThemeModel>(context,
+                                                        listen: false)
+                                                    .returnThemeType() ==
+                                                "Dark"
+                                            ? Colors.white10
+                                            : Colors.black.withOpacity(.1),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                     )
                                   : Container(
                                       decoration: BoxDecoration(
-                                          color: animation.value,
+                                          color: Provider.of<ThemeModel>(
+                                                          context,
+                                                          listen: false)
+                                                      .returnThemeType() ==
+                                                  "Dark"
+                                              ? Colors.white10
+                                              : Colors.black.withOpacity(.1),
                                           borderRadius:
                                               BorderRadius.circular(20),
                                           image: DecorationImage(
@@ -293,8 +309,7 @@ class _WallpaperGridState extends State<WallpaperGrid>
                   index: index,
                   // child: AnimatedBuilder(
                   // builder: (buildContext, child) {
-                  child: WallpaperTile(
-                      widget: widget, animation: animation, index: index),
+                  child: WallpaperTile(widget: widget, index: index),
                   // },
                   // ),
                 );
