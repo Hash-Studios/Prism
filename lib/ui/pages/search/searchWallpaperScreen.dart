@@ -780,43 +780,28 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: <Widget>[
-                                            GestureDetector(
-                                              onTap: () {
-                                                launch(
-                                                    pdata.wallsPS[index].url);
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    JamIcons.camera,
-                                                    size: 20,
-                                                    color: Theme.of(context)
-                                                        .accentColor
-                                                        .withOpacity(.7),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Container(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            .4,
-                                                    child: Text(
-                                                      pdata.wallsPS[index]
-                                                          .photographer
-                                                          .toString(),
-                                                      textAlign: TextAlign.left,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText2
-                                                          .copyWith(
-                                                              color: Theme.of(
-                                                                      context)
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.info,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  pdata.wallsPS[index].id
+                                                      .toString(),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
                                                                   .accentColor),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
                                             ),
                                             const SizedBox(height: 5),
                                             Row(
@@ -848,30 +833,48 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                           crossAxisAlignment:
                                               CrossAxisAlignment.end,
                                           children: <Widget>[
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  pdata.wallsPS[index].id
-                                                      .toString(),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText2
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
+                                            SizedBox(
+                                              width: 160,
+                                              child: Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: ActionChip(
+                                                  onPressed: () {
+                                                    SystemChrome
+                                                        .setEnabledSystemUIOverlays([
+                                                      SystemUiOverlay.top,
+                                                      SystemUiOverlay.bottom
+                                                    ]);
+                                                    launch(pdata
+                                                        .wallsPS[index].url);
+                                                  },
+                                                  padding: const EdgeInsets
+                                                          .symmetric(
+                                                      vertical: 5,
+                                                      horizontal: 5),
+                                                  avatar: Icon(JamIcons.camera,
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                                  labelPadding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          7, 3, 7, 3),
+                                                  label: Text(
+                                                    pdata.wallsPS[index]
+                                                        .photographer
+                                                        .toString(),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2
+                                                        .copyWith(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor)
+                                                        .copyWith(fontSize: 16),
+                                                    overflow: TextOverflow.fade,
+                                                  ),
                                                 ),
-                                                const SizedBox(width: 10),
-                                                Icon(
-                                                  JamIcons.info,
-                                                  size: 20,
-                                                  color: Theme.of(context)
-                                                      .accentColor
-                                                      .withOpacity(.7),
-                                                ),
-                                              ],
+                                              ),
                                             ),
-                                            const SizedBox(height: 5),
                                             Row(
                                               children: [
                                                 Text(
