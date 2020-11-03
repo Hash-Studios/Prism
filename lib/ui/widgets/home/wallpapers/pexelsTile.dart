@@ -1,19 +1,19 @@
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsGrid.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:provider/provider.dart';
 
 class PexelsTile extends StatelessWidget {
   const PexelsTile({
     Key key,
     @required this.widget,
-    @required this.animation,
     @required this.index,
   }) : super(key: key);
 
   final PexelsGrid widget;
-  final Animation<Color> animation;
   final int index;
 
   @override
@@ -32,11 +32,19 @@ class PexelsTile extends StatelessWidget {
       child: Container(
         decoration: PData.wallsP.isEmpty
             ? BoxDecoration(
-                color: animation.value,
+                color: Provider.of<ThemeModel>(context, listen: false)
+                            .returnThemeType() ==
+                        "Dark"
+                    ? Colors.white10
+                    : Colors.black.withOpacity(.1),
                 borderRadius: BorderRadius.circular(20),
               )
             : BoxDecoration(
-                color: animation.value,
+                color: Provider.of<ThemeModel>(context, listen: false)
+                            .returnThemeType() ==
+                        "Dark"
+                    ? Colors.white10
+                    : Colors.black.withOpacity(.1),
                 borderRadius: BorderRadius.circular(20),
                 image: DecorationImage(
                     image: CachedNetworkImageProvider(
