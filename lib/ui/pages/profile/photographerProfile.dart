@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userData;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UserProfile extends StatefulWidget {
@@ -36,7 +37,14 @@ class _UserProfileState extends State<UserProfile> {
   }
 
   Future<bool> onWillPop() async {
-    if (navStack.length > 1) navStack.removeLast();
+    if (navStack.length > 1) {
+      navStack.removeLast();
+      if ((navStack.last == "Wallpaper") ||
+          (navStack.last == "Search Wallpaper") ||
+          (navStack.last == "SharedWallpaper")) {
+        SystemChrome.setEnabledSystemUIOverlays([]);
+      }
+    }
     debugPrint(navStack.toString());
     return true;
   }
@@ -68,6 +76,23 @@ class _UserProfileState extends State<UserProfile> {
                 ],
                 backgroundColor: config.Colors().mainAccentColor(1),
                 pinned: true,
+                leading: IconButton(
+                  icon: const Icon(
+                    JamIcons.chevron_left,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    if (navStack.length > 1) {
+                      navStack.removeLast();
+                      if ((navStack.last == "Wallpaper") ||
+                          (navStack.last == "Search Wallpaper") ||
+                          (navStack.last == "SharedWallpaper")) {
+                        SystemChrome.setEnabledSystemUIOverlays([]);
+                      }
+                    }
+                    debugPrint(navStack.toString());
+                  },
+                ),
                 expandedHeight: 260.0,
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
