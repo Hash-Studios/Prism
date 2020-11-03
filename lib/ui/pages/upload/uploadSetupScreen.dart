@@ -110,7 +110,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
         mainAxisSize: MainAxisSize.min,
         children: const [
           Icon(JamIcons.google_play_circle),
-          Text("Icons"),
+          Text("* Icons"),
         ],
       ),
     )
@@ -301,8 +301,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                         color: Theme.of(context).accentColor,
                       ),
                       decoration: InputDecoration(
-                        labelText: "Write a Name...",
-                        hintText: "Write a Name...",
+                        labelText: "* Write a Name...",
+                        hintText: "* Write a Name...",
                         hintStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
@@ -326,8 +326,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                         color: Theme.of(context).accentColor,
                       ),
                       decoration: InputDecoration(
-                        labelText: "Write a description...",
-                        hintText: "Write a description...",
+                        labelText: "* Write a description...",
+                        hintText: "* Write a description...",
                         hintStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
@@ -695,7 +695,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           ),
           ExpansionTile(
             title: Text(
-              "Add wallpaper",
+              "* Add wallpaper",
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.normal,
@@ -933,6 +933,19 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           ],
                         ),
             ],
+          ),
+          const Divider(
+            height: 1,
+          ),
+          ListTile(
+            title: Text(
+              "Fields marked with * are required.",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w100,
+                color: Theme.of(context).accentColor.withOpacity(0.7),
+              ),
+            ),
           ),
           const Divider(
             height: 1,
