@@ -38,86 +38,82 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
             child: Scrollbar(
               controller: controller,
               isAlwaysShown: true,
-              child: SingleChildScrollView(
+              child: ListView.builder(
                 controller: controller,
-                child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: choices.map((choice) {
-                      return Center(
-                        child: Container(
-                            margin: const EdgeInsets.all(10),
+                itemCount: choices.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final choice = choices[index];
+                  return Center(
+                    child: Container(
+                      margin: const EdgeInsets.all(10),
+                      height: 100,
+                      width: MediaQuery.of(context).size.width * .7,
+                      decoration: BoxDecoration(
+                        color: config.Colors().mainAccentColor(1),
+                        borderRadius: BorderRadius.circular(10),
+                        image: DecorationImage(
+                          image: CachedNetworkImageProvider(
+                              choice.image as String),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: MaterialButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Provider.of<CategorySupplier>(context,
+                                    listen: false)
+                                .changeSelectedChoice(choice as CategoryMenu);
+                            Provider.of<CategorySupplier>(context,
+                                    listen: false)
+                                .changeWallpaperFuture(
+                                    choice as CategoryMenu, "r");
+                            PM.tabController.animateTo(0,
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeInCubic);
+                          },
+                          child: Container(
                             height: 100,
                             width: MediaQuery.of(context).size.width * .7,
                             decoration: BoxDecoration(
-                              color: config.Colors().mainAccentColor(1),
+                              color: initialValue == choice as CategoryMenu
+                                  ? Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.7)
+                                  : Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.4),
                               borderRadius: BorderRadius.circular(10),
-                              image: DecorationImage(
-                                image: CachedNetworkImageProvider(
-                                    choice.image as String),
-                                fit: BoxFit.cover,
+                            ),
+                            child: Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (initialValue == choice as CategoryMenu)
+                                    Icon(JamIcons.check,
+                                        color: Theme.of(context).accentColor)
+                                  else
+                                    Container(),
+                                  Text(
+                                    choice.name.toString(),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headline4
+                                        .copyWith(
+                                            color:
+                                                Theme.of(context).accentColor),
+                                  ),
+                                ],
                               ),
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: MaterialButton(
-                                padding: EdgeInsets.zero,
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Provider.of<CategorySupplier>(context,
-                                          listen: false)
-                                      .changeSelectedChoice(
-                                          choice as CategoryMenu);
-                                  Provider.of<CategorySupplier>(context,
-                                          listen: false)
-                                      .changeWallpaperFuture(
-                                          choice as CategoryMenu, "r");
-                                  PM.tabController.animateTo(0,
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      curve: Curves.easeInCubic);
-                                },
-                                child: Container(
-                                  height: 100,
-                                  width: MediaQuery.of(context).size.width * .7,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        initialValue == choice as CategoryMenu
-                                            ? Theme.of(context)
-                                                .primaryColor
-                                                .withOpacity(0.7)
-                                            : Theme.of(context)
-                                                .primaryColor
-                                                .withOpacity(0.4),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Center(
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (initialValue ==
-                                            choice as CategoryMenu)
-                                          Icon(JamIcons.check,
-                                              color:
-                                                  Theme.of(context).accentColor)
-                                        else
-                                          Container(),
-                                        Text(
-                                          choice.name.toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline4
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            )),
-                      );
-                    }).toList()),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
