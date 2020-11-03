@@ -415,3 +415,73 @@ class PremiumBanner extends StatelessWidget {
           );
   }
 }
+
+class PremiumBannerSetup extends StatelessWidget {
+  final bool comparator;
+  final Widget child;
+  const PremiumBannerSetup({this.comparator, this.child});
+  @override
+  Widget build(BuildContext context) {
+    return comparator
+        ? child
+        : Stack(
+            children: <Widget>[
+              child,
+              Positioned(
+                top: MediaQuery.of(context).size.height * 0.62 - 32,
+                left: MediaQuery.of(context).size.width * 0.642 - 15,
+                child: Container(
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFFFB800),
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(10))),
+                  padding: const EdgeInsets.all(0),
+                  child: const Padding(
+                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                    child: Icon(
+                      JamIcons.star_f,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+  }
+}
+
+class PremiumBannerSetupOld extends StatelessWidget {
+  final bool comparator;
+  final Widget child;
+  const PremiumBannerSetupOld({this.comparator, this.child});
+  @override
+  Widget build(BuildContext context) {
+    return comparator
+        ? child
+        : Stack(
+            children: <Widget>[
+              child,
+              Positioned(
+                top: MediaQuery.of(context).size.height * 0.72 - 33,
+                left: MediaQuery.of(context).size.width * 0.712 - 29,
+                child: Container(
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFFFB800),
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(10))),
+                  padding: const EdgeInsets.all(0),
+                  child: const Padding(
+                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                    child: Icon(
+                      JamIcons.star_f,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+  }
+}
