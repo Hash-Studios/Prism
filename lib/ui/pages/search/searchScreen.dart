@@ -132,6 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.1,
                   child: PopupMenuButton(
+                    offset: const Offset(5, 30),
                     icon: Icon(JamIcons.more_vertical,
                         color: Theme.of(context).accentColor),
                     elevation: 4,
@@ -139,6 +140,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onCanceled: () {
                       debugPrint('You have not choosed anything');
                     },
+                    color: Theme.of(context).hintColor,
                     tooltip: 'Providers',
                     onSelected: (choice) {
                       setState(() {
@@ -168,7 +170,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           value: choice,
                           child: Row(
                             children: <Widget>[
-                              Icon(choice.icon as IconData),
+                              Icon(choice.icon as IconData,
+                                  color: Theme.of(context).accentColor),
                               const SizedBox(width: 10),
                               Text(choice.title.toString()),
                             ],
