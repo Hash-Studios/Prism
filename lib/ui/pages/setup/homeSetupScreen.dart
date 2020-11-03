@@ -5,6 +5,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
@@ -91,7 +92,18 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
           top: 0,
           child: Container(
             width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height * 0.3,
+            height: MediaQuery.of(context).size.height * 0.9,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  config.Colors().mainAccentColor(1),
+                  Theme.of(context).primaryColor
+                ],
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                stops: const [0, 1],
+              ),
+            ),
             child: Align(
               alignment: Alignment.topLeft,
               child: Container(
@@ -101,28 +113,14 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      main.prefs.get("premium") as bool == true
-                          ? Provider.of<SetupProvider>(context, listen: false)
-                                  .setups
-                                  .isEmpty
-                              ? ""
-                              : Provider.of<SetupProvider>(context,
-                                      listen: false)
-                                  .setups[pageNumber]['name']
-                                  .toString()
-                                  .toUpperCase()
-                          : (pageNumber == 5)
-                              ? "BUY PREMIUM"
-                              : Provider.of<SetupProvider>(context,
-                                          listen: false)
-                                      .setups
-                                      .isEmpty
-                                  ? ""
-                                  : Provider.of<SetupProvider>(context,
-                                          listen: false)
-                                      .setups[pageNumber]['name']
-                                      .toString()
-                                      .toUpperCase(),
+                      Provider.of<SetupProvider>(context, listen: false)
+                              .setups
+                              .isEmpty
+                          ? ""
+                          : Provider.of<SetupProvider>(context, listen: false)
+                              .setups[pageNumber]['name']
+                              .toString()
+                              .toUpperCase(),
                       style: Theme.of(context)
                           .textTheme
                           .headline1
@@ -153,7 +151,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                       (this.mounted) ? {setState(() {})} : debugPrint(""));
                   return GestureDetector(
                     onTap: () {
-                      if (pageNumber == 5) {
+                      if (pageNumber >= 5) {
                         showPremiumPopUp(() {
                           Navigator.pushNamed(context, setupViewRoute,
                               arguments: [pageNumber]);
@@ -173,155 +171,40 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                           });
                         },
                         controller: widget.controller,
-                        itemCount: main.prefs.get("premium") == true
-                            ? Provider.of<SetupProvider>(context, listen: false)
-                                    .setups
-                                    .isEmpty
-                                ? 1
-                                : Provider.of<SetupProvider>(context,
-                                        listen: false)
-                                    .setups
-                                    .length
-                            : 6,
-                        itemBuilder: (context, index) => main.prefs
-                                    .get("premium") as bool ==
-                                true
-                            ? Provider.of<SetupProvider>(context, listen: false)
-                                    .setups
-                                    .isEmpty
-                                ? Loader()
-                                : AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: EdgeInsets.only(
-                                      top: pageNumber == index + 1 ||
-                                              pageNumber == index - 1
-                                          ? MediaQuery.of(context).size.height *
-                                              0.1
-                                          : MediaQuery.of(context).size.height *
-                                              0.0299,
-                                    ),
-                                    child: Align(
-                                      alignment: Alignment.topCenter,
-                                      child: CachedNetworkImage(
-                                        imageUrl: Provider.of<SetupProvider>(
-                                                context,
-                                                listen: false)
-                                            .setups[index]['image']
-                                            .toString(),
-                                        imageBuilder:
-                                            (context, imageProvider) => Hero(
-                                          tag: "CustomHerotag$index",
-                                          child: Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.642,
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.62,
-                                            decoration: BoxDecoration(
-                                              boxShadow: pageNumber == index
-                                                  ? Provider.of<ThemeModel>(
-                                                                  context)
-                                                              .returnThemeType() ==
-                                                          "Dark"
-                                                      ? [
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .15),
-                                                            blurRadius: 38,
-                                                            offset:
-                                                                const Offset(
-                                                                    0, 19),
-                                                          ),
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .10),
-                                                            blurRadius: 12,
-                                                            offset:
-                                                                const Offset(
-                                                                    0, 15),
-                                                          )
-                                                        ]
-                                                      : [
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .7),
-                                                            blurRadius: 38,
-                                                            offset:
-                                                                const Offset(
-                                                                    0, 19),
-                                                          ),
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .6),
-                                                            blurRadius: 12,
-                                                            offset:
-                                                                const Offset(
-                                                                    0, 15),
-                                                          )
-                                                        ]
-                                                  : [],
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              image: DecorationImage(
-                                                  image: imageProvider,
-                                                  fit: BoxFit.fill),
-                                            ),
-                                          ),
-                                        ),
-                                        progressIndicatorBuilder:
-                                            (context, url, downloadProgress) =>
-                                                Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.642,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.62,
-                                          child: Center(
-                                            child: CircularProgressIndicator(
-                                                valueColor:
-                                                    AlwaysStoppedAnimation(
-                                                  config.Colors()
-                                                      .mainAccentColor(1),
-                                                ),
-                                                value:
-                                                    downloadProgress.progress),
-                                          ),
-                                        ),
-                                        errorWidget: (context, url, error) =>
-                                            Center(
-                                          child: Icon(
-                                            JamIcons.close_circle_f,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                            : (index == 5)
-                                ? AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: EdgeInsets.only(
-                                      top: pageNumber == index + 1 ||
-                                              pageNumber == index - 1
-                                          ? MediaQuery.of(context).size.height *
-                                              0.1
-                                          : MediaQuery.of(context).size.height *
-                                              0.0299,
-                                    ),
-                                    child: Align(
-                                      alignment: Alignment.topCenter,
-                                      child: Hero(
+                        itemCount: Provider.of<SetupProvider>(context,
+                                    listen: false)
+                                .setups
+                                .isEmpty
+                            ? 1
+                            : Provider.of<SetupProvider>(context, listen: false)
+                                .setups
+                                .length,
+                        itemBuilder: (context, index) => Provider.of<
+                                    SetupProvider>(context, listen: false)
+                                .setups
+                                .isEmpty
+                            ? Loader()
+                            : AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: EdgeInsets.only(
+                                  top: pageNumber == index + 1 ||
+                                          pageNumber == index - 1
+                                      ? MediaQuery.of(context).size.height * 0.1
+                                      : MediaQuery.of(context).size.height *
+                                          0.0299,
+                                ),
+                                child: PremiumBannerSetup(
+                                  comparator: index < 5,
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: CachedNetworkImage(
+                                      imageUrl: Provider.of<SetupProvider>(
+                                              context,
+                                              listen: false)
+                                          .setups[index]['image']
+                                          .toString(),
+                                      imageBuilder: (context, imageProvider) =>
+                                          Hero(
                                         tag: "CustomHerotag$index",
                                         child: Container(
                                           width: MediaQuery.of(context)
@@ -336,8 +219,8 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                             boxShadow: pageNumber == index
                                                 ? Provider.of<ThemeModel>(
                                                                 context)
-                                                            .currentTheme ==
-                                                        kLightTheme
+                                                            .returnThemeType() ==
+                                                        "Dark"
                                                     ? [
                                                         BoxShadow(
                                                           color: Colors.black
@@ -373,151 +256,42 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                                 : [],
                                             borderRadius:
                                                 BorderRadius.circular(10),
-                                            image: const DecorationImage(
-                                                image: AssetImage(
-                                                    'assets/images/Premium.png'),
+                                            image: DecorationImage(
+                                                image: imageProvider,
                                                 fit: BoxFit.fill),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  )
-                                : Provider.of<SetupProvider>(context,
-                                            listen: false)
-                                        .setups
-                                        .isEmpty
-                                    ? Loader()
-                                    : AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        padding: EdgeInsets.only(
-                                          top: pageNumber == index + 1 ||
-                                                  pageNumber == index - 1
-                                              ? MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.1
-                                              : MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.0299,
-                                        ),
-                                        child: Align(
-                                          alignment: Alignment.topCenter,
-                                          child: CachedNetworkImage(
-                                            imageUrl:
-                                                Provider.of<SetupProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .setups[index]['image']
-                                                    .toString(),
-                                            imageBuilder:
-                                                (context, imageProvider) =>
-                                                    Hero(
-                                              tag: "CustomHerotag$index",
-                                              child: Container(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.642,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.62,
-                                                decoration: BoxDecoration(
-                                                  boxShadow: pageNumber == index
-                                                      ? Provider.of<ThemeModel>(
-                                                                      context)
-                                                                  .currentTheme ==
-                                                              kLightTheme
-                                                          ? [
-                                                              BoxShadow(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        .15),
-                                                                blurRadius: 38,
-                                                                offset:
-                                                                    const Offset(
-                                                                        0, 19),
-                                                              ),
-                                                              BoxShadow(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        .10),
-                                                                blurRadius: 12,
-                                                                offset:
-                                                                    const Offset(
-                                                                        0, 15),
-                                                              )
-                                                            ]
-                                                          : [
-                                                              BoxShadow(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        .7),
-                                                                blurRadius: 38,
-                                                                offset:
-                                                                    const Offset(
-                                                                        0, 19),
-                                                              ),
-                                                              BoxShadow(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        .6),
-                                                                blurRadius: 12,
-                                                                offset:
-                                                                    const Offset(
-                                                                        0, 15),
-                                                              )
-                                                            ]
-                                                      : [],
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  image: DecorationImage(
-                                                      image: imageProvider,
-                                                      fit: BoxFit.fill),
-                                                ),
+                                      progressIndicatorBuilder:
+                                          (context, url, downloadProgress) =>
+                                              Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.642,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.62,
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation(
+                                                config.Colors()
+                                                    .mainAccentColor(1),
                                               ),
-                                            ),
-                                            progressIndicatorBuilder: (context,
-                                                    url, downloadProgress) =>
-                                                Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.642,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.62,
-                                              child: Center(
-                                                child:
-                                                    CircularProgressIndicator(
-                                                        valueColor:
-                                                            AlwaysStoppedAnimation(
-                                                          config.Colors()
-                                                              .mainAccentColor(
-                                                                  1),
-                                                        ),
-                                                        value: downloadProgress
-                                                            .progress),
-                                              ),
-                                            ),
-                                            errorWidget:
-                                                (context, url, error) => Center(
-                                              child: Icon(
-                                                JamIcons.close_circle_f,
-                                                color: Theme.of(context)
-                                                    .accentColor,
-                                              ),
-                                            ),
-                                          ),
+                                              value: downloadProgress.progress),
                                         ),
                                       ),
+                                      errorWidget: (context, url, error) =>
+                                          Center(
+                                        child: Icon(
+                                          JamIcons.close_circle_f,
+                                          color: Theme.of(context).accentColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                   );
@@ -539,41 +313,25 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                   child: const Icon(JamIcons.chevron_left),
                 ),
               ),
-        main.prefs.get("premium") as bool == true
-            ? pageNumber ==
-                    Provider.of<SetupProvider>(context, listen: false)
-                            .setups
-                            .length -
-                        1
-                ? Container()
-                : Align(
-                    alignment: Alignment.centerRight,
-                    child: ArrowBounceAnimation(
-                      onTap: () {
-                        widget.controller.animateToPage(
-                            widget.controller.page.toInt() + 1,
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.fastOutSlowIn);
-                        HapticFeedback.vibrate();
-                      },
-                      child: const Icon(JamIcons.chevron_right),
-                    ),
-                  )
-            : pageNumber == 5
-                ? Container()
-                : Align(
-                    alignment: Alignment.centerRight,
-                    child: ArrowBounceAnimation(
-                      onTap: () {
-                        widget.controller.animateToPage(
-                            widget.controller.page.toInt() + 1,
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.fastOutSlowIn);
-                        HapticFeedback.vibrate();
-                      },
-                      child: const Icon(JamIcons.chevron_right),
-                    ),
-                  ),
+        pageNumber ==
+                Provider.of<SetupProvider>(context, listen: false)
+                        .setups
+                        .length -
+                    1
+            ? Container()
+            : Align(
+                alignment: Alignment.centerRight,
+                child: ArrowBounceAnimation(
+                  onTap: () {
+                    widget.controller.animateToPage(
+                        widget.controller.page.toInt() + 1,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.fastOutSlowIn);
+                    HapticFeedback.vibrate();
+                  },
+                  child: const Icon(JamIcons.chevron_right),
+                ),
+              ),
       ],
     );
   }
