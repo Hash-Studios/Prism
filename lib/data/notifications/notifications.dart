@@ -11,7 +11,7 @@ Future<void> getNotifications() async {
     debugPrint("-------- Fetching fresh notifications ---------");
     await databaseReference
         .collection("notifications")
-        .orderBy("createdAt", descending: true)
+        .orderBy("createdAt")
         .getDocuments()
         .then((value) {
       debugPrint("-------- Fetched fresh notifications ---------");
@@ -47,7 +47,7 @@ Future<void> getNotifications() async {
     debugPrint("-------- Fetching only new notifications ---------");
     await databaseReference
         .collection("notifications")
-        .orderBy("createdAt", descending: true)
+        .orderBy("createdAt")
         .getDocuments()
         .then((value) {
       int counter = 0;
