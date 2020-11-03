@@ -38,6 +38,8 @@ class AboutScreen extends StatelessWidget {
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
+                navStack.removeLast();
+                debugPrint(navStack.toString());
                 Navigator.pop(context);
               }),
           title: Text(
