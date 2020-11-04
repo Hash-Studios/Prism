@@ -25,6 +25,9 @@ import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:Prism/global/svgAssets.dart';
 
 class ShareWallpaperViewScreen extends StatefulWidget {
   final List arguments;
@@ -872,71 +875,97 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       child: Align(
                                                         alignment: Alignment
                                                             .centerRight,
-                                                        child: ActionChip(
-                                                          onPressed:
-                                                              Data.wall == null
-                                                                  ? () {}
-                                                                  : () {
-                                                                      SystemChrome
-                                                                          .setEnabledSystemUIOverlays([
-                                                                        SystemUiOverlay
-                                                                            .top,
-                                                                        SystemUiOverlay
-                                                                            .bottom
-                                                                      ]);
-                                                                      Navigator.pushNamed(
-                                                                          context,
-                                                                          photographerProfileRoute,
-                                                                          arguments: [
-                                                                            Data.wall["by"],
-                                                                            Data.wall["email"],
-                                                                            Data.wall["userPhoto"],
-                                                                            false,
-                                                                            Data.wall["twitter"] != null
-                                                                                ? Data.wall["twitter"].toString().split("https://www.twitter.com/")[1]
-                                                                                : "",
-                                                                            Data.wall["instagram"] != null
-                                                                                ? Data.wall["instagram"].toString().split("https://www.instagram.com/")[1]
-                                                                                : "",
-                                                                          ]);
-                                                                    },
-                                                          padding:
-                                                              const EdgeInsets
-                                                                      .symmetric(
-                                                                  vertical: 5,
-                                                                  horizontal:
-                                                                      5),
-                                                          avatar: CircleAvatar(
-                                                            backgroundImage:
-                                                                CachedNetworkImageProvider(Data
-                                                                    .wall[
-                                                                        "userPhoto"]
-                                                                    .toString()),
-                                                          ),
-                                                          labelPadding:
-                                                              const EdgeInsets
-                                                                      .fromLTRB(
-                                                                  7, 3, 7, 3),
-                                                          label: Text(
-                                                              Data.wall == null
-                                                                  ? "Photographer"
-                                                                  : Data.wall[
-                                                                          "by"]
-                                                                      .toString(),
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .bodyText2
-                                                                  .copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .accentColor)
-                                                                  .copyWith(
-                                                                      fontSize:
-                                                                          16),
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .fade),
+                                                        child: Stack(
+                                                          children: [
+                                                            Align(
+                                                              alignment:
+                                                                  Alignment
+                                                                      .topRight,
+                                                              child: ActionChip(
+                                                                onPressed:
+                                                                    Data.wall ==
+                                                                            null
+                                                                        ? () {}
+                                                                        : () {
+                                                                            SystemChrome.setEnabledSystemUIOverlays([
+                                                                              SystemUiOverlay.top,
+                                                                              SystemUiOverlay.bottom
+                                                                            ]);
+                                                                            Navigator.pushNamed(context, photographerProfileRoute, arguments: [
+                                                                              Data.wall["by"],
+                                                                              Data.wall["email"],
+                                                                              Data.wall["userPhoto"],
+                                                                              false,
+                                                                              Data.wall["twitter"] != null ? Data.wall["twitter"].toString().split("https://www.twitter.com/")[1] : "",
+                                                                              Data.wall["instagram"] != null ? Data.wall["instagram"].toString().split("https://www.instagram.com/")[1] : "",
+                                                                            ]);
+                                                                          },
+                                                                padding: const EdgeInsets
+                                                                        .symmetric(
+                                                                    vertical: 5,
+                                                                    horizontal:
+                                                                        5),
+                                                                avatar:
+                                                                    CircleAvatar(
+                                                                  backgroundImage:
+                                                                      CachedNetworkImageProvider(Data
+                                                                          .wall[
+                                                                              "userPhoto"]
+                                                                          .toString()),
+                                                                ),
+                                                                labelPadding:
+                                                                    const EdgeInsets
+                                                                            .fromLTRB(
+                                                                        7,
+                                                                        3,
+                                                                        7,
+                                                                        3),
+                                                                label: Text(
+                                                                    Data.wall ==
+                                                                            null
+                                                                        ? "Photographer"
+                                                                        : Data
+                                                                            .wall[
+                                                                                "by"]
+                                                                            .toString(),
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyText2
+                                                                        .copyWith(
+                                                                            color: Theme.of(context)
+                                                                                .accentColor)
+                                                                        .copyWith(
+                                                                            fontSize:
+                                                                                16),
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .fade),
+                                                              ),
+                                                            ),
+                                                            globals.verifiedUsers
+                                                                    .contains(Data
+                                                                        .wall[
+                                                                            "email"]
+                                                                        .toString())
+                                                                ? Align(
+                                                                    alignment:
+                                                                        Alignment
+                                                                            .topRight,
+                                                                    child:
+                                                                        Container(
+                                                                      width: 20,
+                                                                      height:
+                                                                          20,
+                                                                      child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                                          "E57697",
+                                                                          config.Colors().mainAccentColor(1) == Colors.black
+                                                                              ? "E57697"
+                                                                              : main.prefs.get("mainAccentColor").toRadixString(16).toString().substring(2))),
+                                                                    ),
+                                                                  )
+                                                                : Container(),
+                                                          ],
                                                         ),
                                                       ),
                                                     ),

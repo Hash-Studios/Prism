@@ -9,6 +9,9 @@ import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:Prism/global/svgAssets.dart';
 
 class UserProfile extends StatefulWidget {
   final List arguments;
@@ -108,21 +111,40 @@ class _UserProfileState extends State<UserProfile> {
                             const Spacer(flex: 5),
                             userPhoto == null
                                 ? Container()
-                                : Container(
-                                    decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(5000),
-                                        boxShadow: [
-                                          BoxShadow(
-                                              blurRadius: 16,
-                                              offset: const Offset(0, 4),
-                                              color: const Color(0xFF000000)
-                                                  .withOpacity(0.24))
-                                        ]),
-                                    child: CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(userPhoto),
-                                    ),
+                                : Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(5000),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  blurRadius: 16,
+                                                  offset: const Offset(0, 4),
+                                                  color: const Color(0xFF000000)
+                                                      .withOpacity(0.24))
+                                            ]),
+                                        child: CircleAvatar(
+                                          radius: 50,
+                                          backgroundImage:
+                                              NetworkImage(userPhoto),
+                                        ),
+                                      ),
+                                      globals.verifiedUsers.contains(email)
+                                          ? Positioned(
+                                              top: 0,
+                                              left: 70,
+                                              child: Container(
+                                                width: 30,
+                                                height: 30,
+                                                child: SvgPicture.string(
+                                                    verifiedIcon.replaceAll(
+                                                        "E57697", "FFFFFF")),
+                                              ),
+                                            )
+                                          : Container(),
+                                    ],
                                   ),
                             const Spacer(flex: 2),
                             premium == false
