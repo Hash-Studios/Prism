@@ -147,9 +147,9 @@ class _PexelsGridState extends State<PexelsGrid> {
                                         ? Colors.white10
                                         : Colors.black.withOpacity(.1),
                                     borderRadius: BorderRadius.circular(20),
-                                    image: const DecorationImage(
+                                    image: DecorationImage(
                                         image: CachedNetworkImageProvider(
-                                            "https://unblast.com/wp-content/uploads/2018/08/Gradient-Mesh-21.jpg"),
+                                            globals.topImageLink),
                                         fit: BoxFit.cover)),
                                 child: Center(
                                   child: Container(
