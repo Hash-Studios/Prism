@@ -57,12 +57,16 @@ class AboutScreen extends StatelessWidget {
                   height: 20,
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SvgPicture.string(
-                    prismRoundedSquareIcon,
-                    height: 70,
-                  ),
-                ),
+                    padding: const EdgeInsets.all(8.0),
+                    child: Image.asset(
+                      "assets/images/prism.png",
+                      height: 70,
+                    )
+                    //  SvgPicture.string(
+                    //   prismRoundedSquareIcon,
+                    //   height: 70,
+                    // ),
+                    ),
                 const SizedBox(
                   height: 10,
                 ),
