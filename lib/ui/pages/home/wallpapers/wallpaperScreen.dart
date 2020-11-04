@@ -21,8 +21,11 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/svgAssets.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:flutter_svg/flutter_svg.dart';
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -800,82 +803,126 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               child: Align(
                                                 alignment:
                                                     Alignment.centerRight,
-                                                child: ActionChip(
-                                                  onPressed: () {
-                                                    SystemChrome
-                                                        .setEnabledSystemUIOverlays([
-                                                      SystemUiOverlay.top,
-                                                      SystemUiOverlay.bottom
-                                                    ]);
-                                                    Navigator.pushNamed(context,
-                                                        photographerProfileRoute,
-                                                        arguments: [
-                                                          data.subPrismWalls[
-                                                              index]["by"],
-                                                          data.subPrismWalls[
-                                                              index]["email"],
-                                                          data.subPrismWalls[
-                                                                  index]
-                                                              ["userPhoto"],
-                                                          false,
-                                                          data.subPrismWalls[
-                                                                          index]
-                                                                      [
-                                                                      "twitter"] !=
-                                                                  null
-                                                              ? data
+                                                child: Stack(
+                                                  children: [
+                                                    Align(
+                                            alignment: Alignment.topRight,
+                                                                                                          child: ActionChip(
+                                                        onPressed: () {
+                                                          SystemChrome
+                                                              .setEnabledSystemUIOverlays([
+                                                            SystemUiOverlay.top,
+                                                            SystemUiOverlay.bottom
+                                                          ]);
+                                                          Navigator.pushNamed(
+                                                              context,
+                                                              photographerProfileRoute,
+                                                              arguments: [
+                                                                data.subPrismWalls[
+                                                                    index]["by"],
+                                                                data.subPrismWalls[
+                                                                        index]
+                                                                    ["email"],
+                                                                data.subPrismWalls[
+                                                                        index]
+                                                                    ["userPhoto"],
+                                                                false,
+                                                                data.subPrismWalls[
+                                                                                index]
+                                                                            [
+                                                                            "twitter"] !=
+                                                                        null
+                                                                    ? data
+                                                                        .subPrismWalls[
+                                                                            index]
+                                                                            [
+                                                                            "twitter"]
+                                                                        .toString()
+                                                                        .split(
+                                                                            "https://www.twitter.com/")[1]
+                                                                    : "",
+                                                                data.subPrismWalls[
+                                                                                index]
+                                                                            [
+                                                                            "instagram"] !=
+                                                                        null
+                                                                    ? data
+                                                                        .subPrismWalls[
+                                                                            index]
+                                                                            [
+                                                                            "instagram"]
+                                                                        .toString()
+                                                                        .split(
+                                                                            "https://www.instagram.com/")[1]
+                                                                    : "",
+                                                              ]);
+                                                        },
+                                                        padding: const EdgeInsets
+                                                                .symmetric(
+                                                            vertical: 5,
+                                                            horizontal: 5),
+                                                        avatar: CircleAvatar(
+                                                          backgroundImage:
+                                                              CachedNetworkImageProvider(data
                                                                   .subPrismWalls[
                                                                       index][
-                                                                      "twitter"]
-                                                                  .toString()
-                                                                  .split(
-                                                                      "https://www.twitter.com/")[1]
-                                                              : "",
+                                                                      "userPhoto"]
+                                                                  .toString()),
+                                                        ),
+                                                        labelPadding:
+                                                            const EdgeInsets
+                                                                    .fromLTRB(
+                                                                7, 3, 7, 3),
+                                                        label: Text(
                                                           data.subPrismWalls[
-                                                                          index]
-                                                                      [
-                                                                      "instagram"] !=
-                                                                  null
-                                                              ? data
-                                                                  .subPrismWalls[
-                                                                      index][
-                                                                      "instagram"]
-                                                                  .toString()
-                                                                  .split(
-                                                                      "https://www.instagram.com/")[1]
-                                                              : "",
-                                                        ]);
-                                                  },
-                                                  padding: const EdgeInsets
-                                                          .symmetric(
-                                                      vertical: 5,
-                                                      horizontal: 5),
-                                                  avatar: CircleAvatar(
-                                                    backgroundImage:
-                                                        CachedNetworkImageProvider(
-                                                            data
+                                                                  index]["by"]
+                                                              .toString(),
+                                                          style: Theme.of(context)
+                                                              .textTheme
+                                                              .bodyText2
+                                                              .copyWith(
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .accentColor)
+                                                              .copyWith(
+                                                                  fontSize: 16),
+                                                          overflow:
+                                                              TextOverflow.fade,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    globals.verifiedUsers
+                                                            .contains(data
                                                                 .subPrismWalls[
-                                                                    index][
-                                                                    "userPhoto"]
-                                                                .toString()),
-                                                  ),
-                                                  labelPadding:
-                                                      const EdgeInsets.fromLTRB(
-                                                          7, 3, 7, 3),
-                                                  label: Text(
-                                                    data.subPrismWalls[index]
-                                                            ["by"]
-                                                        .toString(),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodyText2
-                                                        .copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor)
-                                                        .copyWith(fontSize: 16),
-                                                    overflow: TextOverflow.fade,
-                                                  ),
+                                                                    index]
+                                                                    ["email"]
+                                                                .toString())
+                                                        ? Align(
+                                                            alignment: Alignment
+                                                                .topRight,
+                                                            child: Container(
+                                                              width: 20,
+                                                              height: 20,
+                                                              child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                                  "E57697",
+                                                                  config.Colors().mainAccentColor(
+                                                                              1) ==
+                                                                          Colors
+                                                                              .black
+                                                                      ? "E57697"
+                                                                      : main
+                                                                          .prefs
+                                                                          .get(
+                                                                              "mainAccentColor")
+                                                                          .toRadixString(
+                                                                              16)
+                                                                          .toString()
+                                                                          .substring(
+                                                                              2))),
+                                                            ),
+                                                          )
+                                                        : Container(),
+                                                  ],
                                                 ),
                                               ),
                                             ),

@@ -179,19 +179,11 @@ class _PageManagerChildState extends State<PageManagerChild>
             ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "setup") {
-        Future.delayed(const Duration())
-            .then((value) => main.prefs.get("isLoggedin") == true
-                ? Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
-                    deepLink.queryParameters["name"],
-                    deepLink.queryParameters["thumbUrl"],
-                  ])
-                : googleSignInPopUp(context, () {
-                    Navigator.pushNamed(context, shareSetupViewRoute,
-                        arguments: [
-                          deepLink.queryParameters["name"],
-                          deepLink.queryParameters["thumbUrl"],
-                        ]);
-                  }));
+        Future.delayed(const Duration()).then((value) =>
+            Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
+              deepLink.queryParameters["name"],
+              deepLink.queryParameters["thumbUrl"],
+            ]));
         linkOpened = 1;
       } else if (deepLink.pathSegments[0] == "refer") {
         //TODO write code to add coins in friend/user account
@@ -226,19 +218,11 @@ class _PageManagerChildState extends State<PageManagerChild>
                     deepLink.queryParameters["instagram"],
                   ]));
         } else if (deepLink.pathSegments[0] == "setup") {
-          Future.delayed(const Duration()).then((value) => main.prefs
-                      .get("isLoggedin") ==
-                  true
-              ? Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
-                  deepLink.queryParameters["name"],
-                  deepLink.queryParameters["thumbUrl"],
-                ])
-              : googleSignInPopUp(context, () {
-                  Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
-                    deepLink.queryParameters["name"],
-                    deepLink.queryParameters["thumbUrl"],
-                  ]);
-                }));
+          Future.delayed(const Duration()).then((value) =>
+              Navigator.pushNamed(context, shareSetupViewRoute, arguments: [
+                deepLink.queryParameters["name"],
+                deepLink.queryParameters["thumbUrl"],
+              ]));
         } else {}
 
         debugPrint("opened while bg via deep link2345");

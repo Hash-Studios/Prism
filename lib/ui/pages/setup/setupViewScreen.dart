@@ -14,6 +14,10 @@ import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:Prism/global/svgAssets.dart';
 
 class SetupViewScreen extends StatefulWidget {
   final List arguments;
@@ -274,86 +278,140 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     width: 150,
                                     child: Align(
                                       alignment: Alignment.centerRight,
-                                      child: ActionChip(
-                                          label: Text(
-                                            Provider.of<SetupProvider>(context,
-                                                    listen: false)
-                                                .setups[index]["by"]
-                                                .toString(),
-                                            overflow: TextOverflow.fade,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyText2
-                                                .copyWith(
-                                                    color: Theme.of(context)
-                                                        .accentColor),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 5, horizontal: 5),
-                                          avatar: CircleAvatar(
-                                            backgroundImage:
-                                                CachedNetworkImageProvider(
-                                                    Provider.of<SetupProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .setups[index]
-                                                            ["userPhoto"]
-                                                        .toString()),
-                                          ),
-                                          labelPadding:
-                                              const EdgeInsets.fromLTRB(
-                                                  7, 3, 7, 3),
-                                          onPressed: () {
-                                            SystemChrome
-                                                .setEnabledSystemUIOverlays([
-                                              SystemUiOverlay.top,
-                                              SystemUiOverlay.bottom
-                                            ]);
-                                            Navigator.pushNamed(context,
-                                                photographerProfileRoute,
-                                                arguments: [
+                                      child: Stack(
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.topRight,
+                                            child: ActionChip(
+                                                label: Text(
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["by"],
+                                                      .setups[index]["by"]
+                                                      .toString(),
+                                                  overflow: TextOverflow.fade,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 5,
+                                                        horizontal: 5),
+                                                avatar: CircleAvatar(
+                                                  backgroundImage:
+                                                      CachedNetworkImageProvider(
+                                                          Provider.of<SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .setups[index]
+                                                                  ["userPhoto"]
+                                                              .toString()),
+                                                ),
+                                                labelPadding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        7, 3, 7, 3),
+                                                onPressed: () {
+                                                  SystemChrome
+                                                      .setEnabledSystemUIOverlays([
+                                                    SystemUiOverlay.top,
+                                                    SystemUiOverlay.bottom
+                                                  ]);
+                                                  Navigator.pushNamed(context,
+                                                      photographerProfileRoute,
+                                                      arguments: [
+                                                        Provider.of<SetupProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .setups[index]["by"],
+                                                        Provider.of<SetupProvider>(
+                                                                    context,
+                                                                    listen: false)
+                                                                .setups[index]
+                                                            ["email"],
+                                                        Provider.of<SetupProvider>(
+                                                                    context,
+                                                                    listen: false)
+                                                                .setups[index]
+                                                            ["userPhoto"],
+                                                        false,
+                                                        Provider.of<SetupProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .setups[index]
+                                                                    [
+                                                                    "twitter"] !=
+                                                                null
+                                                            ? Provider.of<
+                                                                        SetupProvider>(
+                                                                    context,
+                                                                    listen:
+                                                                        false)
+                                                                .setups[index]
+                                                                    ["twitter"]
+                                                                .toString()
+                                                                .split(
+                                                                    "https://www.twitter.com/")[1]
+                                                            : "",
+                                                        Provider.of<SetupProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .setups[index]
+                                                                    [
+                                                                    "instagram"] !=
+                                                                null
+                                                            ? Provider.of<
+                                                                        SetupProvider>(
+                                                                    context,
+                                                                    listen:
+                                                                        false)
+                                                                .setups[index][
+                                                                    "instagram"]
+                                                                .toString()
+                                                                .split(
+                                                                    "https://www.instagram.com/")[1]
+                                                            : "",
+                                                      ]);
+                                                }),
+                                          ),
+                                          globals.verifiedUsers.contains(
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["email"],
-                                                  Provider.of<SetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .setups[index]
-                                                      ["userPhoto"],
-                                                  false,
-                                                 Provider.of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .setups[index]["twitter"] !=
-                                                                  null
-                                                              ? Provider.of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .setups[index]["twitter"]
-                                                                  .toString()
-                                                                  .split(
-                                                                      "https://www.twitter.com/")[1]
-                                                              : "",
-                                                  Provider.of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .setups[index]["instagram"] !=
-                                                                  null
-                                                              ? Provider.of<SetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .setups[index]["instagram"]
-                                                                  .toString()
-                                                                  .split(
-                                                                      "https://www.instagram.com/")[1]
-                                                              : "",
-                                                ]);
-                                          }),
+                                                      .setups[index]["email"]
+                                                      .toString())
+                                              ? Align(
+                                                  alignment: Alignment.topRight,
+                                                  child: Container(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: SvgPicture.string(
+                                                        verifiedIcon.replaceAll(
+                                                            "E57697",
+                                                            config.Colors()
+                                                                        .mainAccentColor(
+                                                                            1) ==
+                                                                    Colors.black
+                                                                ? "E57697"
+                                                                : main.prefs
+                                                                    .get(
+                                                                        "mainAccentColor")
+                                                                    .toRadixString(
+                                                                        16)
+                                                                    .toString()
+                                                                    .substring(
+                                                                        2))),
+                                                  ),
+                                                )
+                                              : Container(),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 5),

@@ -7,6 +7,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +16,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:Prism/global/svgAssets.dart';
 
 class ShareSetupViewScreen extends StatefulWidget {
   final List arguments;
@@ -299,73 +303,119 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                               CrossAxisAlignment.end,
                                           children: <Widget>[
                                             SizedBox(
-                                              width: 160,
+                                              width: 159,
                                               child: Align(
                                                 alignment:
                                                     Alignment.centerRight,
-                                                child: ActionChip(
-                                                    label: Text(
-                                                      sdata.setup["by"]
-                                                          .toString(),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText2
-                                                          .copyWith(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor),
-                                                      overflow:
-                                                          TextOverflow.fade,
+                                                child: Stack(
+                                                  children: [
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.topRight,
+                                                      child: ActionChip(
+                                                          label: Text(
+                                                            sdata.setup["by"]
+                                                                .toString(),
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodyText2
+                                                                .copyWith(
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .accentColor),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .fade,
+                                                          ),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .symmetric(
+                                                                  vertical: 5,
+                                                                  horizontal:
+                                                                      5),
+                                                          avatar: CircleAvatar(
+                                                            backgroundImage:
+                                                                CachedNetworkImageProvider(sdata
+                                                                    .setup[
+                                                                        "userPhoto"]
+                                                                    .toString()),
+                                                          ),
+                                                          labelPadding:
+                                                              const EdgeInsets
+                                                                      .fromLTRB(
+                                                                  7, 3, 7, 3),
+                                                          onPressed: () {
+                                                            SystemChrome
+                                                                .setEnabledSystemUIOverlays([
+                                                              SystemUiOverlay
+                                                                  .top,
+                                                              SystemUiOverlay
+                                                                  .bottom
+                                                            ]);
+                                                            Navigator.pushNamed(
+                                                                context,
+                                                                photographerProfileRoute,
+                                                                arguments: [
+                                                                  sdata.setup[
+                                                                      "by"],
+                                                                  sdata.setup[
+                                                                      "email"],
+                                                                  sdata.setup[
+                                                                      "userPhoto"],
+                                                                  false,
+                                                                  sdata.setup["twitter"] !=
+                                                                          null
+                                                                      ? sdata
+                                                                          .setup[
+                                                                              "twitter"]
+                                                                          .toString()
+                                                                          .split(
+                                                                              "https://www.twitter.com/")[1]
+                                                                      : "",
+                                                                  sdata.setup["instagram"] !=
+                                                                          null
+                                                                      ? sdata
+                                                                          .setup[
+                                                                              "instagram"]
+                                                                          .toString()
+                                                                          .split(
+                                                                              "https://www.instagram.com/")[1]
+                                                                      : "",
+                                                                ]);
+                                                          }),
                                                     ),
-                                                    padding: const EdgeInsets
-                                                            .symmetric(
-                                                        vertical: 5,
-                                                        horizontal: 5),
-                                                    avatar: CircleAvatar(
-                                                      backgroundImage:
-                                                          CachedNetworkImageProvider(
-                                                              sdata.setup[
-                                                                      "userPhoto"]
-                                                                  .toString()),
-                                                    ),
-                                                    labelPadding:
-                                                        const EdgeInsets
-                                                                .fromLTRB(
-                                                            7, 3, 7, 3),
-                                                    onPressed: () {
-                                                      SystemChrome
-                                                          .setEnabledSystemUIOverlays([
-                                                        SystemUiOverlay.top,
-                                                        SystemUiOverlay.bottom
-                                                      ]);
-                                                      Navigator.pushNamed(
-                                                          context,
-                                                          photographerProfileRoute,
-                                                          arguments: [
-                                                            sdata.setup["by"],
-                                                            sdata
-                                                                .setup["email"],
-                                                            sdata.setup[
-                                                                "userPhoto"],
-                                                            false,
-                                                            sdata.setup["twitter"] !=
-                                                                    null
-                                                                ? sdata.setup[
-                                                                        "twitter"]
-                                                                    .toString()
-                                                                    .split(
-                                                                        "https://www.twitter.com/")[1]
-                                                                : "",
-                                                            sdata.setup["instagram"] !=
-                                                                    null
-                                                                ? sdata.setup[
-                                                                        "instagram"]
-                                                                    .toString()
-                                                                    .split(
-                                                                        "https://www.instagram.com/")[1]
-                                                                : "",
-                                                          ]);
-                                                    }),
+                                                    globals.verifiedUsers
+                                                            .contains(sdata
+                                                                .setup["email"]
+                                                                .toString())
+                                                        ? Align(
+                                                            alignment: Alignment
+                                                                .topRight,
+                                                            child: Container(
+                                                              width: 20,
+                                                              height: 20,
+                                                              child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                                  "E57697",
+                                                                  config.Colors().mainAccentColor(
+                                                                              1) ==
+                                                                          Colors
+                                                                              .black
+                                                                      ? "E57697"
+                                                                      : main
+                                                                          .prefs
+                                                                          .get(
+                                                                              "mainAccentColor")
+                                                                          .toRadixString(
+                                                                              16)
+                                                                          .toString()
+                                                                          .substring(
+                                                                              2))),
+                                                            ),
+                                                          )
+                                                        : Container(),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(height: 5),
@@ -399,157 +449,385 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                     ),
                                   ),
                                 ),
-                                main.prefs.get('premium') as bool
-                                    ? sdata.setup["widget"] == ""
-                                        ? Expanded(
-                                            flex: 5,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: <Widget>[
-                                                DownloadButton(
-                                                  link: sdata
-                                                      .setup["wallpaper_url"]
-                                                      .toString(),
-                                                  colorChanged: false,
+                                main.prefs.get('premium') == true
+                                    ? sdata.setup["widget"] == "" ||
+                                            sdata.setup["widget"] == null
+                                        ? sdata.setup["widget2"] == "" ||
+                                                sdata.setup["widget2"] == null
+                                            ? Expanded(
+                                                flex: 5,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: [
+                                                    ModifiedShareDownloadButton(),
+                                                    ModifiedShareSetWallpaperButton(),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        launch(sdata
+                                                            .setup["icon_url"]
+                                                            .toString());
+                                                      },
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .25),
+                                                                blurRadius: 4,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4))
+                                                          ],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      500),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(17),
+                                                        child: Icon(
+                                                          JamIcons
+                                                              .google_play_circle,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
                                                 ),
-                                                SetWallpaperButton(
-                                                  url: sdata
-                                                      .setup["wallpaper_url"]
-                                                      .toString(),
-                                                  colorChanged: false,
+                                              )
+                                            : Expanded(
+                                                flex: 5,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: <Widget>[
+                                                    ModifiedShareDownloadButton(),
+                                                    ModifiedShareSetWallpaperButton(),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        launch(sdata
+                                                            .setup["icon_url"]
+                                                            .toString());
+                                                      },
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .25),
+                                                                blurRadius: 4,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4))
+                                                          ],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      500),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(17),
+                                                        child: Icon(
+                                                          JamIcons
+                                                              .google_play_circle,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        launch(sdata.setup[
+                                                                "widget_url2"]
+                                                            .toString());
+                                                      },
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .25),
+                                                                blurRadius: 4,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4))
+                                                          ],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      500),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(17),
+                                                        child: Icon(
+                                                          JamIcons.google_play,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
                                                 ),
-                                                GestureDetector(
-                                                  onTap: () async {
-                                                    launch(sdata
-                                                        .setup["icon_url"]
-                                                        .toString());
-                                                  },
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(context)
-                                                          .primaryColor,
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .25),
-                                                            blurRadius: 4,
-                                                            offset:
-                                                                const Offset(
-                                                                    0, 4))
-                                                      ],
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              500),
+                                              )
+                                        : sdata.setup["widget2"] == "" ||
+                                                sdata.setup["widget2"] == null
+                                            ? Expanded(
+                                                flex: 5,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: <Widget>[
+                                                    ModifiedShareDownloadButton(),
+                                                    ModifiedShareSetWallpaperButton(),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        launch(sdata
+                                                            .setup["icon_url"]
+                                                            .toString());
+                                                      },
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .25),
+                                                                blurRadius: 4,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4))
+                                                          ],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      500),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(17),
+                                                        child: Icon(
+                                                          JamIcons
+                                                              .google_play_circle,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          size: 20,
+                                                        ),
+                                                      ),
                                                     ),
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            17),
-                                                    child: Icon(
-                                                      JamIcons
-                                                          .google_play_circle,
-                                                      color: Theme.of(context)
-                                                          .accentColor,
-                                                      size: 30,
-                                                    ),
-                                                  ),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        launch(sdata
+                                                            .setup["widget_url"]
+                                                            .toString());
+                                                      },
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .25),
+                                                                blurRadius: 4,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4))
+                                                          ],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      500),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(17),
+                                                        child: Icon(
+                                                          JamIcons.google_play,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          )
-                                        : Expanded(
-                                            flex: 5,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: <Widget>[
-                                                DownloadButton(
-                                                  link: sdata
-                                                      .setup["wallpaper_url"]
-                                                      .toString(),
-                                                  colorChanged: false,
+                                              )
+                                            : Expanded(
+                                                flex: 5,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: <Widget>[
+                                                    ModifiedShareDownloadButton(),
+                                                    ModifiedShareSetWallpaperButton(),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        launch(sdata
+                                                            .setup["icon_url"]
+                                                            .toString());
+                                                      },
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .25),
+                                                                blurRadius: 4,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4))
+                                                          ],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      500),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(17),
+                                                        child: Icon(
+                                                          JamIcons
+                                                              .google_play_circle,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        launch(sdata
+                                                            .setup["widget_url"]
+                                                            .toString());
+                                                      },
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .25),
+                                                                blurRadius: 4,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4))
+                                                          ],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      500),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(17),
+                                                        child: Icon(
+                                                          JamIcons.google_play,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        launch(sdata.setup[
+                                                                "widget_url2"]
+                                                            .toString());
+                                                      },
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        .25),
+                                                                blurRadius: 4,
+                                                                offset:
+                                                                    const Offset(
+                                                                        0, 4))
+                                                          ],
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      500),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(17),
+                                                        child: Icon(
+                                                          JamIcons.google_play,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
                                                 ),
-                                                SetWallpaperButton(
-                                                  url: sdata
-                                                      .setup["wallpaper_url"]
-                                                      .toString(),
-                                                  colorChanged: false,
-                                                ),
-                                                GestureDetector(
-                                                  onTap: () async {
-                                                    launch(sdata
-                                                        .setup["icon_url"]
-                                                        .toString());
-                                                  },
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(context)
-                                                          .primaryColor,
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .25),
-                                                            blurRadius: 4,
-                                                            offset:
-                                                                const Offset(
-                                                                    0, 4))
-                                                      ],
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              500),
-                                                    ),
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            17),
-                                                    child: Icon(
-                                                      JamIcons
-                                                          .google_play_circle,
-                                                      color: Theme.of(context)
-                                                          .accentColor,
-                                                      size: 30,
-                                                    ),
-                                                  ),
-                                                ),
-                                                GestureDetector(
-                                                  onTap: () async {
-                                                    launch(sdata
-                                                        .setup["widget_url"]
-                                                        .toString());
-                                                  },
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(context)
-                                                          .primaryColor,
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .25),
-                                                            blurRadius: 4,
-                                                            offset:
-                                                                const Offset(
-                                                                    0, 4))
-                                                      ],
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              500),
-                                                    ),
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            17),
-                                                    child: Icon(
-                                                      JamIcons.google_play,
-                                                      color: Theme.of(context)
-                                                          .accentColor,
-                                                      size: 30,
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          )
+                                              )
                                     : Expanded(
                                         flex: 5,
                                         child: Row(
@@ -560,8 +838,29 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                               onTap: () async {
                                                 toasts.codeSend(
                                                     "Applying Setups require Premium");
-                                                Navigator.pushNamed(
-                                                    context, premiumRoute);
+                                                void showGooglePopUp(
+                                                    Function func) {
+                                                  debugPrint(main.prefs
+                                                      .get("isLoggedin")
+                                                      .toString());
+                                                  if (main.prefs
+                                                          .get("isLoggedin") ==
+                                                      false) {
+                                                    googleSignInPopUp(
+                                                        context, func);
+                                                  } else {
+                                                    func();
+                                                  }
+                                                }
+
+                                                showGooglePopUp(() {
+                                                  if (main.prefs
+                                                          .get('premium') !=
+                                                      true) {
+                                                    Navigator.pushNamed(
+                                                        context, premiumRoute);
+                                                  }
+                                                });
                                               },
                                               child: Container(
                                                 decoration: BoxDecoration(
@@ -721,6 +1020,74 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
         ),
       ),
     );
+  }
+}
+
+class ModifiedShareDownloadButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return sdata.setup["wallpaper_url"].toString()[0] != "["
+        ? DownloadButton(
+            link: sdata.setup["wallpaper_url"].toString(),
+            colorChanged: false,
+          )
+        : GestureDetector(
+            onTap: () async {
+              launch(sdata.setup["wallpaper_url"][1].toString());
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(.25),
+                      blurRadius: 4,
+                      offset: const Offset(0, 4))
+                ],
+                borderRadius: BorderRadius.circular(500),
+              ),
+              padding: const EdgeInsets.all(17),
+              child: Icon(
+                JamIcons.download,
+                color: Theme.of(context).accentColor,
+                size: 20,
+              ),
+            ),
+          );
+  }
+}
+
+class ModifiedShareSetWallpaperButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return sdata.setup["wallpaper_url"].toString()[0] != "["
+        ? SetWallpaperButton(
+            url: sdata.setup["wallpaper_url"].toString(),
+            colorChanged: false,
+          )
+        : GestureDetector(
+            onTap: () async {
+              launch(sdata.setup["wallpaper_url"][1].toString());
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(.25),
+                      blurRadius: 4,
+                      offset: const Offset(0, 4))
+                ],
+                borderRadius: BorderRadius.circular(500),
+              ),
+              padding: const EdgeInsets.all(17),
+              child: Icon(
+                JamIcons.picture,
+                color: Theme.of(context).accentColor,
+                size: 20,
+              ),
+            ),
+          );
   }
 }
 
