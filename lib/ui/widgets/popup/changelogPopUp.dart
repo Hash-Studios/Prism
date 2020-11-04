@@ -30,7 +30,7 @@ void showChangelog(BuildContext context, Function func) {
             ),
           ),
           SizedBox(
-            height: 400,
+            height: 300,
             child: Scrollbar(
               radius: const Radius.circular(500),
               thickness: 5,

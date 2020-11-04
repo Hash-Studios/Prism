@@ -212,6 +212,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
               child: IconButton(
+                tooltip: 'Home',
                 padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -261,6 +262,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
+                tooltip: 'Search',
                 padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -316,6 +318,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                     color: config.Colors().mainAccentColor(1),
                     borderRadius: BorderRadius.circular(500)),
                 child: IconButton(
+                  tooltip: 'Upload',
                   padding: const EdgeInsets.all(0),
                   icon: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -360,6 +363,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
+                tooltip: 'Setups',
                 padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -406,6 +410,7 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
               child: IconButton(
+                tooltip: 'Settings',
                 padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

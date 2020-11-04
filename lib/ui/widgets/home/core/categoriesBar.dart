@@ -128,6 +128,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                     ),
                   )
                 ]),
+          tooltip: 'Notifications',
           onPressed: () {
             setState(() {
               noNotification = true;
