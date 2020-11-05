@@ -376,8 +376,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: <Widget>[
-                                        Stack(children: [
-                                          Align(
+                                        Stack(
                                             alignment: globals.verifiedUsers
                                                     .contains(Data
                                                         .subPrismWalls[widget
@@ -385,120 +384,121 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         .toString())
                                                 ? Alignment.topRight
                                                 : Alignment.centerLeft,
-                                            child: ActionChip(
-                                                pressElevation: 5,
-                                                padding:
-                                                    const EdgeInsets.all(5),
-                                                avatar: CircleAvatar(
-                                                  backgroundImage:
-                                                      CachedNetworkImageProvider(
-                                                          Data
-                                                              .subPrismWalls[
-                                                                  widget.index]
-                                                                  ["userPhoto"]
-                                                              .toString()),
-                                                ),
-                                                backgroundColor: Colors.black,
-                                                labelPadding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        7, 3, 7, 3),
-                                                label: Text(
-                                                  Data.subPrismWalls[widget
-                                                              .index]["by"]
-                                                          .toString()[0]
-                                                          .toUpperCase() +
-                                                      Data.subPrismWalls[widget
-                                                              .index]["by"]
-                                                          .toString()
-                                                          .substring(1),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .headline4
-                                                      .copyWith(
-                                                        color: Colors.white,
-                                                      ),
-                                                ),
-                                                onPressed: () {
-                                                  Navigator.pushNamed(context,
-                                                      photographerProfileRoute,
-                                                      arguments: [
-                                                        Data.subPrismWalls[
-                                                            widget.index]["by"],
-                                                        Data.subPrismWalls[
-                                                                widget.index]
-                                                            ["email"],
-                                                        Data.subPrismWalls[
-                                                                widget.index]
-                                                            ["userPhoto"],
-                                                        false,
-                                                        Data.subPrismWalls[widget
-                                                                            .index]
-                                                                        [
-                                                                        "twitter"] !=
-                                                                    null &&
-                                                                Data.subPrismWalls[
-                                                                            widget.index]
-                                                                        [
-                                                                        "twitter"] !=
-                                                                    ""
-                                                            ? Data
-                                                                .subPrismWalls[
-                                                                    widget.index]
-                                                                    ["twitter"]
-                                                                .toString()
-                                                                .split(
-                                                                    "https://www.twitter.com/")[1]
-                                                            : "",
-                                                        Data.subPrismWalls[widget
-                                                                            .index]
-                                                                        [
-                                                                        "instagram"] !=
-                                                                    null &&
-                                                                Data.subPrismWalls[
-                                                                            widget.index]
-                                                                        [
-                                                                        "instagram"] !=
-                                                                    ""
-                                                            ? Data
+                                            children: [
+                                              ActionChip(
+                                                  pressElevation: 5,
+                                                  padding:
+                                                      const EdgeInsets.all(5),
+                                                  avatar: CircleAvatar(
+                                                    backgroundImage:
+                                                        CachedNetworkImageProvider(
+                                                            Data
                                                                 .subPrismWalls[
                                                                     widget
-                                                                        .index]
-                                                                    ["instagram"]
-                                                                .toString()
-                                                                .split("https://www.instagram.com/")[1]
-                                                            : "",
-                                                      ]);
-                                                }),
-                                          ),
-                                          globals.verifiedUsers.contains(Data
-                                                  .subPrismWalls[widget.index]
-                                                      ["email"]
-                                                  .toString())
-                                              ? Align(
-                                                  alignment: Alignment.topRight,
-                                                  child: Container(
-                                                    width: 20,
-                                                    height: 20,
-                                                    child: SvgPicture.string(
-                                                        verifiedIcon.replaceAll(
-                                                            "E57697",
-                                                            config.Colors()
-                                                                        .mainAccentColor(
-                                                                            1) ==
-                                                                    Colors.black
-                                                                ? "E57697"
-                                                                : main.prefs
-                                                                    .get(
-                                                                        "mainAccentColor")
-                                                                    .toRadixString(
-                                                                        16)
-                                                                    .toString()
-                                                                    .substring(
-                                                                        2))),
+                                                                        .index][
+                                                                    "userPhoto"]
+                                                                .toString()),
                                                   ),
-                                                )
-                                              : Container(),
-                                        ]),
+                                                  backgroundColor: Colors.black,
+                                                  labelPadding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          7, 3, 7, 3),
+                                                  label: Text(
+                                                    Data.subPrismWalls[widget
+                                                                .index]["by"]
+                                                            .toString()[0]
+                                                            .toUpperCase() +
+                                                        Data.subPrismWalls[
+                                                                widget.index]
+                                                                ["by"]
+                                                            .toString()
+                                                            .substring(1),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .headline4
+                                                        .copyWith(
+                                                          color: Colors.white,
+                                                        ),
+                                                  ),
+                                                  onPressed: () {
+                                                    Navigator.pushNamed(
+                                                        context,
+                                                        photographerProfileRoute,
+                                                        arguments: [
+                                                          Data.subPrismWalls[
+                                                                  widget.index]
+                                                              ["by"],
+                                                          Data.subPrismWalls[
+                                                                  widget.index]
+                                                              ["email"],
+                                                          Data.subPrismWalls[
+                                                                  widget.index]
+                                                              ["userPhoto"],
+                                                          false,
+                                                          Data.subPrismWalls[widget.index]
+                                                                          [
+                                                                          "twitter"] !=
+                                                                      null &&
+                                                                  Data.subPrismWalls[widget.index]
+                                                                          [
+                                                                          "twitter"] !=
+                                                                      ""
+                                                              ? Data
+                                                                  .subPrismWalls[
+                                                                      widget
+                                                                          .index]
+                                                                      [
+                                                                      "twitter"]
+                                                                  .toString()
+                                                                  .split(
+                                                                      "https://www.twitter.com/")[1]
+                                                              : "",
+                                                          Data.subPrismWalls[widget.index]
+                                                                          [
+                                                                          "instagram"] !=
+                                                                      null &&
+                                                                  Data.subPrismWalls[widget.index]
+                                                                          [
+                                                                          "instagram"] !=
+                                                                      ""
+                                                              ? Data
+                                                                  .subPrismWalls[
+                                                                      widget
+                                                                          .index]
+                                                                      [
+                                                                      "instagram"]
+                                                                  .toString()
+                                                                  .split(
+                                                                      "https://www.instagram.com/")[1]
+                                                              : "",
+                                                        ]);
+                                                  }),
+                                              globals.verifiedUsers.contains(
+                                                      Data.subPrismWalls[widget
+                                                              .index]["email"]
+                                                          .toString())
+                                                  ? Container(
+                                                      width: 20,
+                                                      height: 20,
+                                                      child: SvgPicture.string(
+                                                          verifiedIcon.replaceAll(
+                                                              "E57697",
+                                                              config.Colors().mainAccentColor(
+                                                                          1) ==
+                                                                      Colors
+                                                                          .black
+                                                                  ? "E57697"
+                                                                  : main.prefs
+                                                                      .get(
+                                                                          "mainAccentColor")
+                                                                      .toRadixString(
+                                                                          16)
+                                                                      .toString()
+                                                                      .substring(
+                                                                          2))),
+                                                    )
+                                                  : Container(),
+                                            ]),
                                         Padding(
                                           padding: const EdgeInsets.fromLTRB(
                                               0, 5, 0, 10),
