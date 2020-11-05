@@ -30,7 +30,9 @@ class ColorScreen extends StatelessWidget {
         }
         if ((navStack.last == "Wallpaper") ||
             (navStack.last == "Search Wallpaper") ||
-            (navStack.last == "SharedWallpaper")) {
+            (navStack.last == "SharedWallpaper") ||
+            (navStack.last == "SetupView") ||
+            (navStack.last == "User ProfileWallpaper")) {
           SystemChrome.setEnabledSystemUIOverlays([]);
         }
         return false;

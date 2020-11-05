@@ -44,7 +44,8 @@ class _UserProfileState extends State<UserProfile> {
       navStack.removeLast();
       if ((navStack.last == "Wallpaper") ||
           (navStack.last == "Search Wallpaper") ||
-          (navStack.last == "SharedWallpaper")) {
+          (navStack.last == "SharedWallpaper") ||
+          (navStack.last == "SetupView")) {
         SystemChrome.setEnabledSystemUIOverlays([]);
       }
     }
@@ -89,7 +90,8 @@ class _UserProfileState extends State<UserProfile> {
                       navStack.removeLast();
                       if ((navStack.last == "Wallpaper") ||
                           (navStack.last == "Search Wallpaper") ||
-                          (navStack.last == "SharedWallpaper")) {
+                          (navStack.last == "SharedWallpaper") ||
+                          (navStack.last == "SetupView")) {
                         SystemChrome.setEnabledSystemUIOverlays([]);
                       }
                     }
