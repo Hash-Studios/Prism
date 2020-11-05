@@ -134,7 +134,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
                             child: GestureDetector(
                               onTap: () {
-                                launch("https://twitter.com/PrismWallpapers");
+                                launch(globals.bannerURL);
                               },
                               child: Container(
                                 decoration: BoxDecoration(
@@ -156,7 +156,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Text(
-                                        "FOLLOW US ON TWITTER",
+                                        globals.bannerText.toUpperCase(),
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         style: Theme.of(context)
