@@ -18,7 +18,10 @@ class SplashWidget extends StatelessWidget {
     remoteConfig = await RemoteConfig.instance;
     await remoteConfig.setConfigSettings(RemoteConfigSettings());
     await remoteConfig.setDefaults(<String, dynamic>{
-      'topImageLink': 'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4',
+      'topImageLink':
+          'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4',
+      'bannerText': "Join our Telegram",
+      'bannerURL': "https://t.me/PrismWallpapers",
       'newCategories': categories.toString(),
       'currentVersion': globals.currentAppVersion.toString(),
       'versionDesc':
@@ -32,6 +35,8 @@ class SplashWidget extends StatelessWidget {
     await remoteConfig.activateFetched();
     debugPrint("Fetched Values from rc");
     globals.topImageLink = remoteConfig.getString('topImageLink');
+    globals.bannerText = remoteConfig.getString('bannerText');
+    globals.bannerURL = remoteConfig.getString('bannerURL');
     var premiumC = remoteConfig.getString('premiumCollections');
     premiumC = premiumC.replaceAll('"', '');
     premiumC = premiumC.replaceAll("[", "");
