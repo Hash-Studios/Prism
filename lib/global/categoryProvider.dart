@@ -4,7 +4,6 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/global/categoryMenu.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/cupertino.dart';
 
 final List choices = categories

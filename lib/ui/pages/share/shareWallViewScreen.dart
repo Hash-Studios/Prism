@@ -896,8 +896,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                               Data.wall["email"],
                                                                               Data.wall["userPhoto"],
                                                                               false,
-                                                                              Data.wall["twitter"] != null ? Data.wall["twitter"].toString().split("https://www.twitter.com/")[1] : "",
-                                                                              Data.wall["instagram"] != null ? Data.wall["instagram"].toString().split("https://www.instagram.com/")[1] : "",
+                                                                              Data.wall["twitter"] != null && Data.wall["twitter"] != "" ? Data.wall["twitter"].toString().split("https://www.twitter.com/")[1] : "",
+                                                                              Data.wall["instagram"] != null && Data.wall["instagram"] != "" ? Data.wall["instagram"].toString().split("https://www.instagram.com/")[1] : "",
                                                                             ]);
                                                                           },
                                                                 padding: const EdgeInsets

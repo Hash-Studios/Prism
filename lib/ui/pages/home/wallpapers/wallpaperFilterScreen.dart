@@ -100,41 +100,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   static const platform = MethodChannel("flutter.prism.set_wallpaper");
 
-  Future<void> _setWallPaper(String url) async {
-    bool result;
-    try {
-      if (url.contains("com.hash.prism")) {
-        result =
-            await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
-          'url': url,
-        });
-      } else if (url.contains("/0/")) {
-        result =
-            await platform.invokeMethod("set_wallpaper_file", <String, dynamic>{
-          'url': "/${url.replaceAll("/0//", "/0/")}",
-        });
-      } else {
-        result = await platform.invokeMethod("set_wallpaper", <String, dynamic>{
-          'url': url,
-        });
-      }
-      if (result) {
-        debugPrint("Success");
-        analytics.logEvent(
-            name: 'set_wall',
-            parameters: {'type': 'Both', 'result': 'Success'});
-      } else {
-        debugPrint("Failed");
-        toasts.error("Something went wrong!");
-      }
-    } catch (e) {
-      analytics.logEvent(
-          name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
-      debugPrint(e.toString());
-    }
-    Navigator.of(context).pop();
-  }
-
   Future<void> _setBothWallPaper(String url) async {
     bool result;
     try {

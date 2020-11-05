@@ -1,5 +1,4 @@
 import 'package:Prism/auth/google_auth.dart';
-import 'package:flutter/material.dart';
 
 GoogleAuth gAuth = GoogleAuth();
 String currentAppVersion = '2.6.0';

@@ -806,32 +806,34 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                 child: Stack(
                                                   children: [
                                                     Align(
-                                            alignment: Alignment.topRight,
-                                                                                                          child: ActionChip(
+                                                      alignment:
+                                                          Alignment.topRight,
+                                                      child: ActionChip(
                                                         onPressed: () {
                                                           SystemChrome
                                                               .setEnabledSystemUIOverlays([
                                                             SystemUiOverlay.top,
-                                                            SystemUiOverlay.bottom
+                                                            SystemUiOverlay
+                                                                .bottom
                                                           ]);
                                                           Navigator.pushNamed(
                                                               context,
                                                               photographerProfileRoute,
                                                               arguments: [
                                                                 data.subPrismWalls[
-                                                                    index]["by"],
+                                                                        index]
+                                                                    ["by"],
                                                                 data.subPrismWalls[
                                                                         index]
                                                                     ["email"],
                                                                 data.subPrismWalls[
-                                                                        index]
-                                                                    ["userPhoto"],
+                                                                        index][
+                                                                    "userPhoto"],
                                                                 false,
-                                                                data.subPrismWalls[
-                                                                                index]
-                                                                            [
-                                                                            "twitter"] !=
-                                                                        null
+                                                                data.subPrismWalls[index]["twitter"] !=
+                                                                            null &&
+                                                                        data.subPrismWalls[index]["twitter"] !=
+                                                                            ""
                                                                     ? data
                                                                         .subPrismWalls[
                                                                             index]
@@ -841,11 +843,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                         .split(
                                                                             "https://www.twitter.com/")[1]
                                                                     : "",
-                                                                data.subPrismWalls[
-                                                                                index]
-                                                                            [
-                                                                            "instagram"] !=
-                                                                        null
+                                                                data.subPrismWalls[index]["instagram"] !=
+                                                                            null &&
+                                                                        data.subPrismWalls[index]["instagram"] !=
+                                                                            ""
                                                                     ? data
                                                                         .subPrismWalls[
                                                                             index]
@@ -857,10 +858,11 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                     : "",
                                                               ]);
                                                         },
-                                                        padding: const EdgeInsets
-                                                                .symmetric(
-                                                            vertical: 5,
-                                                            horizontal: 5),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .symmetric(
+                                                                vertical: 5,
+                                                                horizontal: 5),
                                                         avatar: CircleAvatar(
                                                           backgroundImage:
                                                               CachedNetworkImageProvider(data
@@ -877,7 +879,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           data.subPrismWalls[
                                                                   index]["by"]
                                                               .toString(),
-                                                          style: Theme.of(context)
+                                                          style: Theme.of(
+                                                                  context)
                                                               .textTheme
                                                               .bodyText2
                                                               .copyWith(
