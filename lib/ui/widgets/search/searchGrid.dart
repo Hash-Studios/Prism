@@ -130,7 +130,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
 
               setState(() {
                 seeMoreLoader = true;
-                Future.delayed(const Duration(seconds: 4))
+                Future.delayed(const Duration(seconds: 2))
                     .then((value) => seeMoreLoader = false);
               });
             }
@@ -172,7 +172,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                         wData.getWallsbyQueryPage(widget.query);
                         setState(() {
                           seeMoreLoader = true;
-                          Future.delayed(const Duration(seconds: 4))
+                          Future.delayed(const Duration(seconds: 2))
                               .then((value) => seeMoreLoader = false);
                         });
                       }
@@ -194,7 +194,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                         pData.getWallsPbyQueryPage(widget.query);
                         setState(() {
                           seeMoreLoader = true;
-                          Future.delayed(const Duration(seconds: 4))
+                          Future.delayed(const Duration(seconds: 2))
                               .then((value) => seeMoreLoader = false);
                         });
                       }

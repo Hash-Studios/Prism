@@ -298,7 +298,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                           "s");
                   setState(() {
                     seeMoreLoader = true;
-                    Future.delayed(const Duration(seconds: 4))
+                    Future.delayed(const Duration(seconds: 2))
                         .then((value) => seeMoreLoader = false);
                   });
                 }
@@ -332,7 +332,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                 "s");
                         setState(() {
                           seeMoreLoader = true;
-                          Future.delayed(const Duration(seconds: 4))
+                          Future.delayed(const Duration(seconds: 2))
                               .then((value) => seeMoreLoader = false);
                         });
                       }
