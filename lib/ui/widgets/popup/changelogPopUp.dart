@@ -44,6 +44,10 @@ void showChangelog(BuildContext context, Function func) {
                       icon: JamIcons.instant_picture,
                       text: "Setup uploading is out of beta."),
                   Change(icon: JamIcons.wrench, text: "All new themes!"),
+                  Change(icon: JamIcons.brush, text: "Variants are now free!"),
+                  Change(
+                      icon: JamIcons.tools,
+                      text: "Optimised app for faster animations!"),
                   Change(
                       icon: JamIcons.settings_alt,
                       text: "Improved settings page."),
@@ -51,7 +55,6 @@ void showChangelog(BuildContext context, Function func) {
                   Change(icon: JamIcons.grid, text: "Redesigned categories."),
                   Change(
                       icon: JamIcons.filter, text: "Added wallpaper filters."),
-                  Change(icon: JamIcons.brush, text: "Variants are now free!"),
                   Change(
                       icon: JamIcons.database, text: "Improved data caching."),
                   Change(
