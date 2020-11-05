@@ -28,7 +28,9 @@ class SplashWidget extends StatelessWidget {
           "Prism Premium is here, for the personalisaton lords!^*^Setups are here! Change the way of personalisation.^*^Favourites moved to profile.",
       'topTitleText':
           '["TOP-RATED","BEST OF COMMUNITY","FAN-FAVOURITE","TRENDING",]',
-      'premiumCollections': '["space","landscapes","mesh gradients",]'
+      'premiumCollections': '["space","landscapes","mesh gradients",]',
+      'verifiedUsers':
+          '["akshaymaurya3006@gmail.com","maurya.abhay30@gmail.com",]'
     });
     debugPrint("Started Fetching Values from rc");
     await remoteConfig.fetch(expiration: const Duration(hours: 6));
@@ -37,6 +39,11 @@ class SplashWidget extends StatelessWidget {
     globals.topImageLink = remoteConfig.getString('topImageLink');
     globals.bannerText = remoteConfig.getString('bannerText');
     globals.bannerURL = remoteConfig.getString('bannerURL');
+    var verifiedU = remoteConfig.getString('verifiedUsers');
+    verifiedU = verifiedU.replaceAll('"', '');
+    verifiedU = verifiedU.replaceAll("[", "");
+    verifiedU = verifiedU.replaceAll(",]", "");
+    globals.verifiedUsers = verifiedU.split(",");
     var premiumC = remoteConfig.getString('premiumCollections');
     premiumC = premiumC.replaceAll('"', '');
     premiumC = premiumC.replaceAll("[", "");
