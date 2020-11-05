@@ -136,7 +136,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                             margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
                             child: GestureDetector(
                               onTap: () {
-                                launch("https://twitter.com/PrismWallpapers");
+                                launch(globals.bannerURL);
                               },
                               child: Container(
                                 decoration: BoxDecoration(
@@ -158,7 +158,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Text(
-                                        "FOLLOW US ON TWITTER",
+                                        globals.bannerText.toUpperCase(),
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         style: Theme.of(context)

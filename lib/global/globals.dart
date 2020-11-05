@@ -34,3 +34,7 @@ List verifiedUsers = [
   "akshaymaurya3006@gmail.com",
   "maurya.abhay30@gmail.com",
 ];
+
+String bannerText = "Join our Telegram";
+
+String bannerURL = "https://t.me/PrismWallpapers";
