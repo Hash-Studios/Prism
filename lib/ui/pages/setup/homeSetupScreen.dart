@@ -217,7 +217,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                                 ? Provider.of<ThemeModel>(
                                                                 context)
                                                             .returnThemeType() ==
-                                                        "Dark"
+                                                        "Light"
                                                     ? [
                                                         BoxShadow(
                                                           color: Colors.black

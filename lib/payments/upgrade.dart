@@ -581,7 +581,9 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                 widget.package.product.description,
                 textAlign: TextAlign.center,
                 style: kSendButtonTextStyle.copyWith(
-                    fontSize: 13, fontWeight: FontWeight.w400),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: Theme.of(context).accentColor),
               ),
             )
           ],

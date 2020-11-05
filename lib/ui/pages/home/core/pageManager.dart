@@ -249,6 +249,7 @@ class _PageManagerChildState extends State<PageManagerChild>
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           flexibleSpace: PreferredSize(
             preferredSize: const Size(double.infinity, 55),
             child: CategoriesBar(

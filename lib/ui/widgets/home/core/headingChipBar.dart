@@ -26,7 +26,8 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
               navStack.removeLast();
               if ((navStack.last == "Wallpaper") ||
                   (navStack.last == "Search Wallpaper") ||
-                  (navStack.last == "SharedWallpaper")) {
+                  (navStack.last == "SharedWallpaper") ||
+                  (navStack.last == "SetupView")) {
                 SystemChrome.setEnabledSystemUIOverlays([]);
               }
             }

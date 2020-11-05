@@ -232,8 +232,8 @@ class _SetupPageState extends State<SetupPage> {
                                             boxShadow: pageNumber == index
                                                 ? Provider.of<ThemeModel>(
                                                                 context)
-                                                            .currentTheme ==
-                                                        kLightTheme
+                                                            .returnThemeType() ==
+                                                        "Light"
                                                     ? [
                                                         BoxShadow(
                                                           color: Colors.black

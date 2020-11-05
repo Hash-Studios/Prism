@@ -205,8 +205,8 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
                                     color: Provider.of<ThemeModel>(context)
-                                                .currentTheme ==
-                                            kLightTheme
+                                                .returnThemeType() ==
+                                            "Light"
                                         ? Colors.black12
                                         : Colors.black54)
                               ]),
@@ -234,11 +234,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   .headline2
                                   .copyWith(
                                       fontSize: 16,
-                                      color: Provider.of<ThemeModel>(context)
-                                                  .currentTheme ==
-                                              kLightTheme
-                                          ? Colors.black
-                                          : Colors.white,
+                                      color: Theme.of(context).accentColor,
                                       fontWeight: FontWeight.bold),
                             )
                           : Text(
@@ -251,8 +247,8 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   .copyWith(
                                       fontSize: 16,
                                       color: Provider.of<ThemeModel>(context)
-                                                  .currentTheme ==
-                                              kLightTheme
+                                                  .returnThemeType() ==
+                                              "Light"
                                           ? Colors.black
                                           : Colors.white,
                                       fontWeight: FontWeight.bold),
@@ -271,8 +267,8 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
                                     color: Provider.of<ThemeModel>(context)
-                                                .currentTheme ==
-                                            kLightTheme
+                                                .returnThemeType() ==
+                                            "Light"
                                         ? Colors.black26
                                         : Colors.black54)
                               ]),
@@ -337,8 +333,8 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
                                     color: Provider.of<ThemeModel>(context)
-                                                .currentTheme ==
-                                            kLightTheme
+                                                .returnThemeType() ==
+                                            "Light"
                                         ? Colors.black26
                                         : Colors.black54)
                               ]),
