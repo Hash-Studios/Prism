@@ -346,7 +346,14 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                         .setups[index]
                                                                     [
                                                                     "twitter"] !=
-                                                                null
+                                                                null && Provider.of<SetupProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .setups[index]
+                                                                    [
+                                                                    "twitter"] !=
+                                                                ""
                                                             ? Provider.of<
                                                                         SetupProvider>(
                                                                     context,
@@ -365,7 +372,14 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                         .setups[index]
                                                                     [
                                                                     "instagram"] !=
-                                                                null
+                                                                null && Provider.of<SetupProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .setups[index]
+                                                                    [
+                                                                    "instagram"] !=
+                                                                ""
                                                             ? Provider.of<
                                                                         SetupProvider>(
                                                                     context,

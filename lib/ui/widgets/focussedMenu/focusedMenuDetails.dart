@@ -378,7 +378,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       children: <Widget>[
                                         Stack(children: [
                                           Align(
-                                            alignment: Alignment.topRight,
+                                            alignment: globals.verifiedUsers
+                                                    .contains(Data
+                                                        .subPrismWalls[widget
+                                                            .index]["email"]
+                                                        .toString())
+                                                ? Alignment.topRight
+                                                : Alignment.centerLeft,
                                             child: ActionChip(
                                                 pressElevation: 5,
                                                 padding:
@@ -426,30 +432,40 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             ["userPhoto"],
                                                         false,
                                                         Data.subPrismWalls[widget
-                                                                        .index][
-                                                                    "twitter"] !=
-                                                                null
+                                                                            .index]
+                                                                        [
+                                                                        "twitter"] !=
+                                                                    null &&
+                                                                Data.subPrismWalls[
+                                                                            widget.index]
+                                                                        [
+                                                                        "twitter"] !=
+                                                                    ""
                                                             ? Data
                                                                 .subPrismWalls[
-                                                                    widget
-                                                                        .index]
+                                                                    widget.index]
                                                                     ["twitter"]
                                                                 .toString()
                                                                 .split(
                                                                     "https://www.twitter.com/")[1]
                                                             : "",
                                                         Data.subPrismWalls[widget
-                                                                        .index][
-                                                                    "instagram"] !=
-                                                                null
+                                                                            .index]
+                                                                        [
+                                                                        "instagram"] !=
+                                                                    null &&
+                                                                Data.subPrismWalls[
+                                                                            widget.index]
+                                                                        [
+                                                                        "instagram"] !=
+                                                                    ""
                                                             ? Data
                                                                 .subPrismWalls[
                                                                     widget
-                                                                        .index][
-                                                                    "instagram"]
+                                                                        .index]
+                                                                    ["instagram"]
                                                                 .toString()
-                                                                .split(
-                                                                    "https://www.instagram.com/")[1]
+                                                                .split("https://www.instagram.com/")[1]
                                                             : "",
                                                       ]);
                                                 }),

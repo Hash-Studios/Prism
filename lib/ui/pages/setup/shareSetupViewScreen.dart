@@ -365,7 +365,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                       "userPhoto"],
                                                                   false,
                                                                   sdata.setup["twitter"] !=
-                                                                          null
+                                                                              null &&
+                                                                          sdata.setup["twitter"] !=
+                                                                              ""
                                                                       ? sdata
                                                                           .setup[
                                                                               "twitter"]
@@ -374,7 +376,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                               "https://www.twitter.com/")[1]
                                                                       : "",
                                                                   sdata.setup["instagram"] !=
-                                                                          null
+                                                                              null &&
+                                                                          sdata.setup["instagram"] !=
+                                                                              ""
                                                                       ? sdata
                                                                           .setup[
                                                                               "instagram"]
