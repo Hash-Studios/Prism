@@ -172,7 +172,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               });
                               debugPrint('Screenshot Taken');
                             }).catchError((onError) {
-                              debugPrint(onError as String);
+                              debugPrint(onError.toString());
                             })
                           : debugPrint("Wallpaper Optimisation is disabled!");
                     }

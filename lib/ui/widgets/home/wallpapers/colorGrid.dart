@@ -117,7 +117,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               PData.getWallsPbyColorPage(widget.provider.substring(9));
               setState(() {
                 seeMoreLoader = true;
-                Future.delayed(const Duration(seconds: 4))
+                Future.delayed(const Duration(seconds: 2))
                     .then((value) => seeMoreLoader = false);
               });
             }
@@ -151,7 +151,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                       PData.getWallsPbyColorPage(widget.provider.substring(9));
                       setState(() {
                         seeMoreLoader = true;
-                        Future.delayed(const Duration(seconds: 4))
+                        Future.delayed(const Duration(seconds: 2))
                             .then((value) => seeMoreLoader = false);
                       });
                     }

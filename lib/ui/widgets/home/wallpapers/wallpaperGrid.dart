@@ -264,7 +264,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                   Data.seeMorePrism();
                   setState(() {
                     seeMoreLoader = true;
-                    Future.delayed(const Duration(seconds: 4))
+                    Future.delayed(const Duration(seconds: 2))
                         .then((value) => seeMoreLoader = false);
                   });
                 }
@@ -296,7 +296,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                         Data.seeMorePrism();
                         setState(() {
                           seeMoreLoader = true;
-                          Future.delayed(const Duration(seconds: 4))
+                          Future.delayed(const Duration(seconds: 2))
                               .then((value) => seeMoreLoader = false);
                         });
                       }
