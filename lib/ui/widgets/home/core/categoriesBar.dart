@@ -24,11 +24,9 @@ class CategoriesBar extends StatefulWidget {
 }
 
 class _CategoriesBarState extends State<CategoriesBar> {
-  bool isNew;
   bool noNotification = false;
   @override
   void initState() {
-    isNew = true;
     fetchNotifications();
     super.initState();
     globals.height = widget.height;

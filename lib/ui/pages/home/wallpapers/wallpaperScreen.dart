@@ -42,7 +42,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     return true;
   }
 
-  bool isNew;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String provider;
   int index;
@@ -96,7 +95,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    isNew = true;
     super.initState();
     SystemChrome.setEnabledSystemUIOverlays([]);
     provider = widget.arguments[0] as String;
