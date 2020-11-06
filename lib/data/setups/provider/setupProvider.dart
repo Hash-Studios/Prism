@@ -9,7 +9,11 @@ class SetupProvider extends ChangeNotifier {
   Future<List> getDataBase() async {
     final box = Hive.box('setups');
     if ((box.get('setups') == null) ||
-        (box.get('setups').toString() == "[]" || box.get('date') == null)) {
+        (box.get('setups').toString() == "[]") ||
+        (box.get('date') !=
+            DateFormat("yy-MM-dd").format(
+              DateTime.now(),
+            ))) {
       debugPrint("Refetching setups collection");
       setups = [];
       await databaseReference
