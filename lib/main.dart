@@ -35,67 +35,63 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
   GestureBinding.instance.resamplingEnabled = true;
-  getApplicationDocumentsDirectory().then((dir) async {
-    Hive.init(dir.path);
-    await Hive.openBox('wallpapers');
-    await Hive.openBox('collections');
-    await Hive.openBox('setups');
-    Hive.registerAdapter(NotifDataAdapter());
-    await Hive.openBox<List>('notifications');
-    prefs = await Hive.openBox('prefs');
-    debugPrint("Box Opened");
-    if (prefs.get("mainAccentColor") == null) {
-      prefs.put("mainAccentColor", 0xFFE57697);
-    }
-    hqThumbs = (prefs.get('hqThumbs') as bool) ?? false;
-    if (hqThumbs) {
-      prefs.put('hqThumbs', true);
-    } else {
-      prefs.put('hqThumbs', false);
-    }
-    currentThemeID = prefs.get('themeID')?.toString() ?? "kDMaterial Dark";
-    prefs.put("themeID", currentThemeID);
-    optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? true;
-    if (optimisedWallpapers) {
-      prefs.put('optimisedWallpapers', true);
-    } else {
-      prefs.put('optimisedWallpapers', false);
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        systemNavigationBarColor: config.Colors().mainAccentColor(1),
-      ));
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-          .then((value) => runZoned<Future<void>>(() {
-                runApp(
-                  RestartWidget(
-                    child: MultiProvider(
-                      providers: [
-                        // ChangeNotifierProvider<TabProvider>(
-                        //   create: (context) => TabProvider(),
-                        // ),
-                        ChangeNotifierProvider<FavouriteProvider>(
-                          create: (context) => FavouriteProvider(),
-                        ),
-                        ChangeNotifierProvider<CategorySupplier>(
-                          create: (context) => CategorySupplier(),
-                        ),
-                        ChangeNotifierProvider<SetupProvider>(
-                          create: (context) => SetupProvider(),
-                        ),
-                        ChangeNotifierProvider<ProfileWallProvider>(
-                          create: (context) => ProfileWallProvider(),
-                        ),
-                        ChangeNotifierProvider<ThemeModel>(
-                          create: (context) =>
-                              ThemeModel(themes[currentThemeID]),
-                        ),
-                      ],
-                      child: MyApp(),
-                    ),
+  getApplicationDocumentsDirectory().then(
+    (dir) async {
+      Hive.init(dir.path);
+      await Hive.openBox('wallpapers');
+      await Hive.openBox('collections');
+      await Hive.openBox('setups');
+      Hive.registerAdapter(NotifDataAdapter());
+      await Hive.openBox<List>('notifications');
+      prefs = await Hive.openBox('prefs');
+      debugPrint("Box Opened");
+      if (prefs.get("mainAccentColor") == null) {
+        prefs.put("mainAccentColor", 0xFFE57697);
+      }
+      currentThemeID = prefs.get('themeID')?.toString() ?? "kDMaterial Dark";
+      prefs.put("themeID", currentThemeID);
+      optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? true;
+      if (optimisedWallpapers) {
+        prefs.put('optimisedWallpapers', true);
+      } else {
+        prefs.put('optimisedWallpapers', false);
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          systemNavigationBarColor: config.Colors().mainAccentColor(1),
+        ));
+        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+            .then(
+          (value) => runZoned<Future<void>>(
+            () {
+              runApp(
+                RestartWidget(
+                  child: MultiProvider(
+                    providers: [
+                      ChangeNotifierProvider<FavouriteProvider>(
+                        create: (context) => FavouriteProvider(),
+                      ),
+                      ChangeNotifierProvider<CategorySupplier>(
+                        create: (context) => CategorySupplier(),
+                      ),
+                      ChangeNotifierProvider<SetupProvider>(
+                        create: (context) => SetupProvider(),
+                      ),
+                      ChangeNotifierProvider<ProfileWallProvider>(
+                        create: (context) => ProfileWallProvider(),
+                      ),
+                      ChangeNotifierProvider<ThemeModel>(
+                        create: (context) => ThemeModel(themes[currentThemeID]),
+                      ),
+                    ],
+                    child: MyApp(),
                   ),
-                );
-              }));
-    }
-  });
+                ),
+              );
+            },
+          ),
+        );
+      }
+    },
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -110,8 +106,9 @@ class _MyAppState extends State<MyApp> {
     try {
       modes = await FlutterDisplayMode.supported;
       // modes.forEach(print);
+      print(modes);
     } on PlatformException catch (e) {
-      debugPrint(e.toString());
+      print(e.toString());
     }
     selected =
         modes.firstWhere((DisplayMode m) => m.selected, orElse: () => null);
