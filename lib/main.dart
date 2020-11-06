@@ -31,7 +31,7 @@ bool hqThumbs;
 bool optimisedWallpapers;
 void main() {
   //! Uncomment next line before release
-  // debugPrint = (String message, {int wrapWidth}) {};
+  debugPrint = (String message, {int wrapWidth}) {};
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
   GestureBinding.instance.resamplingEnabled = true;
