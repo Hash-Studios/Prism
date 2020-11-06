@@ -13,9 +13,11 @@ Future<List> getPrismWalls() async {
   if (navStack.last == "Home") {
     final box = Hive.box('wallpapers');
     if ((box.get('wallpapers') == null) ||
-        (box.get('wallpapers').toString() == "[]" || box.get('date') == null)) {
+        (box.get('wallpapers').toString() == "[]") || (box.get('date') !=	
+            DateFormat("yy-MM-dd").format(	
+              DateTime.now(),	
+            ))) {
       debugPrint("Refetching whole collection");
-      // toasts.error("Refetching whole collection");
       prismWalls = [];
       subPrismWalls = [];
       await databaseReference
@@ -41,10 +43,6 @@ Future<List> getPrismWalls() async {
               DateTime.now(),
             ),
           );
-          // box.put(
-          //   'dateTime',
-          //   DateTime.now().toString(),
-          // );
           debugPrint(prismWalls.length.toString());
           subPrismWalls = box.get('wallpapers').sublist(0, 24) as List;
         } else {
@@ -56,62 +54,8 @@ Future<List> getPrismWalls() async {
         debugPrint("data done with error");
       });
     }
-    // else if (box.get('date') !=
-    //     DateFormat("yy-MM-dd").format(
-    //       DateTime.now(),
-    //     )) {
-    //   debugPrint("Refetching part of collection");
-    //   toasts.error("Refetching part of collection");
-    //   prismWalls = [];
-    //   subPrismWalls = [];
-    //   final prevWalls = box.get('wallpapers') as List;
-    //   for (final wall in prevWalls) {
-    //     // if (DateTime.parse(wall['createdAt'].toString())
-    //     //         .compareTo(DateTime.now()) <
-    //     //     0) {
-    //     prismWalls.add(wall);
-    //     // }
-    //   }
-    //   await databaseReference
-    //       .collection("walls")
-    //       .where('review', isEqualTo: true)
-    //       .orderBy("createdAt", descending: true)
-    //       .where('createdAt',
-    //           isGreaterThan: DateTime.parse(box.get('dateTime').toString()))
-    //       .getDocuments()
-    //       .then((value) {
-    //     debugPrint(value.documents.length.toString());
-    //     for (final f in value.documents) {
-    //       Map<String, dynamic> map;
-    //       map = f.data;
-    //       map['createdAt'] = map['createdAt'].toString();
-    //       prismWalls.add(map);
-    //     }
-    //   });
-    //   box.delete('wallpapers');
-    //   if (prismWalls != []) {
-    //     box.put('wallpapers', prismWalls);
-    //     debugPrint("New Wallpapers saved");
-    //     box.put(
-    //       'date',
-    // DateFormat("yy-MM-dd").format(
-    //   DateTime.now(),
-    // ),
-    //     );
-    // box.put(
-    //   'dateTime',
-    //   DateTime.now().toString(),
-    // );
-    //     debugPrint(prismWalls.length.toString());
-    //     subPrismWalls = box.get('wallpapers').sublist(0, 24) as List;
-    //   } else {
-    //     debugPrint("Not connected to Internet");
-    //     subPrismWalls = [];
-    //   }
-    // }
     else {
       debugPrint("Community : Data Fetched from cache");
-      // toasts.error("Data fetched from cache");
       prismWalls = [];
       subPrismWalls = [];
       prismWalls = box.get('wallpapers') as List;
