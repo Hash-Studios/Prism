@@ -1,5 +1,27 @@
 ## Changelog
 
+### v2.6.0
+- Setups' uploading is now out of beta
+- Added new themes & theme designer
+- Removed "Premium required" for variants
+- Added new Wallpaper Filters (beta)
+- Added new & improved in-app notifications
+- Fixed thousands of lint issues
+- Updated Sliding Up Panel
+- Added New About Page
+- Swapped Firebase Storage with GitHub in setups
+- Redesigned new category popup
+- Changed HomeScreen Layout to Tabs
+- Setups now don't require signin to view
+- Improved Scrolling Performance
+- Added High Refresh Rate Support 
+- Twitter and Instagram now visible in wallpapers' info
+- Added verfied users
+- Added dynamic svg Strings
+- Removed tutorial coach mark
+- Reduced assets & app size
+- Minor bug fixes and improvements
+
 ### v2.5.7
 - Redesigned settings screen
 - Now customise the accent color of the app
