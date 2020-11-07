@@ -6,7 +6,7 @@
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
 ![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-10K+-green.svg)
-![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-3.8-blue.svg)
+![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.2-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
@@ -17,38 +17,31 @@
 </div>
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
 
-Prism offers an exclusive collection of wallpapers that are beautifully hand-crafted for your very specific device. This exclusive collection is hand-picked from all around the world to give you the best illustration, graphics, and photographs that look amazing in any setup that you want. Now Prism also offers an exclusive range of home screen setups, that you can simply apply. Each setup includes a wallpaper, an icon pack and a widget.
+Prism offers an exclusive collection of wallpapers that are beautifully hand-crafted for your very specific device. This exclusive collection is hand-picked from all around the world to give you the best illustration, graphics, and photographs that look amazing in any setup that you want. Now Prism also offers an exclusive range of home screen setups, that you can simply apply. Each setup includes a wallpaper, an icon pack and widgets.
 
 Prism relies on its Community and [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/) APIs as its source of beautiful and large collection of Wallpapers. By utilizing their API, it provides the user with a fast and smooth experience filled with subtle animations and minimal design. The main goal of Prism is to make the smartphone customization experience, smooth and easy, yet giving the users amazing wallpapers, and features like downloading infinite (as much your storage allows) wallpapers or sharing the ones they like with others.
 
 Now users can upload wallpapers & setups, which will be shown in the Community section. They can also view the wallpapers they uploaded in the Profile section and the setups in the setups section. We generally take upto 24 hours for reviewing every wallpaper/setup, but premium users get their wallpapers reviewed instantly.
 
-Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated every day. It also features categories like Abstract, Nature, 4K, Art, Landscape, Minimal, Space, Neon, etc. if you are into these. It also offers predefined exclusive collections made by us like, Mesh Gradients, Fluids, Space and more. Then it allows one to find wallpapers based on colors, i.e. you can find wallpapers with a color that matches your icons or home screen setup. Not even that, it also shows you a palette of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
+Prism offers a never-ending feed of wallpapers on its home screen. It also has a Curated section that is filled with the best photos/wallpapers updated every day. It also features categories like Abstract, Nature, 4K, Art, Landscape, Minimal, Space, Neon, etc. if you are into these. It also offers predefined exclusive collections made by us like, Canvas, Trails, Mesh Gradients, Fluids, Space and more. Then it allows one to find wallpapers based on colors, i.e. you can find wallpapers with a color that matches your icons or home screen setup. Not even that, it also shows you a palette of colors from any wallpaper in the app, on clicking which you can find wallpapers of that specific color.
 
-Main features like finding, downloading and setting up wallpapers don't require Google Sign In, while features like Favourites require you to sign up using Google. This signup is facilitated by Google Firebase, so it is secure and we only get your name, email, and profile photo for identification purposes. The app also has Dark Mode, if you want to save your phone's battery while getting in love with those wallpapers. The app also allows users to share wallpapers with others by giving them a unique link for every wallpaper, using Firebase Dynamic Links so that anyone can directly view the wallpaper.
+Main features like finding, downloading and setting up wallpapers don't require Google Sign In, while features like Favourites require you to sign up using Google. This signup is facilitated by Google Firebase, so it is secure and we only get your name, email, and profile photo for identification purposes. The app also has AMOLED Dark Mode, if you want to save your phone's battery while getting in love with those wallpapers. The app also allows users to share wallpapers with others by giving them a unique link for every wallpaper, using Firebase Dynamic Links so that anyone can directly view the wallpaper.
 
 ### Introducing Prism Premium
 
 Now get access to more premium and exclusive stuff by buying Prism Premium.
 
-You get access to Variants (Set up to 5 color variants of each wallpaper!) and Setups (Get more exclusive Home Screen setups! Free version includes only 5 free setups).
+You get access to Setups (Get more exclusive Home Screen setups! Free version includes only 5 free setups) and exclusive collections.
 Your uploads are also reviewed instantly, rather than the 24 hours time constraint in the free version.
 You also get a PRO badge in front of your profile, plus you directly support the development of this forever ad-free app.
 
 - Get exclusive setups (ultra-premium look)
 - Get exclusive collections
-- The ability to set variants of wallpapers
+- The ability to add filters on wallpapers before applying
 - Get PRO badge in front of your profile
-- Get uploads reviewed instantly
-- Get rid of all rewarded video ads(Used for downloads)
+- Get wallpaper uploads reviewed instantly
+- Get rid of all rewarded video ads (Used for downloads)
 - Support development of the app
-
-### Twitter
-
-Prism Wallpapers is now on Twitter. We regularly share exclusive wallpapers, setups and organise giveaways.
-Follow us there to stay notified. [https://twitter.com/PrismWallpapers](https://twitter.com/PrismWallpapers)
-
-<a href='https://twitter.com/PrismWallpapers'><img alt='Follow on Twitter' src='https://img.shields.io/twitter/follow/PrismWallpapers?color=green&label=Follow&logo=Twitter&style=flat'/></a>
 
 ### Telegram
 
@@ -74,14 +67,15 @@ Join us on Telegram now. [https://t.me/PrismWallpapers](https://t.me/PrismWallpa
 ## Features
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
-- Over 600+ exclusive wallpapers, making it the best selection ever
+- Over 800+ exclusive wallpapers, making it the best selection ever
 - Community wallpapers uploaded by users all-around the world
 - Homescreen setups - Unique and exclusive setups designed with the perfect combination of wallpapers, icon pack and widgets
 - Exclusive collections updated daily with premium wallpapers
-- Each wallpaper comes with 5 color variants
-- Dark Mode supported
+- Each wallpaper comes with 5 color variants and 20+ filters
+- AMOLED Dark Mode supported
 - Optional Sign-in
-- Each wallpaper has a unique link, makes sharing them easier
+- Each wallpaper/setup/user has a unique link, makes sharing them easier
+- Option to add Twitter/Instagram to your profile
 - Low Internet usage due to minimal loading and persistent data using Provider/ CacheNetworkImage
 - Save Liked Images for later (works even after uninstalling the app)
 - Download any wallpaper to Gallery by watching a quick video ad
@@ -104,15 +98,26 @@ Join us on Telegram now. [https://t.me/PrismWallpapers](https://t.me/PrismWallpa
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-### v2.5.7
-- Redesigned settings screen
-- Now customise the accent color of the app
-- Now connect Twitter with your Prism Profile
-- Now connect Instagram with your Prism Profile
-- Now share setups and profiles
-- Redesigned App Icon
-- Redesigned splash animation
-- Now join our telegram group from the app
+### v2.6.0
+- Setups' uploading is now out of beta
+- Added new themes & theme designer
+- Removed "Premium required" for variants
+- Added new Wallpaper Filters (beta)
+- Added new & improved in-app notifications
+- Fixed thousands of lint issues
+- Updated Sliding Up Panel
+- Added New About Page
+- Swapped Firebase Storage with GitHub in setups
+- Redesigned new category popup
+- Changed HomeScreen Layout to Tabs
+- Setups now don't require signin to view
+- Improved Scrolling Performance
+- Added High Refresh Rate Support 
+- Twitter and Instagram now visible in wallpapers' info
+- Added verfied users
+- Added dynamic svg Strings
+- Removed tutorial coach mark
+- Reduced assets & app size
 - Minor bug fixes and improvements
 
 ## Demo

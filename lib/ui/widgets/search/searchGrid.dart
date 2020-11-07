@@ -1,6 +1,6 @@
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
-    as WData;
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+    as wData;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pData;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
@@ -15,7 +15,7 @@ import 'package:provider/provider.dart';
 class SearchGrid extends StatefulWidget {
   final String query;
   final String selectedProvider;
-  SearchGrid({@required this.query, @required this.selectedProvider});
+  const SearchGrid({@required this.query, @required this.selectedProvider});
   @override
   _SearchGridState createState() => _SearchGridState();
 }
@@ -25,7 +25,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
   AnimationController shakeController;
   Animation<Color> animation;
   int longTapIndex;
-  var refreshHomeKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey =
+      GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
   @override
@@ -37,21 +38,22 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -82,24 +84,22 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
   }
 
   @override
-  dispose() {
+  void dispose() {
     _controller?.dispose();
     shakeController.dispose();
     super.dispose();
   }
 
-  Future<Null> refreshList() async {
-    refreshHomeKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(milliseconds: 500));
+  Future<void> refreshList() async {
+    refreshHomeKey.currentState?.show();
+    await Future.delayed(const Duration(milliseconds: 500));
     if (widget.selectedProvider == "WallHaven") {
-      WData.wallsS = [];
-      WData.getWallsbyQuery(widget.query);
+      wData.wallsS = [];
+      wData.getWallsbyQuery(widget.query);
     } else if (widget.selectedProvider == "Pexels") {
-      PData.wallsPS = [];
-      PData.getWallsPbyQuery(widget.query);
+      pData.wallsPS = [];
+      pData.getWallsPbyQuery(widget.query);
     }
-
-    return null;
   }
 
   @override
@@ -123,14 +123,14 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
             if (!seeMoreLoader) {
               if (widget.selectedProvider == "WallHaven") {
-                WData.getWallsbyQueryPage(widget.query);
+                wData.getWallsbyQueryPage(widget.query);
               } else if (widget.selectedProvider == "Pexels") {
-                PData.getWallsPbyQueryPage(widget.query);
+                pData.getWallsPbyQueryPage(widget.query);
               }
 
               setState(() {
                 seeMoreLoader = true;
-                Future.delayed(Duration(seconds: 4))
+                Future.delayed(const Duration(seconds: 2))
                     .then((value) => seeMoreLoader = false);
               });
             }
@@ -139,10 +139,14 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
         },
         child: GridView.builder(
           controller: controller,
-          padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
+          padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
           itemCount: widget.selectedProvider == "WallHaven"
-              ? WData.wallsS.length == 0 ? 24 : WData.wallsS.length
-              : PData.wallsPS.length == 0 ? 24 : PData.wallsPS.length,
+              ? wData.wallsS.isEmpty
+                  ? 24
+                  : wData.wallsS.length
+              : pData.wallsPS.isEmpty
+                  ? 24
+                  : pData.wallsPS.length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent:
@@ -154,48 +158,48 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               crossAxisSpacing: 8),
           itemBuilder: (context, index) {
             if (widget.selectedProvider == "WallHaven") {
-              if (index == WData.wallsS.length - 1 && index >= 23) {
+              if (index == wData.wallsS.length - 1 && index >= 23) {
                 return FlatButton(
                     color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnTheme() ==
-                            ThemeType.Dark
+                                .returnThemeType() ==
+                            "Dark"
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        WData.getWallsbyQueryPage(widget.query);
+                        wData.getWallsbyQueryPage(widget.query);
                         setState(() {
                           seeMoreLoader = true;
-                          Future.delayed(Duration(seconds: 4))
+                          Future.delayed(const Duration(seconds: 2))
                               .then((value) => seeMoreLoader = false);
                         });
                       }
                     },
-                    child: !seeMoreLoader ? Text("See more") : Loader());
+                    child: !seeMoreLoader ? const Text("See more") : Loader());
               }
             } else if (widget.selectedProvider == "Pexels") {
-              if (index == PData.wallsPS.length - 1 && index >= 23) {
+              if (index == pData.wallsPS.length - 1 && index >= 23) {
                 return FlatButton(
                     color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnTheme() ==
-                            ThemeType.Dark
+                                .returnThemeType() ==
+                            "Dark"
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        PData.getWallsPbyQueryPage(widget.query);
+                        pData.getWallsPbyQueryPage(widget.query);
                         setState(() {
                           seeMoreLoader = true;
-                          Future.delayed(Duration(seconds: 4))
+                          Future.delayed(const Duration(seconds: 2))
                               .then((value) => seeMoreLoader = false);
                         });
                       }
                     },
-                    child: !seeMoreLoader ? Text("See more") : Loader());
+                    child: !seeMoreLoader ? const Text("See more") : Loader());
               }
             }
 
@@ -206,65 +210,30 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                 child: AnimatedBuilder(
                     animation: offsetAnimation,
                     builder: (buildContext, child) {
-                      if (offsetAnimation.value < 0.0)
-                        print('${offsetAnimation.value + 8.0}');
+                      if (offsetAnimation.value < 0.0) {
+                        debugPrint('${offsetAnimation.value + 8.0}');
+                      }
                       return GestureDetector(
-                        child: Padding(
-                          padding: index == longTapIndex
-                              ? EdgeInsets.symmetric(
-                                  vertical: offsetAnimation.value / 2,
-                                  horizontal: offsetAnimation.value)
-                              : EdgeInsets.all(0),
-                          child: Container(
-                            decoration: widget.selectedProvider == "WallHaven"
-                                ? WData.wallsS.length == 0
-                                    ? BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                      )
-                                    : BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
-                                            image: CachedNetworkImageProvider(
-                                                WData.wallsS[index]
-                                                    .thumbs["original"]),
-                                            fit: BoxFit.cover))
-                                : PData.wallsPS.length == 0
-                                    ? BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                      )
-                                    : BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
-                                            image: CachedNetworkImageProvider(
-                                                PData.wallsPS[index]
-                                                    .src["medium"]),
-                                            fit: BoxFit.cover)),
-                          ),
-                        ),
                         onTap: () {
                           if (widget.selectedProvider == "WallHaven") {
-                            if (WData.wallsS == []) {
+                            if (wData.wallsS == []) {
                             } else {
-                              Navigator.pushNamed(context, WallpaperRoute,
+                              Navigator.pushNamed(context, wallpaperRoute,
                                   arguments: [
                                     widget.query,
                                     index,
-                                    WData.wallsS[index].thumbs["small"],
+                                    wData.wallsS[index].thumbs["small"],
                                   ]);
                             }
                           } else if (widget.selectedProvider == "Pexels") {
-                            if (PData.wallsPS == []) {
+                            if (pData.wallsPS == []) {
                             } else {
-                              Navigator.pushNamed(context, SearchWallpaperRoute,
+                              Navigator.pushNamed(context, searchWallpaperRoute,
                                   arguments: [
                                     widget.selectedProvider,
                                     widget.query,
                                     index,
-                                    PData.wallsPS[index].src["medium"],
+                                    pData.wallsPS[index].src["medium"],
                                   ]);
                             }
                           }
@@ -275,27 +244,68 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                           });
                           shakeController.forward(from: 0.0);
                           if (widget.selectedProvider == "WallHaven") {
-                            if (WData.wallsS == []) {
+                            if (wData.wallsS == []) {
                             } else {
                               HapticFeedback.vibrate();
                               createDynamicLink(
-                                  WData.wallsS[index].id,
+                                  wData.wallsS[index].id,
                                   "WallHaven",
-                                  WData.wallsS[index].path,
-                                  WData.wallsS[index].thumbs["original"]);
+                                  wData.wallsS[index].path,
+                                  wData.wallsS[index].thumbs["original"]
+                                      .toString());
                             }
                           } else if (widget.selectedProvider == "Pexels") {
-                            if (WData.wallsS == []) {
+                            if (wData.wallsS == []) {
                             } else {
                               HapticFeedback.vibrate();
                               createDynamicLink(
-                                  PData.wallsPS[index].id,
+                                  pData.wallsPS[index].id,
                                   "Pexels",
-                                  PData.wallsPS[index].src["original"],
-                                  PData.wallsPS[index].src["medium"]);
+                                  pData.wallsPS[index].src["original"]
+                                      .toString(),
+                                  pData.wallsPS[index].src["medium"]
+                                      .toString());
                             }
                           }
                         },
+                        child: Padding(
+                          padding: index == longTapIndex
+                              ? EdgeInsets.symmetric(
+                                  vertical: offsetAnimation.value / 2,
+                                  horizontal: offsetAnimation.value)
+                              : const EdgeInsets.all(0),
+                          child: Container(
+                            decoration: widget.selectedProvider == "WallHaven"
+                                ? wData.wallsS.isEmpty
+                                    ? BoxDecoration(
+                                        color: animation.value,
+                                        borderRadius: BorderRadius.circular(20),
+                                      )
+                                    : BoxDecoration(
+                                        color: animation.value,
+                                        borderRadius: BorderRadius.circular(20),
+                                        image: DecorationImage(
+                                            image: CachedNetworkImageProvider(
+                                                wData.wallsS[index]
+                                                    .thumbs["original"]
+                                                    .toString()),
+                                            fit: BoxFit.cover))
+                                : pData.wallsPS.isEmpty
+                                    ? BoxDecoration(
+                                        color: animation.value,
+                                        borderRadius: BorderRadius.circular(20),
+                                      )
+                                    : BoxDecoration(
+                                        color: animation.value,
+                                        borderRadius: BorderRadius.circular(20),
+                                        image: DecorationImage(
+                                            image: CachedNetworkImageProvider(
+                                                pData.wallsPS[index]
+                                                    .src["medium"]
+                                                    .toString()),
+                                            fit: BoxFit.cover)),
+                          ),
+                        ),
                       );
                     }));
           },

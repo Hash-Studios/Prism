@@ -1,6 +1,16 @@
 # include: package:effective_dart/analysis_options.yaml
+include: package:lint/analysis_options.yaml
 analyzer:
   errors:
     # unused_import: ignore
     # deprecated_member_use: ignore
     missing_return: ignore
+    # library_prefixes: ignore
+    # file_names: ignore
+    # prefer_if_elements_to_conditional_expressions: ignore
+    # non_constant_identifier_names: ignore
+    # avoid_function_literals_in_foreach_calls: ignore
+    # avoid_positional_boolean_parameters: ignore
+    # unnecessary_this: ignore
+  exclude:
+    - lib/theme/jam_icons_icons.dart

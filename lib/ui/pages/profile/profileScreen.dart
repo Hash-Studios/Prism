@@ -8,7 +8,6 @@ import 'package:Prism/ui/widgets/favourite/favLoader.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
 import 'package:Prism/ui/widgets/profile/premiumList.dart';
-import 'package:Prism/ui/widgets/profile/prismList.dart';
 import 'package:Prism/ui/widgets/profile/studioList.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
@@ -21,6 +20,9 @@ import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:Prism/global/svgAssets.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -44,8 +46,8 @@ class ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<ProfileChild> {
-  int favCount = main.prefs.get('userFavs') ?? 0;
-  int profileCount = main.prefs.get('userPosts') ?? 0;
+  int favCount = main.prefs.get('userFavs') as int ?? 0;
+  int profileCount = main.prefs.get('userPosts') as int ?? 0;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {
@@ -55,17 +57,17 @@ class _ProfileChildState extends State<ProfileChild> {
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
   Future checkFav() async {
-    if (main.prefs.get("isLoggedin")) {
+    if (main.prefs.get("isLoggedin") as bool) {
       await Provider.of<FavouriteProvider>(context, listen: false)
           .countFav()
           .then(
         (value) {
-          print(value);
+          debugPrint(value.toString());
           setState(
             () {
               favCount = value;
@@ -83,7 +85,7 @@ class _ProfileChildState extends State<ProfileChild> {
         InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
         onWillPop: onWillPop,
-        child: main.prefs.get("isLoggedin")
+        child: main.prefs.get("isLoggedin") as bool
             ? DefaultTabController(
                 length: 3,
                 child: Scaffold(
@@ -101,13 +103,15 @@ class _ProfileChildState extends State<ProfileChild> {
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: IconButton(
-                                      icon: Icon(JamIcons.share_alt),
+                                      icon: const Icon(JamIcons.share_alt),
                                       onPressed: () {
                                         createUserDynamicLink(
-                                            main.prefs.get("name"),
-                                            main.prefs.get("email"),
-                                            main.prefs.get("googleimage"),
-                                            main.prefs.get("premium"),
+                                            main.prefs.get("name").toString(),
+                                            main.prefs.get("email").toString(),
+                                            main.prefs
+                                                .get("googleimage")
+                                                .toString(),
+                                            main.prefs.get("premium") as bool,
                                             main.prefs.get("twitter") != ""
                                                 ? main.prefs
                                                         .get("twitter")
@@ -128,7 +132,6 @@ class _ProfileChildState extends State<ProfileChild> {
                               ],
                         backgroundColor: config.Colors().mainAccentColor(1),
                         automaticallyImplyLeading: false,
-                        pinned: false,
                         expandedHeight: 260.0,
                         flexibleSpace: FlexibleSpaceBar(
                           background: Stack(
@@ -139,239 +142,243 @@ class _ProfileChildState extends State<ProfileChild> {
                               ),
                               Padding(
                                 padding: const EdgeInsets.only(top: 25.0),
-                                child: Container(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Spacer(flex: 5),
-                                      main.prefs.get("googleimage") == null
-                                          ? Container()
-                                          : Container(
-                                              decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          5000),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                        blurRadius: 16,
-                                                        offset: Offset(0, 4),
-                                                        color: Color(0xFF000000)
-                                                            .withOpacity(0.24))
-                                                  ]),
-                                              child: CircleAvatar(
-                                                radius: 50,
-                                                backgroundImage: NetworkImage(
-                                                    main.prefs
-                                                        .get("googleimage")),
+                                child: Column(
+                                  children: [
+                                    const Spacer(flex: 5),
+                                    main.prefs.get("googleimage") == null
+                                        ? Container()
+                                        : Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              Container(
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5000),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                          blurRadius: 16,
+                                                          offset: const Offset(
+                                                              0, 4),
+                                                          color: const Color(
+                                                                  0xFF000000)
+                                                              .withOpacity(
+                                                                  0.24))
+                                                    ]),
+                                                child: CircleAvatar(
+                                                  radius: 50,
+                                                  backgroundImage: NetworkImage(
+                                                      main.prefs
+                                                          .get("googleimage")
+                                                          .toString()),
+                                                ),
                                               ),
-                                            ),
-                                      Spacer(flex: 2),
-                                      main.prefs.get("name") == null
-                                          ? Container()
-                                          : !main.prefs.get('premium')
-                                              ? Text(
-                                                  main.prefs.get("name"),
-                                                  style: TextStyle(
-                                                      fontFamily:
-                                                          "Proxima Nova",
-                                                      color: Colors.white,
-                                                      fontSize: 32,
-                                                      fontWeight:
-                                                          FontWeight.w700),
-                                                )
-                                              : Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: <Widget>[
-                                                    Text(
-                                                      main.prefs.get("name"),
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              "Proxima Nova",
-                                                          color: Colors.white,
-                                                          fontSize: 32,
-                                                          fontWeight:
-                                                              FontWeight.w700),
-                                                    ),
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              left: 8.0),
+                                              globals.verifiedUsers.contains(
+                                                      main.prefs
+                                                          .get("email")
+                                                          .toString())
+                                                  ? Positioned(
+                                                      top: 0,
+                                                      left: 70,
                                                       child: Container(
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                                vertical: 3,
-                                                                horizontal: 5),
-                                                        decoration: BoxDecoration(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        50),
-                                                            color: Color(
-                                                                0xFFFFFFFF)),
-                                                        child: Text(
-                                                          "PRO",
-                                                          style: Theme.of(
-                                                                  context)
-                                                              .textTheme
-                                                              .bodyText2
-                                                              .copyWith(
-                                                                  fontSize: 10,
-                                                                  color: Color(main
-                                                                      .prefs
-                                                                      .get(
-                                                                          "mainAccentColor"))),
-                                                        ),
+                                                        width: 30,
+                                                        height: 30,
+                                                        child: SvgPicture
+                                                            .string(verifiedIcon
+                                                                .replaceAll(
+                                                                    "E57697",
+                                                                    "FFFFFF")),
                                                       ),
                                                     )
-                                                  ],
-                                                ),
-                                      Spacer(flex: 1),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: <Widget>[
-                                          Spacer(flex: 3),
-                                          Row(
-                                            children: <Widget>[
-                                              Text(
-                                                favCount.toString() + " ",
-                                                style: TextStyle(
+                                                  : Container(),
+                                            ],
+                                          ),
+                                    const Spacer(flex: 2),
+                                    main.prefs.get("name") == null
+                                        ? Container()
+                                        : main.prefs.get('premium') == false
+                                            ? Text(
+                                                main.prefs
+                                                    .get("name")
+                                                    .toString(),
+                                                style: const TextStyle(
                                                     fontFamily: "Proxima Nova",
-                                                    fontSize: 24,
-                                                    color: Colors.white70,
+                                                    color: Colors.white,
+                                                    fontSize: 32,
                                                     fontWeight:
-                                                        FontWeight.normal),
-                                              ),
-                                              Icon(
-                                                JamIcons.heart_f,
-                                                color: Colors.white70,
-                                              ),
-                                            ],
-                                          ),
-                                          Spacer(flex: 1),
-                                          Row(
-                                            children: <Widget>[
-                                              FutureBuilder(
-                                                  future: Provider.of<
-                                                              ProfileWallProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .getProfileWallsLength(),
-                                                  builder: (context, snapshot) {
-                                                    return Text(
-                                                      snapshot.data == null
-                                                          ? profileCount
-                                                                  .toString() +
-                                                              " "
-                                                          : snapshot.data
-                                                                  .toString() +
-                                                              " ",
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              "Proxima Nova",
-                                                          fontSize: 24,
-                                                          color: Colors.white70,
-                                                          fontWeight: FontWeight
-                                                              .normal),
-                                                    );
-                                                  }),
-                                              Icon(
-                                                JamIcons.picture,
-                                                color: Colors.white70,
-                                              ),
-                                            ],
-                                          ),
-                                          Spacer(flex: 3),
-                                        ],
-                                      ),
-                                      Spacer(flex: 1),
-                                      main.prefs.get("twitter") != "" &&
-                                              main.prefs.get("twitter") !=
-                                                  "https://www.twitter.com/"
-                                          ? GestureDetector(
-                                              onTap: () {
-                                                launch(main.prefs
-                                                    .get("twitter")
-                                                    .toString());
-                                              },
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                // mainAxisAlignment:
-                                                //     MainAxisAlignment.start,
+                                                        FontWeight.w700),
+                                              )
+                                            : Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: <Widget>[
-                                                  Icon(
-                                                    JamIcons.twitter,
-                                                    color: Colors.white70,
-                                                  ),
                                                   Text(
-                                                    " " +
-                                                        main.prefs
-                                                            .get("twitter")
-                                                            .toString()
-                                                            .split(
-                                                                "https://www.twitter.com/")[1],
-                                                    style: TextStyle(
+                                                    main.prefs
+                                                        .get("name")
+                                                        .toString(),
+                                                    style: const TextStyle(
                                                         fontFamily:
                                                             "Proxima Nova",
-                                                        fontSize: 20,
+                                                        color: Colors.white,
+                                                        fontSize: 32,
+                                                        fontWeight:
+                                                            FontWeight.w700),
+                                                  ),
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            left: 8.0),
+                                                    child: Container(
+                                                      padding: const EdgeInsets
+                                                              .symmetric(
+                                                          vertical: 3,
+                                                          horizontal: 5),
+                                                      decoration: BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(50),
+                                                          color: const Color(
+                                                              0xFFFFFFFF)),
+                                                      child: Text(
+                                                        "PRO",
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2
+                                                            .copyWith(
+                                                                fontSize: 10,
+                                                                color: Color(main
+                                                                        .prefs
+                                                                        .get(
+                                                                            "mainAccentColor")
+                                                                    as int)),
+                                                      ),
+                                                    ),
+                                                  )
+                                                ],
+                                              ),
+                                    const Spacer(),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        const Spacer(flex: 3),
+                                        Row(
+                                          children: <Widget>[
+                                            Text(
+                                              "${favCount.toString()} ",
+                                              style: const TextStyle(
+                                                  fontFamily: "Proxima Nova",
+                                                  fontSize: 24,
+                                                  color: Colors.white70,
+                                                  fontWeight:
+                                                      FontWeight.normal),
+                                            ),
+                                            const Icon(
+                                              JamIcons.heart_f,
+                                              color: Colors.white70,
+                                            ),
+                                          ],
+                                        ),
+                                        const Spacer(),
+                                        Row(
+                                          children: <Widget>[
+                                            FutureBuilder(
+                                                future: Provider.of<
+                                                            ProfileWallProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .getProfileWallsLength(),
+                                                builder: (context, snapshot) {
+                                                  return Text(
+                                                    snapshot.data == null
+                                                        ? "${profileCount.toString()} "
+                                                        : "${snapshot.data.toString()} ",
+                                                    style: const TextStyle(
+                                                        fontFamily:
+                                                            "Proxima Nova",
+                                                        fontSize: 24,
                                                         color: Colors.white70,
                                                         fontWeight:
                                                             FontWeight.normal),
-                                                  ),
-                                                ],
-                                              ),
-                                            )
-                                          : Spacer(
-                                              flex: 1,
+                                                  );
+                                                }),
+                                            const Icon(
+                                              JamIcons.picture,
+                                              color: Colors.white70,
                                             ),
-                                      Spacer(flex: 1),
-                                      main.prefs.get("instagram") != "" &&
-                                              main.prefs.get("instagram") !=
-                                                  "https://www.instagram.com/"
-                                          ? GestureDetector(
-                                              onTap: () {
-                                                launch(main.prefs
-                                                    .get("instagram")
-                                                    .toString());
-                                              },
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                // mainAxisAlignment:
-                                                //     MainAxisAlignment.start,
-                                                children: <Widget>[
-                                                  Icon(
-                                                    JamIcons.instagram,
-                                                    color: Colors.white70,
-                                                  ),
-                                                  Text(
-                                                    " " +
-                                                        main.prefs
-                                                            .get("instagram")
-                                                            .toString()
-                                                            .split(
-                                                                "https://www.instagram.com/")[1],
-                                                    style: TextStyle(
-                                                        fontFamily:
-                                                            "Proxima Nova",
-                                                        fontSize: 20,
-                                                        color: Colors.white70,
-                                                        fontWeight:
-                                                            FontWeight.normal),
-                                                  ),
-                                                ],
-                                              ),
-                                            )
-                                          : Spacer(
-                                              flex: 1,
+                                          ],
+                                        ),
+                                        const Spacer(flex: 3),
+                                      ],
+                                    ),
+                                    const Spacer(),
+                                    main.prefs.get("twitter") != "" &&
+                                            main.prefs.get("twitter") !=
+                                                "https://www.twitter.com/"
+                                        ? GestureDetector(
+                                            onTap: () {
+                                              launch(main.prefs
+                                                  .get("twitter")
+                                                  .toString());
+                                            },
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              // mainAxisAlignment:
+                                              //     MainAxisAlignment.start,
+                                              children: <Widget>[
+                                                const Icon(
+                                                  JamIcons.twitter,
+                                                  color: Colors.white70,
+                                                ),
+                                                Text(
+                                                  ' ${main.prefs.get("twitter").toString().split("https://www.twitter.com/")[1]}',
+                                                  style: const TextStyle(
+                                                      fontFamily:
+                                                          "Proxima Nova",
+                                                      fontSize: 20,
+                                                      color: Colors.white70,
+                                                      fontWeight:
+                                                          FontWeight.normal),
+                                                ),
+                                              ],
                                             ),
-                                    ],
-                                  ),
+                                          )
+                                        : const Spacer(),
+                                    const Spacer(),
+                                    main.prefs.get("instagram") != "" &&
+                                            main.prefs.get("instagram") !=
+                                                "https://www.instagram.com/"
+                                        ? GestureDetector(
+                                            onTap: () {
+                                              launch(main.prefs
+                                                  .get("instagram")
+                                                  .toString());
+                                            },
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              // mainAxisAlignment:
+                                              //     MainAxisAlignment.start,
+                                              children: <Widget>[
+                                                const Icon(
+                                                  JamIcons.instagram,
+                                                  color: Colors.white70,
+                                                ),
+                                                Text(
+                                                  ' ${main.prefs.get("instagram").toString().split("https://www.instagram.com/")[1]}',
+                                                  style: const TextStyle(
+                                                      fontFamily:
+                                                          "Proxima Nova",
+                                                      fontSize: 20,
+                                                      color: Colors.white70,
+                                                      fontWeight:
+                                                          FontWeight.normal),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : const Spacer(),
+                                  ],
                                 ),
                               ),
                             ],
@@ -383,7 +390,8 @@ class _ProfileChildState extends State<ProfileChild> {
                         automaticallyImplyLeading: false,
                         pinned: true,
                         titleSpacing: 0,
-                        expandedHeight: main.prefs.get("isLoggedin") ? 50 : 0,
+                        expandedHeight:
+                            main.prefs.get("isLoggedin") as bool ? 50 : 0,
                         title: SizedBox(
                           width: MediaQuery.of(context).size.width,
                           height: 57,
@@ -394,8 +402,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                   indicatorColor: Theme.of(context).accentColor,
                                   indicatorSize: TabBarIndicatorSize.label,
                                   unselectedLabelColor:
-                                      Color(0xFFFFFFFF).withOpacity(0.5),
-                                  labelColor: Color(0xFFFFFFFF),
+                                      const Color(0xFFFFFFFF).withOpacity(0.5),
+                                  labelColor: const Color(0xFFFFFFFF),
                                   tabs: [
                                     Tab(
                                       icon: Icon(
@@ -443,8 +451,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         DownloadList(),
                         GeneralList(),
                         UserList(),
-                        PrismList(),
-                        StudioList(scrollController: controller),
+                        const StudioList(),
                       ])
                     ]),
                   ),
@@ -457,7 +464,6 @@ class _ProfileChildState extends State<ProfileChild> {
                   SliverAppBar(
                     backgroundColor: config.Colors().mainAccentColor(1),
                     automaticallyImplyLeading: false,
-                    pinned: false,
                     expandedHeight: 280.0,
                     flexibleSpace: FlexibleSpaceBar(
                       background: Stack(
@@ -474,10 +480,8 @@ class _ProfileChildState extends State<ProfileChild> {
                                   child: SizedBox(
                                     width:
                                         MediaQuery.of(context).size.width / 2,
-                                    child: FlareActor(
+                                    child: const FlareActor(
                                       "assets/animations/Text.flr",
-                                      isPaused: false,
-                                      alignment: Alignment.center,
                                       animation: "Untitled",
                                     ),
                                   ),
@@ -498,8 +502,17 @@ class _ProfileChildState extends State<ProfileChild> {
                     DownloadList(),
                     GeneralList(),
                     UserList(),
-                    PrismList(),
-                    StudioList(),
+                    const StudioList(),
+                    const SizedBox(
+                      height: 300,
+                    ),
+                    // const SizedBox(
+                    //   height: 300,
+                    //   child: FlareActor(
+                    //     "assets/animations/Update.flr",
+                    //     animation: "update",
+                    //   ),
+                    // ),
                   ]))
                 ]),
               ));

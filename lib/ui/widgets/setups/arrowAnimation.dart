@@ -4,7 +4,7 @@ class ArrowBounceAnimation extends StatefulWidget {
   final Function onTap;
   final Widget child;
 
-  ArrowBounceAnimation({this.child, this.onTap});
+  const ArrowBounceAnimation({this.child, this.onTap});
 
   @override
   _ArrowBounceAnimationState createState() => _ArrowBounceAnimationState();
@@ -19,7 +19,7 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
   void initState() {
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(
+      duration: const Duration(
         milliseconds: 600,
       ),
     )..addListener(() {
@@ -41,7 +41,7 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
 
   @override
   Widget build(BuildContext context) {
-    double scale = 1.3 - animation.value;
+    final double scale = 1.3 - animation.value;
     return GestureDetector(
       onTap: _onTap,
       child: Transform.scale(

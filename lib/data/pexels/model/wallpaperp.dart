@@ -5,7 +5,7 @@ class WallPaperP {
   final String url;
   final String photographer;
   final Map src;
-  final int current_page;
+  final int currentPage;
   WallPaperP({
     this.id,
     this.width,
@@ -13,6 +13,6 @@ class WallPaperP {
     this.url,
     this.photographer,
     this.src,
-    this.current_page,
+    this.currentPage,
   });
 }

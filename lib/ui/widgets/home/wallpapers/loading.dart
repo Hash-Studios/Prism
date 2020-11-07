@@ -24,21 +24,22 @@ class _LoadingCardsState extends State<LoadingCards>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -69,7 +70,7 @@ class _LoadingCardsState extends State<LoadingCards>
   }
 
   @override
-  dispose() {
+  void dispose() {
     _controller.dispose();
     super.dispose();
   }
@@ -79,12 +80,14 @@ class _LoadingCardsState extends State<LoadingCards>
     ScrollController controller;
     try {
       controller = InheritedDataProvider.of(context).scrollController;
-    } catch (e) {}
+    } catch (e) {
+      debugPrint(e.toString());
+    }
 
     return controller != null
         ? GridView.builder(
             controller: controller,
-            padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
+            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -105,7 +108,7 @@ class _LoadingCardsState extends State<LoadingCards>
             },
           )
         : GridView.builder(
-            padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
+            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(

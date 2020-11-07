@@ -8,9 +8,9 @@ class App {
   double _heightPadding;
   double _widthPadding;
 
-  App(_context) {
+  App(BuildContext _context) {
     this._context = _context;
-    MediaQueryData _queryData = MediaQuery.of(this._context);
+    final MediaQueryData _queryData = MediaQuery.of(this._context);
     _height = _queryData.size.height / 100.0;
     _width = _queryData.size.width / 100.0;
     _heightPadding = _height -
@@ -37,39 +37,40 @@ class App {
 }
 
 class Colors {
-  Color _mainColor = Color(0xFFFFFFFF);
-  Color _secondColor = Color(0xFFEDEDED);
-  Color _accentColor = Color(0xFF2F2F2F);
-  Color _mainDarkColor = Color(0xFF181818);
-  Color _secondDarkColor = Color(0xFF2F2F2F);
-  Color _accentDarkColor = Color(0xFFF0F0F0);
-  Color _mainAccentColor = Color(main.prefs.get("mainAccentColor"));
+  static const Color _mainColor = Color(0xFFFFFFFF);
+  static const Color _secondColor = Color(0xFFEDEDED);
+  static const Color _accentColor = Color(0xFF2F2F2F);
+  static const Color _mainDarkColor = Color(0xFF181818);
+  static const Color _secondDarkColor = Color(0xFF2F2F2F);
+  static const Color _accentDarkColor = Color(0xFFF0F0F0);
+  final Color _mainAccentColor =
+      Color(main.prefs.get("mainAccentColor") as int);
 
   Color mainColor(double opacity) {
-    return this._mainColor.withOpacity(opacity);
+    return _mainColor.withOpacity(opacity);
   }
 
   Color secondColor(double opacity) {
-    return this._secondColor.withOpacity(opacity);
+    return _secondColor.withOpacity(opacity);
   }
 
   Color accentColor(double opacity) {
-    return this._accentColor.withOpacity(opacity);
+    return _accentColor.withOpacity(opacity);
   }
 
   Color mainDarkColor(double opacity) {
-    return this._mainDarkColor.withOpacity(opacity);
+    return _mainDarkColor.withOpacity(opacity);
   }
 
   Color secondDarkColor(double opacity) {
-    return this._secondDarkColor.withOpacity(opacity);
+    return _secondDarkColor.withOpacity(opacity);
   }
 
   Color accentDarkColor(double opacity) {
-    return this._accentDarkColor.withOpacity(opacity);
+    return _accentDarkColor.withOpacity(opacity);
   }
 
   Color mainAccentColor(double opacity) {
-    return this._mainAccentColor.withOpacity(opacity);
+    return _mainAccentColor.withOpacity(opacity);
   }
 }

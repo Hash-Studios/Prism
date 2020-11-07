@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 
 class ProfileWallProvider extends ChangeNotifier {
-  final databaseReference = Firestore.instance;
+  final Firestore databaseReference = Firestore.instance;
   List profileWalls;
   int len = 0;
   Future<List> getProfileWalls() async {
-    this.profileWalls = [];
-    var db;
+    profileWalls = [];
+    Query db;
     if (main.prefs.get('premium') == true) {
       db = databaseReference
           .collection("walls")
@@ -22,22 +22,22 @@ class ProfileWallProvider extends ChangeNotifier {
           .orderBy("createdAt", descending: true);
     }
     await db.getDocuments().then((value) {
-      this.profileWalls = [];
-      value.documents.forEach((f) {
-        this.profileWalls.add(f.data);
-      });
-      this.len = this.profileWalls.length;
-      print(this.len);
+      profileWalls = [];
+      for (final f in value.documents) {
+        profileWalls.add(f.data);
+      }
+      len = profileWalls.length;
+      debugPrint(len.toString());
     }).catchError((e) {
-      print(e.toString());
-      print("data done with error");
+      debugPrint(e.toString());
+      debugPrint("data done with error");
     });
-    return this.profileWalls;
+    return profileWalls;
   }
 
   Future<int> getProfileWallsLength() async {
     var tempList = [];
-    var db2;
+    Query db2;
     if (main.prefs.get('premium') == true) {
       db2 = databaseReference
           .collection("walls")
@@ -52,16 +52,16 @@ class ProfileWallProvider extends ChangeNotifier {
     }
     await db2.getDocuments().then((value) {
       tempList = [];
-      value.documents.forEach((f) {
+      for (final f in value.documents) {
         tempList.add(f.data);
-      });
-      this.len = tempList.length;
-      print(this.len);
+      }
+      len = tempList.length;
+      debugPrint(len.toString());
     }).catchError((e) {
-      print(e.toString());
-      print("data done with error");
+      debugPrint(e.toString());
+      debugPrint("data done with error");
     });
-    main.prefs.put('userPosts', this.len);
-    return this.len;
+    main.prefs.put('userPosts', len);
+    return len;
   }
 }

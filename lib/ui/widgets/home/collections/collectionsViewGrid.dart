@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 
 class CollectionViewGrid extends StatefulWidget {
   final List arguments;
-  CollectionViewGrid({@required this.arguments});
+  const CollectionViewGrid({@required this.arguments});
   @override
   _CollectionViewGridState createState() => _CollectionViewGridState();
 }
@@ -20,7 +20,8 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
   AnimationController shakeController;
   Animation<Color> animation;
   int longTapIndex;
-  var refreshHomeKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey =
+      GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
   @override
@@ -32,21 +33,22 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -77,7 +79,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
   }
 
   @override
-  dispose() {
+  void dispose() {
     _controller?.dispose();
     shakeController.dispose();
     super.dispose();
@@ -97,7 +99,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
         InheritedDataProvider.of(context).scrollController;
     return GridView.builder(
       controller: controller,
-      padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
+      padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
       itemCount: widget.arguments.length,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -112,27 +114,12 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
         return AnimatedBuilder(
             animation: offsetAnimation,
             builder: (buildContext, child) {
-              if (offsetAnimation.value < 0.0)
-                print('${offsetAnimation.value + 8.0}');
+              if (offsetAnimation.value < 0.0) {
+                debugPrint('${offsetAnimation.value + 8.0}');
+              }
               return GestureDetector(
-                child: Padding(
-                  padding: index == longTapIndex
-                      ? EdgeInsets.symmetric(
-                          vertical: offsetAnimation.value / 2,
-                          horizontal: offsetAnimation.value)
-                      : EdgeInsets.all(0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: animation.value,
-                        borderRadius: BorderRadius.circular(20),
-                        image: DecorationImage(
-                            image: CachedNetworkImageProvider(
-                                widget.arguments[index]["wallpaper_thumb"]),
-                            fit: BoxFit.cover)),
-                  ),
-                ),
                 onTap: () {
-                  Navigator.pushNamed(context, ShareRoute, arguments: [
+                  Navigator.pushNamed(context, shareRoute, arguments: [
                     widget.arguments[index]["id"],
                     widget.arguments[index]["wallpaper_provider"],
                     widget.arguments[index]["wallpaper_url"],
@@ -146,11 +133,28 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
                   shakeController.forward(from: 0.0);
                   HapticFeedback.vibrate();
                   createDynamicLink(
-                      widget.arguments[index]["id"],
-                      widget.arguments[index]["wallpaper_provider"],
-                      widget.arguments[index]["wallpaper_url"],
-                      widget.arguments[index]["wallpaper_thumb"]);
+                      widget.arguments[index]["id"].toString(),
+                      widget.arguments[index]["wallpaper_provider"].toString(),
+                      widget.arguments[index]["wallpaper_url"].toString(),
+                      widget.arguments[index]["wallpaper_thumb"].toString());
                 },
+                child: Padding(
+                  padding: index == longTapIndex
+                      ? EdgeInsets.symmetric(
+                          vertical: offsetAnimation.value / 2,
+                          horizontal: offsetAnimation.value)
+                      : const EdgeInsets.all(0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: animation.value,
+                        borderRadius: BorderRadius.circular(20),
+                        image: DecorationImage(
+                            image: CachedNetworkImageProvider(widget
+                                .arguments[index]["wallpaper_thumb"]
+                                .toString()),
+                            fit: BoxFit.cover)),
+                  ),
+                ),
               );
             });
       },

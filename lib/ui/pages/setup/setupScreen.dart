@@ -5,7 +5,9 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/setups/arrowAnimation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +17,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 
 class SetupScreen extends StatefulWidget {
-  SetupScreen({
+  const SetupScreen({
     Key key,
   }) : super(key: key);
 
@@ -26,13 +28,12 @@ class SetupScreen extends StatefulWidget {
 class _SetupScreenState extends State<SetupScreen> {
   Future<bool> onWillPop() async {
     navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
   final PageController controller = PageController(
     viewportFraction: 0.78,
-    initialPage: 0,
   );
   Future future;
 
@@ -75,10 +76,23 @@ class SetupPage extends StatefulWidget {
 class _SetupPageState extends State<SetupPage> {
   int pageNumber = 0;
   void showPremiumPopUp(Function func) {
-    if (!main.prefs.get("premium")) {
-      Navigator.pushNamed(context, PremiumRoute);
+    if (main.prefs.get("isLoggedin") == false ||
+        main.prefs.get("isLoggedin") == null) {
+      googleSignInPopUp(context, () {
+        if (main.prefs.get("premium") == false ||
+            main.prefs.get("premium") == null) {
+          Navigator.pushNamed(context, premiumRoute);
+        } else {
+          func();
+        }
+      });
     } else {
-      func();
+      if (main.prefs.get("premium") == false ||
+          main.prefs.get("premium") == null) {
+        Navigator.pushNamed(context, premiumRoute);
+      } else {
+        func();
+      }
     }
   }
 
@@ -100,43 +114,26 @@ class _SetupPageState extends State<SetupPage> {
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                stops: [0, 1],
+                stops: const [0, 1],
               ),
             ),
             child: Align(
               alignment: Alignment.topLeft,
               child: Container(
                 width: MediaQuery.of(context).size.width - 25,
-                padding: EdgeInsets.only(left: 25, top: 25),
+                padding: const EdgeInsets.only(left: 25, top: 25),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      main.prefs.get("premium")
-                          ? Provider.of<SetupProvider>(context, listen: false)
-                                      .setups
-                                      .length ==
-                                  0
-                              ? ""
-                              : Provider.of<SetupProvider>(context,
-                                      listen: false)
-                                  .setups[pageNumber]['name']
-                                  .toString()
-                                  .toUpperCase()
-                          : (pageNumber == 5)
-                              ? "BUY PREMIUM"
-                              : Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups
-                                          .length ==
-                                      0
-                                  ? ""
-                                  : Provider.of<SetupProvider>(context,
-                                          listen: false)
-                                      .setups[pageNumber]['name']
-                                      .toString()
-                                      .toUpperCase(),
+                      Provider.of<SetupProvider>(context, listen: false)
+                              .setups
+                              .isEmpty
+                          ? ""
+                          : Provider.of<SetupProvider>(context, listen: false)
+                              .setups[pageNumber]['name']
+                              .toString()
+                              .toUpperCase(),
                       style: Theme.of(context)
                           .textTheme
                           .headline1
@@ -155,27 +152,25 @@ class _SetupPageState extends State<SetupPage> {
               future: widget.future,
               builder: (context, snapshot) {
                 if (snapshot == null) {
-                  print("snapshot null");
+                  debugPrint("snapshot null");
                   return Center(child: Loader());
                 }
                 if (snapshot.connectionState == ConnectionState.waiting ||
                     snapshot.connectionState == ConnectionState.none) {
-                  print("snapshot none, waiting");
+                  debugPrint("snapshot none, waiting");
                   return Center(child: Loader());
                 } else {
-                  Future.delayed(Duration(seconds: 0))
-                      .then((value) => setState(() {
-                            pageNumber;
-                          }));
+                  Future.delayed(const Duration())
+                      .then((value) => setState(() {}));
                   return GestureDetector(
                     onTap: () {
-                      if (pageNumber == 5) {
+                      if (pageNumber >= 5) {
                         showPremiumPopUp(() {
-                          Navigator.pushNamed(context, SetupViewRoute,
+                          Navigator.pushNamed(context, setupViewRoute,
                               arguments: [pageNumber]);
                         });
                       } else {
-                        Navigator.pushNamed(context, SetupViewRoute,
+                        Navigator.pushNamed(context, setupViewRoute,
                             arguments: [pageNumber]);
                       }
                     },
@@ -189,153 +184,40 @@ class _SetupPageState extends State<SetupPage> {
                           });
                         },
                         controller: widget.controller,
-                        itemCount: main.prefs.get("premium")
-                            ? Provider.of<SetupProvider>(context, listen: false)
-                                        .setups
-                                        .length ==
-                                    0
-                                ? 1
-                                : Provider.of<SetupProvider>(context,
-                                        listen: false)
-                                    .setups
-                                    .length
-                            : 6,
-                        itemBuilder: (context, index) => main.prefs
-                                .get("premium")
-                            ? Provider.of<SetupProvider>(context, listen: false)
-                                        .setups
-                                        .length ==
-                                    0
-                                ? Loader()
-                                : AnimatedContainer(
-                                    duration: Duration(milliseconds: 200),
-                                    padding: EdgeInsets.only(
-                                      top: pageNumber == index + 1 ||
-                                              pageNumber == index - 1
-                                          ? MediaQuery.of(context).size.height *
-                                              0.1
-                                          : MediaQuery.of(context).size.height *
-                                              0.0299,
-                                    ),
-                                    child: Align(
-                                      alignment: Alignment.topCenter,
-                                      child: CachedNetworkImage(
-                                        imageUrl: Provider.of<SetupProvider>(
-                                                context,
-                                                listen: false)
-                                            .setups[index]['image'],
-                                        imageBuilder:
-                                            (context, imageProvider) => Hero(
-                                          tag: "CustomHerotag$index",
-                                          child: Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.712,
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.72,
-                                            decoration: BoxDecoration(
-                                              boxShadow: pageNumber == index
-                                                  ? Provider.of<ThemeModel>(
-                                                                  context)
-                                                              .currentTheme ==
-                                                          kLightTheme
-                                                      ? [
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .15),
-                                                            blurRadius: 38,
-                                                            offset:
-                                                                Offset(0, 19),
-                                                          ),
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .10),
-                                                            blurRadius: 12,
-                                                            offset:
-                                                                Offset(0, 15),
-                                                          )
-                                                        ]
-                                                      : [
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .7),
-                                                            blurRadius: 38,
-                                                            offset:
-                                                                Offset(0, 19),
-                                                          ),
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    .6),
-                                                            blurRadius: 12,
-                                                            offset:
-                                                                Offset(0, 15),
-                                                          )
-                                                        ]
-                                                  : [],
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              image: DecorationImage(
-                                                  image: imageProvider,
-                                                  fit: BoxFit.fill),
-                                            ),
-                                          ),
-                                        ),
-                                        progressIndicatorBuilder:
-                                            (context, url, downloadProgress) =>
-                                                Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.712,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.72,
-                                          child: Center(
-                                            child: CircularProgressIndicator(
-                                                valueColor:
-                                                    AlwaysStoppedAnimation(
-                                                  config.Colors()
-                                                      .mainAccentColor(1),
-                                                ),
-                                                value:
-                                                    downloadProgress.progress),
-                                          ),
-                                        ),
-                                        errorWidget: (context, url, error) =>
-                                            Container(
-                                          child: Center(
-                                            child: Icon(
-                                              JamIcons.close_circle_f,
-                                              color:
-                                                  Theme.of(context).accentColor,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                            : (index == 5)
-                                ? AnimatedContainer(
-                                    duration: Duration(milliseconds: 200),
-                                    padding: EdgeInsets.only(
-                                      top: pageNumber == index + 1 ||
-                                              pageNumber == index - 1
-                                          ? MediaQuery.of(context).size.height *
-                                              0.1
-                                          : MediaQuery.of(context).size.height *
-                                              0.0299,
-                                    ),
-                                    child: Align(
-                                      alignment: Alignment.topCenter,
-                                      child: Hero(
+                        itemCount: Provider.of<SetupProvider>(context,
+                                    listen: false)
+                                .setups
+                                .isEmpty
+                            ? 1
+                            : Provider.of<SetupProvider>(context, listen: false)
+                                .setups
+                                .length,
+                        itemBuilder: (context, index) => Provider.of<
+                                    SetupProvider>(context, listen: false)
+                                .setups
+                                .isEmpty
+                            ? Loader()
+                            : AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: EdgeInsets.only(
+                                  top: pageNumber == index + 1 ||
+                                          pageNumber == index - 1
+                                      ? MediaQuery.of(context).size.height * 0.1
+                                      : MediaQuery.of(context).size.height *
+                                          0.0299,
+                                ),
+                                child: PremiumBannerSetupOld(
+                                  comparator: index < 5,
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: CachedNetworkImage(
+                                      imageUrl: Provider.of<SetupProvider>(
+                                              context,
+                                              listen: false)
+                                          .setups[index]['image']
+                                          .toString(),
+                                      imageBuilder: (context, imageProvider) =>
+                                          Hero(
                                         tag: "CustomHerotag$index",
                                         child: Container(
                                           width: MediaQuery.of(context)
@@ -350,20 +232,22 @@ class _SetupPageState extends State<SetupPage> {
                                             boxShadow: pageNumber == index
                                                 ? Provider.of<ThemeModel>(
                                                                 context)
-                                                            .currentTheme ==
-                                                        kLightTheme
+                                                            .returnThemeType() ==
+                                                        "Light"
                                                     ? [
                                                         BoxShadow(
                                                           color: Colors.black
                                                               .withOpacity(.15),
                                                           blurRadius: 38,
-                                                          offset: Offset(0, 19),
+                                                          offset: const Offset(
+                                                              0, 19),
                                                         ),
                                                         BoxShadow(
                                                           color: Colors.black
                                                               .withOpacity(.10),
                                                           blurRadius: 12,
-                                                          offset: Offset(0, 15),
+                                                          offset: const Offset(
+                                                              0, 15),
                                                         )
                                                       ]
                                                     : [
@@ -371,161 +255,56 @@ class _SetupPageState extends State<SetupPage> {
                                                           color: Colors.black
                                                               .withOpacity(.7),
                                                           blurRadius: 38,
-                                                          offset: Offset(0, 19),
+                                                          offset: const Offset(
+                                                              0, 19),
                                                         ),
                                                         BoxShadow(
                                                           color: Colors.black
                                                               .withOpacity(.6),
                                                           blurRadius: 12,
-                                                          offset: Offset(0, 15),
+                                                          offset: const Offset(
+                                                              0, 15),
                                                         )
                                                       ]
                                                 : [],
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                             image: DecorationImage(
-                                                image: AssetImage(
-                                                    'assets/images/Premium.png'),
+                                                image: imageProvider,
                                                 fit: BoxFit.fill),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  )
-                                : Provider.of<SetupProvider>(context,
-                                                listen: false)
-                                            .setups
-                                            .length ==
-                                        0
-                                    ? Loader()
-                                    : AnimatedContainer(
-                                        duration: Duration(milliseconds: 200),
-                                        padding: EdgeInsets.only(
-                                          top: pageNumber == index + 1 ||
-                                                  pageNumber == index - 1
-                                              ? MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.1
-                                              : MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.0299,
-                                        ),
-                                        child: Align(
-                                          alignment: Alignment.topCenter,
-                                          child: CachedNetworkImage(
-                                            imageUrl:
-                                                Provider.of<SetupProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .setups[index]['image'],
-                                            imageBuilder:
-                                                (context, imageProvider) =>
-                                                    Hero(
-                                              tag: "CustomHerotag$index",
-                                              child: Container(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.712,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.72,
-                                                decoration: BoxDecoration(
-                                                  boxShadow: pageNumber == index
-                                                      ? Provider.of<ThemeModel>(
-                                                                      context)
-                                                                  .currentTheme ==
-                                                              kLightTheme
-                                                          ? [
-                                                              BoxShadow(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        .15),
-                                                                blurRadius: 38,
-                                                                offset: Offset(
-                                                                    0, 19),
-                                                              ),
-                                                              BoxShadow(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        .10),
-                                                                blurRadius: 12,
-                                                                offset: Offset(
-                                                                    0, 15),
-                                                              )
-                                                            ]
-                                                          : [
-                                                              BoxShadow(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        .7),
-                                                                blurRadius: 38,
-                                                                offset: Offset(
-                                                                    0, 19),
-                                                              ),
-                                                              BoxShadow(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        .6),
-                                                                blurRadius: 12,
-                                                                offset: Offset(
-                                                                    0, 15),
-                                                              )
-                                                            ]
-                                                      : [],
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  image: DecorationImage(
-                                                      image: imageProvider,
-                                                      fit: BoxFit.fill),
-                                                ),
+                                      progressIndicatorBuilder:
+                                          (context, url, downloadProgress) =>
+                                              Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.712,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.72,
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation(
+                                                config.Colors()
+                                                    .mainAccentColor(1),
                                               ),
-                                            ),
-                                            progressIndicatorBuilder: (context,
-                                                    url, downloadProgress) =>
-                                                Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.712,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.72,
-                                              child: Center(
-                                                child:
-                                                    CircularProgressIndicator(
-                                                        valueColor:
-                                                            AlwaysStoppedAnimation(
-                                                          config.Colors()
-                                                              .mainAccentColor(
-                                                                  1),
-                                                        ),
-                                                        value: downloadProgress
-                                                            .progress),
-                                              ),
-                                            ),
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    Container(
-                                              child: Center(
-                                                child: Icon(
-                                                  JamIcons.close_circle_f,
-                                                  color: Theme.of(context)
-                                                      .accentColor,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                                              value: downloadProgress.progress),
                                         ),
                                       ),
+                                      errorWidget: (context, url, error) =>
+                                          Center(
+                                        child: Icon(
+                                          JamIcons.close_circle_f,
+                                          color: Theme.of(context).accentColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                   );
@@ -537,51 +316,35 @@ class _SetupPageState extends State<SetupPage> {
             : Align(
                 alignment: Alignment.centerLeft,
                 child: ArrowBounceAnimation(
-                  child: Icon(JamIcons.chevron_left),
                   onTap: () {
                     widget.controller.animateToPage(
                         widget.controller.page.toInt() - 1,
-                        duration: Duration(milliseconds: 200),
+                        duration: const Duration(milliseconds: 200),
                         curve: Curves.fastOutSlowIn);
                     HapticFeedback.vibrate();
                   },
+                  child: const Icon(JamIcons.chevron_left),
                 ),
               ),
-        main.prefs.get("premium")
-            ? pageNumber ==
-                    Provider.of<SetupProvider>(context, listen: false)
-                            .setups
-                            .length -
-                        1
-                ? Container()
-                : Align(
-                    alignment: Alignment.centerRight,
-                    child: ArrowBounceAnimation(
-                      child: Icon(JamIcons.chevron_right),
-                      onTap: () {
-                        widget.controller.animateToPage(
-                            widget.controller.page.toInt() + 1,
-                            duration: Duration(milliseconds: 200),
-                            curve: Curves.fastOutSlowIn);
-                        HapticFeedback.vibrate();
-                      },
-                    ),
-                  )
-            : pageNumber == 5
-                ? Container()
-                : Align(
-                    alignment: Alignment.centerRight,
-                    child: ArrowBounceAnimation(
-                      child: Icon(JamIcons.chevron_right),
-                      onTap: () {
-                        widget.controller.animateToPage(
-                            widget.controller.page.toInt() + 1,
-                            duration: Duration(milliseconds: 200),
-                            curve: Curves.fastOutSlowIn);
-                        HapticFeedback.vibrate();
-                      },
-                    ),
-                  ),
+        pageNumber ==
+                Provider.of<SetupProvider>(context, listen: false)
+                        .setups
+                        .length -
+                    1
+            ? Container()
+            : Align(
+                alignment: Alignment.centerRight,
+                child: ArrowBounceAnimation(
+                  onTap: () {
+                    widget.controller.animateToPage(
+                        widget.controller.page.toInt() + 1,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.fastOutSlowIn);
+                    HapticFeedback.vibrate();
+                  },
+                  child: const Icon(JamIcons.chevron_right),
+                ),
+              ),
       ],
     );
   }

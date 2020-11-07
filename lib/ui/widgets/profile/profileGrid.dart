@@ -23,7 +23,8 @@ class _ProfileGridState extends State<ProfileGrid>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
-  var refreshProfileKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshProfileKey =
+      GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -32,21 +33,22 @@ class _ProfileGridState extends State<ProfileGrid>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -82,11 +84,10 @@ class _ProfileGridState extends State<ProfileGrid>
     super.dispose();
   }
 
-  Future<Null> refreshList() async {
-    refreshProfileKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(milliseconds: 500));
+  Future<void> refreshList() async {
+    refreshProfileKey.currentState?.show();
+    await Future.delayed(const Duration(milliseconds: 500));
     Provider.of<ProfileWallProvider>(context, listen: false).getProfileWalls();
-    return null;
   }
 
   @override
@@ -99,34 +100,115 @@ class _ProfileGridState extends State<ProfileGrid>
                     .profileWalls !=
                 null
             ? Provider.of<ProfileWallProvider>(context, listen: false)
-                        .profileWalls
-                        .length ==
-                    0
+                    .profileWalls
+                    .isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModel>(context, listen: false)
-                                    .returnTheme() ==
-                                ThemeType.Dark
+                                    .returnThemeType() ==
+                                "Dark"
                             ? SvgPicture.string(
-                                postsDark.replaceAll(
-                                    "E57697",
-                                    main.prefs
-                                        .get("mainAccentColor")
-                                        .toRadixString(16)
-                                        .toString()
-                                        .substring(2)),
+                                postsDark
+                                    .replaceAll(
+                                        "181818",
+                                        Theme.of(context)
+                                            .primaryColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "E57697",
+                                        main.prefs
+                                            .get("mainAccentColor")
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2F2F",
+                                        Theme.of(context)
+                                            .hintColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2)),
                               )
                             : SvgPicture.string(
-                                postsLight.replaceAll(
-                                    "E57697",
-                                    main.prefs
-                                        .get("mainAccentColor")
-                                        .toRadixString(16)
-                                        .toString()
-                                        .substring(2)),
+                                postsLight
+                                    .replaceAll(
+                                        "181818",
+                                        Theme.of(context)
+                                            .primaryColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "E57697",
+                                        main.prefs
+                                            .get("mainAccentColor")
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2F2F",
+                                        Theme.of(context)
+                                            .hintColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2)),
                               ),
                       ),
                       SizedBox(
@@ -138,7 +220,7 @@ class _ProfileGridState extends State<ProfileGrid>
                 : GridView.builder(
                     shrinkWrap: true,
                     cacheExtent: 50000,
-                    padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
+                    padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
                     itemCount: Provider.of<ProfileWallProvider>(context)
                         .profileWalls
                         .length,
@@ -156,25 +238,13 @@ class _ProfileGridState extends State<ProfileGrid>
                         provider: "ProfileWall",
                         index: index,
                         child: GestureDetector(
-                          child: Container(
-                            decoration: BoxDecoration(
-                                color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                      Provider.of<ProfileWallProvider>(context)
-                                              .profileWalls[index]
-                                          ["wallpaper_thumb"],
-                                    ),
-                                    fit: BoxFit.cover)),
-                          ),
                           onTap: () {
                             if (Provider.of<ProfileWallProvider>(context,
                                         listen: false)
                                     .profileWalls ==
                                 []) {
                             } else {
-                              Navigator.pushNamed(context, ProfileWallViewRoute,
+                              Navigator.pushNamed(context, profileWallViewRoute,
                                   arguments: [
                                     index,
                                     Provider.of<ProfileWallProvider>(context,
@@ -183,9 +253,22 @@ class _ProfileGridState extends State<ProfileGrid>
                                   ]);
                             }
                           },
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                    image: CachedNetworkImageProvider(
+                                      Provider.of<ProfileWallProvider>(context)
+                                          .profileWalls[index]
+                                              ["wallpaper_thumb"]
+                                          .toString(),
+                                    ),
+                                    fit: BoxFit.cover)),
+                          ),
                         ),
                       );
                     })
-            : LoadingCards());
+            : const LoadingCards());
   }
 }

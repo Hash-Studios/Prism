@@ -14,47 +14,49 @@ class ColorBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      flex: 2,
+      flex: 3,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(
           colors == null ? 5 : colors.length,
           (color) {
             return GestureDetector(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colors == null ? Color(0xFF000000) : colors[color],
-                    borderRadius: BorderRadius.circular(500),
-                  ),
-                  height: MediaQuery.of(context).size.width / 8,
-                  width: MediaQuery.of(context).size.width / 8,
-                ),
-                onLongPress: () {
-                  HapticFeedback.vibrate();
-                  Clipboard.setData(ClipboardData(
-                    text: colors[color]
-                        .toString()
-                        .replaceAll("Color(0xff", "")
-                        .replaceAll(")", ""),
-                  )).then((result) {
-                    toasts.color(colors[color]);
-                  });
-                },
-                onTap: () {
-                  SystemChrome.setEnabledSystemUIOverlays(
-                      [SystemUiOverlay.top, SystemUiOverlay.bottom]);
-                  Future.delayed(Duration(seconds: 0))
-                      .then((value) => Navigator.pushNamed(
-                            context,
-                            ColorRoute,
-                            arguments: [
-                              colors[color]
-                                  .toString()
-                                  .replaceAll("Color(0xff", "")
-                                  .replaceAll(")", ""),
-                            ],
-                          ));
+              onLongPress: () {
+                HapticFeedback.vibrate();
+                Clipboard.setData(ClipboardData(
+                  text: colors[color]
+                      .toString()
+                      .replaceAll("Color(0xff", "")
+                      .replaceAll(")", ""),
+                )).then((result) {
+                  toasts.color(colors[color]);
                 });
+              },
+              onTap: () {
+                SystemChrome.setEnabledSystemUIOverlays(
+                    [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+                Future.delayed(const Duration())
+                    .then((value) => Navigator.pushNamed(
+                          context,
+                          colorRoute,
+                          arguments: [
+                            colors[color]
+                                .toString()
+                                .replaceAll("Color(0xff", "")
+                                .replaceAll(")", ""),
+                          ],
+                        ));
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color:
+                      colors == null ? const Color(0xFF000000) : colors[color],
+                  borderRadius: BorderRadius.circular(500),
+                ),
+                height: MediaQuery.of(context).size.width / 8,
+                width: MediaQuery.of(context).size.width / 8,
+              ),
+            );
           },
         ),
       ),

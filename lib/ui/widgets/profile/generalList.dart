@@ -1,6 +1,5 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -16,15 +15,15 @@ class GeneralList extends StatefulWidget {
 }
 
 class _GeneralListState extends State<GeneralList> {
-  bool optWall = main.prefs.get('optimisedWallpapers') ?? true;
+  bool optWall = (main.prefs.get('optimisedWallpapers') ?? true) as bool;
 
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
-      leading: Icon(
+      leading: const Icon(
         JamIcons.wrench,
       ),
-      title: new Text(
+      title: Text(
         "General",
         style: TextStyle(
             color: Theme.of(context).accentColor,
@@ -38,11 +37,15 @@ class _GeneralListState extends State<GeneralList> {
       children: [
         ListTile(
           onTap: () {
-            Navigator.pushNamed(context, ThemeViewRoute, arguments: [
-              Provider.of<ThemeModel>(context, listen: false).currentTheme
+            Navigator.pushNamed(context, themeViewRoute, arguments: [
+              Provider.of<ThemeModel>(context, listen: false).currentTheme,
+              Color(main.prefs.get("mainAccentColor") as int),
+              Provider.of<ThemeModel>(context, listen: false).returnThemeIndex(
+                Provider.of<ThemeModel>(context, listen: false).currentTheme,
+              )
             ]);
           },
-          leading: Icon(JamIcons.wrench),
+          leading: const Icon(JamIcons.wrench),
           title: Text(
             "Themes",
             style: TextStyle(
@@ -50,36 +53,13 @@ class _GeneralListState extends State<GeneralList> {
                 fontWeight: FontWeight.w500,
                 fontFamily: "Proxima Nova"),
           ),
-          subtitle: Text(
+          subtitle: const Text(
             "Toggle app theme",
             style: TextStyle(fontSize: 12),
           ),
         ),
         ListTile(
-          onTap: () {
-            showAccentColors(context);
-          },
-          leading: Icon(JamIcons.brush),
-          title: Text(
-            "Theme Accent Color",
-            style: TextStyle(
-                color: Theme.of(context).accentColor,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
-          ),
-          subtitle: Text(
-            "Change app accent color",
-            style: TextStyle(fontSize: 12),
-          ),
-          trailing: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              backgroundColor: Color(main.prefs.get("mainAccentColor")),
-            ),
-          ),
-        ),
-        ListTile(
-            leading: Icon(
+            leading: const Icon(
               JamIcons.pie_chart_alt,
             ),
             title: Text(
@@ -89,7 +69,7 @@ class _GeneralListState extends State<GeneralList> {
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "Clear locally cached images",
               style: TextStyle(fontSize: 12),
             ),
@@ -100,11 +80,13 @@ class _GeneralListState extends State<GeneralList> {
               await Hive.openBox('wallpapers');
               await Hive.box('collections').deleteFromDisk();
               await Hive.openBox('collections');
+              await Hive.box('setups').deleteFromDisk();
+              await Hive.openBox('setups');
               toasts.codeSend("Cleared cache!");
             }),
         SwitchListTile(
             activeColor: config.Colors().mainAccentColor(1),
-            secondary: Icon(
+            secondary: const Icon(
               JamIcons.dashboard,
             ),
             value: optWall,
@@ -116,11 +98,11 @@ class _GeneralListState extends State<GeneralList> {
                   fontFamily: "Proxima Nova"),
             ),
             subtitle: optWall
-                ? Text(
+                ? const Text(
                     "Disabling this might lead to High Internet Usage",
                     style: TextStyle(fontSize: 12),
                   )
-                : Text(
+                : const Text(
                     "Enable this to optimise Wallpapers according to your device",
                     style: TextStyle(fontSize: 12),
                   ),
@@ -134,7 +116,7 @@ class _GeneralListState extends State<GeneralList> {
           onTap: () {
             main.RestartWidget.restartApp(context);
           },
-          leading: Icon(JamIcons.refresh),
+          leading: const Icon(JamIcons.refresh),
           title: Text(
             "Restart App",
             style: TextStyle(
@@ -142,27 +124,8 @@ class _GeneralListState extends State<GeneralList> {
                 fontWeight: FontWeight.w500,
                 fontFamily: "Proxima Nova"),
           ),
-          subtitle: Text(
+          subtitle: const Text(
             "Force the application to restart",
-            style: TextStyle(fontSize: 12),
-          ),
-        ),
-        ListTile(
-          onTap: () {
-            main.prefs.put("newDevice", true);
-            main.prefs.put("newDevice2", true);
-            main.RestartWidget.restartApp(context);
-          },
-          leading: Icon(JamIcons.help),
-          title: Text(
-            "Show Tutorial",
-            style: TextStyle(
-                color: Theme.of(context).accentColor,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Proxima Nova"),
-          ),
-          subtitle: Text(
-            "Quick Guide to Prism",
             style: TextStyle(fontSize: 12),
           ),
         ),
