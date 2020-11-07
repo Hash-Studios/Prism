@@ -1,4 +1,5 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:animations/animations.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
@@ -414,7 +415,10 @@ void showChangelog(BuildContext context, Function func) {
       ),
     ),
   );
-  showDialog(context: context, builder: (BuildContext context) => aboutPopUp);
+  showModal(
+      context: context,
+      configuration: const FadeScaleTransitionConfiguration(),
+      builder: (BuildContext context) => aboutPopUp);
 }
 
 class ChangeVersion extends StatelessWidget {

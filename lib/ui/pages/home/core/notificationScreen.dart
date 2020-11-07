@@ -1,3 +1,4 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/data/notifications/model/notificationModel.dart';
@@ -147,8 +148,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                   );
 
-                  showDialog(
+                  showModal(
                       context: context,
+                      configuration: const FadeScaleTransitionConfiguration(),
                       builder: (BuildContext context) => notificationsPopUp);
                 })
           ],
@@ -279,8 +281,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                   );
 
-                  showDialog(
+                  showModal(
                       context: context,
+                      configuration: const FadeScaleTransitionConfiguration(),
                       builder: (BuildContext context) =>
                           deleteNotificationsPopUp);
                 },

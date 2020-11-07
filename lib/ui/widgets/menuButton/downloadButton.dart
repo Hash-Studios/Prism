@@ -2,6 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:animations/animations.dart';
 import 'package:firebase_admob/firebase_admob.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
@@ -124,8 +125,9 @@ class _DownloadButtonState extends State<DownloadButton> {
 }
 
 void showDownloadPopup(BuildContext context, Function rewardFunc) {
-  showDialog(
+  showModal(
       context: context,
+      configuration: const FadeScaleTransitionConfiguration(),
       builder: (BuildContext context) => StatefulBuilder(
               builder: (BuildContext context, StateSetter setState) {
             return Dialog(

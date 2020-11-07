@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -39,9 +40,10 @@ class _StudioListState extends State<StudioList> {
   }
 
   Future<void> onSupport(BuildContext context) async {
-    showDialog(
+    showModal(
       context: context,
-      child: AlertDialog(
+      configuration: const FadeScaleTransitionConfiguration(),
+      builder: (context) => AlertDialog(
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(
             Radius.circular(20),

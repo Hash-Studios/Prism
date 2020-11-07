@@ -19,6 +19,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  animations: ^1.1.2
   cached_network_image: ^2.2.0+1
   carousel_slider: ^2.2.1
   cloud_firestore: ^0.13.5
@@ -57,6 +58,7 @@ dependencies:
   screenshot: ^0.2.0
   share: ^0.6.4
   sliding_up_panel: ^1.0.2
+  sprung: ^2.0.0+13
   url_launcher: ^5.4.5
 
 dependency_overrides:
