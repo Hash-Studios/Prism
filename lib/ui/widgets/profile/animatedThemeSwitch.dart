@@ -8,7 +8,7 @@ class AnimatedToggle extends StatefulWidget {
   final Color textColor;
   final List<BoxShadow> shadows;
 
-  AnimatedToggle({
+  const AnimatedToggle({
     @required this.values,
     @required this.onToggleCallback,
     this.backgroundColor,
@@ -24,11 +24,11 @@ class _AnimatedToggleState extends State<AnimatedToggle> {
   bool initialPosition = true;
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
+    final double width = MediaQuery.of(context).size.width;
     return Container(
       width: width * 0.7,
       height: width * 0.13,
-      margin: EdgeInsets.all(20),
+      margin: const EdgeInsets.all(20),
       child: Stack(
         children: <Widget>[
           GestureDetector(
@@ -85,6 +85,7 @@ class _AnimatedToggleState extends State<AnimatedToggle> {
                   borderRadius: BorderRadius.circular(width * 0.1),
                 ),
               ),
+              alignment: Alignment.center,
               child: Text(
                 initialPosition ? widget.values[0] : widget.values[1],
                 style: TextStyle(
@@ -94,7 +95,6 @@ class _AnimatedToggleState extends State<AnimatedToggle> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              alignment: Alignment.center,
             ),
           ),
         ],

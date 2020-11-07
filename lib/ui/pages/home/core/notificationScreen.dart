@@ -3,12 +3,14 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
+import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -19,19 +21,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
   List notifications;
   @override
   void initState() {
-    Box<List> box = Hive.box('notifications');
+    final Box<List> box = Hive.box('notifications');
     if (box.get('notifications') == [] || box.get('notifications') == null) {
       notifications = [];
     } else {
       notifications = box.get('notifications');
     }
-    notifications = new List.from(notifications.reversed);
+    notifications = List.from(notifications.reversed);
     super.initState();
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -43,22 +45,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: Text("Notifications"),
+          title: const Text("Notifications"),
           leading: IconButton(
-            icon: Icon(JamIcons.close),
+            icon: const Icon(JamIcons.close),
             onPressed: () {
               if (navStack.length > 1) navStack.removeLast();
-              print(navStack);
+              debugPrint(navStack.toString());
               Navigator.pop(context);
             },
           ),
           actions: <Widget>[
             IconButton(
                 icon: main.prefs.get("Subscriber") == false
-                    ? Icon(JamIcons.bell)
-                    : Icon(JamIcons.bell_off),
+                    ? const Icon(JamIcons.bell)
+                    : const Icon(JamIcons.bell_off),
                 onPressed: () {
-                  Dialog notificationsPopUp = Dialog(
+                  final Dialog notificationsPopUp = Dialog(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
                     child: Container(
@@ -74,8 +76,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Row(
                             children: [
                               Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                                padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
                                 child: Text(
                                   main.prefs.get("Subscriber") == false
                                       ? 'Subscribe to notifications?'
@@ -88,19 +89,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ),
                             ],
                           ),
-                          SizedBox(
-                            height: 25,
+                          const SizedBox(
+                            height: 50,
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: <Widget>[
+                              Container(width: 10),
                               FlatButton(
-                                shape: StadiumBorder(),
-                                color: config.Colors().mainAccentColor(1),
+                                shape: const StadiumBorder(),
+                                color: main.prefs.get("Subscriber") == false
+                                    ? Theme.of(context).hintColor
+                                    : config.Colors().mainAccentColor(1),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
-                                child: Text(
+                                child: const Text(
                                   'NO',
                                   style: TextStyle(
                                     fontSize: 16.0,
@@ -109,8 +113,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 ),
                               ),
                               FlatButton(
-                                shape: StadiumBorder(),
-                                color: config.Colors().mainAccentColor(1),
+                                shape: const StadiumBorder(),
+                                color: main.prefs.get("Subscriber") == false
+                                    ? config.Colors().mainAccentColor(1)
+                                    : Theme.of(context).hintColor,
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                   if (main.prefs.get("Subscriber") == false) {
@@ -126,7 +132,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                         .codeSend("Succesfully unsubscribed!");
                                   }
                                 },
-                                child: Text(
+                                child: const Text(
                                   'YES',
                                   style: TextStyle(
                                     fontSize: 16.0,
@@ -135,9 +141,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 ),
                               ),
                             ],
-                          ),
-                          SizedBox(
-                            height: 15,
                           ),
                         ],
                       ),
@@ -151,7 +154,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ],
         ),
         body: Container(
-          child: notifications.length > 0
+          child: notifications.isNotEmpty
               ? ListView.builder(
                   itemCount: notifications.length,
                   itemBuilder: (BuildContext context, int index) {
@@ -160,41 +163,130 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         setState(() {
                           notifications.removeAt(index);
                         });
-                        Box<List> box = Hive.box('notifications');
+                        final Box<List> box = Hive.box('notifications');
                         box.put('notifications', notifications);
                       },
-                      dismissThresholds: {
+                      dismissThresholds: const {
                         DismissDirection.startToEnd: 0.5,
                         DismissDirection.endToStart: 0.5
                       },
                       secondaryBackground: Container(
-                        child: Align(
+                        color: Colors.red,
+                        child: const Align(
                           alignment: Alignment.centerRight,
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: EdgeInsets.all(8.0),
                             child: Icon(JamIcons.trash),
                           ),
                         ),
-                        color: Colors.red,
                       ),
                       background: Container(
-                        child: Align(
+                        color: Colors.red,
+                        child: const Align(
                           alignment: Alignment.centerLeft,
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: EdgeInsets.all(8.0),
                             child: Icon(JamIcons.trash),
                           ),
                         ),
-                        color: Colors.red,
                       ),
-                      child:
-                          NotificationCard(notification: notifications[index]),
                       key: UniqueKey(),
+                      child: NotificationCard(
+                          notification: notifications[index] as NotifData),
                     );
                   },
                 )
-              : Center(child: Text('No new notifications')),
+              : Center(
+                  child: Text('No new notifications',
+                      style: TextStyle(color: Theme.of(context).accentColor))),
         ),
+        floatingActionButton: notifications.isNotEmpty
+            ? FloatingActionButton(
+                mini: true,
+                onPressed: () {
+                  final Dialog deleteNotificationsPopUp = Dialog(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(context).primaryColor),
+                      width: MediaQuery.of(context).size.width * .7,
+                      height: MediaQuery.of(context).size.height * .2,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Row(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
+                                child: Text(
+                                  'Delete all notifications?',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                      color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 50,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: <Widget>[
+                              Container(width: 10),
+                              FlatButton(
+                                shape: const StadiumBorder(),
+                                color: config.Colors().mainAccentColor(1),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text(
+                                  'NO',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              FlatButton(
+                                shape: const StadiumBorder(),
+                                color: Theme.of(context).hintColor,
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  setState(() {
+                                    notifications = [];
+                                    final Box<List> box =
+                                        Hive.box('notifications');
+                                    box.put('notifications', notifications);
+                                  });
+                                },
+                                child: const Text(
+                                  'YES',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) =>
+                          deleteNotificationsPopUp);
+                },
+                child: const Icon(JamIcons.trash),
+              )
+            : Container(),
       ),
     );
   }
@@ -203,54 +295,94 @@ class _NotificationScreenState extends State<NotificationScreen> {
 class NotificationCard extends StatelessWidget {
   final NotifData notification;
 
-  NotificationCard({this.notification});
+  const NotificationCard({this.notification});
+
+  static String stringForDatetime(DateTime dt) {
+    final dtInLocal = dt.toLocal();
+    final now = DateTime.now().toLocal();
+    var dateString = "";
+
+    final diff = now.difference(dtInLocal);
+
+    if (now.day == dtInLocal.day) {
+      final todayFormat = DateFormat("h:mm a");
+      dateString += todayFormat.format(dtInLocal);
+    } else if ((diff.inDays) == 1 ||
+        (diff.inSeconds < 86400 && now.day != dtInLocal.day)) {
+      final yesterdayFormat = DateFormat("h:mm a");
+      dateString += "Yesterday, ${yesterdayFormat.format(dtInLocal)}";
+    } else if (now.year == dtInLocal.year && diff.inDays > 1) {
+      final monthFormat = DateFormat("MMM d");
+      dateString += monthFormat.format(dtInLocal);
+    } else {
+      final yearFormat = DateFormat("MMM d y");
+      dateString += yearFormat.format(dtInLocal);
+    }
+
+    return dateString;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: <Widget>[
-          ExpansionTile(
-            leading: CircleAvatar(
-              backgroundImage: NetworkImage(notification.imageUrl ??
-                  "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg"),
-            ),
-            backgroundColor: Theme.of(context).primaryColor,
-            title: Text(
-              notification.title,
-              style: TextStyle(
-                  color: Theme.of(context).accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Proxima Nova"),
-            ),
-            subtitle: Text(
-              notification.desc,
-              style:
-                  TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
-            ),
-            children: <Widget>[
-              InkWell(
-                child: Ink(
-                  child: CachedNetworkImage(
-                    imageUrl: notification.imageUrl ??
-                        "https://thelifedesigncourse.com/wp-content/uploads/2019/05/orange-waves-background-fluid-gradient-vector-21996148.jpg",
-                    fit: BoxFit.cover,
+    return ExpansionTile(
+      initiallyExpanded: true,
+      leading: const CircleAvatar(
+        backgroundImage: AssetImage("assets/images/prism.png"),
+      ),
+      backgroundColor: Theme.of(context).primaryColor,
+      title: Text(
+        notification.title,
+        style: TextStyle(
+            color: Theme.of(context).accentColor,
+            fontWeight: FontWeight.w500,
+            fontFamily: "Proxima Nova"),
+      ),
+      subtitle: Text(
+        notification.desc,
+        style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
+      ),
+      children: <Widget>[
+        InkWell(
+          onTap: () {
+            if (notification.url == "") {
+              if (notification.pageName != null) {
+                Navigator.pushNamed(context, notification.pageName,
+                    arguments: notification.arguments);
+              }
+            } else {
+              launch(notification.url);
+            }
+          },
+          onLongPress: () {
+            HapticFeedback.lightImpact();
+          },
+          child: Ink(
+            child: Stack(
+              children: [
+                CachedNetworkImage(
+                  imageUrl: notification.imageUrl ??
+                      "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
+                  fit: BoxFit.cover,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Text(
+                      stringForDatetime(notification.createdAt),
+                      style: const TextStyle(
+                        backgroundColor: Colors.white24,
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ),
-                onTap: () {
-                  if (notification.url == "") {
-                    if (notification.pageName != null)
-                      Navigator.pushNamed(context, notification.pageName,
-                          arguments: notification.arguments);
-                  } else {
-                    launch(notification.url);
-                  }
-                },
-              )
-            ],
-          )
-        ],
-      ),
+              ],
+            ),
+          ),
+        )
+      ],
     );
   }
 }

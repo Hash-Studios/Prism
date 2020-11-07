@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AppData {
-  static final AppData _appData = new AppData._internal();
+  static final AppData _appData = AppData._internal();
 
   bool isPro;
 
@@ -14,7 +14,7 @@ class AppData {
 
 final appData = AppData();
 
-TextStyle kSendButtonTextStyle = TextStyle(
+TextStyle kSendButtonTextStyle = const TextStyle(
   fontWeight: FontWeight.bold,
   fontSize: 20,
 );

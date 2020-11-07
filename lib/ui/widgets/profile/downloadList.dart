@@ -10,10 +10,10 @@ class DownloadList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
-        leading: Icon(
+        leading: const Icon(
           JamIcons.download,
         ),
-        title: new Text(
+        title: Text(
           "Downloads",
           style: TextStyle(
               color: Theme.of(context).accentColor,
@@ -27,9 +27,9 @@ class DownloadList extends StatelessWidget {
         children: [
           ListTile(
             onTap: () {
-              Navigator.pushNamed(context, DownloadRoute);
+              Navigator.pushNamed(context, downloadRoute);
             },
-            leading: Icon(JamIcons.download),
+            leading: const Icon(JamIcons.download),
             title: Text(
               "My Downloads",
               style: TextStyle(
@@ -37,24 +37,24 @@ class DownloadList extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: Text(
+            subtitle: const Text(
               "See all your downloaded wallpapers",
               style: TextStyle(fontSize: 12),
             ),
-            trailing: Icon(JamIcons.chevron_right),
+            trailing: const Icon(JamIcons.chevron_right),
           ),
           ListTile(
-              leading: Icon(
+              leading: const Icon(
                 JamIcons.database,
               ),
-              title: new Text(
+              title: Text(
                 "Clear Downloads",
                 style: TextStyle(
                     color: Theme.of(context).accentColor,
                     fontWeight: FontWeight.w500,
                     fontFamily: "Proxima Nova"),
               ),
-              subtitle: Text(
+              subtitle: const Text(
                 "Clear downloaded wallpapers",
                 style: TextStyle(fontSize: 12),
               ),
@@ -62,7 +62,7 @@ class DownloadList extends StatelessWidget {
                 showDialog(
                   context: context,
                   child: AlertDialog(
-                    shape: RoundedRectangleBorder(
+                    shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(
                         Radius.circular(20),
                       ),
@@ -79,31 +79,29 @@ class DownloadList extends StatelessWidget {
                     ),
                     actions: <Widget>[
                       FlatButton(
-                        shape: StadiumBorder(),
+                        shape: const StadiumBorder(),
                         onPressed: () async {
                           Navigator.of(context).pop();
                           final dir = Directory("storage/emulated/0/Prism/");
-                          var status = await Permission.storage.status;
+                          final status = await Permission.storage.status;
                           if (!status.isGranted) {
                             await Permission.storage.request();
                           }
                           try {
                             dir.deleteSync(recursive: true);
                             Fluttertoast.showToast(
-                                msg: "Deleted all downloads!",
-                                toastLength: Toast.LENGTH_LONG,
-                                timeInSecForIosWeb: 1,
-                                textColor: Colors.white,
-                                backgroundColor: Colors.green[400],
-                                fontSize: 16.0);
+                              msg: "Deleted all downloads!",
+                              toastLength: Toast.LENGTH_LONG,
+                              textColor: Colors.white,
+                              backgroundColor: Colors.green[400],
+                            );
                           } catch (e) {
                             Fluttertoast.showToast(
-                                msg: "No downloads!",
-                                toastLength: Toast.LENGTH_LONG,
-                                timeInSecForIosWeb: 1,
-                                textColor: Colors.white,
-                                backgroundColor: Colors.red[400],
-                                fontSize: 16.0);
+                              msg: "No downloads!",
+                              toastLength: Toast.LENGTH_LONG,
+                              textColor: Colors.white,
+                              backgroundColor: Colors.red[400],
+                            );
                           }
                         },
                         child: Text(
@@ -117,12 +115,12 @@ class DownloadList extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FlatButton(
-                          shape: StadiumBorder(),
+                          shape: const StadiumBorder(),
                           color: config.Colors().mainAccentColor(1),
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          child: Text(
+                          child: const Text(
                             'NO',
                             style: TextStyle(
                               fontSize: 16.0,

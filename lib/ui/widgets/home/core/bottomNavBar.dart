@@ -25,7 +25,7 @@ class BottomBar extends StatefulWidget {
 
 class _BottomBarState extends State<BottomBar>
     with SingleTickerProviderStateMixin {
-  ScrollController scrollBottomBarController = new ScrollController();
+  ScrollController scrollBottomBarController = ScrollController();
   AnimationController _controller;
   Animation<Offset> _offsetAnimation;
   bool isScrollingDown = false;
@@ -63,7 +63,7 @@ class _BottomBarState extends State<BottomBar>
     });
   }
 
-  void myScroll() async {
+  Future<void> myScroll() async {
     scrollBottomBarController.addListener(() {
       if (scrollBottomBarController.position.userScrollDirection ==
           ScrollDirection.reverse) {
@@ -108,7 +108,7 @@ class _BottomBarState extends State<BottomBar>
             child: BottomNavBar(),
           ),
         ),
-        isOnTop
+        isOnTop == true
             ? Container()
             : Positioned(
                 right: 10,
@@ -119,7 +119,7 @@ class _BottomBarState extends State<BottomBar>
                     scrollBottomBarController
                         .animateTo(
                             scrollBottomBarController.position.minScrollExtent,
-                            duration: Duration(milliseconds: 500),
+                            duration: const Duration(milliseconds: 500),
                             curve: Curves.easeIn)
                         .then((value) {
                       setState(() {
@@ -129,7 +129,7 @@ class _BottomBarState extends State<BottomBar>
                       showBottomBar();
                     });
                   },
-                  child: Icon(JamIcons.arrow_up),
+                  child: const Icon(JamIcons.arrow_up),
                 ),
               )
       ],
@@ -174,15 +174,15 @@ class _BottomNavBarState extends State<BottomNavBar>
     super.dispose();
   }
 
-  void checkSignIn() async {
+  Future<void> checkSignIn() async {
     setState(() {
-      isLoggedin = main.prefs.get("isLoggedin");
+      isLoggedin = main.prefs.get("isLoggedin") as bool;
     });
   }
 
   void showGooglePopUp(Function func) {
-    print(isLoggedin);
-    if (!isLoggedin) {
+    debugPrint(isLoggedin.toString());
+    if (isLoggedin == false) {
       googleSignInPopUp(context, func);
     } else {
       func();
@@ -197,9 +197,9 @@ class _BottomNavBarState extends State<BottomNavBar>
         color: Theme.of(context).primaryColor,
         boxShadow: [
           BoxShadow(
-              color: Color(0xFF000000).withOpacity(0.25),
+              color: const Color(0xFF000000).withOpacity(0.25),
               blurRadius: 4,
-              offset: Offset(0, 4)),
+              offset: const Offset(0, 4)),
         ],
         borderRadius: BorderRadius.circular(500),
       ),
@@ -212,7 +212,8 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
               child: IconButton(
-                padding: EdgeInsets.all(0),
+                tooltip: 'Home',
+                padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -225,12 +226,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Home"
-                            ? config.Colors().mainAccentColor(1)
+                            ? config.Colors().mainAccentColor(1) == Colors.black
+                                ? Colors.white
+                                : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Home"
-                          ? EdgeInsets.all(3)
-                          : EdgeInsets.all(0),
+                          ? const EdgeInsets.all(3)
+                          : const EdgeInsets.all(0),
                       width:
                           navStack.last == "Home" ? _paddingAnimation.value : 0,
                       height: navStack.last == "Home" ? 3 : 0,
@@ -239,16 +242,17 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   SystemChrome.setSystemUIOverlayStyle(
-                      SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+                      const SystemUiOverlayStyle(
+                          statusBarColor: Colors.transparent));
                   navStack.last == "Home"
-                      ? print("Currently on Home")
+                      ? debugPrint("Currently on Home")
                       : Navigator.of(context).popUntil((route) {
                           if (navStack.last != "Home") {
                             navStack.removeLast();
-                            print(navStack);
+                            debugPrint(navStack.toString());
                             return false;
                           } else {
-                            print(navStack);
+                            debugPrint(navStack.toString());
                             return true;
                           }
                         });
@@ -258,7 +262,8 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                padding: EdgeInsets.all(0),
+                tooltip: 'Search',
+                padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -271,12 +276,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Search"
-                            ? config.Colors().mainAccentColor(1)
+                            ? config.Colors().mainAccentColor(1) == Colors.black
+                                ? Colors.white
+                                : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Search"
-                          ? EdgeInsets.all(3)
-                          : EdgeInsets.all(0),
+                          ? const EdgeInsets.all(3)
+                          : const EdgeInsets.all(0),
                       width: navStack.last == "Search"
                           ? _paddingAnimation.value
                           : 0,
@@ -286,12 +293,13 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   SystemChrome.setSystemUIOverlayStyle(
-                      SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+                      const SystemUiOverlayStyle(
+                          statusBarColor: Colors.transparent));
                   navStack.last == "Search"
-                      ? print("Currently on Search")
+                      ? debugPrint("Currently on Search")
                       : navStack.last == "Home"
-                          ? Navigator.of(context).pushNamed(SearchRoute)
-                          : Navigator.of(context).pushNamed(SearchRoute);
+                          ? Navigator.of(context).pushNamed(searchRoute)
+                          : Navigator.of(context).pushNamed(searchRoute);
                 },
               ),
             ),
@@ -299,10 +307,19 @@ class _BottomNavBarState extends State<BottomNavBar>
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: Container(
                 decoration: BoxDecoration(
+                    border: Border.all(
+                      color: config.Colors().mainAccentColor(1) == Colors.black
+                          ? Colors.white
+                          : config.Colors().mainAccentColor(1),
+                      width: config.Colors().mainAccentColor(1) == Colors.black
+                          ? 1
+                          : 0,
+                    ),
                     color: config.Colors().mainAccentColor(1),
                     borderRadius: BorderRadius.circular(500)),
                 child: IconButton(
-                  padding: EdgeInsets.all(0),
+                  tooltip: 'Upload',
+                  padding: const EdgeInsets.all(0),
                   icon: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
@@ -315,12 +332,15 @@ class _BottomNavBarState extends State<BottomNavBar>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(500),
                           color: navStack.last == "Add"
-                              ? config.Colors().mainAccentColor(1)
+                              ? config.Colors().mainAccentColor(1) ==
+                                      Colors.black
+                                  ? Colors.white
+                                  : config.Colors().mainAccentColor(1)
                               : Theme.of(context).accentColor,
                         ),
                         margin: navStack.last == "Add"
-                            ? EdgeInsets.all(3)
-                            : EdgeInsets.all(0),
+                            ? const EdgeInsets.all(3)
+                            : const EdgeInsets.all(0),
                         width: navStack.last == "Add"
                             ? _paddingAnimation.value
                             : 0,
@@ -333,7 +353,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                       showModalBottomSheet(
                         isScrollControlled: true,
                         context: context,
-                        builder: (context) => UploadBottomPanel(),
+                        builder: (context) => const UploadBottomPanel(),
                       );
                     });
                   },
@@ -343,7 +363,8 @@ class _BottomNavBarState extends State<BottomNavBar>
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
               child: IconButton(
-                padding: EdgeInsets.all(0),
+                tooltip: 'Setups',
+                padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -357,12 +378,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Setups"
-                            ? config.Colors().mainAccentColor(1)
+                            ? config.Colors().mainAccentColor(1) == Colors.black
+                                ? Colors.white
+                                : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Setups"
-                          ? EdgeInsets.all(3)
-                          : EdgeInsets.all(0),
+                          ? const EdgeInsets.all(3)
+                          : const EdgeInsets.all(0),
                       width: navStack.last == "Setups"
                           ? _paddingAnimation.value
                           : 0,
@@ -371,23 +394,24 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
-                  showGooglePopUp(() {
-                    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-                        statusBarColor:
-                            Color(main.prefs.get("mainAccentColor"))));
-                    navStack.last == "Setups"
-                        ? print("Currently on Setups")
-                        : navStack.last == "Home"
-                            ? Navigator.of(context).pushNamed(SetupRoute)
-                            : Navigator.of(context).pushNamed(SetupRoute);
-                  });
+                  // showGooglePopUp(() {
+                  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+                      statusBarColor:
+                          Color(main.prefs.get("mainAccentColor") as int)));
+                  navStack.last == "Setups"
+                      ? debugPrint("Currently on Setups")
+                      : navStack.last == "Home"
+                          ? Navigator.of(context).pushNamed(setupRoute)
+                          : Navigator.of(context).pushNamed(setupRoute);
+                  // });
                 },
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
               child: IconButton(
-                padding: EdgeInsets.all(0),
+                tooltip: 'Settings',
+                padding: const EdgeInsets.all(0),
                 icon: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
@@ -406,12 +430,14 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Profile"
-                            ? config.Colors().mainAccentColor(1)
+                            ? config.Colors().mainAccentColor(1) == Colors.black
+                                ? Colors.white
+                                : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Profile"
-                          ? EdgeInsets.all(3)
-                          : EdgeInsets.all(0),
+                          ? const EdgeInsets.all(3)
+                          : const EdgeInsets.all(0),
                       width: navStack.last == "Profile"
                           ? _paddingAnimation.value
                           : 0,
@@ -421,12 +447,13 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   SystemChrome.setSystemUIOverlayStyle(
-                      SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+                      const SystemUiOverlayStyle(
+                          statusBarColor: Colors.transparent));
                   navStack.last == "Profile"
-                      ? print("Currently on Profile")
+                      ? debugPrint("Currently on Profile")
                       : navStack.last == "Home"
-                          ? Navigator.of(context).pushNamed(ProfileRoute)
-                          : Navigator.of(context).pushNamed(ProfileRoute);
+                          ? Navigator.of(context).pushNamed(profileRoute)
+                          : Navigator.of(context).pushNamed(profileRoute);
                 },
               ),
             ),
@@ -448,9 +475,7 @@ class UploadBottomPanel extends StatefulWidget {
 
 class _UploadBottomPanelState extends State<UploadBottomPanel> {
   File _wallpaper;
-  File _setup;
   final picker = ImagePicker();
-  final picker2 = ImagePicker();
   @override
   void initState() {
     super.initState();
@@ -463,20 +488,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
         _wallpaper = File(pickedFile.path);
       });
       Navigator.pop(context);
-      Future.delayed(Duration(seconds: 0)).then((value) =>
-          Navigator.pushNamed(context, EditWallRoute, arguments: [_wallpaper]));
-    }
-  }
-
-  Future getSetup() async {
-    final pickedFile = await picker2.getImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _setup = File(pickedFile.path);
-      });
-      Navigator.pop(context);
-      Future.delayed(Duration(seconds: 0)).then((value) =>
-          Navigator.pushNamed(context, UploadSetupRoute, arguments: [_setup]));
+      Future.delayed(const Duration()).then((value) =>
+          Navigator.pushNamed(context, editWallRoute, arguments: [_wallpaper]));
     }
   }
 
@@ -487,7 +500,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       height: MediaQuery.of(context).size.height / 1.5,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -499,23 +512,25 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Icon(
-                  JamIcons.chevron_down,
-                  color: Theme.of(context).accentColor,
+                padding: const EdgeInsets.all(12.0),
+                child: Container(
+                  height: 5,
+                  width: 30,
+                  decoration: BoxDecoration(
+                      color: Theme.of(context).hintColor,
+                      borderRadius: BorderRadius.circular(500)),
                 ),
               )
             ],
           ),
-          Spacer(),
+          const Spacer(),
           Text(
             "Upload",
             style: Theme.of(context).textTheme.headline2,
           ),
-          Spacer(),
+          const Spacer(flex: 2),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.max,
             children: <Widget>[
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -562,9 +577,9 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: config.Colors()
-                                              .mainAccentColor(1),
-                                          width: 1),
+                                        color:
+                                            config.Colors().mainAccentColor(1),
+                                      ),
                                       color: config.Colors()
                                           .mainAccentColor(1)
                                           .withOpacity(0.2),
@@ -589,7 +604,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     "Wallpapers",
                     style: TextStyle(
                         fontSize: 16,
-                        color: config.Colors().mainAccentColor(1),
+                        color: Theme.of(context).accentColor,
                         fontWeight: FontWeight.bold),
                   )
                 ],
@@ -601,8 +616,10 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
-                      onTap: () async {
-                        await getSetup();
+                      onTap: () {
+                        Navigator.pop(context);
+                        Future.delayed(const Duration()).then((value) =>
+                            Navigator.pushNamed(context, setupGuidelinesRoute));
                       },
                       child: Container(
                         width: width / 2 - 20,
@@ -639,9 +656,9 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: config.Colors()
-                                              .mainAccentColor(1),
-                                          width: 1),
+                                        color:
+                                            config.Colors().mainAccentColor(1),
+                                      ),
                                       color: config.Colors()
                                           .mainAccentColor(1)
                                           .withOpacity(0.2),
@@ -662,39 +679,18 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                       ),
                     ),
                   ),
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        "Setups",
-                        style: TextStyle(
-                            fontSize: 16,
-                            color: config.Colors().mainAccentColor(1),
-                            fontWeight: FontWeight.bold),
-                      ),
-                      Container(
-                        margin: EdgeInsets.only(left: 3),
-                        decoration: BoxDecoration(
-                            color: config.Colors().mainAccentColor(1),
-                            borderRadius: BorderRadius.circular(500)),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 1.0, horizontal: 4),
-                          child: Text(
-                            "BETA",
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      )
-                    ],
+                  Text(
+                    "Setups",
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).accentColor,
+                        fontWeight: FontWeight.bold),
                   )
                 ],
               ),
             ],
           ),
-          Spacer(),
+          const Spacer(flex: 2),
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
             child: Container(
@@ -709,6 +705,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
               ),
             ),
           ),
+          const Spacer(),
         ],
       ),
     );

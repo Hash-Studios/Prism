@@ -1,10 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:share/share.dart';
 
-void createDynamicLink(
+Future<String> createDynamicLink(
     String id, String provider, String url, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
@@ -29,13 +30,14 @@ void createDynamicLink(
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(
-      ClipboardData(text: "🔥Check this out ➜ " + shortUrl.toString()));
+      ClipboardData(text: "🔥Check this out ➜ ${shortUrl.toString()}"));
   analytics.logShare(contentType: 'focussedMenu', itemId: id, method: 'link');
   toasts.codeSend("Sharing link copied!");
-  print(shortUrl);
+  debugPrint(shortUrl.toString());
+  return shortUrl.toString();
 }
 
-void createUserDynamicLink(String name, String email, String userPhoto,
+Future<void> createUserDynamicLink(String name, String email, String userPhoto,
     bool premium, String twitter, String instagram) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
@@ -59,12 +61,13 @@ void createUserDynamicLink(String name, String email, String userPhoto,
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  Share.share("🔥Check this out ➜ " + shortUrl.toString());
+  Share.share("🔥Check this out ➜ $shortUrl");
   analytics.logShare(contentType: 'userShare', itemId: email, method: 'link');
-  print(shortUrl);
+  debugPrint(shortUrl.toString());
 }
 
-void createSetupDynamicLink(String index, String name, String thumbUrl) async {
+Future<void> createSetupDynamicLink(
+    String index, String name, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
           title: "$name - Prism Wallpapers",
@@ -88,7 +91,35 @@ void createSetupDynamicLink(String index, String name, String thumbUrl) async {
   final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
   final Uri shortUrl = shortDynamicLink.shortUrl;
   Clipboard.setData(ClipboardData(text: shortUrl.toString()));
-  Share.share("🔥Check this out ➜ " + shortUrl.toString());
+  Share.share("🔥Check this out ➜ $shortUrl");
   analytics.logShare(contentType: 'setupShare', itemId: name, method: 'link');
-  print(shortUrl);
+  debugPrint(shortUrl.toString());
+}
+
+Future<String> createSharingPrismLink(String userID) async {
+  final DynamicLinkParameters parameters = DynamicLinkParameters(
+      socialMetaTagParameters: SocialMetaTagParameters(
+          title: "Prism Wallpapers",
+          imageUrl: Uri.parse(
+              "https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png"),
+          description:
+              "Download Prism from my link to get 50 coins instantly!"),
+      dynamicLinkParametersOptions: DynamicLinkParametersOptions(
+          shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short),
+      uriPrefix: 'https://prismwallpapers.page.link',
+      link: Uri.parse('http://prism.hash.com/refer?userID=$userID'),
+      androidParameters: AndroidParameters(
+        packageName: 'com.hash.prism',
+        minimumVersion: 1,
+      ),
+      iosParameters: IosParameters(
+        bundleId: 'com.hash.prism',
+        minimumVersion: '1.0.1',
+        appStoreId: '1405860595',
+      ));
+  final ShortDynamicLink shortDynamicLink = await parameters.buildShortLink();
+  final Uri shortUrl = shortDynamicLink.shortUrl;
+  analytics.logShare(contentType: 'prismShare', itemId: userID, method: 'link');
+  debugPrint(shortUrl.toString());
+  return shortUrl.toString();
 }

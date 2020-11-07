@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:flutter/material.dart';
 
-final databaseReference = Firestore.instance;
+final Firestore databaseReference = Firestore.instance;
 List userProfileWalls;
 int len = 0;
 Future<List> getuserProfileWalls(String email) async {
@@ -14,14 +15,14 @@ Future<List> getuserProfileWalls(String email) async {
       .getDocuments()
       .then((value) {
     userProfileWalls = [];
-    value.documents.forEach((f) {
+    for (final f in value.documents) {
       userProfileWalls.add(f.data);
-    });
+    }
     len = userProfileWalls.length;
-    print(len);
+    debugPrint(len.toString());
   }).catchError((e) {
-    print(e.toString());
-    print("data done with error");
+    debugPrint(e.toString());
+    debugPrint("data done with error");
   });
   return userProfileWalls;
 }
@@ -40,10 +41,10 @@ Future<int> getProfileWallsLength(String email) async {
       tempList.add(f.data);
     });
     len = tempList.length;
-    print(len);
+    debugPrint(len.toString());
   }).catchError((e) {
-    print(e.toString());
-    print("data done with error");
+    debugPrint(e.toString());
+    debugPrint("data done with error");
   });
   return len;
 }

@@ -1,24 +1,25 @@
 import 'dart:math';
 import 'package:Prism/routes/router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 
-final databaseReference = Firestore.instance;
+final Firestore databaseReference = Firestore.instance;
 List wallpapersForCollections;
 Set collectionNames;
 Map collections;
 Map wall;
 Future<Map> getCollections() async {
   if (navStack.last == "Home") {
-    var box = Hive.box('collections');
-    print(box.get('collections'));
+    final box = Hive.box('collections');
+    // debugPrint(box.get('collections').toString());
     if ((box.get('date') !=
             DateFormat("yy-MM-dd").format(
               DateTime.now(),
             )) ||
         (box.get('collections') == null) ||
-        (box.get('collections') == [])) {
+        (box.get('collections').toString() == "[]")) {
       wallpapersForCollections = [];
       collectionNames = {};
       collections = {};
@@ -31,29 +32,31 @@ Future<Map> getCollections() async {
         wallpapersForCollections = [];
         collectionNames = {};
         collections = {};
-        print("Data Fetched");
-        value.documents.forEach((f) {
-          var map = f.data;
+        debugPrint("Data Fetched");
+        for (final DocumentSnapshot f in value.documents) {
+          Map<String, dynamic> map;
+          map = f.data;
           map['createdAt'] = map['createdAt'].toString();
           if (map['collections'] != null) wallpapersForCollections.add(map);
-        });
-        print("Data added to list");
-        for (var wall in wallpapersForCollections) {
-          for (var collectionName in wall['collections']) {
+        }
+        debugPrint("Data added to list");
+        for (final wall in wallpapersForCollections) {
+          for (final collectionName in wall['collections']) {
             if (!collectionNames.contains(collectionName)) {
               collectionNames.add(collectionName);
             }
           }
         }
 
-        var r = Random();
-        var randomList = [];
+        final r = Random();
+        List randomList;
+        randomList = [];
         var count = 0;
         for (var i = 0; i < 10; i++) {
           randomList.add(r.nextInt(wallpapersForCollections.length));
         }
-        for (var wall in wallpapersForCollections) {
-          for (var collectionName in wall['collections']) {
+        for (final wall in wallpapersForCollections) {
+          for (final collectionName in wall['collections']) {
             if (!collections.containsKey(collectionName)) {
               collections[collectionName] = [];
               collections[collectionName].add(wall);
@@ -71,51 +74,52 @@ Future<Map> getCollections() async {
             count++;
           }
         }
-        print("Data grouped");
-        print(collectionNames);
+        debugPrint("Data grouped");
+        debugPrint(collectionNames.toString());
 
         box.delete('Collections');
         if (collections != {}) {
           box.put('collections', wallpapersForCollections);
-          print("Collections saved");
+          debugPrint("Collections saved");
           box.put(
             'date',
             DateFormat("yy-MM-dd").format(
               DateTime.now(),
             ),
           );
-          print(collectionNames.length);
+          debugPrint(collectionNames.length.toString());
         } else {
-          print("Not connected to Internet");
+          debugPrint("Not connected to Internet");
           collectionNames = {};
           collections = {};
         }
       }).catchError((e) {
-        print(e.toString());
-        print("data done with error");
+        debugPrint(e.toString());
+        debugPrint("data done with error");
       });
     } else {
-      print("Collections : Data Fetched from cache");
+      debugPrint("Collections : Data Fetched from cache");
       wallpapersForCollections = [];
       collectionNames = {};
       collections = {};
-      wallpapersForCollections = box.get('collections');
-      for (var wall in wallpapersForCollections) {
-        for (var collectionName in wall['collections']) {
+      wallpapersForCollections = box.get('collections') as List;
+      for (final wall in wallpapersForCollections) {
+        for (final collectionName in wall['collections']) {
           if (!collectionNames.contains(collectionName)) {
             collectionNames.add(collectionName);
           }
         }
       }
 
-      var r = Random();
-      var randomList = [];
+      final r = Random();
+      List randomList;
+      randomList = [];
       var count = 0;
       for (var i = 0; i < 10; i++) {
         randomList.add(r.nextInt(wallpapersForCollections.length));
       }
-      for (var wall in wallpapersForCollections) {
-        for (var collectionName in wall['collections']) {
+      for (final wall in wallpapersForCollections) {
+        for (final collectionName in wall['collections']) {
           if (!collections.containsKey(collectionName)) {
             collections[collectionName] = [];
             collections[collectionName].add(wall);
@@ -133,10 +137,10 @@ Future<Map> getCollections() async {
           count++;
         }
       }
-      print(collectionNames.length);
+      debugPrint(collectionNames.length.toString());
     }
   } else {
-    print("Refresh blocked");
+    debugPrint("Refresh blocked");
   }
   return collections;
 }

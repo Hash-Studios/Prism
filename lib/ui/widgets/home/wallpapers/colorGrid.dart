@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 
 class ColorGrid extends StatefulWidget {
   final String provider;
-  ColorGrid({@required this.provider});
+  const ColorGrid({@required this.provider});
   @override
   _ColorGridState createState() => _ColorGridState();
 }
@@ -22,7 +22,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
   AnimationController shakeController;
   Animation<Color> animation;
   int longTapIndex;
-  var refreshHomeKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshHomeKey =
+      GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
   @override
@@ -34,21 +35,22 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -79,18 +81,17 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
   }
 
   @override
-  dispose() {
+  void dispose() {
     _controller?.dispose();
     shakeController.dispose();
     super.dispose();
   }
 
-  Future<Null> refreshList() async {
-    refreshHomeKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(milliseconds: 500));
+  Future<void> refreshList() async {
+    refreshHomeKey.currentState?.show();
+    await Future.delayed(const Duration(milliseconds: 500));
     PData.wallsC = [];
     PData.getWallsPbyColor(widget.provider.substring(9));
-    return null;
   }
 
   @override
@@ -116,7 +117,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               PData.getWallsPbyColorPage(widget.provider.substring(9));
               setState(() {
                 seeMoreLoader = true;
-                Future.delayed(Duration(seconds: 4))
+                Future.delayed(const Duration(seconds: 2))
                     .then((value) => seeMoreLoader = false);
               });
             }
@@ -124,8 +125,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
         },
         child: GridView.builder(
           controller: controller,
-          padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
-          itemCount: PData.wallsC.length == 0 ? 24 : PData.wallsC.length,
+          padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+          itemCount: PData.wallsC.isEmpty ? 24 : PData.wallsC.length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent:
@@ -139,8 +140,8 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
             if (index == PData.wallsC.length - 1) {
               return FlatButton(
                   color: Provider.of<ThemeModel>(context, listen: false)
-                              .returnTheme() ==
-                          ThemeType.Dark
+                              .returnThemeType() ==
+                          "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),
                   shape: RoundedRectangleBorder(
@@ -150,12 +151,12 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                       PData.getWallsPbyColorPage(widget.provider.substring(9));
                       setState(() {
                         seeMoreLoader = true;
-                        Future.delayed(Duration(seconds: 4))
+                        Future.delayed(const Duration(seconds: 2))
                             .then((value) => seeMoreLoader = false);
                       });
                     }
                   },
-                  child: !seeMoreLoader ? Text("See more") : Loader());
+                  child: !seeMoreLoader ? const Text("See more") : Loader());
             }
 
             return FocusedMenuHolder(
@@ -164,34 +165,14 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                 child: AnimatedBuilder(
                     animation: offsetAnimation,
                     builder: (buildContext, child) {
-                      if (offsetAnimation.value < 0.0)
-                        print('${offsetAnimation.value + 8.0}');
+                      if (offsetAnimation.value < 0.0) {
+                        debugPrint('${offsetAnimation.value + 8.0}');
+                      }
                       return GestureDetector(
-                        child: Padding(
-                          padding: index == longTapIndex
-                              ? EdgeInsets.symmetric(
-                                  vertical: offsetAnimation.value / 2,
-                                  horizontal: offsetAnimation.value)
-                              : EdgeInsets.all(0),
-                          child: Container(
-                            decoration: PData.wallsC.length == 0
-                                ? BoxDecoration(
-                                    color: animation.value,
-                                    borderRadius: BorderRadius.circular(20),
-                                  )
-                                : BoxDecoration(
-                                    color: animation.value,
-                                    borderRadius: BorderRadius.circular(20),
-                                    image: DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                            PData.wallsC[index].src["medium"]),
-                                        fit: BoxFit.cover)),
-                          ),
-                        ),
                         onTap: () {
                           if (PData.wallsC == []) {
                           } else {
-                            Navigator.pushNamed(context, WallpaperRoute,
+                            Navigator.pushNamed(context, wallpaperRoute,
                                 arguments: [
                                   widget.provider,
                                   index,
@@ -210,10 +191,32 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                             createDynamicLink(
                                 PData.wallsC[index].id,
                                 "Pexels",
-                                PData.wallsC[index].src["original"],
-                                PData.wallsC[index].src["medium"]);
+                                PData.wallsC[index].src["original"].toString(),
+                                PData.wallsC[index].src["medium"].toString());
                           }
                         },
+                        child: Padding(
+                          padding: index == longTapIndex
+                              ? EdgeInsets.symmetric(
+                                  vertical: offsetAnimation.value / 2,
+                                  horizontal: offsetAnimation.value)
+                              : const EdgeInsets.all(0),
+                          child: Container(
+                            decoration: PData.wallsC.isEmpty
+                                ? BoxDecoration(
+                                    color: animation.value,
+                                    borderRadius: BorderRadius.circular(20),
+                                  )
+                                : BoxDecoration(
+                                    color: animation.value,
+                                    borderRadius: BorderRadius.circular(20),
+                                    image: DecorationImage(
+                                        image: CachedNetworkImageProvider(PData
+                                            .wallsC[index].src["medium"]
+                                            .toString()),
+                                        fit: BoxFit.cover)),
+                          ),
+                        ),
                       );
                     }));
           },

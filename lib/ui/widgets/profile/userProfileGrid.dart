@@ -1,4 +1,4 @@
-import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as UserData;
+import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userdata;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -25,7 +25,8 @@ class _UserProfileGridState extends State<UserProfileGrid>
     with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation<Color> animation;
-  var refreshProfileKey = GlobalKey<RefreshIndicatorState>();
+  GlobalKey<RefreshIndicatorState> refreshProfileKey =
+      GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -34,21 +35,22 @@ class _UserProfileGridState extends State<UserProfileGrid>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false).returnTheme() ==
-            ThemeType.Dark
+    animation = Provider.of<ThemeModel>(context, listen: false)
+                .returnThemeType() ==
+            "Dark"
         ? TweenSequence<Color>(
             [
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
                   begin: Colors.white10,
-                  end: Color(0x22FFFFFF),
+                  end: const Color(0x22FFFFFF),
                 ),
               ),
               TweenSequenceItem(
                 weight: 1.0,
                 tween: ColorTween(
-                  begin: Color(0x22FFFFFF),
+                  begin: const Color(0x22FFFFFF),
                   end: Colors.white10,
                 ),
               ),
@@ -84,11 +86,10 @@ class _UserProfileGridState extends State<UserProfileGrid>
     super.dispose();
   }
 
-  Future<Null> refreshList() async {
-    refreshProfileKey.currentState?.show(atTop: true);
-    await Future.delayed(Duration(milliseconds: 500));
-    UserData.getuserProfileWalls(widget.email);
-    return null;
+  Future<void> refreshList() async {
+    refreshProfileKey.currentState?.show();
+    await Future.delayed(const Duration(milliseconds: 500));
+    userdata.getuserProfileWalls(widget.email);
   }
 
   @override
@@ -97,33 +98,115 @@ class _UserProfileGridState extends State<UserProfileGrid>
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshProfileKey,
         onRefresh: refreshList,
-        child: UserData.userProfileWalls != null
-            ? UserData.userProfileWalls.length == 0
+        child: userdata.userProfileWalls != null
+            ? userdata.userProfileWalls.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
                         child: Provider.of<ThemeModel>(context, listen: false)
-                                    .returnTheme() ==
-                                ThemeType.Dark
+                                    .returnThemeType() ==
+                                "Dark"
                             ? SvgPicture.string(
-                                postsDark.replaceAll(
-                                    "E57697",
-                                    main.prefs
-                                        .get("mainAccentColor")
-                                        .toRadixString(16)
-                                        .toString()
-                                        .substring(2)),
+                                postsDark
+                                    .replaceAll(
+                                        "181818",
+                                        Theme.of(context)
+                                            .primaryColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "E57697",
+                                        main.prefs
+                                            .get("mainAccentColor")
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2F2F",
+                                        Theme.of(context)
+                                            .hintColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2)),
                               )
                             : SvgPicture.string(
-                                postsLight.replaceAll(
-                                    "E57697",
-                                    main.prefs
-                                        .get("mainAccentColor")
-                                        .toRadixString(16)
-                                        .toString()
-                                        .substring(2)),
+                                postsLight
+                                    .replaceAll(
+                                        "181818",
+                                        Theme.of(context)
+                                            .primaryColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "E57697",
+                                        main.prefs
+                                            .get("mainAccentColor")
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "F0F0F0",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2E41",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "3F3D56",
+                                        Theme.of(context)
+                                            .accentColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2))
+                                    .replaceAll(
+                                        "2F2F2F",
+                                        Theme.of(context)
+                                            .hintColor
+                                            .value
+                                            .toRadixString(16)
+                                            .toString()
+                                            .substring(2)),
                               ),
                       ),
                       SizedBox(
@@ -135,8 +218,8 @@ class _UserProfileGridState extends State<UserProfileGrid>
                 : GridView.builder(
                     shrinkWrap: true,
                     cacheExtent: 50000,
-                    padding: EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: UserData.userProfileWalls.length,
+                    padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+                    itemCount: userdata.userProfileWalls.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
                             MediaQuery.of(context).orientation ==
@@ -151,32 +234,33 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         provider: "UserProfileWall",
                         index: index,
                         child: GestureDetector(
+                          onTap: () {
+                            if (userdata.userProfileWalls == []) {
+                            } else {
+                              Navigator.pushNamed(
+                                  context, userProfileWallViewRoute,
+                                  arguments: [
+                                    index,
+                                    userdata.userProfileWalls[index]
+                                        ["wallpaper_thumb"],
+                                  ]);
+                            }
+                          },
                           child: Container(
                             decoration: BoxDecoration(
                                 color: animation.value,
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      UserData.userProfileWalls[index]
-                                          ["wallpaper_thumb"],
+                                      userdata.userProfileWalls[index]
+                                              ["wallpaper_thumb"]
+                                          .toString(),
                                     ),
                                     fit: BoxFit.cover)),
                           ),
-                          onTap: () {
-                            if (UserData.userProfileWalls == []) {
-                            } else {
-                              Navigator.pushNamed(
-                                  context, UserProfileWallViewRoute,
-                                  arguments: [
-                                    index,
-                                    UserData.userProfileWalls[index]
-                                        ["wallpaper_thumb"],
-                                  ]);
-                            }
-                          },
                         ),
                       );
                     })
-            : LoadingCards());
+            : const LoadingCards());
   }
 }

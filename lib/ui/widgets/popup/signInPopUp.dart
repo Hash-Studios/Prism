@@ -7,7 +7,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/theme/config.dart' as config;
 
 void googleSignInPopUp(BuildContext context, Function func) {
-  Dialog loaderDialog = Dialog(
+  final Dialog loaderDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: Container(
       decoration: BoxDecoration(
@@ -15,12 +15,12 @@ void googleSignInPopUp(BuildContext context, Function func) {
           color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .7,
       height: MediaQuery.of(context).size.height * .3,
-      child: Center(
+      child: const Center(
         child: CircularProgressIndicator(),
       ),
     ),
   );
-  Dialog signinPopUp = Dialog(
+  final Dialog signinPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: SingleChildScrollView(
       child: Container(
@@ -36,14 +36,12 @@ void googleSignInPopUp(BuildContext context, Function func) {
               height: 150,
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20)),
                   color: Theme.of(context).hintColor),
-              child: FlareActor(
+              child: const FlareActor(
                 "assets/animations/Signin.flr",
-                isPaused: false,
-                alignment: Alignment.center,
                 animation: "signin",
               ),
             ),
@@ -61,14 +59,12 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 ),
               ],
             ),
-            SizedBox(
+            const SizedBox(
               height: 20,
             ),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 20,
                 ),
                 Icon(
@@ -76,7 +72,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   size: 22,
                   color: config.Colors().mainAccentColor(1),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20,
                 ),
                 Container(
@@ -91,44 +87,12 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 ),
               ],
             ),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 20,
-                ),
-                Icon(
-                  JamIcons.instant_picture,
-                  size: 22,
-                  color: config.Colors().mainAccentColor(1),
-                ),
-                SizedBox(
-                  width: 20,
-                ),
-                Container(
-                  width: MediaQuery.of(context).size.width * 0.6,
-                  child: Text(
-                    "The ability to view setups.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6
-                        .copyWith(color: Theme.of(context).accentColor),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                SizedBox(
+                const SizedBox(
                   width: 20,
                 ),
                 Icon(
@@ -136,7 +100,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   size: 22,
                   color: config.Colors().mainAccentColor(1),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20,
                 ),
                 Container(
@@ -151,14 +115,40 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 ),
               ],
             ),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                SizedBox(
+                const SizedBox(
+                  width: 20,
+                ),
+                Icon(
+                  JamIcons.instant_picture,
+                  size: 22,
+                  color: config.Colors().mainAccentColor(1),
+                ),
+                const SizedBox(
+                  width: 20,
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Text(
+                    "The ability to upload setups.",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            Row(
+              children: [
+                const SizedBox(
                   width: 20,
                 ),
                 Icon(
@@ -166,7 +156,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   size: 22,
                   color: config.Colors().mainAccentColor(1),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20,
                 ),
                 Container(
@@ -181,14 +171,12 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 ),
               ],
             ),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 20,
                 ),
                 Icon(
@@ -196,7 +184,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   size: 22,
                   color: config.Colors().mainAccentColor(1),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 20,
                 ),
                 Container(
@@ -211,11 +199,11 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 ),
               ],
             ),
-            SizedBox(
+            const SizedBox(
               height: 25,
             ),
             FlatButton(
-              shape: StadiumBorder(),
+              shape: const StadiumBorder(),
               color: config.Colors().mainAccentColor(1),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -229,13 +217,13 @@ void googleSignInPopUp(BuildContext context, Function func) {
                   Navigator.pop(context);
                   func();
                 }).catchError((e) {
-                  print(e);
+                  debugPrint(e.toString());
                   Navigator.pop(context);
                   main.prefs.put("isLoggedin", false);
                   toasts.error("Something went wrong, please try again!");
                 });
               },
-              child: Text(
+              child: const Text(
                 'SIGN IN WITH GOOGLE',
                 style: TextStyle(
                   fontSize: 16.0,
@@ -243,7 +231,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 ),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 15,
             ),
           ],

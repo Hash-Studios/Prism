@@ -1,16 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:extended_image/extended_image.dart';
 import 'package:image_editor/image_editor.dart' hide ImageSource;
 
 class EditWallScreen extends StatefulWidget {
   final List arguments;
-  EditWallScreen({this.arguments});
+  const EditWallScreen({this.arguments});
   @override
   _EditWallScreenState createState() => _EditWallScreenState();
 }
@@ -76,12 +76,12 @@ class _EditWallScreenState extends State<EditWallScreen> {
   @override
   void initState() {
     super.initState();
-    image = widget.arguments[0];
+    image = widget.arguments[0] as File;
   }
 
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
+    debugPrint(navStack.toString());
     return true;
   }
 
@@ -94,11 +94,23 @@ class _EditWallScreenState extends State<EditWallScreen> {
         appBar: AppBar(
             title: Text(
               "Edit Wallpaper",
-              style: TextStyle(color: Theme.of(context).accentColor),
+              style: Theme.of(context)
+                  .textTheme
+                  .headline3
+                  .copyWith(color: Theme.of(context).accentColor),
             ),
+            leading: IconButton(
+                icon:
+                    Icon(JamIcons.close, color: Theme.of(context).accentColor),
+                onPressed: () {
+                  navStack.removeLast();
+                  debugPrint(navStack.toString());
+                  Navigator.pop(context);
+                }),
             actions: <Widget>[
               IconButton(
-                icon: Icon(Icons.settings_backup_restore),
+                icon: Icon(JamIcons.history,
+                    color: Theme.of(context).accentColor),
                 onPressed: () {
                   setState(() {
                     sat = 1;
@@ -108,40 +120,139 @@ class _EditWallScreenState extends State<EditWallScreen> {
                 },
               ),
               IconButton(
-                icon: Icon(Icons.check),
+                icon: Icon(Icons.check, color: Theme.of(context).accentColor),
                 onPressed: () async {
                   await crop();
                 },
               ),
             ]),
-        body: Container(
-          child: Column(
-            children: <Widget>[
-              AspectRatio(
-                aspectRatio: 1,
-                child: buildImage(),
-              ),
-              Expanded(
-                child: SliderTheme(
-                  data: const SliderThemeData(
-                    showValueIndicator: ShowValueIndicator.never,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Spacer(flex: 3),
-                      _buildSat(),
-                      Spacer(flex: 1),
-                      _buildBrightness(),
-                      Spacer(flex: 1),
-                      _buildCon(),
-                      Spacer(flex: 3),
-                    ],
-                  ),
+        body: Column(
+          children: <Widget>[
+            AspectRatio(
+              aspectRatio: 1,
+              child: buildImage(),
+            ),
+            Expanded(
+              child: SliderTheme(
+                data: const SliderThemeData(
+                  showValueIndicator: ShowValueIndicator.never,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.2,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const Spacer(flex: 3),
+                          Column(
+                            children: <Widget>[
+                              Icon(
+                                JamIcons.brush,
+                                color: Theme.of(context).accentColor,
+                              ),
+                              Text(
+                                "Saturation",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyText2
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              )
+                            ],
+                          ),
+                          const Spacer(),
+                          Column(
+                            children: <Widget>[
+                              Icon(
+                                JamIcons.brightness,
+                                color: Theme.of(context).accentColor,
+                              ),
+                              Text(
+                                "Brightness",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyText2
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              )
+                            ],
+                          ),
+                          const Spacer(),
+                          Column(
+                            children: <Widget>[
+                              Icon(
+                                JamIcons.background_color,
+                                color: Theme.of(context).accentColor,
+                              ),
+                              Text(
+                                "Contrast",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyText2
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              )
+                            ],
+                          ),
+                          const Spacer(flex: 3),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.6,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const Spacer(flex: 3),
+                          _buildSat(),
+                          const Spacer(),
+                          _buildBrightness(),
+                          const Spacer(),
+                          _buildCon(),
+                          const Spacer(flex: 3),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.1,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const Spacer(flex: 3),
+                          Text(
+                            sat.toStringAsFixed(2),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyText2
+                                .copyWith(color: Theme.of(context).accentColor),
+                          ),
+                          const Spacer(flex: 2),
+                          Text(
+                            bright.toStringAsFixed(2),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyText2
+                                .copyWith(color: Theme.of(context).accentColor),
+                          ),
+                          const Spacer(flex: 2),
+                          Text(
+                            con.toStringAsFixed(2),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyText2
+                                .copyWith(color: Theme.of(context).accentColor),
+                          ),
+                          const Spacer(flex: 3),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         bottomNavigationBar: _buildFunctions(),
       ),
@@ -167,8 +278,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
           initEditorConfigHandler: (ExtendedImageState state) {
             return EditorConfig(
               maxScale: 8.0,
-              cropRectPadding: const EdgeInsets.all(20.0),
-              hitTestSize: 20.0,
               cropAspectRatio: 1 / 2,
             );
           },
@@ -188,9 +297,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
           ),
           title: Text(
             'Flip',
-            style: TextStyle(
-              color: Theme.of(context).accentColor,
-            ),
+            style: Theme.of(context).textTheme.bodyText2.copyWith(
+                  color: Theme.of(context).accentColor,
+                ),
           ),
         ),
         BottomNavigationBarItem(
@@ -200,9 +309,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
           ),
           title: Text(
             'Rotate left',
-            style: TextStyle(
-              color: Theme.of(context).accentColor,
-            ),
+            style: Theme.of(context).textTheme.bodyText2.copyWith(
+                  color: Theme.of(context).accentColor,
+                ),
           ),
         ),
         BottomNavigationBarItem(
@@ -212,9 +321,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
           ),
           title: Text(
             'Rotate right',
-            style: TextStyle(
-              color: Theme.of(context).accentColor,
-            ),
+            style: Theme.of(context).textTheme.bodyText2.copyWith(
+                  color: Theme.of(context).accentColor,
+                ),
           ),
         ),
       ],
@@ -231,7 +340,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
             break;
         }
       },
-      currentIndex: 0,
       selectedItemColor: Theme.of(context).primaryColor,
       unselectedItemColor: Theme.of(context).primaryColor,
     );
@@ -262,7 +370,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
     option.outputFormat = const OutputFormat.jpeg(100);
 
-    print(const JsonEncoder.withIndent('  ').convert(option.toJson()));
+    debugPrint(const JsonEncoder.withIndent('  ').convert(option.toJson()));
 
     final DateTime start = DateTime.now();
     final Uint8List result = await ImageEditor.editImage(
@@ -270,15 +378,15 @@ class _EditWallScreenState extends State<EditWallScreen> {
       imageEditorOption: option,
     );
 
-    print('result.length = ${result.length}');
+    debugPrint('result.length = ${result.length}');
 
     final Duration diff = DateTime.now().difference(start);
     image.writeAsBytesSync(result);
-    print('image_editor time : $diff');
+    debugPrint('image_editor time : $diff');
     if (navStack.length > 1) navStack.removeLast();
-    print(navStack);
-    Future.delayed(Duration(seconds: 0)).then((value) =>
-        Navigator.pushReplacementNamed(context, UploadWallRoute,
+    debugPrint(navStack.toString());
+    Future.delayed(const Duration()).then((value) =>
+        Navigator.pushReplacementNamed(context, uploadWallRoute,
             arguments: [image]));
   }
 
@@ -291,122 +399,50 @@ class _EditWallScreenState extends State<EditWallScreen> {
   }
 
   Widget _buildSat() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      mainAxisSize: MainAxisSize.max,
-      children: <Widget>[
-        SizedBox(
-          width: MediaQuery.of(context).size.width * 0.03,
-        ),
-        Column(
-          children: <Widget>[
-            Icon(
-              JamIcons.brush,
-              color: Theme.of(context).accentColor,
-            ),
-            Text(
-              "Saturation",
-              style: TextStyle(color: Theme.of(context).accentColor),
-            )
-          ],
-        ),
-        Container(
-          width: MediaQuery.of(context).size.width * 0.7,
-          child: Slider(
-            label: 'sat : ${sat.toStringAsFixed(2)}',
-            onChanged: (double value) {
-              setState(() {
-                sat = value;
-              });
-            },
-            divisions: 50,
-            value: sat,
-            min: 0,
-            max: 2,
-          ),
-        ),
-        Text(sat.toStringAsFixed(2)),
-      ],
+    return Slider(
+      activeColor: Theme.of(context).accentColor,
+      inactiveColor: Theme.of(context).hintColor,
+      label: 'sat : ${sat.toStringAsFixed(2)}',
+      onChanged: (double value) {
+        setState(() {
+          sat = value;
+        });
+      },
+      divisions: 50,
+      value: sat,
+      max: 2,
     );
   }
 
   Widget _buildBrightness() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      mainAxisSize: MainAxisSize.max,
-      children: <Widget>[
-        SizedBox(
-          width: MediaQuery.of(context).size.width * 0.03,
-        ),
-        Column(
-          children: <Widget>[
-            Icon(
-              JamIcons.brightness,
-              color: Theme.of(context).accentColor,
-            ),
-            Text(
-              "Brightness",
-              style: TextStyle(color: Theme.of(context).accentColor),
-            )
-          ],
-        ),
-        Container(
-          width: MediaQuery.of(context).size.width * 0.7,
-          child: Slider(
-            label: '${bright.toStringAsFixed(2)}',
-            onChanged: (double value) {
-              setState(() {
-                bright = value;
-              });
-            },
-            divisions: 50,
-            value: bright,
-            min: -1,
-            max: 1,
-          ),
-        ),
-        Text(bright.toStringAsFixed(2)),
-      ],
+    return Slider(
+      activeColor: Theme.of(context).accentColor,
+      inactiveColor: Theme.of(context).hintColor,
+      label: bright.toStringAsFixed(2),
+      onChanged: (double value) {
+        setState(() {
+          bright = value;
+        });
+      },
+      divisions: 50,
+      value: bright,
+      min: -1,
     );
   }
 
   Widget _buildCon() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      mainAxisSize: MainAxisSize.max,
-      children: <Widget>[
-        SizedBox(
-          width: MediaQuery.of(context).size.width * 0.03,
-        ),
-        Column(
-          children: <Widget>[
-            Icon(
-              JamIcons.background_color,
-              color: Theme.of(context).accentColor,
-            ),
-            Text(
-              "Contrast",
-              style: TextStyle(color: Theme.of(context).accentColor),
-            )
-          ],
-        ),
-        Container(
-          width: MediaQuery.of(context).size.width * 0.7,
-          child: Slider(
-            label: 'con : ${con.toStringAsFixed(2)}',
-            onChanged: (double value) {
-              setState(() {
-                con = value;
-              });
-            },
-            divisions: 50,
-            value: con,
-            min: 0,
-            max: 4,
-          ),
-        ),
-        Text(con.toStringAsFixed(2)),
-      ],
+    return Slider(
+      activeColor: Theme.of(context).accentColor,
+      inactiveColor: Theme.of(context).hintColor,
+      label: 'con : ${con.toStringAsFixed(2)}',
+      onChanged: (double value) {
+        setState(() {
+          con = value;
+        });
+      },
+      divisions: 50,
+      value: con,
+      max: 4,
     );
   }
 }

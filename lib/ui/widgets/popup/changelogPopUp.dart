@@ -5,7 +5,7 @@ import 'package:Prism/theme/config.dart' as config;
 
 void showChangelog(BuildContext context, Function func) {
   final controller = ScrollController();
-  Dialog aboutPopUp = Dialog(
+  final Dialog aboutPopUp = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     child: Container(
       decoration: BoxDecoration(
@@ -20,25 +20,49 @@ void showChangelog(BuildContext context, Function func) {
             height: 150,
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20)),
                 color: Theme.of(context).hintColor),
-            child: FlareActor(
+            child: const FlareActor(
               "assets/animations/Changelog.flr",
-              isPaused: false,
-              alignment: Alignment.center,
               animation: "changelog",
             ),
           ),
           SizedBox(
-            height: 400,
+            height: 300,
             child: Scrollbar(
+              radius: const Radius.circular(500),
+              thickness: 5,
               controller: controller,
               isAlwaysShown: true,
               child: SingleChildScrollView(
                 controller: controller,
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                child: Column(mainAxisSize: MainAxisSize.min, children: const [
+                  ChangeVersion(number: 'v2.6.0'),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text: "Setup uploading is out of beta."),
+                  Change(icon: JamIcons.wrench, text: "All new themes!"),
+                  Change(icon: JamIcons.brush, text: "Variants are now free!"),
+                  Change(
+                      icon: JamIcons.tools,
+                      text: "Optimised app for faster animations!"),
+                  Change(
+                      icon: JamIcons.settings_alt,
+                      text: "Improved settings page."),
+                  Change(icon: JamIcons.home, text: "Redesigned home."),
+                  Change(icon: JamIcons.grid, text: "Redesigned categories."),
+                  Change(
+                      icon: JamIcons.filter, text: "Added wallpaper filters."),
+                  Change(
+                      icon: JamIcons.database, text: "Improved data caching."),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Major bug fixes and improvements."),
+                  SizedBox(
+                    height: 15,
+                  ),
                   ChangeVersion(number: 'v2.5.7'),
                   Change(
                       icon: JamIcons.settings_alt,
@@ -365,17 +389,17 @@ void showChangelog(BuildContext context, Function func) {
               ),
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 25,
           ),
           FlatButton(
-            shape: StadiumBorder(),
+            shape: const StadiumBorder(),
             color: config.Colors().mainAccentColor(1),
             onPressed: () {
               Navigator.of(context).pop();
               func();
             },
-            child: Text(
+            child: const Text(
               'CLOSE',
               style: TextStyle(
                 fontSize: 16.0,
@@ -383,7 +407,7 @@ void showChangelog(BuildContext context, Function func) {
               ),
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 15,
           ),
         ],
@@ -395,7 +419,7 @@ void showChangelog(BuildContext context, Function func) {
 
 class ChangeVersion extends StatelessWidget {
   final String number;
-  ChangeVersion({@required this.number});
+  const ChangeVersion({@required this.number});
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -416,7 +440,7 @@ class ChangeVersion extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(
+        const SizedBox(
           height: 20,
         ),
       ],
@@ -427,7 +451,7 @@ class ChangeVersion extends StatelessWidget {
 class Change extends StatelessWidget {
   final IconData icon;
   final String text;
-  Change({@required this.icon, @required this.text});
+  const Change({@required this.icon, @required this.text});
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -435,10 +459,8 @@ class Change extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            SizedBox(
+            const SizedBox(
               width: 20,
             ),
             Icon(
@@ -446,7 +468,7 @@ class Change extends StatelessWidget {
               size: 22,
               color: config.Colors().mainAccentColor(1),
             ),
-            SizedBox(
+            const SizedBox(
               width: 20,
             ),
             Container(
@@ -461,7 +483,7 @@ class Change extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(
+        const SizedBox(
           height: 10,
         ),
       ],

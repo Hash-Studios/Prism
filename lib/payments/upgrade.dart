@@ -1,45 +1,23 @@
-import 'package:Prism/routes/router.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:flutter/material.dart';
 import 'dart:async';
-
-import 'package:flutter/services.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:flare_flutter/flare_actor.dart';
-import 'components.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:flare_flutter/flare_actor.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'components.dart';
 
 PurchaserInfo _purchaserInfo;
-
-Future<void> initPlatformState() async {
-  appData.isPro = false;
-
-  await Purchases.setDebugLogsEnabled(true);
-  await Purchases.setup(apiKey, appUserId: main.prefs.get('id'));
-
-  PurchaserInfo purchaserInfo;
-  try {
-    purchaserInfo = await Purchases.getPurchaserInfo();
-    print(purchaserInfo.toString());
-    if (purchaserInfo.entitlements.all['prism_premium'] != null) {
-      appData.isPro = purchaserInfo.entitlements.all['prism_premium'].isActive;
-    } else {
-      appData.isPro = false;
-    }
-  } on PlatformException catch (e) {
-    print(e);
-  }
-
-  print('#### is user pro? ${appData.isPro}');
-}
 
 Future<void> checkPremium() async {
   appData.isPro = false;
 
-  await Purchases.setup(apiKey, appUserId: main.prefs.get('id'));
+  await Purchases.setup(apiKey, appUserId: main.prefs.get('id') as String);
 
   PurchaserInfo purchaserInfo;
   try {
@@ -50,11 +28,11 @@ Future<void> checkPremium() async {
       appData.isPro = false;
     }
   } on PlatformException catch (e) {
-    print(e);
+    debugPrint(e.toString());
   }
 
   main.prefs.put('premium', appData.isPro);
-  print('#### is user pro? ${appData.isPro}');
+  debugPrint('#### is user pro? ${appData.isPro}');
 }
 
 class UpgradeScreen extends StatefulWidget {
@@ -68,8 +46,32 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   @override
   void initState() {
     super.initState();
-    fetchData();
     initPlatformState();
+    fetchData();
+  }
+
+  Future<void> initPlatformState() async {
+    appData.isPro = false;
+
+    await Purchases.setDebugLogsEnabled(true);
+    await Purchases.setup(apiKey, appUserId: main.prefs.get('id') as String);
+
+    PurchaserInfo purchaserInfo;
+    try {
+      purchaserInfo = await Purchases.getPurchaserInfo();
+      debugPrint(purchaserInfo.toString());
+      if (purchaserInfo.entitlements.all['prism_premium'] != null) {
+        appData.isPro =
+            purchaserInfo.entitlements.all['prism_premium'].isActive;
+      } else {
+        appData.isPro = false;
+      }
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+    }
+
+    debugPrint('#### is user pro? ${appData.isPro}');
+    setState(() {});
   }
 
   Future<void> fetchData() async {
@@ -77,14 +79,14 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     try {
       purchaserInfo = await Purchases.getPurchaserInfo();
     } on PlatformException catch (e) {
-      print(e);
+      debugPrint(e.toString());
     }
 
     Offerings offerings;
     try {
       offerings = await Purchases.getOfferings();
     } on PlatformException catch (e) {
-      print(e);
+      debugPrint(e.toString());
     }
     if (!mounted) return;
 
@@ -100,11 +102,11 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       return WillPopScope(
         onWillPop: onWillPop,
         child: Scaffold(
-            backgroundColor: Theme.of(context).primaryColor,
-            body: Center(
-                child: Text(
-              "Loading...",
-            ))),
+          backgroundColor: Theme.of(context).primaryColor,
+          body: Center(
+            child: Loader(),
+          ),
+        ),
       );
     } else {
       if (_purchaserInfo.entitlements.all.isNotEmpty &&
@@ -128,7 +130,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
 class UpsellScreen extends StatefulWidget {
   final Offerings offerings;
 
-  UpsellScreen({Key key, @required this.offerings}) : super(key: key);
+  const UpsellScreen({Key key, @required this.offerings}) : super(key: key);
 
   @override
   _UpsellScreenState createState() => _UpsellScreenState();
@@ -136,7 +138,7 @@ class UpsellScreen extends StatefulWidget {
 
 Future<bool> onWillPop() async {
   if (navStack.length > 1) navStack.removeLast();
-  print(navStack);
+  debugPrint(navStack.toString());
   return true;
 }
 
@@ -154,12 +156,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
                 backgroundColor: Theme.of(context).primaryColor,
                 appBar: AppBar(
                   automaticallyImplyLeading: false,
-                  title: Text("Purchase"),
+                  title: const Text("Purchase"),
                   leading: IconButton(
-                    icon: Icon(JamIcons.close),
+                    icon: const Icon(JamIcons.close),
                     onPressed: () {
                       if (navStack.length > 1) navStack.removeLast();
-                      print(navStack);
+                      debugPrint(navStack.toString());
                       Navigator.pop(context);
                     },
                   ),
@@ -168,21 +170,18 @@ class _UpsellScreenState extends State<UpsellScreen> {
                     height: MediaQuery.of(context).size.height,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
                       children: <Widget>[
                         Container(
                           height: 200,
                           width: MediaQuery.of(context).size.width,
                           decoration:
                               BoxDecoration(color: Theme.of(context).hintColor),
-                          child: FlareActor(
+                          child: const FlareActor(
                             "assets/animations/Premium.flr",
-                            isPaused: false,
-                            alignment: Alignment.center,
                             animation: "premium",
                           ),
                         ),
-                        Spacer(
+                        const Spacer(
                           flex: 4,
                         ),
                         Row(
@@ -199,14 +198,39 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             ),
                           ],
                         ),
-                        Spacer(
-                          flex: 1,
+                        const Spacer(),
+                        Row(
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                            ),
+                            Icon(
+                              JamIcons.pictures,
+                              size: 22,
+                              color: config.Colors().mainAccentColor(1),
+                            ),
+                            const SizedBox(
+                              width: 20,
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Text(
+                                "View exclusive collections & walls!",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline6
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Icon(
@@ -214,13 +238,13 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               size: 22,
                               color: config.Colors().mainAccentColor(1),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Container(
                               width: MediaQuery.of(context).size.width * 0.8,
                               child: Text(
-                                "Get more exclusive collections & setups!",
+                                "Unlock more than 5 setups!",
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline6
@@ -230,14 +254,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Icon(
@@ -245,13 +267,13 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               size: 22,
                               color: config.Colors().mainAccentColor(1),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Container(
                               width: MediaQuery.of(context).size.width * 0.8,
                               child: Text(
-                                "Directly set upto 5 variants of each wallpaper!",
+                                "Apply filters to wallpapers!",
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline6
@@ -261,14 +283,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Icon(
@@ -276,7 +296,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               size: 22,
                               color: config.Colors().mainAccentColor(1),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Container(
@@ -292,14 +312,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Icon(
@@ -307,7 +325,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               size: 22,
                               color: config.Colors().mainAccentColor(1),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Container(
@@ -323,14 +341,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Icon(
@@ -338,7 +354,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               size: 22,
                               color: config.Colors().mainAccentColor(1),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Container(
@@ -354,14 +370,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 10,
                         ),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Icon(
@@ -369,7 +383,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               size: 22,
                               color: config.Colors().mainAccentColor(1),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                             Container(
@@ -385,14 +399,53 @@ class _UpsellScreenState extends State<UpsellScreen> {
                             ),
                           ],
                         ),
-                        Spacer(
+                        const Spacer(
                           flex: 4,
                         ),
                         PurchaseButton(package: lifetime),
-                        Spacer(
+                        const Spacer(
                           flex: 2,
                         ),
                         FlatButton(
+                          // ignore: void_checks
+                          onPressed: () async {
+                            try {
+                              debugPrint('now trying to restore');
+                              final PurchaserInfo restoredInfo =
+                                  await Purchases.restoreTransactions();
+                              debugPrint('restore completed');
+                              debugPrint(restoredInfo.toString());
+
+                              appData.isPro = restoredInfo
+                                  .entitlements.all["prism_premium"].isActive;
+
+                              debugPrint('is user pro? ${appData.isPro}');
+
+                              if (appData.isPro) {
+                                main.prefs.put('premium', appData.isPro);
+                                toasts
+                                    .codeSend("You are now a premium member.");
+                                main.RestartWidget.restartApp(context);
+                              } else {
+                                toasts.error(
+                                    "There was an error. Please try again later.");
+                              }
+                            } on PlatformException catch (e) {
+                              debugPrint('----xx-----');
+                              final errorCode =
+                                  PurchasesErrorHelper.getErrorCode(e);
+                              if (errorCode ==
+                                  PurchasesErrorCode.purchaseCancelledError) {
+                                toasts.error("User cancelled purchase.");
+                              } else if (errorCode ==
+                                  PurchasesErrorCode.purchaseNotAllowedError) {
+                                toasts.error("User not allowed to purchase.");
+                              } else {
+                                toasts.error(e.toString());
+                              }
+                            }
+                            return UpgradeScreen();
+                          },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.45,
                             decoration: BoxDecoration(
@@ -412,82 +465,31 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               ),
                             ),
                           ),
-                          onPressed: () async {
-                            try {
-                              print('now trying to restore');
-                              PurchaserInfo restoredInfo =
-                                  await Purchases.restoreTransactions();
-                              print('restore completed');
-                              print(restoredInfo.toString());
-
-                              appData.isPro = restoredInfo
-                                  .entitlements.all["prism_premium"].isActive;
-
-                              print('is user pro? ${appData.isPro}');
-
-                              if (appData.isPro) {
-                                main.prefs.put('premium', appData.isPro);
-                                toasts
-                                    .codeSend("You are now a premium member.");
-                                main.RestartWidget.restartApp(context);
-                              } else {
-                                toasts.error(
-                                    "There was an error. Please try again later.");
-                              }
-                            } on PlatformException catch (e) {
-                              print('----xx-----');
-                              var errorCode =
-                                  PurchasesErrorHelper.getErrorCode(e);
-                              if (errorCode ==
-                                  PurchasesErrorCode.purchaseCancelledError) {
-                                toasts.error("User cancelled purchase.");
-                              } else if (errorCode ==
-                                  PurchasesErrorCode.purchaseNotAllowedError) {
-                                toasts.error("User not allowed to purchase.");
-                              } else {
-                                toasts.error(e.toString());
-                              }
-                            }
-                            return UpgradeScreen();
-                          },
                         ),
-                        Spacer(
-                          flex: 1,
-                        ),
+                        const Spacer(),
                       ],
                     ))),
           );
         }
       }
-    }
-    return WillPopScope(
-      onWillPop: onWillPop,
-      child: Scaffold(
+    } else {
+      return WillPopScope(
+        onWillPop: onWillPop,
+        child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: Text("Purchase"),
-            leading: IconButton(
-              icon: Icon(JamIcons.close),
-              onPressed: () {
-                if (navStack.length > 1) navStack.removeLast();
-                print(navStack);
-                Navigator.pop(context);
-              },
-            ),
-          ),
           body: Center(
-              child: Text(
-            "Loading...",
-          ))),
-    );
+            child: Loader(),
+          ),
+        ),
+      );
+    }
   }
 }
 
 class PurchaseButton extends StatefulWidget {
   final Package package;
 
-  PurchaseButton({Key key, @required this.package}) : super(key: key);
+  const PurchaseButton({Key key, @required this.package}) : super(key: key);
 
   @override
   _PurchaseButtonState createState() => _PurchaseButtonState();
@@ -506,17 +508,18 @@ class _PurchaseButtonState extends State<PurchaseButton> {
             Padding(
               padding: const EdgeInsets.only(top: 18.0),
               child: FlatButton(
+                // ignore: void_checks
                 onPressed: () async {
                   try {
-                    print('now trying to purchase');
+                    debugPrint('now trying to purchase');
                     _purchaserInfo =
                         await Purchases.purchasePackage(widget.package);
-                    print('purchase completed');
+                    debugPrint('purchase completed');
 
                     appData.isPro = _purchaserInfo
                         .entitlements.all["prism_premium"].isActive;
                     main.prefs.put('premium', appData.isPro);
-                    print('is user pro? ${appData.isPro}');
+                    debugPrint('is user pro? ${appData.isPro}');
 
                     if (appData.isPro) {
                       toasts.codeSend("You are now a premium member.");
@@ -526,8 +529,8 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                           .error("There was an error, please try again later.");
                     }
                   } on PlatformException catch (e) {
-                    print('----xx-----');
-                    var errorCode = PurchasesErrorHelper.getErrorCode(e);
+                    debugPrint('----xx-----');
+                    final errorCode = PurchasesErrorHelper.getErrorCode(e);
                     if (errorCode ==
                         PurchasesErrorCode.purchaseCancelledError) {
                       toasts.error("User cancelled purchase.");
@@ -554,7 +557,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                         width: MediaQuery.of(context).size.width * 0.4,
                         child: Text(
                           'Buy ${widget.package.product.title}',
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w600),
                           textAlign: TextAlign.center,
                         ),
@@ -562,8 +565,8 @@ class _PurchaseButtonState extends State<PurchaseButton> {
                       Container(
                         width: MediaQuery.of(context).size.width * 0.24,
                         child: Text(
-                          '${widget.package.product.priceString}',
-                          style: TextStyle(fontSize: 22),
+                          widget.package.product.priceString,
+                          style: const TextStyle(fontSize: 22),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -575,10 +578,12 @@ class _PurchaseButtonState extends State<PurchaseButton> {
             Padding(
               padding: const EdgeInsets.only(top: 8.0, bottom: 18.0),
               child: Text(
-                '${widget.package.product.description}',
+                widget.package.product.description,
                 textAlign: TextAlign.center,
                 style: kSendButtonTextStyle.copyWith(
-                    fontSize: 13, fontWeight: FontWeight.w400),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: Theme.of(context).accentColor),
               ),
             )
           ],

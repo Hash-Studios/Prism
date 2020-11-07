@@ -2,33 +2,73 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/main.dart' as main;
 
-enum ThemeType { Light, Dark }
+Map<String, ThemeData> themes = {
+  "kLFrost White": kLightTheme,
+  "kDMaterial Dark": kDarkTheme,
+  "kLCoffee": kLightTheme2,
+  "kDAMOLED": kDarkTheme2,
+  "kLRose": kLightTheme3,
+  "kLCotton Blue": kLightTheme4,
+  "kDOlive": kDarkTheme3,
+  "kDDeep Ocean": kDarkTheme4,
+  "kDJungle": kDarkTheme5,
+  "kDPepper": kDarkTheme6,
+  "kDSky": kDarkTheme7,
+  "kDSteel": kDarkTheme8,
+};
 
 class ThemeModel extends ChangeNotifier {
   ThemeData currentTheme = kDarkTheme;
-  ThemeType themeType = ThemeType.Dark;
 
-  ThemeModel(this.currentTheme, this.themeType);
+  ThemeModel(
+    this.currentTheme,
+  );
 
-  toggleTheme() {
-    if (this.themeType == ThemeType.Dark) {
-      main.prefs.put("darkMode", false);
-      this.currentTheme = kLightTheme;
-      this.themeType = ThemeType.Light;
-      print(main.prefs.get("darkMode"));
-      return notifyListeners();
-    }
-
-    if (this.themeType == ThemeType.Light) {
-      main.prefs.put("darkMode", true);
-      this.currentTheme = kDarkTheme;
-      this.themeType = ThemeType.Dark;
-      print(main.prefs.get("darkMode"));
-      return notifyListeners();
-    }
+  void changeAccentColor(int accentColor) {
+    debugPrint(accentColor.toString());
+    currentTheme = currentTheme.copyWith(errorColor: Color(accentColor));
+    return notifyListeners();
   }
 
-  returnTheme() {
-    return themeType;
+  void changeThemeByID(String themeID) {
+    debugPrint(themeID);
+    currentTheme = themes[themeID];
+    main.prefs.put("themeID", themeID);
+    return notifyListeners();
+  }
+
+  void changeThemeByThemeData(ThemeData themeData) {
+    debugPrint(returnTheme(themeData));
+    currentTheme = themeData;
+    main.prefs.put("themeID", returnTheme(themeData));
+    return notifyListeners();
+  }
+
+  String returnTheme(ThemeData themeData) {
+    return themes.keys.firstWhere(
+      (element) => themes[element] == themeData,
+      orElse: () => null,
+    );
+  }
+
+  int returnThemeIndex(ThemeData themeData) {
+    return themes.keys.toList().indexOf(themes.keys.firstWhere(
+          (element) => themes[element] == themeData,
+          orElse: () => null,
+        ));
+  }
+
+  String returnThemeType() {
+    final String themeNow = themes.keys.firstWhere(
+      (element) => themes[element] == currentTheme,
+      orElse: () => "kDMaterial Dark",
+    );
+    if (themeNow[1] == "L") {
+      return "Light";
+    } else if (themeNow[1] == "D") {
+      return "Dark";
+    } else {
+      return "Dark";
+    }
   }
 }
