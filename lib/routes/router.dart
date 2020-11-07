@@ -134,31 +134,19 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: wallpaperRoute);
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-         WallpaperScreen(arguments: settings.arguments as List),
+            WallpaperScreen(arguments: settings.arguments as List),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-         return FadeThroughTransition(
-           fillColor: Theme.of(context).primaryColor,
-           animation:animation,
-           secondaryAnimation:secondaryAnimation,
-           child:child,
-         );
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          final curve = Sprung.overDamped;
+          final tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
         },
       );
-      // return PageRouteBuilder(
-      //   pageBuilder: (context, animation, secondaryAnimation) =>
-      //       WallpaperScreen(arguments: settings.arguments as List),
-      //   transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      //     const begin = Offset(0.0, 1.0);
-      //     const end = Offset.zero;
-      //     final curve = Sprung.overDamped;
-      //     final tween =
-      //         Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-      //     return SlideTransition(
-      //       position: animation.drive(tween),
-      //       child: child,
-      //     );
-      //   },
-      // );
     case searchWallpaperRoute:
       navStack.add("Search Wallpaper");
       debugPrint(navStack.toString());
