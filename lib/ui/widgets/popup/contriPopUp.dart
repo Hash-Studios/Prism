@@ -1,6 +1,7 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
@@ -178,5 +179,8 @@ void showContributorDetails(BuildContext context, String username) {
           }),
     ),
   );
-  showDialog(context: context, builder: (BuildContext context) => userPopUp);
+  showModal(
+      context: context,
+      configuration: const FadeScaleTransitionConfiguration(),
+      builder: (BuildContext context) => userPopUp);
 }

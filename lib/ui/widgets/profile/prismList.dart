@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/changelogPopUp.dart';
+import 'package:animations/animations.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -85,9 +86,10 @@ class PrismList extends StatelessWidget {
               style: TextStyle(fontSize: 12),
             ),
             onTap: () async {
-              showDialog(
+              showModal(
                 context: context,
-                child: AlertDialog(
+                configuration: const FadeScaleTransitionConfiguration(),
+                builder: (context) => AlertDialog(
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(
                       Radius.circular(20),

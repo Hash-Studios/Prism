@@ -1,6 +1,7 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
@@ -100,9 +101,10 @@ class UserList extends StatelessWidget {
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () async {
-                    showDialog(
+                    showModal(
                       context: context,
-                      child: AlertDialog(
+                      configuration: const FadeScaleTransitionConfiguration(),
+                      builder: (context) => AlertDialog(
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(
                             Radius.circular(20),
@@ -173,9 +175,10 @@ class UserList extends StatelessWidget {
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () async {
-                    showDialog(
+                    showModal(
                       context: context,
-                      child: AlertDialog(
+                      configuration: const FadeScaleTransitionConfiguration(),
+                      builder: (context) => AlertDialog(
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(
                             Radius.circular(20),
@@ -287,9 +290,10 @@ class UserList extends StatelessWidget {
                     style: TextStyle(fontSize: 12),
                   ),
                   onTap: () async {
-                    showDialog(
+                    showModal(
                       context: context,
-                      child: AlertDialog(
+                      configuration: const FadeScaleTransitionConfiguration(),
+                      builder: (context) => AlertDialog(
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(
                             Radius.circular(20),

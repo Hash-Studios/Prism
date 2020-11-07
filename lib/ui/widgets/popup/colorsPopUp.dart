@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:animations/animations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
@@ -160,7 +161,10 @@ Color showColors(BuildContext context) {
       ),
     ),
   );
-  showDialog(context: context, builder: (BuildContext context) => colorPopUp);
+  showModal(
+      context: context,
+      configuration: const FadeScaleTransitionConfiguration(),
+      builder: (BuildContext context) => colorPopUp);
 }
 
 void showAccentColors(BuildContext context) {
@@ -266,5 +270,8 @@ void showAccentColors(BuildContext context) {
       ),
     ),
   );
-  showDialog(context: context, builder: (BuildContext context) => colorPopUp);
+  showModal(
+      context: context,
+      configuration: const FadeScaleTransitionConfiguration(),
+      builder: (BuildContext context) => colorPopUp);
 }
