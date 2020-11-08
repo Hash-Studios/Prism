@@ -33,8 +33,6 @@ import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as imagelib;
-import 'package:sprung/sprung.dart';
-import 'package:animations/animations.dart';
 
 List<String> navStack = ["Home"];
 
@@ -50,49 +48,19 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: searchRoute);
       return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-           SearchScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-         return FadeThroughTransition(
-           fillColor: Theme.of(context).primaryColor,
-           animation:animation,
-           secondaryAnimation:secondaryAnimation,
-           child:child,
-         );
-        },
-      );
+          pageBuilder: (context, animation1, animation2) => SearchScreen());
     case homeRoute:
       navStack.add("Home");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: homeRoute);
-       return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-          PageManager(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-         return FadeThroughTransition(
-           fillColor: Theme.of(context).primaryColor,
-           animation:animation,
-           secondaryAnimation:secondaryAnimation,
-           child:child,
-         );
-        },
-      );
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => PageManager());
     case profileRoute:
       navStack.add("Profile");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: profileRoute);
-       return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-         ProfileScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-         return FadeThroughTransition(
-           fillColor: Theme.of(context).primaryColor,
-           animation:animation,
-           secondaryAnimation:secondaryAnimation,
-           child:child,
-         );
-        },
-      );
+      return PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => ProfileScreen());
     case photographerProfileRoute:
       navStack.add("User Profile");
       debugPrint(navStack.toString());
@@ -132,132 +100,57 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Wallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: wallpaperRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            WallpaperScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              WallpaperScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case searchWallpaperRoute:
       navStack.add("Search Wallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: searchWallpaperRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-           SearchWallpaperScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              SearchWallpaperScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case downloadWallpaperRoute:
       navStack.add("DownloadedWallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: downloadWallpaperRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-          DownloadWallpaperScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              DownloadWallpaperScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case shareRoute:
       navStack.add("SharedWallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: shareRoute);
-       return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-           ShareWallpaperViewScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              ShareWallpaperViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case shareSetupViewRoute:
       navStack.add("SharedSetup");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: shareSetupViewRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-           ShareSetupViewScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              ShareSetupViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case favWallViewRoute:
       navStack.add("FavouriteWallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: favWallViewRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-          FavWallpaperViewScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              FavWallpaperViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case setupRoute:
       navStack.add("Setups");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: setupRoute);
       return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-        SetupScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-         return FadeThroughTransition(
-           fillColor: Theme.of(context).primaryColor,
-           animation:animation,
-           secondaryAnimation:secondaryAnimation,
-           child:child,
-         );
-        },
-      );
+          pageBuilder: (context, animation1, animation2) =>
+              const SetupScreen());
     case setupViewRoute:
       navStack.add("SetupView");
       debugPrint(navStack.toString());
@@ -284,40 +177,18 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("ProfileWallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: profileWallViewRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-           ProfileWallViewScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              ProfileWallViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case userProfileWallViewRoute:
       navStack.add("User ProfileWallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: userProfileWallViewRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-           UserProfileWallViewScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              UserProfileWallViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case themeViewRoute:
       navStack.add("Themes");
       debugPrint(navStack.toString());
@@ -329,159 +200,65 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Edit Wallpaper");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: editWallRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            EditWallScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              EditWallScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case uploadSetupRoute:
       navStack.add("Upload Setup");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: uploadSetupRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
+      return CupertinoPageRoute(
+          builder: (context) =>
               UploadSetupScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+          fullscreenDialog: true);
     case setupGuidelinesRoute:
       navStack.add("Setup Guidelines");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: setupGuidelinesRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-             const SetupGuidelinesScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) => const SetupGuidelinesScreen(),
+          fullscreenDialog: true);
     case setupTagRoute:
       navStack.add("Setup Tag");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: setupTagRoute);
-       return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-             TagSetupScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              TagSetupScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case uploadWallRoute:
       navStack.add("Add");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: uploadWallRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
+      return CupertinoPageRoute(
+          builder: (context) =>
               UploadWallScreen(arguments: settings.arguments as List),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+          fullscreenDialog: true);
     case aboutRoute:
       navStack.add("About Prism");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: aboutRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-             AboutScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) => AboutScreen(), fullscreenDialog: true);
     case sharePrismRoute:
       navStack.add("Share Prism");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: sharePrismRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-          SharePrismScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) => SharePrismScreen(), fullscreenDialog: true);
     case wallpaperFilterRoute:
       navStack.add("Wallpaper Filter");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: wallpaperFilterRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-             WallpaperFilterScreen(
+      return CupertinoPageRoute(
+          builder: (context) => WallpaperFilterScreen(
                 image: (settings.arguments as List)[0] as imagelib.Image,
                 finalImage: (settings.arguments as List)[1] as imagelib.Image,
                 filename: (settings.arguments as List)[2] as String,
                 finalFilename: (settings.arguments as List)[3] as String,
               ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          final curve = Sprung.overDamped;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+          fullscreenDialog: true);
     default:
       navStack.add("undefined");
       debugPrint(navStack.toString());
