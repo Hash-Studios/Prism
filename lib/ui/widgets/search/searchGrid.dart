@@ -11,6 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/main.dart' as main;
 
 class SearchGrid extends StatefulWidget {
   final String query;
@@ -95,7 +96,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
     await Future.delayed(const Duration(milliseconds: 500));
     if (widget.selectedProvider == "WallHaven") {
       wData.wallsS = [];
-      wData.getWallsbyQuery(widget.query);
+      wData.getWallsbyQuery(widget.query, main.prefs.get('WHcategories') as int,
+          main.prefs.get('WHpurity') as int);
     } else if (widget.selectedProvider == "Pexels") {
       pData.wallsPS = [];
       pData.getWallsPbyQuery(widget.query);
@@ -123,7 +125,10 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
             if (!seeMoreLoader) {
               if (widget.selectedProvider == "WallHaven") {
-                wData.getWallsbyQueryPage(widget.query);
+                wData.getWallsbyQueryPage(
+                    widget.query,
+                    main.prefs.get('WHcategories') as int,
+                    main.prefs.get('WHpurity') as int);
               } else if (widget.selectedProvider == "Pexels") {
                 pData.getWallsPbyQueryPage(widget.query);
               }
@@ -169,7 +174,10 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(20)),
                     onPressed: () {
                       if (!seeMoreLoader) {
-                        wData.getWallsbyQueryPage(widget.query);
+                        wData.getWallsbyQueryPage(
+                            widget.query,
+                            main.prefs.get('WHcategories') as int,
+                            main.prefs.get('WHpurity') as int);
                         setState(() {
                           seeMoreLoader = true;
                           Future.delayed(const Duration(seconds: 2))

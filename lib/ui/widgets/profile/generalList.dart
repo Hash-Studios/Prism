@@ -16,6 +16,8 @@ class GeneralList extends StatefulWidget {
 
 class _GeneralListState extends State<GeneralList> {
   bool optWall = (main.prefs.get('optimisedWallpapers') ?? true) as bool;
+  int categories = (main.prefs.get('WHcategories') ?? 100) as int;
+  int purity = (main.prefs.get('WHpurity') ?? 100) as int;
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +113,76 @@ class _GeneralListState extends State<GeneralList> {
                 optWall = value;
               });
               main.prefs.put('optimisedWallpapers', value);
+            }),
+        SwitchListTile(
+            activeColor: config.Colors().mainAccentColor(1),
+            secondary: const Icon(
+              JamIcons.dashboard,
+            ),
+            value: categories == 101 ? true : false,
+            title: Text(
+              "Show Anime Wallpapers",
+              style: TextStyle(
+                  color: Theme.of(context).accentColor,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: categories == 101
+                ? const Text(
+                    "Disable this to hide anime wallpapers",
+                    style: TextStyle(fontSize: 12),
+                  )
+                : const Text(
+                    "Enable this to show anime wallpapers",
+                    style: TextStyle(fontSize: 12),
+                  ),
+            onChanged: (bool value) async {
+              if (value == true) {
+                setState(() {
+                  categories = 101;
+                });
+                main.prefs.put('WHcategories', 101);
+              } else {
+                setState(() {
+                  categories = 100;
+                });
+                main.prefs.put('WHcategories', 100);
+              }
+            }),
+        SwitchListTile(
+            activeColor: config.Colors().mainAccentColor(1),
+            secondary: const Icon(
+              JamIcons.dashboard,
+            ),
+            value: purity == 110 ? true : false,
+            title: Text(
+              "Show NSFW Wallpapers",
+              style: TextStyle(
+                  color: Theme.of(context).accentColor,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: purity == 110
+                ? const Text(
+                    "Disable this to hide nsfw wallpapers",
+                    style: TextStyle(fontSize: 12),
+                  )
+                : const Text(
+                    "Enable this to show nsfw wallpapers",
+                    style: TextStyle(fontSize: 12),
+                  ),
+            onChanged: (bool value) async {
+              if (value == true) {
+                setState(() {
+                  purity = 110;
+                });
+                main.prefs.put('WHpurity', 110);
+              } else {
+                setState(() {
+                  purity = 100;
+                });
+                main.prefs.put('WHpurity', 100);
+              }
             }),
         ListTile(
           onTap: () {
