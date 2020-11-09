@@ -58,7 +58,6 @@ dependencies:
   screenshot: ^0.2.0
   share: ^0.6.4
   sliding_up_panel: ^1.0.2
-  sprung: ^2.0.0+13
   url_launcher: ^5.4.5
 
 dependency_overrides:
