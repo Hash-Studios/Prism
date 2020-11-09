@@ -139,9 +139,9 @@ class _GeneralListState extends State<GeneralList> {
             onChanged: (bool value) async {
               if (value == true) {
                 setState(() {
-                  categories = 101;
+                  categories = 111;
                 });
-                main.prefs.put('WHcategories', 101);
+                main.prefs.put('WHcategories', 111);
               } else {
                 setState(() {
                   categories = 100;
