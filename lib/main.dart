@@ -29,6 +29,8 @@ Directory dir;
 String currentThemeID;
 bool hqThumbs;
 bool optimisedWallpapers;
+int categories;
+int purity;
 void main() {
   //! Uncomment next line before release
   debugPrint = (String message, {int wrapWidth}) {};
@@ -55,41 +57,53 @@ void main() {
         prefs.put('optimisedWallpapers', true);
       } else {
         prefs.put('optimisedWallpapers', false);
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          systemNavigationBarColor: config.Colors().mainAccentColor(1),
-        ));
-        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-            .then(
-          (value) => runZoned<Future<void>>(
-            () {
-              runApp(
-                RestartWidget(
-                  child: MultiProvider(
-                    providers: [
-                      ChangeNotifierProvider<FavouriteProvider>(
-                        create: (context) => FavouriteProvider(),
-                      ),
-                      ChangeNotifierProvider<CategorySupplier>(
-                        create: (context) => CategorySupplier(),
-                      ),
-                      ChangeNotifierProvider<SetupProvider>(
-                        create: (context) => SetupProvider(),
-                      ),
-                      ChangeNotifierProvider<ProfileWallProvider>(
-                        create: (context) => ProfileWallProvider(),
-                      ),
-                      ChangeNotifierProvider<ThemeModel>(
-                        create: (context) => ThemeModel(themes[currentThemeID]),
-                      ),
-                    ],
-                    child: MyApp(),
-                  ),
-                ),
-              );
-            },
-          ),
-        );
       }
+      categories = prefs.get('WHcategories') as int ?? 100;
+      if (categories == 100) {
+        prefs.put('WHcategories', 100);
+      } else {
+        prefs.put('WHcategories', 101);
+      }
+      purity = prefs.get('WHpurity') as int ?? 100;
+      if (purity == 100) {
+        prefs.put('WHpurity', 100);
+      } else {
+        prefs.put('WHpurity', 110);
+      }
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+        systemNavigationBarColor: config.Colors().mainAccentColor(1),
+      ));
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+          .then(
+        (value) => runZoned<Future<void>>(
+          () {
+            runApp(
+              RestartWidget(
+                child: MultiProvider(
+                  providers: [
+                    ChangeNotifierProvider<FavouriteProvider>(
+                      create: (context) => FavouriteProvider(),
+                    ),
+                    ChangeNotifierProvider<CategorySupplier>(
+                      create: (context) => CategorySupplier(),
+                    ),
+                    ChangeNotifierProvider<SetupProvider>(
+                      create: (context) => SetupProvider(),
+                    ),
+                    ChangeNotifierProvider<ProfileWallProvider>(
+                      create: (context) => ProfileWallProvider(),
+                    ),
+                    ChangeNotifierProvider<ThemeModel>(
+                      create: (context) => ThemeModel(themes[currentThemeID]),
+                    ),
+                  ],
+                  child: MyApp(),
+                ),
+              ),
+            );
+          },
+        ),
+      );
     },
   );
 }
