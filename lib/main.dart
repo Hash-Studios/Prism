@@ -62,7 +62,7 @@ void main() {
       if (categories == 100) {
         prefs.put('WHcategories', 100);
       } else {
-        prefs.put('WHcategories', 101);
+        prefs.put('WHcategories', 111);
       }
       purity = prefs.get('WHpurity') as int ?? 100;
       if (purity == 100) {
