@@ -117,9 +117,9 @@ class _GeneralListState extends State<GeneralList> {
         SwitchListTile(
             activeColor: config.Colors().mainAccentColor(1),
             secondary: const Icon(
-              JamIcons.dashboard,
+              JamIcons.picture,
             ),
-            value: categories == 101 ? true : false,
+            value: categories == 111,
             title: Text(
               "Show Anime Wallpapers",
               style: TextStyle(
@@ -127,7 +127,7 @@ class _GeneralListState extends State<GeneralList> {
                   fontWeight: FontWeight.w500,
                   fontFamily: "Proxima Nova"),
             ),
-            subtitle: categories == 101
+            subtitle: categories == 111
                 ? const Text(
                     "Disable this to hide anime wallpapers",
                     style: TextStyle(fontSize: 12),
@@ -152,11 +152,11 @@ class _GeneralListState extends State<GeneralList> {
         SwitchListTile(
             activeColor: config.Colors().mainAccentColor(1),
             secondary: const Icon(
-              JamIcons.dashboard,
+              JamIcons.stop_sign,
             ),
-            value: purity == 110 ? true : false,
+            value: purity == 110,
             title: Text(
-              "Show NSFW Wallpapers",
+              "Show Sketchy Wallpapers",
               style: TextStyle(
                   color: Theme.of(context).accentColor,
                   fontWeight: FontWeight.w500,
@@ -164,11 +164,11 @@ class _GeneralListState extends State<GeneralList> {
             ),
             subtitle: purity == 110
                 ? const Text(
-                    "Disable this to hide nsfw wallpapers",
+                    "Disable this to hide sketchy wallpapers",
                     style: TextStyle(fontSize: 12),
                   )
                 : const Text(
-                    "Enable this to show nsfw wallpapers",
+                    "Enable this to show sketchy wallpapers",
                     style: TextStyle(fontSize: 12),
                   ),
             onChanged: (bool value) async {
