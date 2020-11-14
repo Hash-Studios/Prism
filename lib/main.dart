@@ -29,6 +29,8 @@ Directory dir;
 String currentThemeID;
 bool hqThumbs;
 bool optimisedWallpapers;
+int categories;
+int purity;
 void main() {
   //! Uncomment next line before release
   debugPrint = (String message, {int wrapWidth}) {};
@@ -55,41 +57,53 @@ void main() {
         prefs.put('optimisedWallpapers', true);
       } else {
         prefs.put('optimisedWallpapers', false);
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          systemNavigationBarColor: config.Colors().mainAccentColor(1),
-        ));
-        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-            .then(
-          (value) => runZoned<Future<void>>(
-            () {
-              runApp(
-                RestartWidget(
-                  child: MultiProvider(
-                    providers: [
-                      ChangeNotifierProvider<FavouriteProvider>(
-                        create: (context) => FavouriteProvider(),
-                      ),
-                      ChangeNotifierProvider<CategorySupplier>(
-                        create: (context) => CategorySupplier(),
-                      ),
-                      ChangeNotifierProvider<SetupProvider>(
-                        create: (context) => SetupProvider(),
-                      ),
-                      ChangeNotifierProvider<ProfileWallProvider>(
-                        create: (context) => ProfileWallProvider(),
-                      ),
-                      ChangeNotifierProvider<ThemeModel>(
-                        create: (context) => ThemeModel(themes[currentThemeID]),
-                      ),
-                    ],
-                    child: MyApp(),
-                  ),
-                ),
-              );
-            },
-          ),
-        );
       }
+      categories = prefs.get('WHcategories') as int ?? 100;
+      if (categories == 100) {
+        prefs.put('WHcategories', 100);
+      } else {
+        prefs.put('WHcategories', 111);
+      }
+      purity = prefs.get('WHpurity') as int ?? 100;
+      if (purity == 100) {
+        prefs.put('WHpurity', 100);
+      } else {
+        prefs.put('WHpurity', 110);
+      }
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+        systemNavigationBarColor: config.Colors().mainAccentColor(1),
+      ));
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+          .then(
+        (value) => runZoned<Future<void>>(
+          () {
+            runApp(
+              RestartWidget(
+                child: MultiProvider(
+                  providers: [
+                    ChangeNotifierProvider<FavouriteProvider>(
+                      create: (context) => FavouriteProvider(),
+                    ),
+                    ChangeNotifierProvider<CategorySupplier>(
+                      create: (context) => CategorySupplier(),
+                    ),
+                    ChangeNotifierProvider<SetupProvider>(
+                      create: (context) => SetupProvider(),
+                    ),
+                    ChangeNotifierProvider<ProfileWallProvider>(
+                      create: (context) => ProfileWallProvider(),
+                    ),
+                    ChangeNotifierProvider<ThemeModel>(
+                      create: (context) => ThemeModel(themes[currentThemeID]),
+                    ),
+                  ],
+                  child: MyApp(),
+                ),
+              ),
+            );
+          },
+        ),
+      );
     },
   );
 }
@@ -105,10 +119,9 @@ class _MyAppState extends State<MyApp> {
   Future<void> fetchModes() async {
     try {
       modes = await FlutterDisplayMode.supported;
-      // modes.forEach(print);
-      print(modes);
+      // print(modes);
     } on PlatformException catch (e) {
-      print(e.toString());
+      // print(e.toString());
     }
     selected =
         modes.firstWhere((DisplayMode m) => m.selected, orElse: () => null);
@@ -118,10 +131,48 @@ class _MyAppState extends State<MyApp> {
     return FlutterDisplayMode.current;
   }
 
-  Future<void> setCurrentMode(int index) async {
+  Future<void> setCurrentMode() async {
     await fetchModes();
-    if (modes.length > index) {
-      await FlutterDisplayMode.setMode(modes[index]);
+    if (modes.isNotEmpty) {
+      var width = 0;
+      for (final mode in modes) {
+        if (mode.width > width) {
+          width = mode.width;
+        }
+      }
+      List<DisplayMode> maxWidthModes = [];
+      for (final mode in modes) {
+        if (mode.width == width) {
+          maxWidthModes.add(mode);
+        }
+      }
+      var height = 0;
+      for (final mode in maxWidthModes) {
+        if (mode.height > height) {
+          height = mode.height;
+        }
+      }
+      List<DisplayMode> maxResModes = [];
+      for (final mode in maxWidthModes) {
+        if (mode.height == height) {
+          maxResModes.add(mode);
+        }
+      }
+      double refreshRate = 0;
+      for (final mode in maxResModes) {
+        if (mode.refreshRate > refreshRate) {
+          refreshRate = mode.refreshRate;
+        }
+      }
+      List<DisplayMode> maxDisplayModes = [];
+      for (final mode in maxResModes) {
+        if (mode.refreshRate == refreshRate) {
+          maxDisplayModes.add(mode);
+        }
+      }
+      if (maxDisplayModes.isNotEmpty) {
+        await FlutterDisplayMode.setMode(maxDisplayModes[0]);
+      }
     }
     selected =
         modes.firstWhere((DisplayMode m) => m.selected, orElse: () => null);
@@ -138,7 +189,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    setCurrentMode(1);
+    setCurrentMode();
     getLoginStatus();
     super.initState();
   }

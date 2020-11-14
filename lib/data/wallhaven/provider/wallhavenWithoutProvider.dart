@@ -20,7 +20,7 @@ List<Map<String, int>> pageNumbers = categories
     .toList();
 
 Future<List<WallPaper>> categoryDataFetcher(
-    String categoryName, String mode) async {
+    String categoryName, String mode, int categories, int purity) async {
   final int index = pageNumbers.indexOf(pageNumbers
       .firstWhere((element) => element.keys.toList()[0] == categoryName));
   if (mode == "r") {
@@ -33,7 +33,7 @@ Future<List<WallPaper>> categoryDataFetcher(
   if (navStack.last == "Home") {
     http
         .get(
-            "https://wallhaven.cc/api/v1/search?q=$categoryName&page=${pageNumbers[index][categoryName]}")
+            "https://wallhaven.cc/api/v1/search?q=$categoryName&page=${pageNumbers[index][categoryName]}&categories=$categories&purity=$purity")
         .then(
       (http.Response response) {
         final resp = json.decode(response.body);
@@ -68,7 +68,7 @@ Future<List<WallPaper>> categoryDataFetcher(
   }
 }
 
-Future<List<WallPaper>> getData(String mode) async {
+Future<List<WallPaper>> getData(String mode, int categories, int purity) async {
   if (mode == "r") {
     walls = [];
     pageGetData = 1;
@@ -78,7 +78,7 @@ Future<List<WallPaper>> getData(String mode) async {
   if (navStack.last == "Home") {
     http
         .get(
-            "https://wallhaven.cc/api/v1/search?page=$pageGetData&categories=100&purity=100&sorting=toplist&order=des")
+            "https://wallhaven.cc/api/v1/search?page=$pageGetData&categories=$categories&purity=$purity&sorting=toplist&order=des")
         .then(
       (http.Response response) {
         final resp = json.decode(response.body);
@@ -151,9 +151,14 @@ Future<WallPaper> getWallbyID(String id) async {
   );
 }
 
-Future<List<WallPaper>> getWallsbyQuery(String query) async {
-  debugPrint("https://wallhaven.cc/api/v1/search?q=$query&page=1");
-  http.get("https://wallhaven.cc/api/v1/search?q=$query&page=1").then(
+Future<List<WallPaper>> getWallsbyQuery(
+    String query, int categories, int purity) async {
+  debugPrint(
+      "https://wallhaven.cc/api/v1/search?q=$query&page=1&categories=$categories&purity=$purity");
+  http
+      .get(
+          "https://wallhaven.cc/api/v1/search?q=$query&page=1&categories=$categories&purity=$purity")
+      .then(
     (http.Response response) {
       final resp = json.decode(response.body);
       debugPrint(resp["data"].length.toString());
@@ -183,10 +188,13 @@ Future<List<WallPaper>> getWallsbyQuery(String query) async {
   );
 }
 
-Future<List<WallPaper>> getWallsbyQueryPage(String query) async {
-  debugPrint("https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery");
+Future<List<WallPaper>> getWallsbyQueryPage(
+    String query, int categories, int purity) async {
+  debugPrint(
+      "https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity");
   http
-      .get("https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery")
+      .get(
+          "https://wallhaven.cc/api/v1/search?q=$query&page=$pageGetQuery&categories=$categories&purity=$purity")
       .then(
     (http.Response response) {
       final resp = json.decode(response.body);
