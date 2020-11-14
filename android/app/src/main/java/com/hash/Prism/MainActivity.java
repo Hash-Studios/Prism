@@ -1,13 +1,13 @@
 package com.hash.prism;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import android.annotation.SuppressLint;
+
 import android.content.Context;
 
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
+
 import android.app.WallpaperManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
@@ -20,16 +20,16 @@ import android.net.Uri;
 import android.content.ContentValues;
 import android.content.*;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.provider.MediaStore;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
-import com.squareup.picasso.Callback;
+
 import java.io.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "flutter.prism.set_wallpaper";
@@ -99,6 +99,29 @@ public class MainActivity extends FlutterActivity {
         }
     };
 
+    Target saveImageTarget = new Target() {
+        @Override
+        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+            try {
+                saveImageToPictures(bitmap, "default_" + System.currentTimeMillis());
+            } catch (IOException e) {
+                e.printStackTrace();
+                res.success(false);
+            }
+        }
+
+        @Override
+        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+            res.success(false);
+            e.printStackTrace();
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+        }
+    };
+
+
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
@@ -145,10 +168,39 @@ public class MainActivity extends FlutterActivity {
                         android.util.Log.i("Arguments ", "configureFlutterEngine: " + url);
                         Picasso.get().load("file://" + url).into(target3);
 
+                    } else if (call.method.equals("save_image")) {
+                        String link = call.argument("link");
+                        Picasso.get().load(link).into(saveImageTarget);
                     }
                 });
     }
+
+    private void saveImageToPictures(Bitmap bitmap, @NonNull String name) throws IOException {
+        OutputStream fos;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentResolver resolver = getContentResolver();
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, name + ".jpg");
+                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpg");
+                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "Prism");
+                Uri imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+                fos = resolver.openOutputStream(Objects.requireNonNull(imageUri));
+            } else {
+                String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES + File.separator + "Prism").toString();
+                File image = new File(imagesDir, name + ".jpg");
+                fos = new FileOutputStream(image);
+            }
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            Objects.requireNonNull(fos).close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            res.success(false);
+        }
+        res.success(true);
+    }
 }
+
 
 class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean> {
 
@@ -165,11 +217,13 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
                 WallpaperManager wallpaperManager = WallpaperManager.getInstance(mContext);
                 try {
                     Uri tempUri = getImageUri(mContext, pairs[0].first);
-                    android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Saved image to storage");
+                    Log.i("Arguments ", "configureFlutterEngine: " + "Saved image to storage");
                     File finalFile = new File(getRealPathFromURI(tempUri));
                     Uri contentURI = getImageContentUri(mContext, finalFile.getAbsolutePath());
-                    android.util.Log.i("Arguments ", "configureFlutterEngine: " + "Opening crop intent");
-                    mContext.startActivity(wallpaperManager.getCropAndSetWallpaperIntent(contentURI));
+                    Log.i("Arguments ", "configureFlutterEngine: " + "Opening crop intent");
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        mContext.startActivity(wallpaperManager.getCropAndSetWallpaperIntent(contentURI));
+                    }
                     // wallpaperManager.setBitmap(pairs[0].first);
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -235,8 +289,8 @@ class SetWallPaperTask extends AsyncTask<Pair<Bitmap, String>, Boolean, Boolean>
     public static Uri getImageContentUri(Context context, String absPath) {
 
         Cursor cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                new String[] { MediaStore.Images.Media._ID }, MediaStore.Images.Media.DATA + "=? ",
-                new String[] { absPath }, null);
+                new String[]{MediaStore.Images.Media._ID}, MediaStore.Images.Media.DATA + "=? ",
+                new String[]{absPath}, null);
 
         if (cursor != null && cursor.moveToFirst()) {
             int id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID));
