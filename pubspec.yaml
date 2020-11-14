@@ -38,7 +38,6 @@ dependencies:
   flutter_displaymode: ^0.1.1
   flutter_svg: ^0.19.0
   fluttertoast: ^4.0.1
-  gallery_saver: ^2.0.1
   github: ^6.2.2
   google_sign_in: ^4.4.4
   hive: ^1.4.1+1
