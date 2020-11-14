@@ -6,7 +6,7 @@
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
 ![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-10K+-green.svg)
-![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.2-blue.svg)
+![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.5-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
@@ -124,38 +124,37 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 
 **Screens**
 
-| ![](demo/65.jpg) | ![](demo/73.jpg) | ![](demo/74.jpg) | ![](demo/3.jpg) | ![](demo/4.jpg) |
+| ![](demo/2.jpg) | ![](demo/3.jpg) | ![](demo/4.jpg) | ![](demo/5.jpg) | ![](demo/6.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Home     |    Search WallHaven   |    Search Pexels     |     Color Picker       |     Color Based     |
 
-| ![](demo/78.jpg) | ![](demo/80.jpg) | ![](demo/60.jpg) | ![](demo/61.jpg) | ![](demo/79.jpg) |
+| ![](demo/7.jpg) | ![](demo/8.jpg) | ![](demo/9.jpg) | ![](demo/11.jpg) | ![](demo/12.jpg) |
 | :-------------:  | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |    Favourites    |    Downloads     |     Setups       |    Setups Info    |     Profile     |
 
-| ![](demo/28.jpg) | ![](demo/76.jpg)| ![](demo/77.jpg)       | ![](demo/68.jpg)  | ![](demo/88.jpg) |
+| ![](demo/13.jpg) | ![](demo/14.jpg)| ![](demo/16.jpg)       | ![](demo/17.jpg)  | ![](demo/18.jpg) |
 | :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------:  |
 |  Upload Popup    |    Edit Wallpaper       |  Uploading Wallpaper    | Uploader's Profile   |     Scroll to Top Button       |
 
-| ![](demo/70.jpg) | ![](demo/69.jpg) | ![](demo/87.jpg)| ![](demo/72.jpg) | ![](demo/90.jpg) |
+| ![](demo/19.jpg) | ![](demo/20.jpg) | ![](demo/21.jpg)| ![](demo/23.jpg) | ![](demo/25.jpg) |
 | :-------------: | :-------------: | :-------------: | :-------------:  | :-------------:  |
-|     Categories     |     Collections    | Collection (Shapes)  |    Notifications     |     Setup Upload       |
+|     Categories     |     Collections    | Collection (Illustrations)  |    Setup Guidelines     |     Setup Upload       |
 
-| ![](demo/63.jpg) | ![](demo/89.jpg) | ![](demo/37.jpg)       | ![](demo/38.jpg)  | ![](demo/67.jpg)|
+| ![](demo/36.jpg) | ![](demo/38.jpg) | ![](demo/27.jpg)       | ![](demo/30.jpg)  | ![](demo/29.jpg)|
 | :-------------:  | :-------------:  | :-------------:       | :-------------:  | :-------------: |
-|     Premium Info       |     Premium Page    |  Wallpaper Display    | Clock for testing   | Wallpaper Info  |
+|     About Page       |     Premium Page    |  Wallpaper Display    | Clock for testing   | Wallpaper Info  |
 
-| ![](demo/41.jpg) | ![](demo/40.jpg) | ![](demo/33.jpg) | ![](demo/35.jpg) | ![](demo/36.jpg) |
+| ![](demo/33.jpg) | ![](demo/34.jpg) | ![](demo/35.jpg) | ![](demo/37.jpg) | ![](demo/22.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Splash Screen    |    Quick Action Menu    |    Settings     |     Theme Switcher Dark       |     Theme Switcher Light    |
+|     Splash Screen    |    Quick Action Menu    |    Settings     |     Themes      |     Notifications    |
 
-This theme switcher toggle button was inspired by [Shubham](https://github.com/shubhamhackz) and you can check out his code [here](https://github.com/shubhamhackz/light_dark_toggle).
+**Themes**
 
-**Light Theme**
-
-| ![](demo/81.jpg) | ![](demo/83.jpg)| ![](demo/85.jpg)| ![](demo/84.jpg) | ![](demo/86.jpg)|
+| ![](demo/39.jpg) | ![](demo/40.jpg)| ![](demo/41.jpg)| ![](demo/42.jpg) | ![](demo/43.jpg)|
 | :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
-|  Home  |Search|  Favourites    |      Setups   |      Profile  |
+|  Frosty White  |Coffee|  AMOLED    |      Rose   |      Cotton  |
 
+...and 10 more!
 
 ## Support
 
