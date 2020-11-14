@@ -6,6 +6,7 @@ import 'package:firebase_admob/firebase_admob.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/services.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:permission_handler/permission_handler.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/theme/config.dart' as config;
 class DownloadButton extends StatefulWidget {
   final String link;
   final bool colorChanged;
+
   const DownloadButton({
     @required this.link,
     @required this.colorChanged,
@@ -27,11 +29,14 @@ class DownloadButton extends StatefulWidget {
 
 class _DownloadButtonState extends State<DownloadButton> {
   bool isLoading;
+
   @override
   void initState() {
     isLoading = false;
     super.initState();
   }
+
+  static const platform = const MethodChannel('flutter.prism.set_wallpaper');
 
   @override
   Widget build(BuildContext context) {
@@ -108,18 +113,32 @@ class _DownloadButtonState extends State<DownloadButton> {
     });
     debugPrint(widget.link);
     toasts.codeSend("Starting Download");
-    GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
-      analytics.logEvent(
-          name: 'download_wallpaper', parameters: {'link': widget.link});
-      toasts.codeSend("Image Downloaded in Pictures/Prism!");
+
+    await platform
+        .invokeMethod('save_image', {"link": widget.link}).then((value) {
+      // use value to check download failed or successed
       setState(() {
         isLoading = false;
       });
     }).catchError((e) {
+      debugPrint(e.toString());
       setState(() {
         isLoading = false;
       });
     });
+
+    // GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
+    //   analytics.logEvent(
+    //       name: 'download_wallpaper', parameters: {'link': widget.link});
+    //   toasts.codeSend("Image Downloaded in Pictures/Prism!");
+    //   setState(() {
+    //     isLoading = false;
+    //   });
+    // }).catchError((e) {
+    //   setState(() {
+    //     isLoading = false;
+    //   });
+    // });
   }
 }
 
@@ -140,7 +159,9 @@ void showDownloadPopup(BuildContext context, Function rewardFunc) {
 
 class DownloadDialogContent extends StatefulWidget {
   final Function rewardFunc;
+
   const DownloadDialogContent({@required this.rewardFunc});
+
   @override
   _DownloadDialogContentState createState() => _DownloadDialogContentState();
 }
