@@ -47,13 +47,20 @@ class _DownloadScreenState extends State<DownloadScreen> {
     return '$path/Prism';
   }
 
+  Future<String> get newLocalfile async {
+    const String path = 'storage/emulated/0/';
+    return '$path/Pictures/Prism';
+  }
+
   Future<void> readData() async {
     final status = await Permission.storage.status;
     if (!status.isGranted) {
       await Permission.storage.request();
     }
     final file = await localfile;
-    files = Directory(file).listSync();
+    final fileNew = await newLocalfile;
+    files = Directory(fileNew).listSync();
+    files.add(Directory(file).listSync());
 
     if (files.isEmpty) {
       setState(() {

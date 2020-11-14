@@ -85,12 +85,18 @@ class DownloadList extends StatelessWidget {
                         onPressed: () async {
                           Navigator.of(context).pop();
                           final dir = Directory("storage/emulated/0/Prism/");
+                          final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
                           final status = await Permission.storage.status;
                           if (!status.isGranted) {
                             await Permission.storage.request();
                           }
                           try {
                             dir.deleteSync(recursive: true);
+                            try{
+                            dir2.deleteSync(recursive: true);
+                            }catch(e){
+                              debugPrint(e.toString());
+                            }
                             Fluttertoast.showToast(
                               msg: "Deleted all downloads!",
                               toastLength: Toast.LENGTH_LONG,
