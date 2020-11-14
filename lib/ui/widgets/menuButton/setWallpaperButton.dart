@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:animations/animations.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -225,9 +226,10 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   }
 
   Future<void> onTapPaint() async {
-    showDialog(
+    showModal(
       context: context,
-      child: AlertDialog(
+      configuration: const FadeScaleTransitionConfiguration(),
+      builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).hintColor,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(

@@ -8,6 +8,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -233,9 +234,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<void> onTapPaint(String url) async {
     showPremiumPopUp(() async {
-      showDialog(
+      showModal(
         context: context,
-        child: AlertDialog(
+        configuration: const FadeScaleTransitionConfiguration(),
+        builder: (context) => AlertDialog(
           backgroundColor: Theme.of(context).hintColor,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(

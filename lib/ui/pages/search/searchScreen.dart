@@ -115,7 +115,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                   isSubmitted = true;
                                   if (selectedProvider == "WallHaven") {
                                     wdata.wallsS = [];
-                                    _future = wdata.getWallsbyQuery(tex);
+                                    _future = wdata.getWallsbyQuery(
+                                        tex,
+                                        main.prefs.get('WHcategories') as int,
+                                        main.prefs.get('WHpurity') as int);
                                   } else if (selectedProvider == "Pexels") {
                                     pdata.wallsPS = [];
                                     _future = pdata.getWallsPbyQuery(tex);
@@ -150,8 +153,10 @@ class _SearchScreenState extends State<SearchScreen> {
                           isSubmitted = true;
                           if (choice.title == "WallHaven") {
                             wdata.wallsS = [];
-                            _future =
-                                wdata.getWallsbyQuery(searchController.text);
+                            _future = wdata.getWallsbyQuery(
+                                searchController.text,
+                                main.prefs.get('WHcategories') as int,
+                                main.prefs.get('WHpurity') as int);
                           } else if (choice.title == "Pexels") {
                             pdata.wallsPS = [];
                             _future =
@@ -223,8 +228,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                     isSubmitted = true;
                                     if (selectedProvider == "WallHaven") {
                                       wdata.wallsS = [];
-                                      _future =
-                                          wdata.getWallsbyQuery(tags[index]);
+                                      _future = wdata.getWallsbyQuery(
+                                          tags[index],
+                                          main.prefs.get('WHcategories') as int,
+                                          main.prefs.get('WHpurity') as int);
                                     } else if (selectedProvider == "Pexels") {
                                       pdata.wallsPS = [];
                                       _future =
