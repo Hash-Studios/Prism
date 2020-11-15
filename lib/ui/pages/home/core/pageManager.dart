@@ -297,10 +297,10 @@ class _PageManagerChildState extends State<PageManagerChild>
         ),
         body: Stack(
           children: <Widget>[
-            TabBarView(controller: tabController, children: [
-              const HomeScreen(),
+            TabBarView(controller: tabController, children: const [
+              HomeScreen(),
               // const HomeSetupScreen(),
-              const CollectionScreen()
+              CollectionScreen()
             ]),
             if (!result) ConnectivityWidget() else Container(),
           ],

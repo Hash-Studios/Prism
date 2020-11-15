@@ -3,6 +3,7 @@ import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/analytics/analytics_service.dart';
 
 class CollectionScreen extends StatefulWidget {
   const CollectionScreen({
@@ -22,6 +23,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   @override
   void initState() {
+    analytics.logEvent(
+      name: 'collections_checked',
+    );
     super.initState();
   }
 
