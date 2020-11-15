@@ -25,7 +25,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = HashMap();
-  List files = [];
+  List<FileSystemEntity> files = [];
   ScrollController controller;
   GlobalKey<RefreshIndicatorState> refreshDownloadKey =
       GlobalKey<RefreshIndicatorState>();
@@ -44,12 +44,12 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
   Future<String> get localfile async {
     const String path = 'storage/emulated/0/';
-    return '$path/Prism';
+    return '${path}Prism';
   }
 
   Future<String> get newLocalfile async {
     const String path = 'storage/emulated/0/';
-    return '$path/Pictures/Prism';
+    return '${path}Pictures/Prism';
   }
 
   Future<void> readData() async {
@@ -59,9 +59,16 @@ class _DownloadScreenState extends State<DownloadScreen> {
     }
     final file = await localfile;
     final fileNew = await newLocalfile;
-    files = Directory(fileNew).listSync();
-    files.add(Directory(file).listSync());
-
+    try {
+      files = Directory(fileNew).listSync();
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+    try {
+      files.addAll(Directory(file).listSync());
+    } catch (e) {
+      debugPrint(e.toString());
+    }
     if (files.isEmpty) {
       setState(() {
         dataFetched = false;

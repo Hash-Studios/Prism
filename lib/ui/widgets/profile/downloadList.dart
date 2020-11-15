@@ -85,25 +85,34 @@ class DownloadList extends StatelessWidget {
                         onPressed: () async {
                           Navigator.of(context).pop();
                           final dir = Directory("storage/emulated/0/Prism/");
-                          final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
+                          final dir2 =
+                              Directory("storage/emulated/0/Pictures/Prism/");
                           final status = await Permission.storage.status;
                           if (!status.isGranted) {
                             await Permission.storage.request();
                           }
+                          bool deletedDir = false;
+                          bool deletedDir2 = false;
                           try {
                             dir.deleteSync(recursive: true);
-                            try{
+                            deletedDir = true;
+                          } catch (e) {
+                            debugPrint(e.toString());
+                          }
+                          try {
                             dir2.deleteSync(recursive: true);
-                            }catch(e){
-                              debugPrint(e.toString());
-                            }
+                            deletedDir2 = true;
+                          } catch (e) {
+                            debugPrint(e.toString());
+                          }
+                          if (deletedDir || deletedDir2) {
                             Fluttertoast.showToast(
                               msg: "Deleted all downloads!",
                               toastLength: Toast.LENGTH_LONG,
                               textColor: Colors.white,
                               backgroundColor: Colors.green[400],
                             );
-                          } catch (e) {
+                          } else {
                             Fluttertoast.showToast(
                               msg: "No downloads!",
                               toastLength: Toast.LENGTH_LONG,
