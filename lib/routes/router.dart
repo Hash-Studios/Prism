@@ -81,6 +81,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Notifications");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: notificationsRoute);
+      analytics.logEvent(
+        name: 'notifications_checked',
+      );
       return CupertinoPageRoute(builder: (context) => NotificationScreen());
     case colorRoute:
       navStack.add("Color");

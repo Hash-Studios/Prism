@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/analytics/analytics_service.dart';
 
 class CategoriesBar extends StatefulWidget {
   final double width;
@@ -100,6 +101,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
           ),
           tooltip: 'Search by color',
           onPressed: () {
+            analytics.logEvent(
+              name: 'colorbrush_tapped',
+            );
             showColors(context);
           },
         ),
@@ -140,6 +144,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
             color: Theme.of(context).accentColor,
           ),
           onPressed: () {
+            analytics.logEvent(
+              name: 'categories_checked',
+            );
             showCategories(
                 context,
                 Provider.of<CategorySupplier>(context, listen: false)
