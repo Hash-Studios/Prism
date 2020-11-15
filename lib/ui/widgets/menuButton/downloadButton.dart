@@ -116,13 +116,13 @@ class _DownloadButtonState extends State<DownloadButton> {
 
     await platform
         .invokeMethod('save_image', {"link": widget.link}).then((value) {
-          if (value){
-            analytics.logEvent(
-          name: 'download_wallpaper', parameters: {'link': widget.link});
-            toasts.codeSend("Image Downloaded in Pictures/Prism!");
-          } else{
-            toasts.error("Couldn't download!");
-          }
+      if (value as bool) {
+        analytics.logEvent(
+            name: 'download_wallpaper', parameters: {'link': widget.link});
+        toasts.codeSend("Image Downloaded in Pictures/Prism!");
+      } else {
+        toasts.error("Couldn't download!");
+      }
       setState(() {
         isLoading = false;
       });
