@@ -204,7 +204,7 @@ class _MyAppState extends State<MyApp> {
                 name: settings.name,
               )),
       theme: Provider.of<ThemeModel>(context).currentTheme,
-      debugShowCheckedModeBanner: false,
+      // debugShowCheckedModeBanner: false,
       home: const SplashWidget(),
     );
   }
