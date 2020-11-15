@@ -1614,19 +1614,20 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                           WallPaperP(),
                                                       trash: false,
                                                     ),
-                                                    ShareButton(
-                                                        id: PData.wall.id,
-                                                        provider: provider,
-                                                        url: PData.wall
-                                                            .src["original"]
-                                                            .toString(),
-                                                        thumbUrl: PData
-                                                            .wall.src["medium"]
-                                                            .toString()),
+                                                    PData.wall != null
+                                                        ? ShareButton(
+                                                            id: PData.wall.id !=
+                                                                    null
+                                                                ? PData.wall.id
+                                                                : "",
+                                                            provider: provider,
+                                                            url: url.toString(),
+                                                            thumbUrl:
+                                                                url.toString(),
+                                                          )
+                                                        : Container(),
                                                     EditButton(
-                                                      url: PData
-                                                          .wall.src["original"]
-                                                          .toString(),
+                                                      url: url.toString(),
                                                     ),
                                                   ],
                                                 ),
