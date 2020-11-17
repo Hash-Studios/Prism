@@ -233,31 +233,47 @@ class _UserProfileGridState extends State<UserProfileGrid>
                       return FocusedMenuHolder(
                         provider: "UserProfileWall",
                         index: index,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (userdata.userProfileWalls == []) {
-                            } else {
-                              Navigator.pushNamed(
-                                  context, userProfileWallViewRoute,
-                                  arguments: [
-                                    index,
-                                    userdata.userProfileWalls[index]
-                                        ["wallpaper_thumb"],
-                                  ]);
-                            }
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                                color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                      userdata.userProfileWalls[index]
-                                              ["wallpaper_thumb"]
-                                          .toString(),
-                                    ),
-                                    fit: BoxFit.cover)),
-                          ),
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                        userdata.userProfileWalls[index]
+                                                ["wallpaper_thumb"]
+                                            .toString(),
+                                      ),
+                                      fit: BoxFit.cover)),
+                            ),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  splashColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.3),
+                                  highlightColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.1),
+                                  onTap: () {
+                                    if (userdata.userProfileWalls == []) {
+                                    } else {
+                                      Navigator.pushNamed(
+                                          context, userProfileWallViewRoute,
+                                          arguments: [
+                                            index,
+                                            userdata.userProfileWalls[index]
+                                                ["wallpaper_thumb"],
+                                          ]);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     })

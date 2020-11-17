@@ -125,28 +125,49 @@ class _DownloadScreenState extends State<DownloadScreen> {
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (BuildContext context, int index) {
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamed(context, downloadWallpaperRoute,
-                              arguments: ["Downloads", files[index]]);
-                        },
-                        child: Container(
-                          decoration: files.isEmpty
-                              ? BoxDecoration(
-                                  color: Theme.of(context)
-                                      .accentColor
-                                      .withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(20),
-                                )
-                              : BoxDecoration(
-                                  color: Theme.of(context)
-                                      .accentColor
-                                      .withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                      image: FileImage(files[index] as File),
-                                      fit: BoxFit.cover)),
-                        ),
+                      return Stack(
+                        children: [
+                          Hero(
+                            tag: (files[index] as File).path.toString(),
+                            child: Container(
+                              decoration: files.isEmpty
+                                  ? BoxDecoration(
+                                      color: Theme.of(context)
+                                          .accentColor
+                                          .withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(20),
+                                    )
+                                  : BoxDecoration(
+                                      color: Theme.of(context)
+                                          .accentColor
+                                          .withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(20),
+                                      image: DecorationImage(
+                                          image:
+                                              FileImage(files[index] as File),
+                                          fit: BoxFit.cover)),
+                            ),
+                          ),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                splashColor: Theme.of(context)
+                                    .accentColor
+                                    .withOpacity(0.3),
+                                highlightColor: Theme.of(context)
+                                    .accentColor
+                                    .withOpacity(0.1),
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                      context, downloadWallpaperRoute,
+                                      arguments: ["Downloads", files[index]]);
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       );
                     },
                   )
