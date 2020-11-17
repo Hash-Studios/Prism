@@ -184,24 +184,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("SetupView");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: setupViewRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            SetupViewScreen(
-          arguments: settings.arguments as List,
-        ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = 0.0;
-          const end = 1.0;
-          const curve = Curves.easeOut;
-
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return ScaleTransition(
-            scale: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              SetupViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case profileSetupViewRoute:
       navStack.add("ProfileSetupView");
       debugPrint(navStack.toString());

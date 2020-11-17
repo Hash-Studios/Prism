@@ -755,19 +755,16 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                       child: CachedNetworkImage(
                         imageUrl: user_data.userProfileSetups[index]["image"]
                             .toString(),
-                        imageBuilder: (context, imageProvider) => Hero(
-                          tag: "CustomHerotag$index",
-                          child: Container(
-                            margin: EdgeInsets.symmetric(
-                                vertical: offsetAnimation.value * 1.25,
-                                horizontal: offsetAnimation.value / 2),
-                            decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(offsetAnimation.value),
-                              image: DecorationImage(
-                                image: imageProvider,
-                                fit: BoxFit.cover,
-                              ),
+                        imageBuilder: (context, imageProvider) => Container(
+                          margin: EdgeInsets.symmetric(
+                              vertical: offsetAnimation.value * 1.25,
+                              horizontal: offsetAnimation.value / 2),
+                          decoration: BoxDecoration(
+                            borderRadius:
+                                BorderRadius.circular(offsetAnimation.value),
+                            image: DecorationImage(
+                              image: imageProvider,
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
