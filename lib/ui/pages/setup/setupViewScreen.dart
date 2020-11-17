@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
@@ -8,6 +10,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -61,6 +64,22 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     super.dispose();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+  }
+
+  Future<void> onFavSetup(String id, Map prism) async {
+    setState(() {
+      isLoading = true;
+    });
+    Provider.of<FavouriteSetupProvider>(context, listen: false)
+        .favCheck(id, setup)
+        .then((value) {
+      analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
+        'id': id,
+      });
+      setState(() {
+        isLoading = false;
+      });
+    });
   }
 
   @override
@@ -813,7 +832,35 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                             ModifiedDownloadButton(index: index),
                             ModifiedSetWallpaperButton(index: index),
                             GestureDetector(
-                              onTap: () {},
+                              onTap: () {
+                                if (main.prefs.get("isLoggedin") == false) {
+                                  googleSignInPopUp(context, () {
+                                    onFavSetup(
+                                        Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["id"]
+                                                  .toString(),
+                                                  Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index] as Map
+                                                  );
+                                  });
+                                } else {
+                                  onFavSetup(
+                                      Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["id"]
+                                                  .toString(),
+                                                  Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index] as Map
+                                                  );
+                                }
+                              },
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).primaryColor,
