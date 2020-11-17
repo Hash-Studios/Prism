@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
@@ -7,9 +6,10 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/pages/profile/profileSetupViewScreen.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
-import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
-import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
+import 'package:Prism/ui/widgets/menuButton/setupFavButton.dart';
+import 'package:Prism/ui/widgets/menuButton/setupShareButton.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/popup/copyrightPopUp.dart';
 import 'package:animations/animations.dart';
@@ -65,22 +65,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     super.dispose();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
-  }
-
-  Future<void> onFavSetup(String id, Map setupMap) async {
-    setState(() {
-      isLoading = true;
-    });
-    Provider.of<FavouriteSetupProvider>(context, listen: false)
-        .favCheck(id, setupMap)
-        .then((value) {
-      analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
-        'id': id,
-      });
-      setState(() {
-        isLoading = false;
-      });
-    });
   }
 
   @override
@@ -849,81 +833,8 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                           children: <Widget>[
                             ModifiedDownloadButton(index: index),
                             ModifiedSetWallpaperButton(index: index),
-                            GestureDetector(
-                              onTap: () {
-                                if (main.prefs.get("isLoggedin") == false) {
-                                  googleSignInPopUp(context, () {
-                                    onFavSetup(
-                                        Provider.of<SetupProvider>(context,
-                                                listen: false)
-                                            .setups[index]["id"]
-                                            .toString(),
-                                        Provider.of<SetupProvider>(context,
-                                                listen: false)
-                                            .setups[index] as Map);
-                                  });
-                                } else {
-                                  onFavSetup(
-                                      Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups[index]["id"]
-                                          .toString(),
-                                      Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups[index] as Map);
-                                }
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withOpacity(.25),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 4))
-                                  ],
-                                  borderRadius: BorderRadius.circular(500),
-                                ),
-                                padding: const EdgeInsets.all(17),
-                                child: Icon(
-                                  JamIcons.heart,
-                                  color: Theme.of(context).accentColor,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                createSetupDynamicLink(
-                                    index.toString(),
-                                    Provider.of<SetupProvider>(context,
-                                            listen: false)
-                                        .setups[index]["name"]
-                                        .toString(),
-                                    Provider.of<SetupProvider>(context,
-                                            listen: false)
-                                        .setups[index]["image"]
-                                        .toString());
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withOpacity(.25),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 4))
-                                  ],
-                                  borderRadius: BorderRadius.circular(500),
-                                ),
-                                padding: const EdgeInsets.all(17),
-                                child: Icon(
-                                  JamIcons.share_alt,
-                                  color: Theme.of(context).accentColor,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
+                            SetupFavButton(index: index),
+                            SetupShareButton(index: index),
                           ],
                         ),
                       ),
@@ -1144,92 +1055,6 @@ class SetupDetailsTile extends StatelessWidget {
                     ],
                   ),
                 ),
-              ),
-            ),
-          );
-  }
-}
-
-class ModifiedDownloadButton extends StatelessWidget {
-  final int index;
-  const ModifiedDownloadButton({@required this.index});
-  @override
-  Widget build(BuildContext context) {
-    return Provider.of<SetupProvider>(context, listen: false)
-                .setups[index]["wallpaper_url"]
-                .toString()[0] !=
-            "["
-        ? DownloadButton(
-            link: Provider.of<SetupProvider>(context, listen: false)
-                .setups[index]["wallpaper_url"]
-                .toString(),
-            colorChanged: false,
-          )
-        : GestureDetector(
-            onTap: () async {
-              launch(Provider.of<SetupProvider>(context, listen: false)
-                  .setups[index]["wallpaper_url"][1]
-                  .toString());
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(.25),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4))
-                ],
-                borderRadius: BorderRadius.circular(500),
-              ),
-              padding: const EdgeInsets.all(17),
-              child: Icon(
-                JamIcons.download,
-                color: Theme.of(context).accentColor,
-                size: 20,
-              ),
-            ),
-          );
-  }
-}
-
-class ModifiedSetWallpaperButton extends StatelessWidget {
-  final int index;
-  const ModifiedSetWallpaperButton({@required this.index});
-  @override
-  Widget build(BuildContext context) {
-    return Provider.of<SetupProvider>(context, listen: false)
-                .setups[index]["wallpaper_url"]
-                .toString()[0] !=
-            "["
-        ? SetWallpaperButton(
-            url: Provider.of<SetupProvider>(context, listen: false)
-                .setups[index]["wallpaper_url"]
-                .toString(),
-            colorChanged: false,
-          )
-        : GestureDetector(
-            onTap: () async {
-              launch(Provider.of<SetupProvider>(context, listen: false)
-                  .setups[index]["wallpaper_url"][1]
-                  .toString());
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(.25),
-                      blurRadius: 4,
-                      offset: const Offset(0, 4))
-                ],
-                borderRadius: BorderRadius.circular(500),
-              ),
-              padding: const EdgeInsets.all(17),
-              child: Icon(
-                JamIcons.picture,
-                color: Theme.of(context).accentColor,
-                size: 20,
               ),
             ),
           );
