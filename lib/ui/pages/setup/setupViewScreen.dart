@@ -91,7 +91,14 @@ class _SetupViewScreenState extends State<SetupViewScreen>
           parallaxEnabled: true,
           parallaxOffset: 0.00,
           color: Colors.transparent,
-          maxHeight: MediaQuery.of(context).size.height * .70,
+          maxHeight: Provider.of<SetupProvider>(context, listen: false)
+                          .setups[index]["widget2"] ==
+                      "" ||
+                  Provider.of<SetupProvider>(context, listen: false)
+                          .setups[index]["widget2"] ==
+                      null
+              ? MediaQuery.of(context).size.height * .70
+              : MediaQuery.of(context).size.height * .85,
           controller: panelController,
           onPanelOpened: () {
             setState(() {
@@ -105,7 +112,14 @@ class _SetupViewScreenState extends State<SetupViewScreen>
           },
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height: MediaQuery.of(context).size.height * .70,
+            height: Provider.of<SetupProvider>(context, listen: false)
+                            .setups[index]["widget2"] ==
+                        "" ||
+                    Provider.of<SetupProvider>(context, listen: false)
+                            .setups[index]["widget2"] ==
+                        null
+                ? MediaQuery.of(context).size.height * .70
+                : MediaQuery.of(context).size.height * .85,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30),
@@ -193,203 +207,221 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                         flex: 3,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: <Widget>[
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(0, 5, 0, 5),
-                                    child: Text(
-                                      Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups[index]["id"]
-                                          .toString()
-                                          .toUpperCase(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyText1
-                                          .copyWith(
-                                              color:
-                                                  Theme.of(context).accentColor,
-                                              fontSize: 16),
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        JamIcons.info,
-                                        size: 20,
-                                        color: Theme.of(context)
-                                            .accentColor
-                                            .withOpacity(.7),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        "Copyright",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2
-                                            .copyWith(
+                          child: panelCollapsed
+                              ? Container()
+                              : ShowUpTransition(
+                                  forward: true,
+                                  delay: const Duration(milliseconds: 100),
+                                  slideSide: SlideFromSlide.bottom,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: <Widget>[
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                0, 5, 0, 5),
+                                            child: Text(
+                                              Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["id"]
+                                                  .toString()
+                                                  .toUpperCase(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText1
+                                                  .copyWith(
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                      fontSize: 16),
+                                            ),
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.info,
+                                                size: 20,
                                                 color: Theme.of(context)
-                                                    .accentColor),
+                                                    .accentColor
+                                                    .withOpacity(.7),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                "Copyright",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: <Widget>[
-                                  SizedBox(
-                                    width: 150,
-                                    child: Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Stack(
-                                        children: [
-                                          Align(
-                                            alignment: Alignment.topRight,
-                                            child: ActionChip(
-                                                label: Text(
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups[index]["by"]
-                                                      .toString(),
-                                                  overflow: TextOverflow.fade,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText2
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 5,
-                                                        horizontal: 5),
-                                                avatar: CircleAvatar(
-                                                  backgroundImage:
-                                                      CachedNetworkImageProvider(
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          SizedBox(
+                                            width: 150,
+                                            child: Align(
+                                              alignment: Alignment.centerRight,
+                                              child: Stack(
+                                                children: [
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.topRight,
+                                                    child: ActionChip(
+                                                        label: Text(
                                                           Provider.of<SetupProvider>(
                                                                   context,
                                                                   listen: false)
                                                               .setups[index]
-                                                                  ["userPhoto"]
-                                                              .toString()),
-                                                ),
-                                                labelPadding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        7, 3, 7, 3),
-                                                onPressed: () {
-                                                  SystemChrome
-                                                      .setEnabledSystemUIOverlays([
-                                                    SystemUiOverlay.top,
-                                                    SystemUiOverlay.bottom
-                                                  ]);
-                                                  Navigator.pushNamed(context,
-                                                      photographerProfileRoute,
-                                                      arguments: [
-                                                        Provider.of<SetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .setups[index]["by"],
-                                                        Provider.of<SetupProvider>(
-                                                                    context,
-                                                                    listen: false)
-                                                                .setups[index]
-                                                            ["email"],
-                                                        Provider.of<SetupProvider>(
-                                                                    context,
-                                                                    listen: false)
-                                                                .setups[index]
-                                                            ["userPhoto"],
-                                                        false,
-                                                        Provider.of<SetupProvider>(context, listen: false).setups[
-                                                                            index][
-                                                                        "twitter"] !=
-                                                                    null &&
-                                                                Provider.of<SetupProvider>(context, listen: false)
-                                                                            .setups[index]
-                                                                        [
-                                                                        "twitter"] !=
-                                                                    ""
-                                                            ? Provider.of<SetupProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .setups[index]
-                                                                    ["twitter"]
-                                                                .toString()
-                                                                .split(
-                                                                    "https://www.twitter.com/")[1]
-                                                            : "",
-                                                        Provider.of<SetupProvider>(context, listen: false)
-                                                                            .setups[index][
-                                                                        "instagram"] !=
-                                                                    null &&
-                                                                Provider.of<SetupProvider>(context, listen: false)
-                                                                            .setups[index]
-                                                                        [
-                                                                        "instagram"] !=
-                                                                    ""
-                                                            ? Provider.of<SetupProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .setups[index][
-                                                                    "instagram"]
-                                                                .toString()
-                                                                .split(
-                                                                    "https://www.instagram.com/")[1]
-                                                            : "",
-                                                      ]);
-                                                }),
-                                          ),
-                                          globals.verifiedUsers.contains(
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups[index]["email"]
-                                                      .toString())
-                                              ? Align(
-                                                  alignment: Alignment.topRight,
-                                                  child: Container(
-                                                    width: 20,
-                                                    height: 20,
-                                                    child: SvgPicture.string(
-                                                        verifiedIcon.replaceAll(
-                                                            "E57697",
-                                                            config.Colors()
-                                                                        .mainAccentColor(
-                                                                            1) ==
-                                                                    Colors.black
-                                                                ? "E57697"
-                                                                : main.prefs
-                                                                    .get(
-                                                                        "mainAccentColor")
-                                                                    .toRadixString(
-                                                                        16)
-                                                                    .toString()
-                                                                    .substring(
-                                                                        2))),
+                                                                  ["by"]
+                                                              .toString(),
+                                                          overflow:
+                                                              TextOverflow.fade,
+                                                          style: Theme.of(
+                                                                  context)
+                                                              .textTheme
+                                                              .bodyText2
+                                                              .copyWith(
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .accentColor),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .symmetric(
+                                                                vertical: 5,
+                                                                horizontal: 5),
+                                                        avatar: CircleAvatar(
+                                                          backgroundImage:
+                                                              CachedNetworkImageProvider(Provider.of<
+                                                                          SetupProvider>(
+                                                                      context,
+                                                                      listen:
+                                                                          false)
+                                                                  .setups[index]
+                                                                      [
+                                                                      "userPhoto"]
+                                                                  .toString()),
+                                                        ),
+                                                        labelPadding:
+                                                            const EdgeInsets
+                                                                    .fromLTRB(
+                                                                7, 3, 7, 3),
+                                                        onPressed: () {
+                                                          SystemChrome
+                                                              .setEnabledSystemUIOverlays([
+                                                            SystemUiOverlay.top,
+                                                            SystemUiOverlay
+                                                                .bottom
+                                                          ]);
+                                                          Navigator.pushNamed(
+                                                              context,
+                                                              photographerProfileRoute,
+                                                              arguments: [
+                                                                Provider.of<SetupProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .setups[index]["by"],
+                                                                Provider.of<SetupProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .setups[index]["email"],
+                                                                Provider.of<SetupProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .setups[index]["userPhoto"],
+                                                                false,
+                                                                Provider.of<SetupProvider>(context, listen: false).setups[index]["twitter"] !=
+                                                                            null &&
+                                                                        Provider.of<SetupProvider>(context, listen: false).setups[index]["twitter"] !=
+                                                                            ""
+                                                                    ? Provider.of<SetupProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .setups[
+                                                                            index]
+                                                                            [
+                                                                            "twitter"]
+                                                                        .toString()
+                                                                        .split(
+                                                                            "https://www.twitter.com/")[1]
+                                                                    : "",
+                                                                Provider.of<SetupProvider>(context, listen: false).setups[index]["instagram"] !=
+                                                                            null &&
+                                                                        Provider.of<SetupProvider>(context, listen: false).setups[index]["instagram"] !=
+                                                                            ""
+                                                                    ? Provider.of<SetupProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .setups[
+                                                                            index]
+                                                                            [
+                                                                            "instagram"]
+                                                                        .toString()
+                                                                        .split(
+                                                                            "https://www.instagram.com/")[1]
+                                                                    : "",
+                                                              ]);
+                                                        }),
                                                   ),
-                                                )
-                                              : Container(),
+                                                  globals.verifiedUsers
+                                                          .contains(Provider.of<
+                                                                      SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .setups[index]
+                                                                  ["email"]
+                                                              .toString())
+                                                      ? Align(
+                                                          alignment: Alignment
+                                                              .topRight,
+                                                          child: Container(
+                                                            width: 20,
+                                                            height: 20,
+                                                            child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                                "E57697",
+                                                                config.Colors().mainAccentColor(
+                                                                            1) ==
+                                                                        Colors
+                                                                            .black
+                                                                    ? "E57697"
+                                                                    : main.prefs
+                                                                        .get(
+                                                                            "mainAccentColor")
+                                                                        .toRadixString(
+                                                                            16)
+                                                                        .toString()
+                                                                        .substring(
+                                                                            2))),
+                                                          ),
+                                                        )
+                                                      : Container(),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                         ],
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
+                                ),
                         ),
                       ),
                       Expanded(
@@ -398,11 +430,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
                           child: Provider.of<SetupProvider>(context,
                                               listen: false)
-                                          .setups[index]["widget2"] ==
+                                          .setups[index]["widget"] ==
                                       "" ||
                                   Provider.of<SetupProvider>(context,
                                               listen: false)
-                                          .setups[index]["widget2"] ==
+                                          .setups[index]["widget"] ==
                                       null
                               ? Column(
                                   mainAxisAlignment:
@@ -410,18 +442,87 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     SetupDetailsTile(
-                                      onTap: () {},
-                                      tileText: Provider.of<SetupProvider>(
-                                              context,
-                                              listen: false)
-                                          .setups[index]["icon"]
-                                          .toString(),
+                                      onTap: () async {
+                                        if (Provider.of<SetupProvider>(context,
+                                                    listen: false)
+                                                .setups[index]["wallpaper_url"]
+                                                .toString()[0] !=
+                                            "[") {
+                                          if (Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["wall_id"] ==
+                                              null) {
+                                            debugPrint("Id Not Found!");
+                                          } else {
+                                            Navigator.pushNamed(
+                                                context, shareRoute,
+                                                arguments: [
+                                                  Provider.of<SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]["wall_id"]
+                                                      .toString(),
+                                                  Provider.of<SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["wallpaper_provider"]
+                                                      .toString(),
+                                                  Provider.of<SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["wallpaper_url"]
+                                                      .toString(),
+                                                  Provider.of<SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["wallpaper_url"]
+                                                      .toString(),
+                                                ]);
+                                          }
+                                        } else {
+                                          launch(Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["wallpaper_url"][1]
+                                              .toString());
+                                        }
+                                      },
+                                      tileText: Provider.of<SetupProvider>(context,
+                                                      listen: false)
+                                                  .setups[index]
+                                                      ["wallpaper_url"]
+                                                  .toString()[0] !=
+                                              "["
+                                          ? "Prism"
+                                          : Provider.of<SetupProvider>(context, listen: false)
+                                                  .setups[index]
+                                                      ["wallpaper_url"][0]
+                                                  .toString() +
+                                              " - " +
+                                              ((Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2
+                                                  ? Provider.of<SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["wallpaper_url"][2]
+                                                      .toString()
+                                                  : ""),
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
-                                      delay: const Duration(milliseconds: 100),
+                                      delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
-                                      onTap: () {},
+                                      onTap: () async {
+                                        launch(Provider.of<SetupProvider>(
+                                                context,
+                                                listen: false)
+                                            .setups[index]["icon_url"]
+                                            .toString());
+                                      },
                                       tileText: Provider.of<SetupProvider>(
                                               context,
                                               listen: false)
@@ -429,75 +530,279 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                           .toString(),
                                       tileType: "Icon",
                                       panelCollapsed: panelCollapsed,
-                                      delay: const Duration(milliseconds: 150),
-                                    ),
-                                    SetupDetailsTile(
-                                      onTap: () {},
-                                      tileText: Provider.of<SetupProvider>(
-                                              context,
-                                              listen: false)
-                                          .setups[index]["widget"]
-                                          .toString(),
-                                      tileType: "Widget",
-                                      panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 200),
                                     ),
                                   ],
                                 )
-                              : Scrollbar(
-                                  child: ListView(
-                                    children: [
-                                      SetupDetailsTile(
-                                        onTap: () {},
-                                        tileText: Provider.of<SetupProvider>(
-                                                context,
-                                                listen: false)
-                                            .setups[index]["icon"]
-                                            .toString(),
-                                        tileType: "Icon",
-                                        panelCollapsed: panelCollapsed,
-                                        delay:
-                                            const Duration(milliseconds: 100),
-                                      ),
-                                      SetupDetailsTile(
-                                        onTap: () {},
-                                        tileText: Provider.of<SetupProvider>(
-                                                context,
-                                                listen: false)
-                                            .setups[index]["widget"]
-                                            .toString(),
-                                        tileType: "Widget",
-                                        panelCollapsed: panelCollapsed,
-                                        delay:
-                                            const Duration(milliseconds: 150),
-                                      ),
-                                      SetupDetailsTile(
-                                        onTap: () {},
-                                        tileText: Provider.of<SetupProvider>(
-                                                context,
-                                                listen: false)
-                                            .setups[index]["icon"]
-                                            .toString(),
-                                        tileType: "Icon",
-                                        panelCollapsed: panelCollapsed,
-                                        delay:
-                                            const Duration(milliseconds: 200),
-                                      ),
-                                      SetupDetailsTile(
-                                        onTap: () {},
-                                        tileText: Provider.of<SetupProvider>(
-                                                context,
-                                                listen: false)
-                                            .setups[index]["icon"]
-                                            .toString(),
-                                        tileType: "Icon",
-                                        panelCollapsed: panelCollapsed,
-                                        delay:
-                                            const Duration(milliseconds: 250),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              : Provider.of<SetupProvider>(context,
+                                                  listen: false)
+                                              .setups[index]["widget2"] ==
+                                          "" ||
+                                      Provider.of<SetupProvider>(context,
+                                                  listen: false)
+                                              .setups[index]["widget2"] ==
+                                          null
+                                  ? Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            if (Provider.of<SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]
+                                                        ["wallpaper_url"]
+                                                    .toString()[0] !=
+                                                "[") {
+                                              if (Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                      ["wall_id"] ==
+                                                  null) {
+                                                debugPrint("Id Not Found!");
+                                              } else {
+                                                Navigator.pushNamed(
+                                                    context, shareRoute,
+                                                    arguments: [
+                                                      Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                              ["wall_id"]
+                                                          .toString(),
+                                                      Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index][
+                                                              "wallpaper_provider"]
+                                                          .toString(),
+                                                      Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                              ["wallpaper_url"]
+                                                          .toString(),
+                                                      Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                              ["wallpaper_url"]
+                                                          .toString(),
+                                                    ]);
+                                              }
+                                            } else {
+                                              launch(Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]
+                                                      ["wallpaper_url"][1]
+                                                  .toString());
+                                            }
+                                          },
+                                          tileText: Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups[index]
+                                                          ["wallpaper_url"]
+                                                      .toString()[0] !=
+                                                  "["
+                                              ? "Prism"
+                                              : Provider.of<SetupProvider>(context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["wallpaper_url"][0]
+                                                      .toString() +
+                                                  " - " +
+                                                  ((Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2
+                                                      ? Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                              ["wallpaper_url"][2]
+                                                          .toString()
+                                                      : ""),
+                                          tileType: "Wallpaper",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 150),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<SetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .setups[index]["icon_url"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["icon"]
+                                              .toString(),
+                                          tileType: "Icon",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 200),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<SetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .setups[index]["widget_url"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["widget"]
+                                              .toString(),
+                                          tileType: "Widget",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 250),
+                                        ),
+                                      ],
+                                    )
+                                  : Column(
+                                      children: [
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            if (Provider.of<SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]
+                                                        ["wallpaper_url"]
+                                                    .toString()[0] !=
+                                                "[") {
+                                              if (Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                      ["wall_id"] ==
+                                                  null) {
+                                                debugPrint("Id Not Found!");
+                                              } else {
+                                                Navigator.pushNamed(
+                                                    context, shareRoute,
+                                                    arguments: [
+                                                      Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                              ["wall_id"]
+                                                          .toString(),
+                                                      Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index][
+                                                              "wallpaper_provider"]
+                                                          .toString(),
+                                                      Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                              ["wallpaper_url"]
+                                                          .toString(),
+                                                      Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                              ["wallpaper_url"]
+                                                          .toString(),
+                                                    ]);
+                                              }
+                                            } else {
+                                              launch(Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]
+                                                      ["wallpaper_url"][1]
+                                                  .toString());
+                                            }
+                                          },
+                                          tileText: Provider.of<SetupProvider>(context, listen: false)
+                                                      .setups[index]
+                                                          ["wallpaper_url"]
+                                                      .toString()[0] !=
+                                                  "["
+                                              ? "Prism"
+                                              : Provider.of<SetupProvider>(context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["wallpaper_url"][0]
+                                                      .toString() +
+                                                  " - " +
+                                                  ((Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2
+                                                      ? Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                              ["wallpaper_url"][2]
+                                                          .toString()
+                                                      : ""),
+                                          tileType: "Wallpaper",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 150),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<SetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .setups[index]["icon_url"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["icon"]
+                                              .toString(),
+                                          tileType: "Icon",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 200),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<SetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .setups[index]["widget_url"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["widget"]
+                                              .toString(),
+                                          tileType: "Widget",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 250),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<SetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .setups[index]["widget_url2"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["widget2"]
+                                              .toString(),
+                                          tileType: "Widget",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 300),
+                                        ),
+                                      ],
+                                    ),
                         ),
                       ),
                       Provider.of<SetupProvider>(context, listen: false).setups[index]["widget"] == "" ||
@@ -518,37 +823,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     children: [
                                       ModifiedDownloadButton(index: index),
                                       ModifiedSetWallpaperButton(index: index),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups[index]["icon_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play_circle,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      )
                                     ],
                                   ),
                                 )
@@ -560,68 +834,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     children: <Widget>[
                                       ModifiedDownloadButton(index: index),
                                       ModifiedSetWallpaperButton(index: index),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups[index]["icon_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play_circle,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups[index]["widget_url2"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      )
                                     ],
                                   ),
                                 )
@@ -639,68 +851,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     children: <Widget>[
                                       ModifiedDownloadButton(index: index),
                                       ModifiedSetWallpaperButton(index: index),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups[index]["icon_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play_circle,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups[index]["widget_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      )
                                     ],
                                   ),
                                 )
@@ -712,99 +862,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     children: <Widget>[
                                       ModifiedDownloadButton(index: index),
                                       ModifiedSetWallpaperButton(index: index),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups[index]["icon_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play_circle,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups[index]["widget_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<SetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .setups[index]["widget_url2"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      )
                                     ],
                                   ),
                                 ),
@@ -960,7 +1017,7 @@ class SetupDetailsTile extends StatelessWidget {
             delay: delay,
             slideSide: SlideFromSlide.bottom,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
+              padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: SizedBox(
@@ -997,9 +1054,16 @@ class SetupDetailsTile extends StatelessWidget {
                                   flex: 10,
                                   child: Text(
                                     tileText,
+                                    style: TextStyle(
+                                      color: Theme.of(context).accentColor,
+                                    ),
                                   )),
-                              const Expanded(
-                                  child: Icon(JamIcons.chevron_right))
+                              Expanded(
+                                child: Icon(
+                                  JamIcons.chevron_right,
+                                  color: Theme.of(context).accentColor,
+                                ),
+                              )
                             ],
                           ),
                         ),
