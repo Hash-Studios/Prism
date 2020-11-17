@@ -1,6 +1,5 @@
-import 'package:Prism/ui/widgets/favourite/favGrid.dart';
 import 'package:Prism/ui/widgets/favourite/favSetupGrid.dart';
-import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -26,12 +25,12 @@ class _FavSetupLoaderState extends State<FavSetupLoader> {
       builder: (ctx, snapshot) {
         if (snapshot == null) {
           debugPrint("snapshot null");
-          return const LoadingCards();
+          return const LoadingSetupCards();
         }
         if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.none) {
           debugPrint("snapshot none, waiting");
-          return const LoadingCards();
+          return const LoadingSetupCards();
         } else {
           return const FavouriteSetupGrid();
         }
