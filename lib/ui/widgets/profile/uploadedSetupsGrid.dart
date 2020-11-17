@@ -260,13 +260,8 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                                   .profileSetups ==
                               []) {
                           } else {
-                            // Navigator.pushNamed(context, profileWallViewRoute,
-                            //     arguments: [
-                            //       index,
-                            //       Provider.of<ProfileSetupProvider>(context,
-                            //               listen: false)
-                            //           .profileSetups[index]["image"],
-                            //     ]);
+                            Navigator.pushNamed(context, profileSetupViewRoute,
+                                arguments: [index]);
                           }
                         },
                         child: Container(
