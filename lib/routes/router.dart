@@ -1,6 +1,8 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/ui/pages/favourite/favouriteSetupScreen.dart';
+import 'package:Prism/ui/pages/favourite/favouriteSetupViewScreen.dart';
 import 'package:Prism/ui/pages/favourite/favouriteWallScreen.dart';
 import 'package:Prism/ui/pages/home/collections/collectionViewScreen.dart';
 import 'package:Prism/ui/pages/download/downloadScreen.dart';
@@ -80,7 +82,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: favWallRoute);
       return CupertinoPageRoute(
-          builder: (context) => FavouriteWallpaperScreen());
+          builder: (context) => const FavouriteWallpaperScreen());
+    case favSetupRoute:
+      navStack.add("Fav Setups");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: favSetupRoute);
+      return CupertinoPageRoute(
+          builder: (context) => const FavouriteSetupScreen());
     case premiumRoute:
       navStack.add("Buy Premium");
       debugPrint(navStack.toString());
@@ -155,6 +163,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               FavWallpaperViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
+    case favSetupViewRoute:
+      navStack.add("Favourite Setup View");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: favSetupViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              FavSetupViewScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     case setupRoute:
       navStack.add("Setups");

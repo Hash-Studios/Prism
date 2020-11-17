@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
@@ -74,14 +75,19 @@ class _ProfileChildState extends State<ProfileChild> {
       await Provider.of<FavouriteProvider>(context, listen: false)
           .countFav()
           .then(
-        (value) {
-          debugPrint(value.toString());
-          setState(
-            () {
-              favCount = value;
-              main.prefs.put('userFavs', value);
-            },
-          );
+        (value) async {
+          await Provider.of<FavouriteSetupProvider>(context, listen: false)
+              .countFavSetups()
+              .then((value2) {
+            debugPrint(value.toString());
+            debugPrint(value2.toString());
+            setState(
+              () {
+                favCount = value + value2;
+                main.prefs.put('userFavs', favCount);
+              },
+            );
+          });
         },
       );
     }

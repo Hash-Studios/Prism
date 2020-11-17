@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/notifications/model/notificationModel.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
@@ -84,6 +85,9 @@ void main() {
                   providers: [
                     ChangeNotifierProvider<FavouriteProvider>(
                       create: (context) => FavouriteProvider(),
+                    ),
+                    ChangeNotifierProvider<FavouriteSetupProvider>(
+                      create: (context) => FavouriteSetupProvider(),
                     ),
                     ChangeNotifierProvider<CategorySupplier>(
                       create: (context) => CategorySupplier(),
