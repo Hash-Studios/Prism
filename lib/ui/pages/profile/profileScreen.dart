@@ -6,6 +6,8 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/favourite/favLoader.dart';
+import 'package:Prism/ui/widgets/profile/aboutList.dart';
+import 'package:Prism/ui/widgets/profile/drawerWidget.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/downloadList.dart';
 import 'package:Prism/ui/widgets/profile/premiumList.dart';
@@ -37,12 +39,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: scaffoldKey,
-      body: BottomBar(
-        child: ProfileChild(),
-      ),
-      endDrawer: Drawer(),
-    );
+        key: scaffoldKey,
+        body: BottomBar(
+          child: ProfileChild(),
+        ),
+        endDrawer: ProfileDrawer());
   }
 }
 
@@ -94,7 +95,7 @@ class _ProfileChildState extends State<ProfileChild> {
         onWillPop: onWillPop,
         child: main.prefs.get("isLoggedin") as bool
             ? DefaultTabController(
-                length: 4,
+                length: 2,
                 child: Scaffold(
                   backgroundColor: Theme.of(context).primaryColor,
                   body: NestedScrollView(
@@ -423,19 +424,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                   tabs: [
                                     Tab(
                                       icon: Icon(
-                                        JamIcons.heart_f,
-                                        color: Theme.of(context).accentColor,
-                                      ),
-                                    ),
-                                    Tab(
-                                      icon: Icon(
                                         JamIcons.picture,
-                                        color: Theme.of(context).accentColor,
-                                      ),
-                                    ),
-                                    Tab(
-                                      icon: Icon(
-                                        JamIcons.settings_alt,
                                         color: Theme.of(context).accentColor,
                                       ),
                                     ),
@@ -454,27 +443,12 @@ class _ProfileChildState extends State<ProfileChild> {
                     body: TabBarView(children: [
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
-                        child: FavLoader(
-                          future: Provider.of<FavouriteProvider>(context,
-                                  listen: false)
-                              .getDataBase(),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 20),
                         child: ProfileLoader(
                           future: Provider.of<ProfileWallProvider>(context,
                                   listen: false)
                               .getProfileWalls(),
                         ),
                       ),
-                      ListView(children: <Widget>[
-                        PremiumList(),
-                        DownloadList(),
-                        GeneralList(),
-                        UserList(),
-                        const StudioList(),
-                      ]),
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
                         child: UploadedSetupsLoader(
@@ -533,6 +507,7 @@ class _ProfileChildState extends State<ProfileChild> {
                     GeneralList(),
                     UserList(),
                     const StudioList(),
+                    AboutList(),
                     const SizedBox(
                       height: 300,
                     ),
