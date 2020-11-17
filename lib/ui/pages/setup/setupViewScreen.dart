@@ -5,6 +5,7 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -90,7 +91,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
           parallaxEnabled: true,
           parallaxOffset: 0.00,
           color: Colors.transparent,
-          maxHeight: MediaQuery.of(context).size.height * .43,
+          maxHeight: MediaQuery.of(context).size.height * .70,
           controller: panelController,
           onPanelOpened: () {
             setState(() {
@@ -104,7 +105,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
           },
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height: MediaQuery.of(context).size.height * .43,
+            height: MediaQuery.of(context).size.height * .70,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30),
@@ -142,39 +143,54 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                           children: <Widget>[
                             Padding(
                               padding: const EdgeInsets.fromLTRB(35, 0, 35, 5),
-                              child: Text(
-                                Provider.of<SetupProvider>(context,
-                                        listen: false)
-                                    .setups[index]["name"]
-                                    .toString()
-                                    .toUpperCase(),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline1
-                                    .copyWith(
-                                        fontSize: 30,
-                                        color: Theme.of(context).accentColor),
-                              ),
+                              child: panelCollapsed
+                                  ? Container()
+                                  : ShowUpTransition(
+                                      forward: true,
+                                      slideSide: SlideFromSlide.bottom,
+                                      child: Text(
+                                        Provider.of<SetupProvider>(context,
+                                                listen: false)
+                                            .setups[index]["name"]
+                                            .toString()
+                                            .toUpperCase(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline1
+                                            .copyWith(
+                                                fontSize: 30,
+                                                color: Theme.of(context)
+                                                    .accentColor),
+                                      ),
+                                    ),
                             ),
                             Padding(
                               padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                              child: Text(
-                                Provider.of<SetupProvider>(context,
-                                        listen: false)
-                                    .setups[index]["desc"]
-                                    .toString(),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline6
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                              ),
+                              child: panelCollapsed
+                                  ? Container()
+                                  : ShowUpTransition(
+                                      forward: true,
+                                      slideSide: SlideFromSlide.bottom,
+                                      delay: const Duration(milliseconds: 50),
+                                      child: Text(
+                                        Provider.of<SetupProvider>(context,
+                                                listen: false)
+                                            .setups[index]["desc"]
+                                            .toString(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline6
+                                            .copyWith(
+                                                color: Theme.of(context)
+                                                    .accentColor),
+                                      ),
+                                    ),
                             ),
                           ],
                         ),
                       ),
                       Expanded(
-                        flex: 6,
+                        flex: 3,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
                           child: Row(
@@ -187,7 +203,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                 children: <Widget>[
                                   Padding(
                                     padding:
-                                        const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                        const EdgeInsets.fromLTRB(0, 5, 0, 5),
                                     child: Text(
                                       Provider.of<SetupProvider>(context,
                                               listen: false)
@@ -198,73 +214,29 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                           .textTheme
                                           .bodyText1
                                           .copyWith(
-                                              color: Theme.of(context)
-                                                  .accentColor),
+                                              color:
+                                                  Theme.of(context).accentColor,
+                                              fontSize: 16),
                                     ),
                                   ),
                                   Row(
                                     children: [
                                       Icon(
-                                        JamIcons.google_play_circle,
+                                        JamIcons.info,
                                         size: 20,
                                         color: Theme.of(context)
                                             .accentColor
                                             .withOpacity(.7),
                                       ),
                                       const SizedBox(width: 10),
-                                      Container(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.32,
-                                        child: Text(
-                                          Provider.of<SetupProvider>(context,
-                                                  listen: false)
-                                              .setups[index]["icon"]
-                                              .toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(
-                                    height: 5,
-                                  ),
-                                  Row(
-                                    children: [
-                                      Provider.of<SetupProvider>(context,
-                                                      listen: false)
-                                                  .setups[index]["widget"] ==
-                                              ""
-                                          ? Container()
-                                          : Icon(
-                                              JamIcons.google_play,
-                                              size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
-                                            ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.32,
-                                        child: Text(
-                                          Provider.of<SetupProvider>(context,
-                                                  listen: false)
-                                              .setups[index]["widget"]
-                                              .toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
-                                        ),
+                                      Text(
+                                        "Copyright",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2
+                                            .copyWith(
+                                                color: Theme.of(context)
+                                                    .accentColor),
                                       ),
                                     ],
                                   ),
@@ -414,35 +386,118 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 5),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        Provider.of<SetupProvider>(context,
-                                                listen: false)
-                                            .setups[index]["wallpaper_provider"]
-                                            .toString(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2
-                                            .copyWith(
-                                                color: Theme.of(context)
-                                                    .accentColor),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Icon(
-                                        JamIcons.database,
-                                        size: 20,
-                                        color: Theme.of(context)
-                                            .accentColor
-                                            .withOpacity(.7),
-                                      ),
-                                    ],
-                                  ),
                                 ],
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 16,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
+                          child: Provider.of<SetupProvider>(context,
+                                              listen: false)
+                                          .setups[index]["widget2"] ==
+                                      "" ||
+                                  Provider.of<SetupProvider>(context,
+                                              listen: false)
+                                          .setups[index]["widget2"] ==
+                                      null
+                              ? Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SetupDetailsTile(
+                                      onTap: () {},
+                                      tileText: Provider.of<SetupProvider>(
+                                              context,
+                                              listen: false)
+                                          .setups[index]["icon"]
+                                          .toString(),
+                                      tileType: "Wallpaper",
+                                      panelCollapsed: panelCollapsed,
+                                      delay: const Duration(milliseconds: 100),
+                                    ),
+                                    SetupDetailsTile(
+                                      onTap: () {},
+                                      tileText: Provider.of<SetupProvider>(
+                                              context,
+                                              listen: false)
+                                          .setups[index]["icon"]
+                                          .toString(),
+                                      tileType: "Icon",
+                                      panelCollapsed: panelCollapsed,
+                                      delay: const Duration(milliseconds: 150),
+                                    ),
+                                    SetupDetailsTile(
+                                      onTap: () {},
+                                      tileText: Provider.of<SetupProvider>(
+                                              context,
+                                              listen: false)
+                                          .setups[index]["widget"]
+                                          .toString(),
+                                      tileType: "Widget",
+                                      panelCollapsed: panelCollapsed,
+                                      delay: const Duration(milliseconds: 200),
+                                    ),
+                                  ],
+                                )
+                              : Scrollbar(
+                                  child: ListView(
+                                    children: [
+                                      SetupDetailsTile(
+                                        onTap: () {},
+                                        tileText: Provider.of<SetupProvider>(
+                                                context,
+                                                listen: false)
+                                            .setups[index]["icon"]
+                                            .toString(),
+                                        tileType: "Icon",
+                                        panelCollapsed: panelCollapsed,
+                                        delay:
+                                            const Duration(milliseconds: 100),
+                                      ),
+                                      SetupDetailsTile(
+                                        onTap: () {},
+                                        tileText: Provider.of<SetupProvider>(
+                                                context,
+                                                listen: false)
+                                            .setups[index]["widget"]
+                                            .toString(),
+                                        tileType: "Widget",
+                                        panelCollapsed: panelCollapsed,
+                                        delay:
+                                            const Duration(milliseconds: 150),
+                                      ),
+                                      SetupDetailsTile(
+                                        onTap: () {},
+                                        tileText: Provider.of<SetupProvider>(
+                                                context,
+                                                listen: false)
+                                            .setups[index]["icon"]
+                                            .toString(),
+                                        tileType: "Icon",
+                                        panelCollapsed: panelCollapsed,
+                                        delay:
+                                            const Duration(milliseconds: 200),
+                                      ),
+                                      SetupDetailsTile(
+                                        onTap: () {},
+                                        tileText: Provider.of<SetupProvider>(
+                                                context,
+                                                listen: false)
+                                            .setups[index]["icon"]
+                                            .toString(),
+                                        tileType: "Icon",
+                                        panelCollapsed: panelCollapsed,
+                                        delay:
+                                            const Duration(milliseconds: 250),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                         ),
                       ),
                       Provider.of<SetupProvider>(context, listen: false).setups[index]["widget"] == "" ||
@@ -878,6 +933,102 @@ class _SetupViewScreenState extends State<SetupViewScreen>
         ),
       ),
     );
+  }
+}
+
+class SetupDetailsTile extends StatelessWidget {
+  final bool panelCollapsed;
+  final Duration delay;
+  final String tileType;
+  final String tileText;
+  final Function onTap;
+  const SetupDetailsTile({
+    Key key,
+    @required this.delay,
+    @required this.tileText,
+    @required this.tileType,
+    @required this.onTap,
+    @required this.panelCollapsed,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return panelCollapsed
+        ? Container()
+        : ShowUpTransition(
+            forward: true,
+            delay: delay,
+            slideSide: SlideFromSlide.bottom,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: 80,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        bottom: -55,
+                        left: 0,
+                        child: Text(
+                          tileType,
+                          style: TextStyle(
+                            fontSize: 160,
+                            color:
+                                Theme.of(context).accentColor.withOpacity(0.1),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(context).accentColor.withOpacity(0.1),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                  flex: 10,
+                                  child: Text(
+                                    tileText,
+                                  )),
+                              const Expanded(
+                                  child: Icon(JamIcons.chevron_right))
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              splashColor: Theme.of(context)
+                                  .accentColor
+                                  .withOpacity(0.3),
+                              highlightColor: Theme.of(context)
+                                  .accentColor
+                                  .withOpacity(0.1),
+                              onTap: () {
+                                onTap();
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
   }
 }
 
