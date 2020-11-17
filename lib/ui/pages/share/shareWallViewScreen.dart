@@ -1006,7 +1006,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                 const FadeScaleTransitionConfiguration(),
                                                             builder: (BuildContext
                                                                     context) =>
-                                                                CopyrightPopUp());
+                                                                const CopyrightPopUp(
+                                                                  setup: false,
+                                                                ));
                                                       },
                                                       child: Row(
                                                         children: [

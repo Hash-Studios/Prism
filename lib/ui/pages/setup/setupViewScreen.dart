@@ -11,6 +11,8 @@ import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/ui/widgets/popup/copyrightPopUp.dart';
+import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -261,26 +263,43 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                       fontSize: 16),
                                             ),
                                           ),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                JamIcons.info,
-                                                size: 20,
-                                                color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(.7),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                "Copyright",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyText2
-                                                    .copyWith(
-                                                        color: Theme.of(context)
-                                                            .accentColor),
-                                              ),
-                                            ],
+                                          GestureDetector(
+                                            onTap: () {
+                                              showModal(
+                                                  context: context,
+                                                  configuration:
+                                                      const FadeScaleTransitionConfiguration(),
+                                                  builder:
+                                                      (BuildContext context) =>
+                                                          const CopyrightPopUp(
+                                                            setup: true,
+                                                          ));
+                                            },
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.info,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  "Copyright",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          decoration:
+                                                              TextDecoration
+                                                                  .underline,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -836,29 +855,23 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                 if (main.prefs.get("isLoggedin") == false) {
                                   googleSignInPopUp(context, () {
                                     onFavSetup(
-                                        Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups[index]["id"]
-                                                  .toString(),
-                                                  Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups[index] as Map
-                                                  );
+                                        Provider.of<SetupProvider>(context,
+                                                listen: false)
+                                            .setups[index]["id"]
+                                            .toString(),
+                                        Provider.of<SetupProvider>(context,
+                                                listen: false)
+                                            .setups[index] as Map);
                                   });
                                 } else {
                                   onFavSetup(
-                                      Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups[index]["id"]
-                                                  .toString(),
-                                                  Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups[index] as Map
-                                                  );
+                                      Provider.of<SetupProvider>(context,
+                                              listen: false)
+                                          .setups[index]["id"]
+                                          .toString(),
+                                      Provider.of<SetupProvider>(context,
+                                              listen: false)
+                                          .setups[index] as Map);
                                 }
                               },
                               child: Container(
