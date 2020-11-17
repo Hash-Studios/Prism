@@ -63,6 +63,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
   double sat = 1;
   double bright = 0;
   double con = 1;
+  double cropRatio = 1 / 2;
 
   List<double> calculateContrastMatrix(double contrast) {
     final m = List<double>.from(defaultColorMatrix);
@@ -83,6 +84,20 @@ class _EditWallScreenState extends State<EditWallScreen> {
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
     return true;
+  }
+
+  void changeCropRatio() {
+    setState(() {
+      if (cropRatio == 1 / 2) {
+        cropRatio = 9 / 16;
+      } else if (cropRatio == 9 / 16) {
+        cropRatio = 9 / 21;
+      } else if (cropRatio == 9 / 21) {
+        cropRatio = 1 / 2;
+      } else {
+        cropRatio = 1 / 2;
+      }
+    });
   }
 
   @override
@@ -278,7 +293,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
           initEditorConfigHandler: (ExtendedImageState state) {
             return EditorConfig(
               maxScale: 8.0,
-              cropAspectRatio: 1 / 2,
+              cropAspectRatio: cropRatio,
             );
           },
         ),
@@ -289,6 +304,8 @@ class _EditWallScreenState extends State<EditWallScreen> {
   Widget _buildFunctions() {
     return BottomNavigationBar(
       backgroundColor: Theme.of(context).primaryColor,
+      showUnselectedLabels: true,
+      type: BottomNavigationBarType.fixed,
       items: <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(
@@ -308,7 +325,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
             color: Theme.of(context).accentColor,
           ),
           title: Text(
-            'Rotate left',
+            'Rotate Left',
             style: Theme.of(context).textTheme.bodyText2.copyWith(
                   color: Theme.of(context).accentColor,
                 ),
@@ -320,7 +337,25 @@ class _EditWallScreenState extends State<EditWallScreen> {
             color: Theme.of(context).accentColor,
           ),
           title: Text(
-            'Rotate right',
+            'Rotate Right',
+            style: Theme.of(context).textTheme.bodyText2.copyWith(
+                  color: Theme.of(context).accentColor,
+                ),
+          ),
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(
+            Icons.crop,
+            color: Theme.of(context).accentColor,
+          ),
+          title: Text(
+            cropRatio == 1 / 2
+                ? "9:18"
+                : cropRatio == 9 / 16
+                    ? "9:16"
+                    : cropRatio == 9 / 21
+                        ? "9:21"
+                        : "9:18",
             style: Theme.of(context).textTheme.bodyText2.copyWith(
                   color: Theme.of(context).accentColor,
                 ),
@@ -337,6 +372,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
             break;
           case 2:
             rotate(true);
+            break;
+          case 3:
+            changeCropRatio();
             break;
         }
       },
