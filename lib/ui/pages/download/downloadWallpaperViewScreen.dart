@@ -78,23 +78,20 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
                       HapticFeedback.vibrate();
                       shakeController.forward(from: 0.0);
                     },
-                    child: Hero(
-                      tag: file.path.toString(),
-                      child: Container(
-                        margin: EdgeInsets.symmetric(
-                            vertical: offsetAnimation.value * 1.25,
-                            horizontal: offsetAnimation.value / 2),
-                        decoration: BoxDecoration(
-                          borderRadius:
-                              BorderRadius.circular(offsetAnimation.value),
-                          image: DecorationImage(
-                            image: FileImage(file),
-                            fit: BoxFit.cover,
-                          ),
+                    child: Container(
+                      margin: EdgeInsets.symmetric(
+                          vertical: offsetAnimation.value * 1.25,
+                          horizontal: offsetAnimation.value / 2),
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(offsetAnimation.value),
+                        image: DecorationImage(
+                          image: FileImage(file),
+                          fit: BoxFit.cover,
                         ),
-                        height: MediaQuery.of(context).size.height,
-                        width: MediaQuery.of(context).size.width,
                       ),
+                      height: MediaQuery.of(context).size.height,
+                      width: MediaQuery.of(context).size.width,
                     ),
                   );
                 }),
