@@ -168,54 +168,72 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                       if (offsetAnimation.value < 0.0) {
                         debugPrint('${offsetAnimation.value + 8.0}');
                       }
-                      return GestureDetector(
-                        onTap: () {
-                          if (PData.wallsC == []) {
-                          } else {
-                            Navigator.pushNamed(context, wallpaperRoute,
-                                arguments: [
-                                  widget.provider,
-                                  index,
-                                  PData.wallsC[index].src["small"]
-                                ]);
-                          }
-                        },
-                        onLongPress: () {
-                          setState(() {
-                            longTapIndex = index;
-                          });
-                          shakeController.forward(from: 0.0);
-                          if (PData.wallsC == []) {
-                          } else {
-                            HapticFeedback.vibrate();
-                            createDynamicLink(
-                                PData.wallsC[index].id,
-                                "Pexels",
-                                PData.wallsC[index].src["original"].toString(),
-                                PData.wallsC[index].src["medium"].toString());
-                          }
-                        },
-                        child: Padding(
-                          padding: index == longTapIndex
-                              ? EdgeInsets.symmetric(
-                                  vertical: offsetAnimation.value / 2,
-                                  horizontal: offsetAnimation.value)
-                              : const EdgeInsets.all(0),
-                          child: Container(
-                            decoration: PData.wallsC.isEmpty
-                                ? BoxDecoration(
-                                    color: animation.value,
-                                    borderRadius: BorderRadius.circular(20),
-                                  )
-                                : BoxDecoration(
-                                    color: animation.value,
-                                    borderRadius: BorderRadius.circular(20),
-                                    image: DecorationImage(
-                                        image: CachedNetworkImageProvider(PData
-                                            .wallsC[index].src["medium"]
-                                            .toString()),
-                                        fit: BoxFit.cover)),
-                          ),
+                      return Padding(
+                        padding: index == longTapIndex
+                            ? EdgeInsets.symmetric(
+                                vertical: offsetAnimation.value / 2,
+                                horizontal: offsetAnimation.value)
+                            : const EdgeInsets.all(0),
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: PData.wallsC.isEmpty
+                                  ? BoxDecoration(
+                                      color: animation.value,
+                                      borderRadius: BorderRadius.circular(20),
+                                    )
+                                  : BoxDecoration(
+                                      color: animation.value,
+                                      borderRadius: BorderRadius.circular(20),
+                                      image: DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                              PData.wallsC[index].src["medium"]
+                                                  .toString()),
+                                          fit: BoxFit.cover)),
+                            ),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  splashColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.3),
+                                  highlightColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.1),
+                                  onTap: () {
+                                    if (PData.wallsC == []) {
+                                    } else {
+                                      Navigator.pushNamed(
+                                          context, wallpaperRoute, arguments: [
+                                        widget.provider,
+                                        index,
+                                        PData.wallsC[index].src["small"]
+                                      ]);
+                                    }
+                                  },
+                                  onLongPress: () {
+                                    setState(() {
+                                      longTapIndex = index;
+                                    });
+                                    shakeController.forward(from: 0.0);
+                                    if (PData.wallsC == []) {
+                                    } else {
+                                      HapticFeedback.vibrate();
+                                      createDynamicLink(
+                                          PData.wallsC[index].id,
+                                          "Pexels",
+                                          PData.wallsC[index].src["original"]
+                                              .toString(),
+                                          PData.wallsC[index].src["medium"]
+                                              .toString());
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     }));

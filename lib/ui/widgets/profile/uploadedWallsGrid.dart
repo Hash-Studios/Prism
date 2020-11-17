@@ -237,35 +237,56 @@ class _ProfileGridState extends State<ProfileGrid>
                       return FocusedMenuHolder(
                         provider: "ProfileWall",
                         index: index,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (Provider.of<ProfileWallProvider>(context,
-                                        listen: false)
-                                    .profileWalls ==
-                                []) {
-                            } else {
-                              Navigator.pushNamed(context, profileWallViewRoute,
-                                  arguments: [
-                                    index,
-                                    Provider.of<ProfileWallProvider>(context,
-                                            listen: false)
-                                        .profileWalls[index]["wallpaper_thumb"],
-                                  ]);
-                            }
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                                color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                      Provider.of<ProfileWallProvider>(context)
-                                          .profileWalls[index]
-                                              ["wallpaper_thumb"]
-                                          .toString(),
-                                    ),
-                                    fit: BoxFit.cover)),
-                          ),
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                        Provider.of<ProfileWallProvider>(
+                                                context)
+                                            .profileWalls[index]
+                                                ["wallpaper_thumb"]
+                                            .toString(),
+                                      ),
+                                      fit: BoxFit.cover)),
+                            ),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  splashColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.3),
+                                  highlightColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.1),
+                                  onTap: () {
+                                    if (Provider.of<ProfileWallProvider>(
+                                                context,
+                                                listen: false)
+                                            .profileWalls ==
+                                        []) {
+                                    } else {
+                                      Navigator.pushNamed(
+                                          context, profileWallViewRoute,
+                                          arguments: [
+                                            index,
+                                            Provider.of<ProfileWallProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .profileWalls[index]
+                                                ["wallpaper_thumb"],
+                                          ]);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     })
