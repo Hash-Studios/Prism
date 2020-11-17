@@ -492,14 +492,22 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             trash: false,
                                           ),
                                           ShareButton(
-                                              id: WData.wall.id.toString(),
+                                              id: WData.wall == null
+                                                  ? ""
+                                                  : WData.wall.id.toString(),
                                               provider: provider,
-                                              url: WData.wall.path.toString(),
-                                              thumbUrl: WData
-                                                  .wall.thumbs["original"]
-                                                  .toString()),
+                                              url: WData.wall == null
+                                                  ? ""
+                                                  : WData.wall.path.toString(),
+                                              thumbUrl: WData.wall == null
+                                                  ? ""
+                                                  : WData
+                                                      .wall.thumbs["original"]
+                                                      .toString()),
                                           EditButton(
-                                            url: WData.wall.path.toString(),
+                                            url: WData.wall == null
+                                                ? ""
+                                                : WData.wall.path.toString(),
                                           ),
                                         ],
                                       ),
