@@ -3,6 +3,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -92,6 +93,8 @@ class _FavouriteGridState extends State<FavouriteGrid>
 
   @override
   Widget build(BuildContext context) {
+    final ScrollController controller =
+        InheritedDataProvider.of(context).scrollController;
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshFavKey,
@@ -220,6 +223,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
                     shrinkWrap: true,
                     cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+                    controller: controller,
                     itemCount:
                         Provider.of<FavouriteProvider>(context).liked.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
