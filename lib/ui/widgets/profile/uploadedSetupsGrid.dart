@@ -251,29 +251,46 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      return GestureDetector(
-                        onTap: () {
-                          if (Provider.of<ProfileSetupProvider>(context,
-                                      listen: false)
-                                  .profileSetups ==
-                              []) {
-                          } else {
-                            Navigator.pushNamed(context, profileSetupViewRoute,
-                                arguments: [index]);
-                          }
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                              image: DecorationImage(
-                                  image: CachedNetworkImageProvider(
-                                    Provider.of<ProfileSetupProvider>(context)
-                                        .profileSetups[index]["image"]
-                                        .toString(),
-                                  ),
-                                  fit: BoxFit.cover)),
-                        ),
+                      return Stack(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                    image: CachedNetworkImageProvider(
+                                      Provider.of<ProfileSetupProvider>(context)
+                                          .profileSetups[index]["image"]
+                                          .toString(),
+                                    ),
+                                    fit: BoxFit.cover)),
+                          ),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                splashColor: Theme.of(context)
+                                    .accentColor
+                                    .withOpacity(0.3),
+                                highlightColor: Theme.of(context)
+                                    .accentColor
+                                    .withOpacity(0.1),
+                                onTap: () {
+                                  if (Provider.of<ProfileSetupProvider>(context,
+                                              listen: false)
+                                          .profileSetups ==
+                                      []) {
+                                  } else {
+                                    Navigator.pushNamed(
+                                        context, profileSetupViewRoute,
+                                        arguments: [index]);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       );
                     })
             : const LoadingSetupCards());
