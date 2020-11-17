@@ -13,6 +13,7 @@ import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/pages/profile/photographerProfile.dart';
 import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
+import 'package:Prism/ui/pages/profile/profileSetupViewScreen.dart';
 import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
 import 'package:Prism/ui/pages/profile/sharePrismScreen.dart';
 import 'package:Prism/ui/pages/profile/themeView.dart';
@@ -176,6 +177,15 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           );
         },
       );
+    case profileSetupViewRoute:
+      navStack.add("ProfileSetupView");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: profileSetupViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) => ProfileSetupViewScreen(
+                arguments: settings.arguments as List,
+              ),
+          fullscreenDialog: true);
     case profileWallViewRoute:
       navStack.add("ProfileWallpaper");
       debugPrint(navStack.toString());
