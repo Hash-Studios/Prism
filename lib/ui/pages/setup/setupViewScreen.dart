@@ -339,23 +339,16 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 .setups[index]
                                                             ["userPhoto"],
                                                         false,
-                                                        Provider.of<SetupProvider>(
-                                                                            context,
-                                                                            listen:
-                                                                                false)
-                                                                        .setups[index]
-                                                                    [
-                                                                    "twitter"] !=
-                                                                null && Provider.of<SetupProvider>(
-                                                                            context,
-                                                                            listen:
-                                                                                false)
-                                                                        .setups[index]
-                                                                    [
-                                                                    "twitter"] !=
-                                                                ""
-                                                            ? Provider.of<
-                                                                        SetupProvider>(
+                                                        Provider.of<SetupProvider>(context, listen: false).setups[
+                                                                            index][
+                                                                        "twitter"] !=
+                                                                    null &&
+                                                                Provider.of<SetupProvider>(context, listen: false)
+                                                                            .setups[index]
+                                                                        [
+                                                                        "twitter"] !=
+                                                                    ""
+                                                            ? Provider.of<SetupProvider>(
                                                                     context,
                                                                     listen:
                                                                         false)
@@ -365,23 +358,16 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 .split(
                                                                     "https://www.twitter.com/")[1]
                                                             : "",
-                                                        Provider.of<SetupProvider>(
-                                                                            context,
-                                                                            listen:
-                                                                                false)
-                                                                        .setups[index]
-                                                                    [
-                                                                    "instagram"] !=
-                                                                null && Provider.of<SetupProvider>(
-                                                                            context,
-                                                                            listen:
-                                                                                false)
-                                                                        .setups[index]
-                                                                    [
-                                                                    "instagram"] !=
-                                                                ""
-                                                            ? Provider.of<
-                                                                        SetupProvider>(
+                                                        Provider.of<SetupProvider>(context, listen: false)
+                                                                            .setups[index][
+                                                                        "instagram"] !=
+                                                                    null &&
+                                                                Provider.of<SetupProvider>(context, listen: false)
+                                                                            .setups[index]
+                                                                        [
+                                                                        "instagram"] !=
+                                                                    ""
+                                                            ? Provider.of<SetupProvider>(
                                                                     context,
                                                                     listen:
                                                                         false)
@@ -801,19 +787,16 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                             Provider.of<SetupProvider>(context, listen: false)
                                 .setups[index]["image"]
                                 .toString(),
-                        imageBuilder: (context, imageProvider) => Hero(
-                          tag: "CustomHerotag$index",
-                          child: Container(
-                            margin: EdgeInsets.symmetric(
-                                vertical: offsetAnimation.value * 1.25,
-                                horizontal: offsetAnimation.value / 2),
-                            decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(offsetAnimation.value),
-                              image: DecorationImage(
-                                image: imageProvider,
-                                fit: BoxFit.cover,
-                              ),
+                        imageBuilder: (context, imageProvider) => Container(
+                          margin: EdgeInsets.symmetric(
+                              vertical: offsetAnimation.value * 1.25,
+                              horizontal: offsetAnimation.value / 2),
+                          decoration: BoxDecoration(
+                            borderRadius:
+                                BorderRadius.circular(offsetAnimation.value),
+                            image: DecorationImage(
+                              image: imageProvider,
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),

@@ -946,21 +946,16 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                 child: CachedNetworkImage(
                                   imageUrl: image,
                                   imageBuilder: (context, imageProvider) =>
-                                      Hero(
-                                    tag: "CustomHerotag$name",
-                                    child: Container(
-                                      margin: EdgeInsets.symmetric(
-                                          vertical:
-                                              offsetAnimation.value * 1.25,
-                                          horizontal:
-                                              offsetAnimation.value / 2),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                            offsetAnimation.value),
-                                        image: DecorationImage(
-                                          image: imageProvider,
-                                          fit: BoxFit.cover,
-                                        ),
+                                      Container(
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: offsetAnimation.value * 1.25,
+                                        horizontal: offsetAnimation.value / 2),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                          offsetAnimation.value),
+                                      image: DecorationImage(
+                                        image: imageProvider,
+                                        fit: BoxFit.cover,
                                       ),
                                     ),
                                   ),
