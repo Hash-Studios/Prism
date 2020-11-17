@@ -84,9 +84,9 @@ class FavouriteSetupProvider extends ChangeNotifier {
         if (index == null) {
           debugPrint("Fav");
           createFavSetup(setup);
-          toasts.codeSend("Wallpaper added to favourites!");
+          toasts.codeSend("Setup added to favourites!");
         } else {
-          toasts.error("Wallpaper removed from favourites!");
+          toasts.error("Setup removed from favourites!");
           deleteDataByID(id);
           return false;
         }
