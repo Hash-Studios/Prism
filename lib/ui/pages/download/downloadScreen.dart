@@ -127,26 +127,22 @@ class _DownloadScreenState extends State<DownloadScreen> {
                     itemBuilder: (BuildContext context, int index) {
                       return Stack(
                         children: [
-                          Hero(
-                            tag: (files[index] as File).path.toString(),
-                            child: Container(
-                              decoration: files.isEmpty
-                                  ? BoxDecoration(
-                                      color: Theme.of(context)
-                                          .accentColor
-                                          .withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(20),
-                                    )
-                                  : BoxDecoration(
-                                      color: Theme.of(context)
-                                          .accentColor
-                                          .withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                          image:
-                                              FileImage(files[index] as File),
-                                          fit: BoxFit.cover)),
-                            ),
+                          Container(
+                            decoration: files.isEmpty
+                                ? BoxDecoration(
+                                    color: Theme.of(context)
+                                        .accentColor
+                                        .withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(20),
+                                  )
+                                : BoxDecoration(
+                                    color: Theme.of(context)
+                                        .accentColor
+                                        .withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(20),
+                                    image: DecorationImage(
+                                        image: FileImage(files[index] as File),
+                                        fit: BoxFit.cover)),
                           ),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(20),
