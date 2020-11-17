@@ -1,10 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/ui/pages/favourite/favouriteWallScreen.dart';
 import 'package:Prism/ui/pages/home/collections/collectionViewScreen.dart';
 import 'package:Prism/ui/pages/download/downloadScreen.dart';
 import 'package:Prism/ui/pages/download/downloadWallpaperViewScreen.dart';
-import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
+import 'package:Prism/ui/pages/favourite/favouriteWallViewScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/wallpaperFilterScreen.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
 import 'package:Prism/ui/pages/profile/profileSetupViewScreen.dart';
 import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
+import 'package:Prism/ui/pages/profile/settings.dart';
 import 'package:Prism/ui/pages/profile/sharePrismScreen.dart';
 import 'package:Prism/ui/pages/profile/themeView.dart';
 import 'package:Prism/ui/pages/profile/userProfileWallViewScreen.dart';
@@ -73,6 +75,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: downloadRoute);
       return CupertinoPageRoute(builder: (context) => DownloadScreen());
+    case favWallRoute:
+      navStack.add("Fav Walls");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: favWallRoute);
+      return CupertinoPageRoute(
+          builder: (context) => FavouriteWallpaperScreen());
     case premiumRoute:
       navStack.add("Buy Premium");
       debugPrint(navStack.toString());
@@ -254,6 +262,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: aboutRoute);
       return CupertinoPageRoute(
           builder: (context) => AboutScreen(), fullscreenDialog: true);
+    case settingsRoute:
+      navStack.add("Settings");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: settingsRoute);
+      return CupertinoPageRoute(
+          builder: (context) => const SettingsScreen(), fullscreenDialog: true);
     case sharePrismRoute:
       navStack.add("Share Prism");
       debugPrint(navStack.toString());
