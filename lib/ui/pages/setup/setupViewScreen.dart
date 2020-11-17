@@ -805,66 +805,69 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     ),
                         ),
                       ),
-                      Provider.of<SetupProvider>(context, listen: false).setups[index]["widget"] == "" ||
-                              Provider.of<SetupProvider>(context, listen: false)
-                                      .setups[index]["widget"] ==
-                                  null
-                          ? Provider.of<SetupProvider>(context, listen: false)
-                                          .setups[index]["widget2"] ==
-                                      "" ||
-                                  Provider.of<SetupProvider>(context, listen: false)
-                                          .setups[index]["widget2"] ==
-                                      null
-                              ? Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      ModifiedDownloadButton(index: index),
-                                      ModifiedSetWallpaperButton(index: index),
-                                    ],
-                                  ),
-                                )
-                              : Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: <Widget>[
-                                      ModifiedDownloadButton(index: index),
-                                      ModifiedSetWallpaperButton(index: index),
-                                    ],
-                                  ),
-                                )
-                          : Provider.of<SetupProvider>(context, listen: false)
-                                          .setups[index]["widget2"] ==
-                                      "" ||
-                                  Provider.of<SetupProvider>(context, listen: false)
-                                          .setups[index]["widget2"] ==
-                                      null
-                              ? Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: <Widget>[
-                                      ModifiedDownloadButton(index: index),
-                                      ModifiedSetWallpaperButton(index: index),
-                                    ],
-                                  ),
-                                )
-                              : Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: <Widget>[
-                                      ModifiedDownloadButton(index: index),
-                                      ModifiedSetWallpaperButton(index: index),
-                                    ],
-                                  ),
+                      Expanded(
+                        flex: 5,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: <Widget>[
+                            ModifiedDownloadButton(index: index),
+                            ModifiedSetWallpaperButton(index: index),
+                            GestureDetector(
+                              onTap: () {},
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.black.withOpacity(.25),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 4))
+                                  ],
+                                  borderRadius: BorderRadius.circular(500),
                                 ),
+                                padding: const EdgeInsets.all(17),
+                                child: Icon(
+                                  JamIcons.heart,
+                                  color: Theme.of(context).accentColor,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                createSetupDynamicLink(
+                                    index.toString(),
+                                    Provider.of<SetupProvider>(context,
+                                            listen: false)
+                                        .setups[index]["name"]
+                                        .toString(),
+                                    Provider.of<SetupProvider>(context,
+                                            listen: false)
+                                        .setups[index]["image"]
+                                        .toString());
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.black.withOpacity(.25),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 4))
+                                  ],
+                                  borderRadius: BorderRadius.circular(500),
+                                ),
+                                padding: const EdgeInsets.all(17),
+                                child: Icon(
+                                  JamIcons.share_alt,
+                                  color: Theme.of(context).accentColor,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -959,32 +962,32 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: IconButton(
-                    onPressed: () {
-                      createSetupDynamicLink(
-                          index.toString(),
-                          Provider.of<SetupProvider>(context, listen: false)
-                              .setups[index]["name"]
-                              .toString(),
-                          Provider.of<SetupProvider>(context, listen: false)
-                              .setups[index]["image"]
-                              .toString());
-                    },
-                    color: isLoading
-                        ? Theme.of(context).accentColor
-                        : colors[0].computeLuminance() > 0.5
-                            ? Colors.black
-                            : Colors.white,
-                    icon: const Icon(
-                      JamIcons.share_alt,
-                    ),
-                  ),
-                ),
-              ),
+              // Align(
+              //   alignment: Alignment.topRight,
+              //   child: Padding(
+              //     padding: const EdgeInsets.all(8.0),
+              //     child: IconButton(
+              //       onPressed: () {
+              //         createSetupDynamicLink(
+              //             index.toString(),
+              //             Provider.of<SetupProvider>(context, listen: false)
+              //                 .setups[index]["name"]
+              //                 .toString(),
+              //             Provider.of<SetupProvider>(context, listen: false)
+              //                 .setups[index]["image"]
+              //                 .toString());
+              //       },
+              //       color: isLoading
+              //           ? Theme.of(context).accentColor
+              //           : colors[0].computeLuminance() > 0.5
+              //               ? Colors.black
+              //               : Colors.white,
+              //       icon: const Icon(
+              //         JamIcons.share_alt,
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
