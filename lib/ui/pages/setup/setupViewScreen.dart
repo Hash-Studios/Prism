@@ -45,7 +45,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
   int index;
   String thumb;
   bool isLoading = true;
-  List<Color> colors;
   PanelController panelController = PanelController();
   AnimationController shakeController;
   bool panelCollapsed = true;
@@ -68,12 +67,12 @@ class _SetupViewScreenState extends State<SetupViewScreen>
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
-  Future<void> onFavSetup(String id, Map prism) async {
+  Future<void> onFavSetup(String id, Map setupMap) async {
     setState(() {
       isLoading = true;
     });
     Provider.of<FavouriteSetupProvider>(context, listen: false)
-        .favCheck(id, setup)
+        .favCheck(id, setupMap)
         .then((value) {
       analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
         'id': id,
@@ -991,11 +990,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                         errorWidget: (context, url, error) => Center(
                           child: Icon(
                             JamIcons.close_circle_f,
-                            color: isLoading
-                                ? Theme.of(context).accentColor
-                                : colors[0].computeLuminance() > 0.5
-                                    ? Colors.black
-                                    : Colors.white,
+                            color: Theme.of(context).accentColor,
                           ),
                         ),
                       ),
@@ -1011,11 +1006,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                       debugPrint(navStack.toString());
                       Navigator.pop(context);
                     },
-                    color: isLoading
-                        ? Theme.of(context).accentColor
-                        : colors[0].computeLuminance() > 0.5
-                            ? Colors.black
-                            : Colors.white,
+                    color: Theme.of(context).accentColor,
                     icon: const Icon(
                       JamIcons.chevron_left,
                     ),

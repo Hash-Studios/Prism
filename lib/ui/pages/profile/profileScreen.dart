@@ -80,12 +80,13 @@ class _ProfileChildState extends State<ProfileChild> {
               .then((value2) {
             debugPrint(value.toString());
             debugPrint(value2.toString());
-            setState(
-              () {
-                favCount = value + value2;
-                main.prefs.put('userFavs', favCount);
-              },
-            );
+            if (mounted)
+              setState(
+                () {
+                  favCount = value + value2;
+                  main.prefs.put('userFavs', favCount);
+                },
+              );
           });
         },
       );
