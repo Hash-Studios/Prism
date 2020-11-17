@@ -71,6 +71,7 @@ Future<void> createSetup(
     String widgetURL2,
     String setupName,
     String setupDesc,
+    String wallId,
     bool review) async {
   await firestore.collection("setups").add({
     'by': main.prefs.get('name'),
@@ -93,6 +94,7 @@ Future<void> createSetup(
     'created_at': DateTime.now(),
     'twitter': main.prefs.get('twitter') ?? "",
     'instagram': main.prefs.get('instagram') ?? "",
+    'wall_id': wallId
   });
   toasts.codeSend("Your setup is submitted, and is under review.");
 }
