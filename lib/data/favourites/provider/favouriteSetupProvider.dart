@@ -60,6 +60,7 @@ class FavouriteSetupProvider extends ChangeNotifier {
       "image": setup["image"].toString() ?? "",
       "name": setup["name"].toString() ?? "",
       "userPhoto": setup["userPhoto"].toString() ?? "",
+      "wall_id": setup["wall_id"].toString() ?? "",
       "wallpaper_provider": setup["wallpaper_provider"].toString() ?? "",
       "wallpaper_thumb": setup["wallpaper_thumb"].toString() ?? "",
       "wallpaper_url": setup["wallpaper_url"] ?? "",
