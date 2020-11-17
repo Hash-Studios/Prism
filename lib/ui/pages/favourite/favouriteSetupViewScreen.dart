@@ -18,6 +18,11 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/ui/widgets/animated/showUp.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:Prism/ui/widgets/popup/copyrightPopUp.dart';
+import 'package:animations/animations.dart';
 
 class FavSetupViewScreen extends StatefulWidget {
   final List arguments;
@@ -39,7 +44,6 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
   int index;
   String thumb;
   bool isLoading = true;
-  List<Color> colors;
   PanelController panelController = PanelController();
   AnimationController shakeController;
   bool panelCollapsed = true;
@@ -60,6 +64,22 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
     super.dispose();
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+  }
+
+  Future<void> onFavSetup(String id, Map setupMap) async {
+    setState(() {
+      isLoading = true;
+    });
+    Provider.of<FavouriteSetupProvider>(context, listen: false)
+        .favCheck(id, setupMap)
+        .then((value) {
+      analytics.logEvent(name: 'setup_fav_status_changed', parameters: {
+        'id': id,
+      });
+      setState(() {
+        isLoading = false;
+      });
+    });
   }
 
   @override
@@ -90,7 +110,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
           parallaxEnabled: true,
           parallaxOffset: 0.00,
           color: Colors.transparent,
-          maxHeight: MediaQuery.of(context).size.height * .43,
+          maxHeight: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                          .liked[index]["widget2"] ==
+                      "" ||
+                  Provider.of<FavouriteSetupProvider>(context, listen: false)
+                          .liked[index]["widget2"] ==
+                      null
+              ? MediaQuery.of(context).size.height * .70
+              : MediaQuery.of(context).size.height * .85,
           controller: panelController,
           onPanelOpened: () {
             setState(() {
@@ -104,7 +131,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
           },
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height: MediaQuery.of(context).size.height * .43,
+            height: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                            .liked[index]["widget2"] ==
+                        "" ||
+                    Provider.of<FavouriteSetupProvider>(context, listen: false)
+                            .liked[index]["widget2"] ==
+                        null
+                ? MediaQuery.of(context).size.height * .70
+                : MediaQuery.of(context).size.height * .85,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30),
@@ -142,631 +176,778 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                           children: <Widget>[
                             Padding(
                               padding: const EdgeInsets.fromLTRB(35, 0, 35, 5),
-                              child: Text(
-                                Provider.of<FavouriteSetupProvider>(context,
-                                        listen: false)
-                                    .liked[index]["name"]
-                                    .toString()
-                                    .toUpperCase(),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline1
-                                    .copyWith(
-                                        fontSize: 30,
-                                        color: Theme.of(context).accentColor),
-                              ),
+                              child: panelCollapsed
+                                  ? Container()
+                                  : ShowUpTransition(
+                                      forward: true,
+                                      slideSide: SlideFromSlide.bottom,
+                                      child: Text(
+                                        Provider.of<FavouriteSetupProvider>(
+                                                context,
+                                                listen: false)
+                                            .liked[index]["name"]
+                                            .toString()
+                                            .toUpperCase(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline1
+                                            .copyWith(
+                                                fontSize: 30,
+                                                color: Theme.of(context)
+                                                    .accentColor),
+                                      ),
+                                    ),
                             ),
                             Padding(
                               padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                              child: Text(
-                                Provider.of<FavouriteSetupProvider>(context,
-                                        listen: false)
-                                    .liked[index]["desc"]
-                                    .toString(),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline6
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                              ),
+                              child: panelCollapsed
+                                  ? Container()
+                                  : ShowUpTransition(
+                                      forward: true,
+                                      slideSide: SlideFromSlide.bottom,
+                                      delay: const Duration(milliseconds: 50),
+                                      child: Text(
+                                        Provider.of<FavouriteSetupProvider>(
+                                                context,
+                                                listen: false)
+                                            .liked[index]["desc"]
+                                            .toString(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline6
+                                            .copyWith(
+                                                color: Theme.of(context)
+                                                    .accentColor),
+                                      ),
+                                    ),
                             ),
                           ],
                         ),
                       ),
                       Expanded(
-                        flex: 6,
+                        flex: 3,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: <Widget>[
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                    child: Text(
-                                      Provider.of<FavouriteSetupProvider>(
-                                              context,
-                                              listen: false)
-                                          .liked[index]["id"]
-                                          .toString()
-                                          .toUpperCase(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyText1
-                                          .copyWith(
-                                              color: Theme.of(context)
-                                                  .accentColor),
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        JamIcons.google_play_circle,
-                                        size: 20,
-                                        color: Theme.of(context)
-                                            .accentColor
-                                            .withOpacity(.7),
+                          child: panelCollapsed
+                              ? Container()
+                              : ShowUpTransition(
+                                  forward: true,
+                                  delay: const Duration(milliseconds: 100),
+                                  slideSide: SlideFromSlide.bottom,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: <Widget>[
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                0, 5, 0, 5),
+                                            child: Text(
+                                              Provider.of<FavouriteSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["id"]
+                                                  .toString()
+                                                  .toUpperCase(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyText1
+                                                  .copyWith(
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                      fontSize: 16),
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            onTap: () {
+                                              showModal(
+                                                  context: context,
+                                                  configuration:
+                                                      const FadeScaleTransitionConfiguration(),
+                                                  builder:
+                                                      (BuildContext context) =>
+                                                          const CopyrightPopUp(
+                                                            setup: true,
+                                                          ));
+                                            },
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  JamIcons.info,
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .accentColor
+                                                      .withOpacity(.7),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  "Copyright",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyText2
+                                                      .copyWith(
+                                                          decoration:
+                                                              TextDecoration
+                                                                  .underline,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.32,
-                                        child: Text(
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          SizedBox(
+                                            width: 150,
+                                            child: Align(
+                                              alignment: Alignment.centerRight,
+                                              child: Stack(
+                                                children: [
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.topRight,
+                                                    child: ActionChip(
+                                                        label: Text(
+                                                          Provider.of<FavouriteSetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked[index]
+                                                                  ["by"]
+                                                              .toString(),
+                                                          overflow:
+                                                              TextOverflow.fade,
+                                                          style: Theme.of(
+                                                                  context)
+                                                              .textTheme
+                                                              .bodyText2
+                                                              .copyWith(
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .accentColor),
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .symmetric(
+                                                                vertical: 5,
+                                                                horizontal: 5),
+                                                        avatar: CircleAvatar(
+                                                          backgroundImage:
+                                                              CachedNetworkImageProvider(Provider.of<
+                                                                          FavouriteSetupProvider>(
+                                                                      context,
+                                                                      listen:
+                                                                          false)
+                                                                  .liked[index][
+                                                                      "userPhoto"]
+                                                                  .toString()),
+                                                        ),
+                                                        labelPadding:
+                                                            const EdgeInsets
+                                                                    .fromLTRB(
+                                                                7, 3, 7, 3),
+                                                        onPressed: () {
+                                                          SystemChrome
+                                                              .setEnabledSystemUIOverlays([
+                                                            SystemUiOverlay.top,
+                                                            SystemUiOverlay
+                                                                .bottom
+                                                          ]);
+                                                          Navigator.pushNamed(
+                                                              context,
+                                                              photographerProfileRoute,
+                                                              arguments: [
+                                                                Provider.of<FavouriteSetupProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .liked[index]["by"],
+                                                                Provider.of<FavouriteSetupProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .liked[index]["email"],
+                                                                Provider.of<FavouriteSetupProvider>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .liked[index]["userPhoto"],
+                                                                false,
+                                                                Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["twitter"] !=
+                                                                            null &&
+                                                                        Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["twitter"] !=
+                                                                            ""
+                                                                    ? Provider.of<FavouriteSetupProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .liked[
+                                                                            index]
+                                                                            [
+                                                                            "twitter"]
+                                                                        .toString()
+                                                                        .split(
+                                                                            "https://www.twitter.com/")[1]
+                                                                    : "",
+                                                                Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["instagram"] !=
+                                                                            null &&
+                                                                        Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["instagram"] !=
+                                                                            ""
+                                                                    ? Provider.of<FavouriteSetupProvider>(
+                                                                            context,
+                                                                            listen:
+                                                                                false)
+                                                                        .liked[
+                                                                            index]
+                                                                            [
+                                                                            "instagram"]
+                                                                        .toString()
+                                                                        .split(
+                                                                            "https://www.instagram.com/")[1]
+                                                                    : "",
+                                                              ]);
+                                                        }),
+                                                  ),
+                                                  globals.verifiedUsers
+                                                          .contains(Provider.of<
+                                                                      FavouriteSetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked[index]
+                                                                  ["email"]
+                                                              .toString())
+                                                      ? Align(
+                                                          alignment: Alignment
+                                                              .topRight,
+                                                          child: Container(
+                                                            width: 20,
+                                                            height: 20,
+                                                            child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                                "E57697",
+                                                                config.Colors().mainAccentColor(
+                                                                            1) ==
+                                                                        Colors
+                                                                            .black
+                                                                    ? "E57697"
+                                                                    : main.prefs
+                                                                        .get(
+                                                                            "mainAccentColor")
+                                                                        .toRadixString(
+                                                                            16)
+                                                                        .toString()
+                                                                        .substring(
+                                                                            2))),
+                                                          ),
+                                                        )
+                                                      : Container(),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 16,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
+                          child: Provider.of<FavouriteSetupProvider>(context,
+                                              listen: false)
+                                          .liked[index]["widget"] ==
+                                      "" ||
+                                  Provider.of<FavouriteSetupProvider>(context,
+                                              listen: false)
+                                          .liked[index]["widget"] ==
+                                      null
+                              ? Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SetupDetailsTile(
+                                      onTap: () async {
+                                        if (Provider.of<FavouriteSetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["wallpaper_url"]
+                                                .toString()[0] !=
+                                            "[") {
+                                          if (Provider.of<FavouriteSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["wall_id"] ==
+                                              null) {
+                                            debugPrint("Id Not Found!");
+                                          } else {
+                                            Navigator.pushNamed(
+                                                context, shareRoute,
+                                                arguments: [
+                                                  Provider.of<FavouriteSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .liked[index]["wall_id"]
+                                                      .toString(),
+                                                  Provider.of<FavouriteSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .liked[index]
+                                                          ["wallpaper_provider"]
+                                                      .toString(),
+                                                  Provider.of<FavouriteSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .liked[index]
+                                                          ["wallpaper_url"]
+                                                      .toString(),
+                                                  Provider.of<FavouriteSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .liked[index]
+                                                          ["wallpaper_url"]
+                                                      .toString(),
+                                                ]);
+                                          }
+                                        } else {
+                                          launch(Provider.of<
+                                                      FavouriteSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["wallpaper_url"][1]
+                                              .toString());
+                                        }
+                                      },
+                                      tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                  .liked[index]["wallpaper_url"]
+                                                  .toString()[0] !=
+                                              "["
+                                          ? "Prism"
+                                          : Provider.of<FavouriteSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["wallpaper_url"]
+                                                      [0]
+                                                  .toString() +
+                                              " - " +
+                                              ((Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"] as List).length > 2
+                                                  ? Provider.of<FavouriteSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .liked[index]
+                                                          ["wallpaper_url"][2]
+                                                      .toString()
+                                                  : ""),
+                                      tileType: "Wallpaper",
+                                      panelCollapsed: panelCollapsed,
+                                      delay: const Duration(milliseconds: 150),
+                                    ),
+                                    SetupDetailsTile(
+                                      onTap: () async {
+                                        launch(
+                                            Provider.of<FavouriteSetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["icon_url"]
+                                                .toString());
+                                      },
+                                      tileText:
                                           Provider.of<FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
                                               .liked[index]["icon"]
                                               .toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(
-                                    height: 5,
-                                  ),
-                                  Row(
-                                    children: [
+                                      tileType: "Icon",
+                                      panelCollapsed: panelCollapsed,
+                                      delay: const Duration(milliseconds: 200),
+                                    ),
+                                  ],
+                                )
+                              : Provider.of<FavouriteSetupProvider>(context,
+                                                  listen: false)
+                                              .liked[index]["widget2"] ==
+                                          "" ||
                                       Provider.of<FavouriteSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["widget2"] ==
+                                          null
+                                  ? Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            if (Provider.of<FavouriteSetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .liked[index]
+                                                        ["wallpaper_url"]
+                                                    .toString()[0] !=
+                                                "[") {
+                                              if (Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                      ["wall_id"] ==
+                                                  null) {
+                                                debugPrint("Id Not Found!");
+                                              } else {
+                                                Navigator.pushNamed(
+                                                    context, shareRoute,
+                                                    arguments: [
+                                                      Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["wall_id"]
+                                                          .toString(),
+                                                      Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index][
+                                                              "wallpaper_provider"]
+                                                          .toString(),
+                                                      Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["wallpaper_url"]
+                                                          .toString(),
+                                                      Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["wallpaper_url"]
+                                                          .toString(),
+                                                    ]);
+                                              }
+                                            } else {
+                                              launch(Provider.of<
+                                                          FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["widget"] ==
-                                              ""
-                                          ? Container()
-                                          : Icon(
-                                              JamIcons.google_play,
-                                              size: 20,
-                                              color: Theme.of(context)
-                                                  .accentColor
-                                                  .withOpacity(.7),
-                                            ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.32,
-                                        child: Text(
-                                          Provider.of<FavouriteSetupProvider>(
+                                                  .liked[index]["wallpaper_url"]
+                                                      [1]
+                                                  .toString());
+                                            }
+                                          },
+                                          tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                      .liked[index]
+                                                          ["wallpaper_url"]
+                                                      .toString()[0] !=
+                                                  "["
+                                              ? "Prism"
+                                              : Provider.of<FavouriteSetupProvider>(context,
+                                                          listen: false)
+                                                      .liked[index]
+                                                          ["wallpaper_url"][0]
+                                                      .toString() +
+                                                  " - " +
+                                                  ((Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"] as List).length > 2
+                                                      ? Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["wallpaper_url"][2]
+                                                          .toString()
+                                                      : ""),
+                                          tileType: "Wallpaper",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 150),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<
+                                                        FavouriteSetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["icon_url"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<
+                                                      FavouriteSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["icon"]
+                                              .toString(),
+                                          tileType: "Icon",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 200),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<
+                                                        FavouriteSetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["widget_url"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<
+                                                      FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
                                               .liked[index]["widget"]
                                               .toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
+                                          tileType: "Widget",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 250),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: <Widget>[
-                                  SizedBox(
-                                    width: 150,
-                                    child: Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Stack(
-                                        children: [
-                                          Align(
-                                            alignment: Alignment.topRight,
-                                            child: ActionChip(
-                                                label: Text(
-                                                  Provider.of<FavouriteSetupProvider>(
-                                                          context,
+                                      ],
+                                    )
+                                  : Column(
+                                      children: [
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            if (Provider.of<FavouriteSetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .liked[index]
+                                                        ["wallpaper_url"]
+                                                    .toString()[0] !=
+                                                "[") {
+                                              if (Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                      ["wall_id"] ==
+                                                  null) {
+                                                debugPrint("Id Not Found!");
+                                              } else {
+                                                Navigator.pushNamed(
+                                                    context, shareRoute,
+                                                    arguments: [
+                                                      Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["wall_id"]
+                                                          .toString(),
+                                                      Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index][
+                                                              "wallpaper_provider"]
+                                                          .toString(),
+                                                      Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["wallpaper_url"]
+                                                          .toString(),
+                                                      Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["wallpaper_url"]
+                                                          .toString(),
+                                                    ]);
+                                              }
+                                            } else {
+                                              launch(Provider.of<
+                                                          FavouriteSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["wallpaper_url"]
+                                                      [1]
+                                                  .toString());
+                                            }
+                                          },
+                                          tileText: Provider.of<FavouriteSetupProvider>(context, listen: false)
+                                                      .liked[index]
+                                                          ["wallpaper_url"]
+                                                      .toString()[0] !=
+                                                  "["
+                                              ? "Prism"
+                                              : Provider.of<FavouriteSetupProvider>(context,
                                                           listen: false)
-                                                      .liked[index]["by"]
-                                                      .toString(),
-                                                  overflow: TextOverflow.fade,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText2
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 5,
-                                                        horizontal: 5),
-                                                avatar: CircleAvatar(
-                                                  backgroundImage:
-                                                      CachedNetworkImageProvider(
-                                                          Provider.of<FavouriteSetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .liked[index]
-                                                                  ["userPhoto"]
-                                                              .toString()),
-                                                ),
-                                                labelPadding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        7, 3, 7, 3),
-                                                onPressed: () {
-                                                  SystemChrome
-                                                      .setEnabledSystemUIOverlays([
-                                                    SystemUiOverlay.top,
-                                                    SystemUiOverlay.bottom
-                                                  ]);
-                                                  Navigator.pushNamed(context,
-                                                      photographerProfileRoute,
-                                                      arguments: [
-                                                        Provider.of<FavouriteSetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .liked[index]["by"],
-                                                        Provider.of<FavouriteSetupProvider>(
-                                                                    context,
-                                                                    listen: false)
-                                                                .liked[index]
-                                                            ["email"],
-                                                        Provider.of<FavouriteSetupProvider>(
-                                                                    context,
-                                                                    listen: false)
-                                                                .liked[index]
-                                                            ["userPhoto"],
-                                                        false,
-                                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                                            .liked[index]
-                                                                        [
-                                                                        "twitter"] !=
-                                                                    null &&
-                                                                Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                                            .liked[index]
-                                                                        [
-                                                                        "twitter"] !=
-                                                                    ""
-                                                            ? Provider.of<FavouriteSetupProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .liked[index]
-                                                                    ["twitter"]
-                                                                .toString()
-                                                                .split(
-                                                                    "https://www.twitter.com/")[1]
-                                                            : "",
-                                                        Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                                            .liked[index][
-                                                                        "instagram"] !=
-                                                                    null &&
-                                                                Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                                                            .liked[index]
-                                                                        [
-                                                                        "instagram"] !=
-                                                                    ""
-                                                            ? Provider.of<FavouriteSetupProvider>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .liked[index][
-                                                                    "instagram"]
-                                                                .toString()
-                                                                .split(
-                                                                    "https://www.instagram.com/")[1]
-                                                            : "",
-                                                      ]);
-                                                }),
-                                          ),
-                                          globals.verifiedUsers.contains(Provider
-                                                      .of<FavouriteSetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                  .liked[index]["email"]
-                                                  .toString())
-                                              ? Align(
-                                                  alignment: Alignment.topRight,
-                                                  child: Container(
-                                                    width: 20,
-                                                    height: 20,
-                                                    child: SvgPicture.string(
-                                                        verifiedIcon.replaceAll(
-                                                            "E57697",
-                                                            config.Colors()
-                                                                        .mainAccentColor(
-                                                                            1) ==
-                                                                    Colors.black
-                                                                ? "E57697"
-                                                                : main.prefs
-                                                                    .get(
-                                                                        "mainAccentColor")
-                                                                    .toRadixString(
-                                                                        16)
-                                                                    .toString()
-                                                                    .substring(
-                                                                        2))),
-                                                  ),
-                                                )
-                                              : Container(),
-                                        ],
-                                      ),
+                                                      .liked[index]
+                                                          ["wallpaper_url"][0]
+                                                      .toString() +
+                                                  " - " +
+                                                  ((Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"] as List).length > 2
+                                                      ? Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                              ["wallpaper_url"][2]
+                                                          .toString()
+                                                      : ""),
+                                          tileType: "Wallpaper",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 150),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<
+                                                        FavouriteSetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["icon_url"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<
+                                                      FavouriteSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["icon"]
+                                              .toString(),
+                                          tileType: "Icon",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 200),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<
+                                                        FavouriteSetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["widget_url"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<
+                                                      FavouriteSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["widget"]
+                                              .toString(),
+                                          tileType: "Widget",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 250),
+                                        ),
+                                        SetupDetailsTile(
+                                          onTap: () async {
+                                            launch(Provider.of<
+                                                        FavouriteSetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["widget_url2"]
+                                                .toString());
+                                          },
+                                          tileText: Provider.of<
+                                                      FavouriteSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["widget2"]
+                                              .toString(),
+                                          tileType: "Widget",
+                                          panelCollapsed: panelCollapsed,
+                                          delay:
+                                              const Duration(milliseconds: 300),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Row(
-                                    children: [
-                                      Text(
+                        ),
+                      ),
+                      Expanded(
+                        flex: 5,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: <Widget>[
+                            ModifiedDownloadButton(index: index),
+                            ModifiedSetWallpaperButton(index: index),
+                            GestureDetector(
+                              onTap: () {
+                                if (main.prefs.get("isLoggedin") == false) {
+                                  googleSignInPopUp(context, () {
+                                    onFavSetup(
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[index]["wallpaper_provider"]
+                                            .liked[index]["id"]
                                             .toString(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText2
-                                            .copyWith(
-                                                color: Theme.of(context)
-                                                    .accentColor),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Icon(
-                                        JamIcons.database,
-                                        size: 20,
-                                        color: Theme.of(context)
-                                            .accentColor
-                                            .withOpacity(.7),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                        Provider.of<FavouriteSetupProvider>(
+                                                context,
+                                                listen: false)
+                                            .liked[index] as Map);
+                                  });
+                                } else {
+                                  onFavSetup(
+                                      Provider.of<FavouriteSetupProvider>(
+                                              context,
+                                              listen: false)
+                                          .liked[index]["id"]
+                                          .toString(),
+                                      Provider.of<FavouriteSetupProvider>(
+                                              context,
+                                              listen: false)
+                                          .liked[index] as Map);
+                                }
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.black.withOpacity(.25),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 4))
+                                  ],
+                                  borderRadius: BorderRadius.circular(500),
+                                ),
+                                padding: const EdgeInsets.all(17),
+                                child: Icon(
+                                  JamIcons.heart,
+                                  color: Theme.of(context).accentColor,
+                                  size: 20,
+                                ),
                               ),
-                            ],
-                          ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                createSetupDynamicLink(
+                                    index.toString(),
+                                    Provider.of<FavouriteSetupProvider>(context,
+                                            listen: false)
+                                        .liked[index]["name"]
+                                        .toString(),
+                                    Provider.of<FavouriteSetupProvider>(context,
+                                            listen: false)
+                                        .liked[index]["image"]
+                                        .toString());
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.black.withOpacity(.25),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 4))
+                                  ],
+                                  borderRadius: BorderRadius.circular(500),
+                                ),
+                                padding: const EdgeInsets.all(17),
+                                child: Icon(
+                                  JamIcons.share_alt,
+                                  color: Theme.of(context).accentColor,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["widget"] == "" ||
-                              Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                      .liked[index]["widget"] ==
-                                  null
-                          ? Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                          .liked[index]["widget2"] ==
-                                      "" ||
-                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                          .liked[index]["widget2"] ==
-                                      null
-                              ? Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      ModifiedDownloadButton(index: index),
-                                      ModifiedSetWallpaperButton(index: index),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<
-                                                      FavouriteSetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .liked[index]["icon_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play_circle,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                )
-                              : Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: <Widget>[
-                                      ModifiedDownloadButton(index: index),
-                                      ModifiedSetWallpaperButton(index: index),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<
-                                                      FavouriteSetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .liked[index]["icon_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play_circle,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<
-                                                      FavouriteSetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .liked[index]["widget_url2"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                )
-                          : Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                          .liked[index]["widget2"] ==
-                                      "" ||
-                                  Provider.of<FavouriteSetupProvider>(context, listen: false)
-                                          .liked[index]["widget2"] ==
-                                      null
-                              ? Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: <Widget>[
-                                      ModifiedDownloadButton(index: index),
-                                      ModifiedSetWallpaperButton(index: index),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<
-                                                      FavouriteSetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .liked[index]["icon_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play_circle,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<
-                                                      FavouriteSetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .liked[index]["widget_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                )
-                              : Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: <Widget>[
-                                      ModifiedDownloadButton(index: index),
-                                      ModifiedSetWallpaperButton(index: index),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<
-                                                      FavouriteSetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .liked[index]["icon_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play_circle,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<
-                                                      FavouriteSetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .liked[index]["widget_url"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          launch(Provider.of<
-                                                      FavouriteSetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .liked[index]["widget_url2"]
-                                              .toString());
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.google_play,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                ),
                     ],
                   ),
                 ),
@@ -830,11 +1011,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                         errorWidget: (context, url, error) => Center(
                           child: Icon(
                             JamIcons.close_circle_f,
-                            color: isLoading
-                                ? Theme.of(context).accentColor
-                                : colors[0].computeLuminance() > 0.5
-                                    ? Colors.black
-                                    : Colors.white,
+                            color: Theme.of(context).accentColor,
                           ),
                         ),
                       ),
@@ -850,50 +1027,147 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                       debugPrint(navStack.toString());
                       Navigator.pop(context);
                     },
-                    color: isLoading
-                        ? Theme.of(context).accentColor
-                        : colors[0].computeLuminance() > 0.5
-                            ? Colors.black
-                            : Colors.white,
+                    color: Theme.of(context).accentColor,
                     icon: const Icon(
                       JamIcons.chevron_left,
                     ),
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: IconButton(
-                    onPressed: () {
-                      createSetupDynamicLink(
-                          index.toString(),
-                          Provider.of<FavouriteSetupProvider>(context,
-                                  listen: false)
-                              .liked[index]["name"]
-                              .toString(),
-                          Provider.of<FavouriteSetupProvider>(context,
-                                  listen: false)
-                              .liked[index]["image"]
-                              .toString());
-                    },
-                    color: isLoading
-                        ? Theme.of(context).accentColor
-                        : colors[0].computeLuminance() > 0.5
-                            ? Colors.black
-                            : Colors.white,
-                    icon: const Icon(
-                      JamIcons.share_alt,
-                    ),
-                  ),
-                ),
-              ),
+              // Align(
+              //   alignment: Alignment.topRight,
+              //   child: Padding(
+              //     padding: const EdgeInsets.all(8.0),
+              //     child: IconButton(
+              //       onPressed: () {
+              //         createSetupDynamicLink(
+              //             index.toString(),
+              //             Provider.of<FavouriteSetupProvider>(context, listen: false)
+              //                 .liked[index]["name"]
+              //                 .toString(),
+              //             Provider.of<FavouriteSetupProvider>(context, listen: false)
+              //                 .liked[index]["image"]
+              //                 .toString());
+              //       },
+              //       color: isLoading
+              //           ? Theme.of(context).accentColor
+              //           : colors[0].computeLuminance() > 0.5
+              //               ? Colors.black
+              //               : Colors.white,
+              //       icon: const Icon(
+              //         JamIcons.share_alt,
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class SetupDetailsTile extends StatelessWidget {
+  final bool panelCollapsed;
+  final Duration delay;
+  final String tileType;
+  final String tileText;
+  final Function onTap;
+  const SetupDetailsTile({
+    Key key,
+    @required this.delay,
+    @required this.tileText,
+    @required this.tileType,
+    @required this.onTap,
+    @required this.panelCollapsed,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return panelCollapsed
+        ? Container()
+        : ShowUpTransition(
+            forward: true,
+            delay: delay,
+            slideSide: SlideFromSlide.bottom,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: 80,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        bottom: -55,
+                        left: 0,
+                        child: Text(
+                          tileType,
+                          style: TextStyle(
+                            fontSize: 160,
+                            color:
+                                Theme.of(context).accentColor.withOpacity(0.1),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(context).accentColor.withOpacity(0.1),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                  flex: 10,
+                                  child: Text(
+                                    tileText,
+                                    style: TextStyle(
+                                      color: Theme.of(context).accentColor,
+                                    ),
+                                  )),
+                              Expanded(
+                                child: Icon(
+                                  JamIcons.chevron_right,
+                                  color: Theme.of(context).accentColor,
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              splashColor: Theme.of(context)
+                                  .accentColor
+                                  .withOpacity(0.3),
+                              highlightColor: Theme.of(context)
+                                  .accentColor
+                                  .withOpacity(0.1),
+                              onTap: () {
+                                onTap();
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
   }
 }
 
