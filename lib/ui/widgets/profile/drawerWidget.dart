@@ -125,7 +125,10 @@ class ProfileDrawer extends StatelessWidget {
             createDrawerBodyItem(
                 icon: JamIcons.instant_picture,
                 text: 'Setups',
-                onTap: () {},
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, favSetupRoute);
+                },
                 context: context),
             Divider(),
             createDrawerBodyHeader(text: "DOWNLOADS", context: context),
