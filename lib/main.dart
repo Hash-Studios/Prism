@@ -53,7 +53,7 @@ void main() {
       }
       currentThemeID = prefs.get('themeID')?.toString() ?? "kDMaterial Dark";
       prefs.put("themeID", currentThemeID);
-      optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? true;
+      optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? false;
       if (optimisedWallpapers) {
         prefs.put('optimisedWallpapers', true);
       } else {
