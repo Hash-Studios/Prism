@@ -2,9 +2,8 @@ import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
-import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -282,6 +281,6 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
                         ],
                       );
                     })
-            : const LoadingCards());
+            : const LoadingSetupCards());
   }
 }

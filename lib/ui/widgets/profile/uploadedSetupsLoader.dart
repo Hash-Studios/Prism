@@ -1,5 +1,6 @@
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/profile/uploadedSetupsGrid.dart';
+import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:flutter/material.dart';
 
 class UploadedSetupsLoader extends StatefulWidget {
@@ -27,13 +28,13 @@ class _UploadedSetupsLoaderState extends State<UploadedSetupsLoader> {
         builder: (ctx, snapshot) {
           if (snapshot == null) {
             debugPrint("snapshot null");
-            return const LoadingCards();
+            return const LoadingSetupCards();
           }
           if (snapshot.connectionState == ConnectionState.waiting ||
               snapshot.connectionState == ConnectionState.none) {
             debugPrint("snapshot none, waiting");
             debugPrint(snapshot.data.toString());
-            return const LoadingCards();
+            return const LoadingSetupCards();
           } else {
             return const UploadedSetupsGrid();
           }

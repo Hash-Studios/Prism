@@ -4,15 +4,13 @@ import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
-import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/config.dart' as config;
 
 class UploadedSetupsGrid extends StatefulWidget {
   const UploadedSetupsGrid({
@@ -278,6 +276,6 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
                         ),
                       );
                     })
-            : const LoadingCards());
+            : const LoadingSetupCards());
   }
 }
