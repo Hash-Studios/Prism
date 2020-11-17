@@ -6,7 +6,7 @@
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
 ![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-10K+-green.svg)
-![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.2-blue.svg)
+![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.5-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
@@ -124,38 +124,37 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 
 **Screens**
 
-| ![](demo/65.jpg) | ![](demo/73.jpg) | ![](demo/74.jpg) | ![](demo/3.jpg) | ![](demo/4.jpg) |
+| ![](demo/2.jpg) | ![](demo/3.jpg) | ![](demo/4.jpg) | ![](demo/5.jpg) | ![](demo/6.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Home     |    Search WallHaven   |    Search Pexels     |     Color Picker       |     Color Based     |
 
-| ![](demo/78.jpg) | ![](demo/80.jpg) | ![](demo/60.jpg) | ![](demo/61.jpg) | ![](demo/79.jpg) |
+| ![](demo/7.jpg) | ![](demo/8.jpg) | ![](demo/9.jpg) | ![](demo/11.jpg) | ![](demo/12.jpg) |
 | :-------------:  | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |    Favourites    |    Downloads     |     Setups       |    Setups Info    |     Profile     |
 
-| ![](demo/28.jpg) | ![](demo/76.jpg)| ![](demo/77.jpg)       | ![](demo/68.jpg)  | ![](demo/88.jpg) |
+| ![](demo/13.jpg) | ![](demo/14.jpg)| ![](demo/16.jpg)       | ![](demo/17.jpg)  | ![](demo/18.jpg) |
 | :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------:  |
 |  Upload Popup    |    Edit Wallpaper       |  Uploading Wallpaper    | Uploader's Profile   |     Scroll to Top Button       |
 
-| ![](demo/70.jpg) | ![](demo/69.jpg) | ![](demo/87.jpg)| ![](demo/72.jpg) | ![](demo/90.jpg) |
+| ![](demo/19.jpg) | ![](demo/20.jpg) | ![](demo/21.jpg)| ![](demo/23.jpg) | ![](demo/25.jpg) |
 | :-------------: | :-------------: | :-------------: | :-------------:  | :-------------:  |
-|     Categories     |     Collections    | Collection (Shapes)  |    Notifications     |     Setup Upload       |
+|     Categories     |     Collections    | Collection (Illustrations)  |    Setup Guidelines     |     Setup Upload       |
 
-| ![](demo/63.jpg) | ![](demo/89.jpg) | ![](demo/37.jpg)       | ![](demo/38.jpg)  | ![](demo/67.jpg)|
+| ![](demo/36.jpg) | ![](demo/38.jpg) | ![](demo/27.jpg)       | ![](demo/30.jpg)  | ![](demo/29.jpg)|
 | :-------------:  | :-------------:  | :-------------:       | :-------------:  | :-------------: |
-|     Premium Info       |     Premium Page    |  Wallpaper Display    | Clock for testing   | Wallpaper Info  |
+|     About Page       |     Premium Page    |  Wallpaper Display    | Clock for testing   | Wallpaper Info  |
 
-| ![](demo/41.jpg) | ![](demo/40.jpg) | ![](demo/33.jpg) | ![](demo/35.jpg) | ![](demo/36.jpg) |
+| ![](demo/33.jpg) | ![](demo/34.jpg) | ![](demo/35.jpg) | ![](demo/37.jpg) | ![](demo/22.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Splash Screen    |    Quick Action Menu    |    Settings     |     Theme Switcher Dark       |     Theme Switcher Light    |
+|     Splash Screen    |    Quick Action Menu    |    Settings     |     Themes      |     Notifications    |
 
-This theme switcher toggle button was inspired by [Shubham](https://github.com/shubhamhackz) and you can check out his code [here](https://github.com/shubhamhackz/light_dark_toggle).
+**Themes**
 
-**Light Theme**
-
-| ![](demo/81.jpg) | ![](demo/83.jpg)| ![](demo/85.jpg)| ![](demo/84.jpg) | ![](demo/86.jpg)|
+| ![](demo/39.jpg) | ![](demo/40.jpg)| ![](demo/41.jpg)| ![](demo/42.jpg) | ![](demo/43.jpg)|
 | :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
-|  Home  |Search|  Favourites    |      Setups   |      Profile  |
+|  Frosty White  |Coffee|  AMOLED    |      Rose   |      Cotton  |
 
+...and 10 more!
 
 ## Support
 
@@ -173,46 +172,46 @@ Prism Wallpapers app is now available on Google Play, so you can support us by g
 
 The following packages are needed for the development of this application.
 
-- `share: ^0.6.4` for sharing the wallpaper links
-- `url_launcher: ^5.4.5` for launching urls
+- `animations: ^1.1.2` for dialog/transition animations
+- `cached_network_image: ^2.2.0+1` for caching wallpapers
+- `carousel_slider: ^2.2.1` for carousel widget
 - `cloud_firestore: ^0.13.5` for storing liked images and other user based data
-- `firebase_core: ^0.4.4+3` for firebase support
+- `data_connection_checker: ^0.3.4` for checking Internet connection
+- `device_info: ^0.4.2+7` for getting device info for bug reports
+- `extended_image: ^0.9.0` for cropping wallpapers before uploading
+- `firebase_admob: ^0.9.3+4` for rewarded video ads
+- `firebase_analytics: ^5.0.16` for analytics
 - `firebase_auth: ^0.16.0` for user authentication
-- `google_sign_in: ^4.4.4` for Google sign in support
+- `firebase_core: ^0.4.4+3` for firebase support
+- `firebase_dynamic_links: ^0.5.1` for wallpaper link generation and handling
+- `firebase_messaging: ^6.0.16` for notifications
+- `firebase_remote_config: ^0.3.1+1` for manipulating the app remotely
+- `flare_flutter: ^2.0.5` for animations
 - `flare_splash_screen: ^3.0.1` for the animated splash screen
-- `provider: ^4.1.3` for caching data, and state management
-- `flutter_svg: 0.17.4` for svg assets
-- `palette_generator: ^0.2.2` for generating wallpaper colors
+- `flutter_displaymode: ^0.1.1` for checking display resolution and refresh rate
+- `flutter_svg: ^0.19.0` for svg assets
 - `fluttertoast: ^4.0.1` for toast notifications
 - `gallery_saver: ^2.0.1` for saving wallpapers to gallery
-- `firebase_dynamic_links: ^0.5.1` for wallpaper link generation and handling
-- `permission_handler: ^5.0.1+1` for handling required device permissions
-- `sliding_up_panel: ^1.0.2` for sliding info panel
-- `firebase_analytics: ^5.0.16` for analytics
-- `firebase_messaging: ^6.0.16` for notifications
-- `in_app_purchase: ^0.3.4+1` for in-app purchases
-- `firebase_crashlytics: ^0.1.3+3` for handling crashes, and better reporting
-- `screenshot: ^0.2.0` for setting wallpapers
-- `tutorial_coach_mark: ^0.3.0` for showing new user tutorial
-- `scroll_to_index: ^1.0.6` for scrolling lists
-- `image_picker: ^0.6.7+4` for picking images
 - `github: ^6.2.2` for communicating with GitHub API
-- `photo_view: ^0.9.2` for showing images before uploading
-- `cached_network_image: ^2.2.0+1` for caching wallpapers
-- `flare_flutter: ^2.0.5` for animations
+- `google_sign_in: ^4.4.4` for Google sign in support
 - `hive: ^1.4.1+1` for caaching data
-- `hive_flutter: ^0.3.0+1` for caching data
-- `path_provider: ^1.6.11` for getting Application storage directory path
-- `purchases_flutter: ^1.2.1` for RevenueCat support
-- `firebase_remote_config: ^0.3.1+1` for manipulating the app remotely
-- `data_connection_checker: ^0.3.4` for checking Internet connection
-- `carousel_slider: ^2.2.1` for carousel widget
-- `firebase_admob: ^0.9.3+4` for rewarded video ads
+- `hive_flutter: ^0.3.0+1` for caaching data
 - `image_editor: ^0.7.1` for editing wallpapers during upload
-- `extended_image: ^0.9.0` for cropping wallpapers before uploading
-- `device_info: ^0.4.2+7` for getting device info for bug reports
-- `firebase_storage: ^3.1.5` for storing setups
+- `image_picker: ^0.6.7+4` for picking images
+- `in_app_purchase: ^0.3.4+1` for in-app purchases
+- `in_app_update: ^1.1.13` for updating app
+- `palette_generator: ^0.2.2` for generating wallpaper colors
+- `path_provider: ^1.6.11` for getting Application storage directory path
+- `permission_handler: ^5.0.1+1` for handling required device permissions
+- `photo_view: ^0.9.2` for showing images before uploading
+- `photofilters: ^2.0.1` for editing filters
+- `provider: ^4.1.3` for caching data, and state management
+- `purchases_flutter: ^1.2.1` for RevenueCat support
 - `rate_my_app: ^0.7.2` for showing app rating popup
+- `screenshot: ^0.2.0` for setting wallpapers
+- `share: ^0.6.4` for sharing the wallpaper links
+- `sliding_up_panel: ^1.0.2` for sliding info panel
+- `url_launcher: ^5.4.5` for launching urls
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
 
