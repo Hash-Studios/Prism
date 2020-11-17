@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/notifications/model/notificationModel.dart';
+import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
@@ -33,7 +34,7 @@ int categories;
 int purity;
 void main() {
   //! Uncomment next line before release
-  debugPrint = (String message, {int wrapWidth}) {};
+  // debugPrint = (String message, {int wrapWidth}) {};
   WidgetsFlutterBinding.ensureInitialized();
   InAppPurchaseConnection.enablePendingPurchases();
   GestureBinding.instance.resamplingEnabled = true;
@@ -92,6 +93,9 @@ void main() {
                     ),
                     ChangeNotifierProvider<ProfileWallProvider>(
                       create: (context) => ProfileWallProvider(),
+                    ),
+                    ChangeNotifierProvider<ProfileSetupProvider>(
+                      create: (context) => ProfileSetupProvider(),
                     ),
                     ChangeNotifierProvider<ThemeModel>(
                       create: (context) => ThemeModel(themes[currentThemeID]),

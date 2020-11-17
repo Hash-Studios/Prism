@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
@@ -11,7 +12,8 @@ import 'package:Prism/ui/widgets/profile/premiumList.dart';
 import 'package:Prism/ui/widgets/profile/studioList.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
-import 'package:Prism/ui/widgets/profile/profileLoader.dart';
+import 'package:Prism/ui/widgets/profile/uploadedWallsLoader.dart';
+import 'package:Prism/ui/widgets/profile/uploadedSetupsLoader.dart';
 import 'package:Prism/ui/widgets/profile/userList.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
@@ -24,6 +26,8 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 
+final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
+
 class ProfileScreen extends StatefulWidget {
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -33,9 +37,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
       body: BottomBar(
         child: ProfileChild(),
       ),
+      endDrawer: Drawer(),
     );
   }
 }
@@ -47,7 +53,9 @@ class ProfileChild extends StatefulWidget {
 
 class _ProfileChildState extends State<ProfileChild> {
   int favCount = main.prefs.get('userFavs') as int ?? 0;
-  int profileCount = main.prefs.get('userPosts') as int ?? 0;
+  int profileCount = (main.prefs.get('userPosts') as int) ??
+      0 + (main.prefs.get('userSetups') as int) ??
+      0;
   final ScrollController scrollController = ScrollController();
   @override
   void initState() {
@@ -87,7 +95,7 @@ class _ProfileChildState extends State<ProfileChild> {
         onWillPop: onWillPop,
         child: main.prefs.get("isLoggedin") as bool
             ? DefaultTabController(
-                length: 3,
+                length: 4,
                 child: Scaffold(
                   backgroundColor: Theme.of(context).primaryColor,
                   body: NestedScrollView(
@@ -127,6 +135,15 @@ class _ProfileChildState extends State<ProfileChild> {
                                                     .split(
                                                         "https://www.instagram.com/")[1]
                                                 : "");
+                                      }),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: IconButton(
+                                      icon: const Icon(JamIcons.menu),
+                                      onPressed: () {
+                                        scaffoldKey.currentState
+                                            .openEndDrawer();
                                       }),
                                 )
                               ],
@@ -422,7 +439,13 @@ class _ProfileChildState extends State<ProfileChild> {
                                         JamIcons.settings_alt,
                                         color: Theme.of(context).accentColor,
                                       ),
-                                    )
+                                    ),
+                                    Tab(
+                                      icon: Icon(
+                                        JamIcons.instant_picture,
+                                        color: Theme.of(context).accentColor,
+                                      ),
+                                    ),
                                   ]),
                             ),
                           ),
@@ -452,7 +475,15 @@ class _ProfileChildState extends State<ProfileChild> {
                         GeneralList(),
                         UserList(),
                         const StudioList(),
-                      ])
+                      ]),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: UploadedSetupsLoader(
+                          future: Provider.of<ProfileSetupProvider>(context,
+                                  listen: false)
+                              .getProfileSetups(),
+                        ),
+                      ),
                     ]),
                   ),
                 ),
