@@ -21,6 +21,7 @@ import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
 import 'package:Prism/ui/pages/profile/settings.dart';
 import 'package:Prism/ui/pages/profile/sharePrismScreen.dart';
 import 'package:Prism/ui/pages/profile/themeView.dart';
+import 'package:Prism/ui/pages/profile/userProfileSetupViewScreen.dart';
 import 'package:Prism/ui/pages/profile/userProfileWallViewScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/pages/search/searchWallpaperScreen.dart';
@@ -225,6 +226,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               UserProfileWallViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
+    case userProfileSetupViewRoute:
+      navStack.add("User ProfileSetup");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: userProfileSetupViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              UserProfileSetupViewScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     case themeViewRoute:
       navStack.add("Themes");

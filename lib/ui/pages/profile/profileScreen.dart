@@ -6,7 +6,6 @@ import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/ui/widgets/favourite/favLoader.dart';
 import 'package:Prism/ui/widgets/profile/aboutList.dart';
 import 'package:Prism/ui/widgets/profile/drawerWidget.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
@@ -448,7 +447,7 @@ class _ProfileChildState extends State<ProfileChild> {
                     ],
                     body: TabBarView(children: [
                       Padding(
-                        padding: const EdgeInsets.only(top: 20),
+                        padding: const EdgeInsets.only(top: 5),
                         child: ProfileLoader(
                           future: Provider.of<ProfileWallProvider>(context,
                                   listen: false)
@@ -456,7 +455,7 @@ class _ProfileChildState extends State<ProfileChild> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(top: 20),
+                        padding: const EdgeInsets.only(top: 5),
                         child: UploadedSetupsLoader(
                           future: Provider.of<ProfileSetupProvider>(context,
                                   listen: false)
