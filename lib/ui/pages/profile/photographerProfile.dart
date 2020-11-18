@@ -65,23 +65,265 @@ class _UserProfileState extends State<UserProfile> {
             body: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
                 SliverAppBar(
-                  actions: [
-                    twitter != "" && twitter != null
-                        ? IconButton(
-                            icon: const Icon(JamIcons.twitter),
-                            onPressed: () {
-                              launch("https://www.twitter.com/$twitter");
-                            })
-                        : Container(),
-                    instagram != "" && instagram != null
-                        ? IconButton(
-                            icon: const Icon(JamIcons.instagram),
-                            onPressed: () {
-                              launch("https://www.instagram.com/$instagram");
-                            })
-                        : Container(),
-                  ],
                   backgroundColor: config.Colors().mainAccentColor(1),
+                  automaticallyImplyLeading: false,
+                  expandedHeight: 200.0,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Container(
+                          color: config.Colors().mainAccentColor(1),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 25, 16, 0),
+                          child: Column(
+                            children: [
+                              const Spacer(flex: 5),
+                              Table(
+                                columnWidths: {
+                                  0: FlexColumnWidth(3),
+                                  1: FlexColumnWidth(5)
+                                },
+                                children: [
+                                  TableRow(children: [
+                                    TableCell(
+                                      child: userPhoto == null
+                                          ? Container()
+                                          : Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              5000),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                            blurRadius: 16,
+                                                            offset:
+                                                                const Offset(
+                                                                    0, 4),
+                                                            color: const Color(
+                                                                    0xFF000000)
+                                                                .withOpacity(
+                                                                    0.24))
+                                                      ]),
+                                                  child: CircleAvatar(
+                                                    radius: 50,
+                                                    backgroundImage:
+                                                        NetworkImage(userPhoto
+                                                            .toString()),
+                                                  ),
+                                                ),
+                                                globals.verifiedUsers.contains(
+                                                        email.toString())
+                                                    ? Positioned(
+                                                        top: 5,
+                                                        left: 100,
+                                                        child: Container(
+                                                          width: 30,
+                                                          height: 30,
+                                                          child: SvgPicture
+                                                              .string(verifiedIcon
+                                                                  .replaceAll(
+                                                                      "E57697",
+                                                                      "FFFFFF")),
+                                                        ),
+                                                      )
+                                                    : Container(),
+                                              ],
+                                            ),
+                                    ),
+                                    TableCell(
+                                      verticalAlignment:
+                                          TableCellVerticalAlignment.bottom,
+                                      child: Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 8),
+                                        child: name == null
+                                            ? Container()
+                                            : premium == false
+                                                ? Text(
+                                                    name
+                                                        .toString()
+                                                        .toUpperCase(),
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                        fontFamily:
+                                                            "Proxima Nova",
+                                                        color: Colors.white,
+                                                        fontSize: 20,
+                                                        fontWeight:
+                                                            FontWeight.w600),
+                                                  )
+                                                : Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: <Widget>[
+                                                      Text(
+                                                        name
+                                                            .toString()
+                                                            .toUpperCase(),
+                                                        style: const TextStyle(
+                                                            fontFamily:
+                                                                "Proxima Nova",
+                                                            color: Colors.white,
+                                                            fontSize: 20,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600),
+                                                      ),
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .only(
+                                                                left: 6.0),
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .symmetric(
+                                                                  vertical: 2,
+                                                                  horizontal:
+                                                                      4),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        50),
+                                                            color: const Color(
+                                                                0xFFFFFFFF),
+                                                          ),
+                                                          child: Text(
+                                                            "PRO",
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodyText2
+                                                                .copyWith(
+                                                                  fontSize: 9,
+                                                                  color: Color(main
+                                                                          .prefs
+                                                                          .get(
+                                                                              "mainAccentColor")
+                                                                      as int),
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      )
+                                                    ],
+                                                  ),
+                                      ),
+                                    ),
+                                  ]),
+                                  TableRow(children: [
+                                    TableCell(
+                                      verticalAlignment:
+                                          TableCellVerticalAlignment.middle,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          twitter != "" && twitter != null
+                                              ? IconButton(
+                                                  icon: const Icon(
+                                                      JamIcons.twitter),
+                                                  onPressed: () {
+                                                    launch(
+                                                        "https://www.twitter.com/$twitter");
+                                                  })
+                                              : Container(),
+                                          instagram != "" && instagram != null
+                                              ? IconButton(
+                                                  icon: const Icon(
+                                                      JamIcons.instagram),
+                                                  onPressed: () {
+                                                    launch(
+                                                        "https://www.instagram.com/$instagram");
+                                                  })
+                                              : Container(),
+                                        ],
+                                      ),
+                                    ),
+                                    TableCell(
+                                      verticalAlignment:
+                                          TableCellVerticalAlignment.middle,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          const Spacer(flex: 2),
+                                          Row(
+                                            children: <Widget>[
+                                              FutureBuilder(
+                                                  future: userData
+                                                      .getProfileWallsLength(
+                                                          email),
+                                                  builder: (context, snapshot) {
+                                                    return Text(
+                                                      snapshot.data == null
+                                                          ? "0 "
+                                                          : "${snapshot.data.toString()} ",
+                                                      style: const TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          fontSize: 24,
+                                                          color: Colors.white70,
+                                                          fontWeight: FontWeight
+                                                              .normal),
+                                                    );
+                                                  }),
+                                              const Icon(
+                                                JamIcons.picture,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
+                                          ),
+                                          const Spacer(),
+                                          Row(
+                                            children: <Widget>[
+                                              FutureBuilder(
+                                                  future: userData
+                                                      .getProfileSetupsLength(
+                                                          email),
+                                                  builder: (context, snapshot) {
+                                                    return Text(
+                                                      snapshot.data == null
+                                                          ? "0 "
+                                                          : "${snapshot.data.toString()} ",
+                                                      style: const TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          fontSize: 24,
+                                                          color: Colors.white70,
+                                                          fontWeight: FontWeight
+                                                              .normal),
+                                                    );
+                                                  }),
+                                              const Icon(
+                                                JamIcons.instant_picture,
+                                                color: Colors.white70,
+                                              ),
+                                            ],
+                                          ),
+                                          const Spacer(flex: 2),
+                                        ],
+                                      ),
+                                    ),
+                                  ]),
+                                ],
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   leading: IconButton(
                     icon: const Icon(
                       JamIcons.chevron_left,
@@ -99,179 +341,6 @@ class _UserProfileState extends State<UserProfile> {
                       }
                       debugPrint(navStack.toString());
                     },
-                  ),
-                  expandedHeight: 260.0,
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Container(
-                          color: config.Colors().mainAccentColor(1),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 25.0),
-                          child: Column(
-                            children: [
-                              const Spacer(flex: 5),
-                              userPhoto == null
-                                  ? Container()
-                                  : Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        Container(
-                                          decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(5000),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                    blurRadius: 16,
-                                                    offset: const Offset(0, 4),
-                                                    color:
-                                                        const Color(0xFF000000)
-                                                            .withOpacity(0.24))
-                                              ]),
-                                          child: CircleAvatar(
-                                            radius: 50,
-                                            backgroundImage:
-                                                NetworkImage(userPhoto),
-                                          ),
-                                        ),
-                                        globals.verifiedUsers.contains(email)
-                                            ? Positioned(
-                                                top: 0,
-                                                left: 70,
-                                                child: Container(
-                                                  width: 30,
-                                                  height: 30,
-                                                  child: SvgPicture.string(
-                                                      verifiedIcon.replaceAll(
-                                                          "E57697", "FFFFFF")),
-                                                ),
-                                              )
-                                            : Container(),
-                                      ],
-                                    ),
-                              const Spacer(flex: 2),
-                              premium == false
-                                  ? name == null
-                                      ? Container()
-                                      : Text(
-                                          name,
-                                          style: const TextStyle(
-                                              fontFamily: "Proxima Nova",
-                                              color: Colors.white,
-                                              fontSize: 32,
-                                              fontWeight: FontWeight.w700),
-                                        )
-                                  : name == null
-                                      ? Container()
-                                      : Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: <Widget>[
-                                            Text(
-                                              name,
-                                              style: const TextStyle(
-                                                  fontFamily: "Proxima Nova",
-                                                  color: Colors.white,
-                                                  fontSize: 32,
-                                                  fontWeight: FontWeight.w700),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 8.0),
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 3,
-                                                        horizontal: 5),
-                                                decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            50),
-                                                    color: const Color(
-                                                        0xFFFFFFFF)),
-                                                child: Text(
-                                                  "PRO",
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText2
-                                                      .copyWith(
-                                                          fontSize: 10,
-                                                          color: Color(
-                                                              main.prefs.get(
-                                                                      "mainAccentColor")
-                                                                  as int)),
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                              const Spacer(),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  const Spacer(flex: 2),
-                                  Row(
-                                    children: <Widget>[
-                                      FutureBuilder(
-                                          future: userData
-                                              .getProfileWallsLength(email),
-                                          builder: (context, snapshot) {
-                                            return Text(
-                                              snapshot.data == null
-                                                  ? "0 "
-                                                  : "${snapshot.data.toString()} ",
-                                              style: const TextStyle(
-                                                  fontFamily: "Proxima Nova",
-                                                  fontSize: 24,
-                                                  color: Colors.white70,
-                                                  fontWeight:
-                                                      FontWeight.normal),
-                                            );
-                                          }),
-                                      const Icon(
-                                        JamIcons.picture,
-                                        color: Colors.white70,
-                                      ),
-                                    ],
-                                  ),
-                                  const Spacer(),
-                                  Row(
-                                    children: <Widget>[
-                                      FutureBuilder(
-                                          future: userData
-                                              .getProfileSetupsLength(email),
-                                          builder: (context, snapshot) {
-                                            return Text(
-                                              snapshot.data == null
-                                                  ? "0 "
-                                                  : "${snapshot.data.toString()} ",
-                                              style: const TextStyle(
-                                                  fontFamily: "Proxima Nova",
-                                                  fontSize: 24,
-                                                  color: Colors.white70,
-                                                  fontWeight:
-                                                      FontWeight.normal),
-                                            );
-                                          }),
-                                      const Icon(
-                                        JamIcons.instant_picture,
-                                        color: Colors.white70,
-                                      ),
-                                    ],
-                                  ),
-                                  const Spacer(flex: 2),
-                                ],
-                              ),
-                              const Spacer(flex: 4),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
                 SliverAppBar(

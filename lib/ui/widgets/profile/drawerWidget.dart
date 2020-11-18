@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
+import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:animations/animations.dart';
@@ -484,12 +485,38 @@ class ProfileDrawer extends StatelessWidget {
             ),
             Divider(),
             createDrawerBodyHeader(text: "USER", context: context),
+            main.prefs.get("name") != null &&
+                    main.prefs.get("email") != null &&
+                    main.prefs.get("googleimage") != null
+                ? createDrawerBodyItem(
+                    icon: JamIcons.share_alt,
+                    text: 'Share your Profile',
+                    context: context,
+                    onTap: () {
+                      createUserDynamicLink(
+                          main.prefs.get("name").toString(),
+                          main.prefs.get("email").toString(),
+                          main.prefs.get("googleimage").toString(),
+                          main.prefs.get("premium") as bool,
+                          main.prefs.get("twitter") != ""
+                              ? main.prefs
+                                  .get("twitter")
+                                  .toString()
+                                  .split("https://www.twitter.com/")[1]
+                              : "",
+                          main.prefs.get("instagram") != ""
+                              ? main.prefs
+                                  .get("instagram")
+                                  .toString()
+                                  .split("https://www.instagram.com/")[1]
+                              : "");
+                    })
+                : Container(),
             createDrawerBodyItem(
               icon: JamIcons.log_out,
               text: 'Log out',
               onTap: () {
                 Navigator.pop(context);
-
                 globals.gAuth.signOutGoogle();
                 toasts.codeSend("Log out Successful!");
                 main.RestartWidget.restartApp(context);
