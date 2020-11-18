@@ -514,7 +514,9 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width * 0.85;
     return Container(
-      height: MediaQuery.of(context).size.height / 1.5,
+      height: MediaQuery.of(context).size.height / 1.5 > 500
+          ? MediaQuery.of(context).size.height / 1.5
+          : 500,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         borderRadius: const BorderRadius.only(
