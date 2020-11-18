@@ -108,7 +108,10 @@ class ProfileDrawer extends StatelessWidget {
                 : createDrawerBodyItem(
                     icon: JamIcons.coin,
                     text: 'Buy Premium',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, premiumRoute);
+                    },
                     context: context),
             (main.prefs.get('premium') as bool == true)
                 ? Container()
