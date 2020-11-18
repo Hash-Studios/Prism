@@ -79,6 +79,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
       setState(() {
         isLoading = false;
       });
+      navStack.removeLast();
+      debugPrint(navStack.toString());
+      Navigator.pop(context);
     });
   }
 
@@ -931,7 +934,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                 ),
                                 padding: const EdgeInsets.all(17),
                                 child: Icon(
-                                  JamIcons.heart,
+                                  JamIcons.trash,
                                   color: Theme.of(context).accentColor,
                                   size: 20,
                                 ),
