@@ -112,10 +112,21 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
           parallaxEnabled: true,
           parallaxOffset: 0.00,
           color: Colors.transparent,
-          maxHeight: user_data.userProfileSetups[index]["widget2"] == "" ||
-                  user_data.userProfileSetups[index]["widget2"] == null
-              ? MediaQuery.of(context).size.height * .70
-              : MediaQuery.of(context).size.height * .85,
+          maxHeight:
+              // Provider.of<SetupProvider>(context, listen: false)
+              //                 .setups[index]["widget2"] ==
+              //             "" ||
+              //         Provider.of<SetupProvider>(context, listen: false)
+              //                 .setups[index]["widget2"] ==
+              //             null
+              // ?
+              MediaQuery.of(context).size.height * .70 > 600
+                  ? MediaQuery.of(context).size.height * .70
+                  : 600
+          // : MediaQuery.of(context).size.height * .85 > 650
+          //     ? MediaQuery.of(context).size.height * .85
+          //     : 650
+          ,
           controller: panelController,
           onPanelOpened: () {
             setState(() {
@@ -129,10 +140,21 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
           },
           panel: Container(
             margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            height: user_data.userProfileSetups[index]["widget2"] == "" ||
-                    user_data.userProfileSetups[index]["widget2"] == null
-                ? MediaQuery.of(context).size.height * .70
-                : MediaQuery.of(context).size.height * .85,
+            height:
+                // Provider.of<SetupProvider>(context, listen: false)
+                //                 .setups[index]["widget2"] ==
+                //             "" ||
+                //         Provider.of<SetupProvider>(context, listen: false)
+                //                 .setups[index]["widget2"] ==
+                //             null
+                // ?
+                MediaQuery.of(context).size.height * .70 > 600
+                    ? MediaQuery.of(context).size.height * .70
+                    : 600
+            // : MediaQuery.of(context).size.height * .85 > 650
+            //     ? MediaQuery.of(context).size.height * .85
+            //     : 650
+            ,
             width: MediaQuery.of(context).size.width,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30),
@@ -180,6 +202,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 ["name"]
                                             .toString()
                                             .toUpperCase(),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
                                             .headline1
@@ -202,6 +226,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                         user_data.userProfileSetups[index]
                                                 ["desc"]
                                             .toString(),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
                                             .headline6
@@ -242,6 +268,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                       ["id"]
                                                   .toString()
                                                   .toUpperCase(),
+                                              overflow: TextOverflow.fade,
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyText1
@@ -275,6 +302,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 const SizedBox(width: 10),
                                                 Text(
                                                   "Copyright",
+                                                  overflow: TextOverflow.fade,
                                                   style: Theme.of(context)
                                                       .textTheme
                                                       .bodyText2
@@ -633,123 +661,129 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                         ),
                                       ],
                                     )
-                                  : Column(
-                                      children: [
-                                        SetupDetailsTile(
-                                          onTap: () async {
-                                            if (user_data
-                                                    .userProfileSetups[index]
-                                                        ["wallpaper_url"]
-                                                    .toString()[0] !=
-                                                "[") {
-                                              if (user_data.userProfileSetups[
-                                                      index]["wall_id"] ==
-                                                  null) {
-                                                debugPrint("Id Not Found!");
-                                              } else {
-                                                Navigator.pushNamed(
-                                                    context, shareRoute,
-                                                    arguments: [
-                                                      user_data
-                                                          .userProfileSetups[
-                                                              index]["wall_id"]
-                                                          .toString(),
-                                                      user_data
-                                                          .userProfileSetups[
-                                                              index][
-                                                              "wallpaper_provider"]
-                                                          .toString(),
-                                                      user_data
-                                                          .userProfileSetups[
-                                                              index]
-                                                              ["wallpaper_url"]
-                                                          .toString(),
-                                                      user_data
-                                                          .userProfileSetups[
-                                                              index]
-                                                              ["wallpaper_url"]
-                                                          .toString(),
-                                                    ]);
-                                              }
-                                            } else {
-                                              launch(user_data
-                                                  .userProfileSetups[index]
-                                                      ["wallpaper_url"][1]
-                                                  .toString());
-                                            }
-                                          },
-                                          tileText: user_data.userProfileSetups[index]
+                                  : Scrollbar(
+                                      radius: const Radius.circular(500),
+                                      thickness: 5,
+                                      child: ListView(
+                                        children: [
+                                          SetupDetailsTile(
+                                            onTap: () async {
+                                              if (user_data
+                                                      .userProfileSetups[index]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
-                                                  "["
-                                              ? "Prism"
-                                              : user_data.userProfileSetups[index]
-                                                          ["wallpaper_url"][0]
-                                                      .toString() +
-                                                  " - " +
-                                                  ((user_data.userProfileSetups[index]
-                                                                      ["wallpaper_url"]
-                                                                  as List)
-                                                              .length >
-                                                          2
-                                                      ? user_data
-                                                          .userProfileSetups[index]
-                                                              ["wallpaper_url"][2]
-                                                          .toString()
-                                                      : ""),
-                                          tileType: "Wallpaper",
-                                          panelCollapsed: panelCollapsed,
-                                          delay:
-                                              const Duration(milliseconds: 150),
-                                        ),
-                                        SetupDetailsTile(
-                                          onTap: () async {
-                                            launch(user_data
+                                                  "[") {
+                                                if (user_data.userProfileSetups[
+                                                        index]["wall_id"] ==
+                                                    null) {
+                                                  debugPrint("Id Not Found!");
+                                                } else {
+                                                  Navigator.pushNamed(
+                                                      context, shareRoute,
+                                                      arguments: [
+                                                        user_data
+                                                            .userProfileSetups[
+                                                                index]
+                                                                ["wall_id"]
+                                                            .toString(),
+                                                        user_data
+                                                            .userProfileSetups[
+                                                                index][
+                                                                "wallpaper_provider"]
+                                                            .toString(),
+                                                        user_data
+                                                            .userProfileSetups[
+                                                                index][
+                                                                "wallpaper_url"]
+                                                            .toString(),
+                                                        user_data
+                                                            .userProfileSetups[
+                                                                index][
+                                                                "wallpaper_url"]
+                                                            .toString(),
+                                                      ]);
+                                                }
+                                              } else {
+                                                launch(user_data
+                                                    .userProfileSetups[index]
+                                                        ["wallpaper_url"][1]
+                                                    .toString());
+                                              }
+                                            },
+                                            tileText: user_data.userProfileSetups[index]
+                                                            ["wallpaper_url"]
+                                                        .toString()[0] !=
+                                                    "["
+                                                ? "Prism"
+                                                : user_data.userProfileSetups[index]
+                                                            ["wallpaper_url"][0]
+                                                        .toString() +
+                                                    " - " +
+                                                    ((user_data.userProfileSetups[index]
+                                                                        ["wallpaper_url"]
+                                                                    as List)
+                                                                .length >
+                                                            2
+                                                        ? user_data
+                                                            .userProfileSetups[index]
+                                                                ["wallpaper_url"][2]
+                                                            .toString()
+                                                        : ""),
+                                            tileType: "Wallpaper",
+                                            panelCollapsed: panelCollapsed,
+                                            delay: const Duration(
+                                                milliseconds: 150),
+                                          ),
+                                          SetupDetailsTile(
+                                            onTap: () async {
+                                              launch(user_data
+                                                  .userProfileSetups[index]
+                                                      ["icon_url"]
+                                                  .toString());
+                                            },
+                                            tileText: user_data
                                                 .userProfileSetups[index]
-                                                    ["icon_url"]
-                                                .toString());
-                                          },
-                                          tileText: user_data
-                                              .userProfileSetups[index]["icon"]
-                                              .toString(),
-                                          tileType: "Icon",
-                                          panelCollapsed: panelCollapsed,
-                                          delay:
-                                              const Duration(milliseconds: 200),
-                                        ),
-                                        SetupDetailsTile(
-                                          onTap: () async {
-                                            launch(user_data
+                                                    ["icon"]
+                                                .toString(),
+                                            tileType: "Icon",
+                                            panelCollapsed: panelCollapsed,
+                                            delay: const Duration(
+                                                milliseconds: 200),
+                                          ),
+                                          SetupDetailsTile(
+                                            onTap: () async {
+                                              launch(user_data
+                                                  .userProfileSetups[index]
+                                                      ["widget_url"]
+                                                  .toString());
+                                            },
+                                            tileText: user_data
                                                 .userProfileSetups[index]
-                                                    ["widget_url"]
-                                                .toString());
-                                          },
-                                          tileText: user_data
-                                              .userProfileSetups[index]
-                                                  ["widget"]
-                                              .toString(),
-                                          tileType: "Widget",
-                                          panelCollapsed: panelCollapsed,
-                                          delay:
-                                              const Duration(milliseconds: 250),
-                                        ),
-                                        SetupDetailsTile(
-                                          onTap: () async {
-                                            launch(user_data
+                                                    ["widget"]
+                                                .toString(),
+                                            tileType: "Widget",
+                                            panelCollapsed: panelCollapsed,
+                                            delay: const Duration(
+                                                milliseconds: 250),
+                                          ),
+                                          SetupDetailsTile(
+                                            onTap: () async {
+                                              launch(user_data
+                                                  .userProfileSetups[index]
+                                                      ["widget_url2"]
+                                                  .toString());
+                                            },
+                                            tileText: user_data
                                                 .userProfileSetups[index]
-                                                    ["widget_url2"]
-                                                .toString());
-                                          },
-                                          tileText: user_data
-                                              .userProfileSetups[index]
-                                                  ["widget2"]
-                                              .toString(),
-                                          tileType: "Widget",
-                                          panelCollapsed: panelCollapsed,
-                                          delay:
-                                              const Duration(milliseconds: 300),
-                                        ),
-                                      ],
+                                                    ["widget2"]
+                                                .toString(),
+                                            tileType: "Widget",
+                                            panelCollapsed: panelCollapsed,
+                                            delay: const Duration(
+                                                milliseconds: 300),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                         ),
                       ),
@@ -876,7 +910,11 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                         progressIndicatorBuilder:
                             (context, url, downloadProgress) => Stack(
                           children: <Widget>[
-                            const SizedBox.expand(child: Text("")),
+                            const SizedBox.expand(
+                                child: Text(
+                              "",
+                              overflow: TextOverflow.fade,
+                            )),
                             Center(
                               child: CircularProgressIndicator(
                                   valueColor: AlwaysStoppedAnimation(
@@ -920,11 +958,11 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
               //       onPressed: () {
               //         createSetupDynamicLink(
               //             index.toString(),
-              //             user_data
-              //                 .userProfileSetups[index]["name"]
+              //             Provider.of<SetupProvider>(context, listen: false)
+              //                 .profileSetups[index]["name"]
               //                 .toString(),
-              //             user_data
-              //                 .userProfileSetups[index]["image"]
+              //             Provider.of<SetupProvider>(context, listen: false)
+              //                 .profileSetups[index]["image"]
               //                 .toString());
               //       },
               //       color: isLoading
@@ -983,8 +1021,9 @@ class SetupDetailsTile extends StatelessWidget {
                         left: 0,
                         child: Text(
                           tileType,
+                          overflow: TextOverflow.fade,
                           style: TextStyle(
-                            fontSize: 160,
+                            fontSize: 140,
                             color:
                                 Theme.of(context).accentColor.withOpacity(0.1),
                             fontWeight: FontWeight.w900,
@@ -1007,6 +1046,7 @@ class SetupDetailsTile extends StatelessWidget {
                                   flex: 10,
                                   child: Text(
                                     tileText,
+                                    overflow: TextOverflow.fade,
                                     style: TextStyle(
                                       color: Theme.of(context).accentColor,
                                     ),
