@@ -6,8 +6,6 @@ String currentAppVersionCode = '56';
 bool updateChecked = false;
 bool updateAvailable = false;
 Map versionInfo = {};
-double height = 1440.0;
-double width = 720.0;
 bool loadingAd = true;
 bool updateAlerted = false;
 

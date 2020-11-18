@@ -15,10 +15,9 @@ import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/analytics/analytics_service.dart';
 
 class CategoriesBar extends StatefulWidget {
-  final double width;
-  final double height;
-  const CategoriesBar({Key key, @required this.width, @required this.height})
-      : super(key: key);
+  const CategoriesBar({
+    Key key,
+  }) : super(key: key);
 
   @override
   _CategoriesBarState createState() => _CategoriesBarState();
@@ -30,8 +29,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
   void initState() {
     fetchNotifications();
     super.initState();
-    globals.height = widget.height;
-    globals.width = widget.width;
     checkForUpdate();
     noNotification = checkNewNotification();
   }
