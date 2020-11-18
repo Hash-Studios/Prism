@@ -13,6 +13,8 @@ import 'package:Prism/theme/config.dart' as config;
 class UserList extends StatelessWidget {
   final TextEditingController _twitterController = TextEditingController();
   final TextEditingController _igController = TextEditingController();
+  final bool expanded;
+  UserList({@required this.expanded});
   @override
   Widget build(BuildContext context) {
     if (main.prefs.get("isLoggedin") == false) {
@@ -67,6 +69,7 @@ class UserList extends StatelessWidget {
       );
     } else {
       return ExpansionTile(
+        initiallyExpanded: expanded,
         leading: const Icon(JamIcons.user_circle),
         title: Text(
           "User",

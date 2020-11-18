@@ -545,7 +545,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       tileText: user_data
                                           .userProfileSetups[index]["icon"]
                                           .toString(),
-                                      tileType: "Icon",
+                                      tileType: "Icons",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 200),
                                     ),
@@ -638,7 +638,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           tileText: user_data
                                               .userProfileSetups[index]["icon"]
                                               .toString(),
-                                          tileType: "Icon",
+                                          tileType: "Icons",
                                           panelCollapsed: panelCollapsed,
                                           delay:
                                               const Duration(milliseconds: 200),
@@ -745,7 +745,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 .userProfileSetups[index]
                                                     ["icon"]
                                                 .toString(),
-                                            tileType: "Icon",
+                                            tileType: "Icons",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(
                                                 milliseconds: 200),

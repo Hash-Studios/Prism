@@ -563,7 +563,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                 },
                                                 tileText: sdata.setup["icon"]
                                                     .toString(),
-                                                tileType: "Icon",
+                                                tileType: "Icons",
                                                 panelCollapsed: panelCollapsed,
                                                 delay: const Duration(
                                                     milliseconds: 200),
@@ -650,7 +650,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                     tileText: sdata
                                                         .setup["icon"]
                                                         .toString(),
-                                                    tileType: "Icon",
+                                                    tileType: "Icons",
                                                     panelCollapsed:
                                                         panelCollapsed,
                                                     delay: const Duration(
@@ -751,7 +751,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                       tileText: sdata
                                                           .setup["icon"]
                                                           .toString(),
-                                                      tileType: "Icon",
+                                                      tileType: "Icons",
                                                       panelCollapsed:
                                                           panelCollapsed,
                                                       delay: const Duration(

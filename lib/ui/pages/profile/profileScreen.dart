@@ -854,8 +854,12 @@ class _ProfileChildState extends State<ProfileChild> {
                       child: PremiumList(),
                     ),
                     DownloadList(),
-                    GeneralList(),
-                    UserList(),
+                    const GeneralList(
+                      expanded: false,
+                    ),
+                    UserList(
+                      expanded: false,
+                    ),
                     const StudioList(),
                     AboutList(),
                     const SizedBox(

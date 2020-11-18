@@ -33,8 +33,12 @@ class SettingsScreen extends StatelessWidget {
           body: BottomBar(
             child: ListView(children: <Widget>[
               PremiumList(),
-              GeneralList(),
-              UserList(),
+              const GeneralList(
+                expanded: true,
+              ),
+              UserList(
+                expanded: true,
+              ),
               const StudioList(),
             ]),
           )),

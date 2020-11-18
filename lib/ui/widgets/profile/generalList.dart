@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:Prism/theme/config.dart' as config;
 
 class GeneralList extends StatefulWidget {
+  final bool expanded;
+  const GeneralList({@required this.expanded});
   @override
   _GeneralListState createState() => _GeneralListState();
 }
@@ -22,6 +24,7 @@ class _GeneralListState extends State<GeneralList> {
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
+      initiallyExpanded: widget.expanded,
       leading: const Icon(
         JamIcons.wrench,
       ),
