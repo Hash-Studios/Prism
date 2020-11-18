@@ -918,7 +918,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     disabledBorder: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
-                                    hintText: "* Write wallpaper name",
+                                    hintText: "Write wallpaper name",
                                     hintStyle: Theme.of(context)
                                         .textTheme
                                         .headline5
