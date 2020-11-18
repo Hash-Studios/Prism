@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 
 final Firestore databaseReference = Firestore.instance;
 Future<void> getNotifications() async {
@@ -30,6 +31,13 @@ Future<void> getNotifications() async {
           }
         } else if (map['modifier'] == "all") {
           writeNotifications(map);
+        } else if (map['modifier'] == globals.currentAppVersion) {
+          writeNotifications(map);
+        } else if (map['modifier'] == main.prefs.get('email').toString()) {
+          if (main.prefs.get('email').toString() != "" &&
+              main.prefs.get('email').toString() != null) {
+            writeNotifications(map);
+          }
         }
       }
       debugPrint(
