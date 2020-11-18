@@ -93,6 +93,8 @@ class _EditWallScreenState extends State<EditWallScreen> {
       } else if (cropRatio == 9 / 16) {
         cropRatio = 9 / 21;
       } else if (cropRatio == 9 / 21) {
+        cropRatio = 9 / 19.5;
+      } else if (cropRatio == 9 / 19.5) {
         cropRatio = 1 / 2;
       } else {
         cropRatio = 1 / 2;
@@ -355,7 +357,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
                     ? "9:16"
                     : cropRatio == 9 / 21
                         ? "9:21"
-                        : "9:18",
+                        : cropRatio == 9 / 19.5
+                            ? "9:19.5"
+                            : "9:18",
             style: Theme.of(context).textTheme.bodyText2.copyWith(
                   color: Theme.of(context).accentColor,
                 ),
