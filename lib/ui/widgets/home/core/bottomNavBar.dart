@@ -419,13 +419,16 @@ class _BottomNavBarState extends State<BottomNavBar>
                     Container(
                       height: navStack.last == "Profile" ? 9 : 0,
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(500),
-                          color: Theme.of(context).accentColor),
-                      child: Icon(JamIcons.user_circle,
-                          color: Theme.of(context).primaryColor),
-                    ),
+                    main.prefs.get("isLoggedin") == true
+                        ? Container(
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(500),
+                                color: Theme.of(context).accentColor),
+                            child: Icon(JamIcons.user_circle,
+                                color: Theme.of(context).primaryColor),
+                          )
+                        : Icon(JamIcons.cog_f,
+                            color: Theme.of(context).accentColor),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
