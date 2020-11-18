@@ -33,7 +33,7 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   final PageController controller = PageController(
-    viewportFraction: 0.78,
+    viewportFraction: 0.74,
   );
   Future future;
 
@@ -227,7 +227,7 @@ class _SetupPageState extends State<SetupPage> {
                                         width:
                                             MediaQuery.of(context).size.height *
                                                 0.65 *
-                                                (9 / 18),
+                                                (9 / 19.5),
                                         height:
                                             MediaQuery.of(context).size.height *
                                                 0.65,
@@ -282,7 +282,7 @@ class _SetupPageState extends State<SetupPage> {
                                         width:
                                             MediaQuery.of(context).size.height *
                                                 0.65 *
-                                                (9 / 18),
+                                                (9 / 19.5),
                                         height:
                                             MediaQuery.of(context).size.height *
                                                 0.65,
