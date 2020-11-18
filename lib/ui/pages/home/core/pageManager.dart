@@ -251,11 +251,9 @@ class _PageManagerChildState extends State<PageManagerChild>
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          flexibleSpace: PreferredSize(
-            preferredSize: const Size(double.infinity, 55),
-            child: CategoriesBar(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height),
+          flexibleSpace: const PreferredSize(
+            preferredSize: Size(double.infinity, 55),
+            child: CategoriesBar(),
           ),
           bottom: TabBar(
               controller: tabController,
