@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,32 +22,37 @@ class ProfileDrawer extends StatelessWidget {
         margin: EdgeInsets.zero,
         padding: EdgeInsets.zero,
         child: Stack(children: <Widget>[
-          Positioned(
-            top: 12.0,
-            left: 16.0,
-            child: Container(
-              width: MediaQuery.of(context).size.width / 2,
-              child: Text(
-                main.prefs.get('premium') as bool == true
-                    ? "Prism Pro"
-                    : "Prism Wallpapers",
-                style: Theme.of(context).textTheme.headline3,
-              ),
-            ),
-          ),
-          Positioned(
-            top: 42.0,
-            left: 16.0,
-            child: Container(
-              width: MediaQuery.of(context).size.width / 2,
-              child: Text(
-                main.prefs.get('premium') as bool == true
-                    ? "Exclusive premium wallpapers & more!"
-                    : "Exclusive wallpapers & setups!",
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyText2
-                    .copyWith(color: Theme.of(context).accentColor),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Container(
+                height: 70,
+                child: Column(
+                  children: [
+                    Container(
+                      width: MediaQuery.of(context).size.width / 2,
+                      child: Text(
+                        main.prefs.get('premium') as bool == true
+                            ? "Prism Pro"
+                            : "Prism Wallpapers",
+                        style: Theme.of(context).textTheme.headline3,
+                      ),
+                    ),
+                    Container(
+                      width: MediaQuery.of(context).size.width / 2,
+                      child: Text(
+                        main.prefs.get('premium') as bool == true
+                            ? "Exclusive premium wallpapers & more!"
+                            : "Exclusive wallpapers & setups!",
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyText2
+                            .copyWith(color: Theme.of(context).accentColor),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -59,20 +65,19 @@ class ProfileDrawer extends StatelessWidget {
       GestureTapCallback onTap,
       BuildContext context}) {
     return ListTile(
+      dense: true,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
       leading: Icon(
         icon,
         color: config.Colors().mainAccentColor(1),
       ),
-      title: Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: Container(
-          width: MediaQuery.of(context).size.width / 2,
-          child: Text(text,
-              style: Theme.of(context)
-                  .textTheme
-                  .caption
-                  .copyWith(fontFamily: "Proxima Nova")),
-        ),
+      title: Container(
+        width: MediaQuery.of(context).size.width / 2,
+        child: Text(text,
+            style: Theme.of(context)
+                .textTheme
+                .caption
+                .copyWith(fontFamily: "Proxima Nova")),
       ),
       onTap: onTap,
     );
@@ -85,7 +90,7 @@ class ProfileDrawer extends StatelessWidget {
         width: MediaQuery.of(context).size.width / 2,
         child: Text(text,
             style: Theme.of(context).textTheme.headline3.copyWith(
-                fontSize: 14,
+                fontSize: 12,
                 color: Theme.of(context).accentColor.withOpacity(0.4))),
       ),
     );
@@ -468,6 +473,20 @@ class ProfileDrawer extends StatelessWidget {
                         .currentTheme,
                   )
                 ]);
+              },
+              context: context,
+            ),
+            Divider(),
+            createDrawerBodyHeader(text: "USER", context: context),
+            createDrawerBodyItem(
+              icon: JamIcons.log_out,
+              text: 'Log out',
+              onTap: () {
+                Navigator.pop(context);
+
+                globals.gAuth.signOutGoogle();
+                toasts.codeSend("Log out Successful!");
+                main.RestartWidget.restartApp(context);
               },
               context: context,
             ),
