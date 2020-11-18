@@ -33,25 +33,10 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
             }
             debugPrint(navStack.toString());
           }),
-      title: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: 100,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(5),
-              child: ActionChip(
-                  pressElevation: 5,
-                  padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                  backgroundColor: Theme.of(context).accentColor,
-                  label: Text(widget.current,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headline4
-                          .copyWith(color: Theme.of(context).primaryColor)),
-                  onPressed: () {}),
-            ),
-          )),
+      title: Text(
+        widget.current,
+        style: Theme.of(context).textTheme.headline3,
+      ),
     );
   }
 }
