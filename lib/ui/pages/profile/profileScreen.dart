@@ -69,7 +69,7 @@ class _ProfileChildState extends State<ProfileChild> {
   void initState() {
     checkFav();
     _controllerBottomCenter =
-        ConfettiController(duration: const Duration(seconds: 5));
+        ConfettiController(duration: const Duration(seconds: 1));
     super.initState();
   }
 
@@ -784,9 +784,9 @@ class _ProfileChildState extends State<ProfileChild> {
                         gravity: 0.1,
                         colors: const [
                           Colors.green,
-                          Colors.blue,
+                          Colors.teal,
                           Colors.pink,
-                          Colors.orange,
+                          Colors.red,
                           Colors.purple
                         ],
                       ),
@@ -801,10 +801,10 @@ class _ProfileChildState extends State<ProfileChild> {
                         minBlastForce: 80,
                         gravity: 0.1,
                         colors: const [
-                          Colors.green,
+                          Colors.indigo,
                           Colors.blue,
                           Colors.pink,
-                          Colors.orange,
+                          Colors.deepOrange,
                           Colors.purple
                         ],
                       ),
