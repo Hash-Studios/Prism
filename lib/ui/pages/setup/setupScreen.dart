@@ -125,19 +125,24 @@ class _SetupPageState extends State<SetupPage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(
-                      Provider.of<SetupProvider>(context, listen: false)
-                              .setups
-                              .isEmpty
-                          ? ""
-                          : Provider.of<SetupProvider>(context, listen: false)
-                              .setups[pageNumber]['name']
-                              .toString()
-                              .toUpperCase(),
-                      style: Theme.of(context)
-                          .textTheme
-                          .headline1
-                          .copyWith(fontSize: 30),
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      child: Text(
+                        Provider.of<SetupProvider>(context, listen: false)
+                                .setups
+                                .isEmpty
+                            ? ""
+                            : Provider.of<SetupProvider>(context, listen: false)
+                                .setups[pageNumber]['name']
+                                .toString()
+                                .toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .headline1
+                            .copyWith(fontSize: 30),
+                      ),
                     ),
                   ],
                 ),
@@ -219,8 +224,9 @@ class _SetupPageState extends State<SetupPage> {
                                       imageBuilder: (context, imageProvider) =>
                                           Container(
                                         width:
-                                            MediaQuery.of(context).size.width *
-                                                0.712,
+                                            MediaQuery.of(context).size.height *
+                                                0.72 *
+                                                (9 / 18),
                                         height:
                                             MediaQuery.of(context).size.height *
                                                 0.72,
@@ -273,8 +279,9 @@ class _SetupPageState extends State<SetupPage> {
                                           (context, url, downloadProgress) =>
                                               Container(
                                         width:
-                                            MediaQuery.of(context).size.width *
-                                                0.712,
+                                            MediaQuery.of(context).size.height *
+                                                0.72 *
+                                                (9 / 18),
                                         height:
                                             MediaQuery.of(context).size.height *
                                                 0.72,
