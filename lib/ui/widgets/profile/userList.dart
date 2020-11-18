@@ -1,4 +1,5 @@
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
@@ -89,14 +90,14 @@ class UserList extends StatelessWidget {
                       JamIcons.heart,
                     ),
                     title: Text(
-                      "Clear favourites",
+                      "Clear favourite walls",
                       style: TextStyle(
                           color: Theme.of(context).accentColor,
                           fontWeight: FontWeight.w500,
                           fontFamily: "Proxima Nova"),
                     ),
                     subtitle: const Text(
-                      "Remove all favourites",
+                      "Remove all favourite wallpapers",
                       style: TextStyle(fontSize: 12),
                     ),
                     onTap: () async {
@@ -114,7 +115,7 @@ class UserList extends StatelessWidget {
                             width: 250,
                             child: Center(
                               child: Text(
-                                "Do you want remove all your favourites?",
+                                "Do you want remove all your favourite wallpapers?",
                                 style: Theme.of(context).textTheme.headline4,
                               ),
                             ),
@@ -125,8 +126,86 @@ class UserList extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(5)),
                               onPressed: () {
                                 Navigator.of(context).pop();
-                                toasts.error("Cleared all favourites!");
+                                toasts
+                                    .error("Cleared all favourite wallpapers!");
                                 Provider.of<FavouriteProvider>(context,
+                                        listen: false)
+                                    .deleteData();
+                              },
+                              child: Text(
+                                'YES',
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  color: config.Colors().mainAccentColor(1),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: FlatButton(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(5)),
+                                color: config.Colors().mainAccentColor(1),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text(
+                                  'NO',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                          backgroundColor: Theme.of(context).primaryColor,
+                        ),
+                      );
+                    }),
+                ListTile(
+                    leading: const Icon(
+                      JamIcons.heart,
+                    ),
+                    title: Text(
+                      "Clear favourite setups",
+                      style: TextStyle(
+                          color: Theme.of(context).accentColor,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: "Proxima Nova"),
+                    ),
+                    subtitle: const Text(
+                      "Remove all favourite setups",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    onTap: () async {
+                      showModal(
+                        context: context,
+                        configuration: const FadeScaleTransitionConfiguration(),
+                        builder: (context) => AlertDialog(
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(10),
+                            ),
+                          ),
+                          content: Container(
+                            height: 50,
+                            width: 250,
+                            child: Center(
+                              child: Text(
+                                "Do you want remove all your favourite setups?",
+                                style: Theme.of(context).textTheme.headline4,
+                              ),
+                            ),
+                          ),
+                          actions: <Widget>[
+                            FlatButton(
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5)),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                toasts.error("Cleared all favourite setups!");
+                                Provider.of<FavouriteSetupProvider>(context,
                                         listen: false)
                                     .deleteData();
                               },
