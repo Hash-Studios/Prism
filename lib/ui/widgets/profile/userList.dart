@@ -19,10 +19,10 @@ class UserList extends StatelessWidget {
         onTap: () {
           final Dialog loaderDialog = Dialog(
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Container(
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(10),
                   color: Theme.of(context).primaryColor),
               width: MediaQuery.of(context).size.width * .7,
               height: MediaQuery.of(context).size.height * .3,
@@ -106,7 +106,7 @@ class UserList extends StatelessWidget {
                         builder: (context) => AlertDialog(
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(
-                              Radius.circular(20),
+                              Radius.circular(10),
                             ),
                           ),
                           content: Container(
@@ -121,7 +121,8 @@ class UserList extends StatelessWidget {
                           ),
                           actions: <Widget>[
                             FlatButton(
-                              shape: const StadiumBorder(),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5)),
                               onPressed: () {
                                 Navigator.of(context).pop();
                                 toasts.error("Cleared all favourites!");
@@ -140,7 +141,8 @@ class UserList extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: FlatButton(
-                                shape: const StadiumBorder(),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(5)),
                                 color: config.Colors().mainAccentColor(1),
                                 onPressed: () {
                                   Navigator.of(context).pop();
@@ -155,6 +157,7 @@ class UserList extends StatelessWidget {
                               ),
                             ),
                           ],
+                          backgroundColor: Theme.of(context).primaryColor,
                         ),
                       );
                     }),
@@ -180,7 +183,7 @@ class UserList extends StatelessWidget {
                         builder: (context) => AlertDialog(
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(
-                              Radius.circular(20),
+                              Radius.circular(10),
                             ),
                           ),
                           content: Container(
@@ -239,7 +242,8 @@ class UserList extends StatelessWidget {
                           ),
                           actions: <Widget>[
                             FlatButton(
-                              shape: const StadiumBorder(),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5)),
                               onPressed: () {
                                 Navigator.of(context).pop();
                               },
@@ -254,7 +258,8 @@ class UserList extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: FlatButton(
-                                shape: const StadiumBorder(),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(5)),
                                 color: config.Colors().mainAccentColor(1),
                                 onPressed: () async {
                                   Navigator.of(context).pop();
@@ -273,6 +278,7 @@ class UserList extends StatelessWidget {
                               ),
                             ),
                           ],
+                          backgroundColor: Theme.of(context).primaryColor,
                         ),
                       );
                     }),
@@ -298,7 +304,7 @@ class UserList extends StatelessWidget {
                         builder: (context) => AlertDialog(
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(
-                              Radius.circular(20),
+                              Radius.circular(10),
                             ),
                           ),
                           content: Container(
@@ -357,7 +363,8 @@ class UserList extends StatelessWidget {
                           ),
                           actions: <Widget>[
                             FlatButton(
-                              shape: const StadiumBorder(),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5)),
                               onPressed: () {
                                 Navigator.of(context).pop();
                               },
@@ -372,7 +379,8 @@ class UserList extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: FlatButton(
-                                shape: const StadiumBorder(),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(5)),
                                 color: config.Colors().mainAccentColor(1),
                                 onPressed: () async {
                                   Navigator.of(context).pop();
@@ -391,6 +399,7 @@ class UserList extends StatelessWidget {
                               ),
                             ),
                           ],
+                          backgroundColor: Theme.of(context).primaryColor,
                         ),
                       );
                     }),

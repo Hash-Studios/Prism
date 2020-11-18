@@ -84,7 +84,8 @@ class _PageManagerChildState extends State<PageManagerChild>
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: FlatButton(
-                  shape: const StadiumBorder(),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5)),
                   color: config.Colors().mainAccentColor(1),
                   onPressed: () async {
                     debugPrint(
@@ -128,7 +129,7 @@ class _PageManagerChildState extends State<PageManagerChild>
           },
           dialogStyle: DialogStyle(
             dialogShape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             messageStyle: Theme.of(context)
                 .textTheme
                 .headline6

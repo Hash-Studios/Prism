@@ -154,14 +154,13 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Clear all Downloads',
               onTap: () async {
                 Navigator.pop(context);
-
                 showModal(
                   context: context,
                   configuration: const FadeScaleTransitionConfiguration(),
                   builder: (context) => AlertDialog(
                     shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(
-                        Radius.circular(20),
+                        Radius.circular(10),
                       ),
                     ),
                     content: Container(
@@ -176,7 +175,8 @@ class ProfileDrawer extends StatelessWidget {
                     ),
                     actions: <Widget>[
                       FlatButton(
-                        shape: const StadiumBorder(),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5)),
                         onPressed: () async {
                           Navigator.of(context).pop();
                           final dir = Directory("storage/emulated/0/Prism/");
@@ -220,14 +220,15 @@ class ProfileDrawer extends StatelessWidget {
                           'YES',
                           style: TextStyle(
                             fontSize: 16.0,
-                            color: config.Colors().mainAccentColor(1),
+                            color: Theme.of(context).accentColor,
                           ),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FlatButton(
-                          shape: const StadiumBorder(),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5)),
                           color: config.Colors().mainAccentColor(1),
                           onPressed: () {
                             Navigator.of(context).pop();
@@ -242,6 +243,7 @@ class ProfileDrawer extends StatelessWidget {
                         ),
                       ),
                     ],
+                    backgroundColor: Theme.of(context).primaryColor,
                   ),
                 );
               },
@@ -254,14 +256,13 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Connect Twitter',
               onTap: () async {
                 Navigator.pop(context);
-
                 showModal(
                   context: context,
                   configuration: const FadeScaleTransitionConfiguration(),
                   builder: (context) => AlertDialog(
                     shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(
-                        Radius.circular(20),
+                        Radius.circular(10),
                       ),
                     ),
                     content: Container(
@@ -314,7 +315,8 @@ class ProfileDrawer extends StatelessWidget {
                     ),
                     actions: <Widget>[
                       FlatButton(
-                        shape: const StadiumBorder(),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5)),
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
@@ -329,7 +331,8 @@ class ProfileDrawer extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FlatButton(
-                          shape: const StadiumBorder(),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5)),
                           color: config.Colors().mainAccentColor(1),
                           onPressed: () async {
                             Navigator.of(context).pop();
@@ -348,6 +351,7 @@ class ProfileDrawer extends StatelessWidget {
                         ),
                       ),
                     ],
+                    backgroundColor: Theme.of(context).primaryColor,
                   ),
                 );
               },
@@ -358,14 +362,13 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Connect Instagram',
               onTap: () async {
                 Navigator.pop(context);
-
                 showModal(
                   context: context,
                   configuration: const FadeScaleTransitionConfiguration(),
                   builder: (context) => AlertDialog(
                     shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(
-                        Radius.circular(20),
+                        Radius.circular(10),
                       ),
                     ),
                     content: Container(
@@ -418,7 +421,8 @@ class ProfileDrawer extends StatelessWidget {
                     ),
                     actions: <Widget>[
                       FlatButton(
-                        shape: const StadiumBorder(),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5)),
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
@@ -433,7 +437,8 @@ class ProfileDrawer extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FlatButton(
-                          shape: const StadiumBorder(),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5)),
                           color: config.Colors().mainAccentColor(1),
                           onPressed: () async {
                             Navigator.of(context).pop();
@@ -452,6 +457,7 @@ class ProfileDrawer extends StatelessWidget {
                         ),
                       ),
                     ],
+                    backgroundColor: Theme.of(context).primaryColor,
                   ),
                 );
               },

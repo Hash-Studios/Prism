@@ -9,10 +9,10 @@ import 'package:Prism/theme/config.dart' as config;
 
 void googleSignInPopUp(BuildContext context, Function func) {
   final Dialog loaderDialog = Dialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     child: Container(
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(10),
           color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .7,
       height: MediaQuery.of(context).size.height * .3,
@@ -21,12 +21,12 @@ void googleSignInPopUp(BuildContext context, Function func) {
       ),
     ),
   );
-  final Dialog signinPopUp = Dialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    child: SingleChildScrollView(
+  final AlertDialog signinPopUp = AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    content: SingleChildScrollView(
       child: Container(
         decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(10),
             color: Theme.of(context).primaryColor),
         width: MediaQuery.of(context).size.width * .78,
         child: Column(
@@ -38,8 +38,8 @@ void googleSignInPopUp(BuildContext context, Function func) {
               width: MediaQuery.of(context).size.width * .78,
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20)),
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10)),
                   color: Theme.of(context).hintColor),
               child: const FlareActor(
                 "assets/animations/Signin.flr",
@@ -200,45 +200,58 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 ),
               ],
             ),
-            const SizedBox(
-              height: 25,
-            ),
-            FlatButton(
-              shape: const StadiumBorder(),
-              color: config.Colors().mainAccentColor(1),
-              onPressed: () {
-                Navigator.of(context).pop();
-                showDialog(
-                    barrierDismissible: false,
-                    context: context,
-                    builder: (BuildContext context) => loaderDialog);
-                globals.gAuth.signInWithGoogle().then((value) {
-                  toasts.codeSend("Login Successful!");
-                  main.prefs.put("isLoggedin", true);
-                  Navigator.pop(context);
-                  func();
-                }).catchError((e) {
-                  debugPrint(e.toString());
-                  Navigator.pop(context);
-                  main.prefs.put("isLoggedin", false);
-                  toasts.error("Something went wrong, please try again!");
-                });
-              },
-              child: const Text(
-                'SIGN IN WITH GOOGLE',
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(
-              height: 15,
-            ),
           ],
         ),
       ),
     ),
+    actions: [
+      FlatButton(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        color: Theme.of(context).primaryColor,
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        child: Text(
+          'CLOSE',
+          style: TextStyle(
+            fontSize: 16.0,
+            color: Theme.of(context).accentColor,
+          ),
+        ),
+      ),
+      FlatButton(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        color: config.Colors().mainAccentColor(1),
+        onPressed: () {
+          Navigator.of(context).pop();
+          showDialog(
+              barrierDismissible: false,
+              context: context,
+              builder: (BuildContext context) => loaderDialog);
+          globals.gAuth.signInWithGoogle().then((value) {
+            toasts.codeSend("Login Successful!");
+            main.prefs.put("isLoggedin", true);
+            Navigator.pop(context);
+            func();
+          }).catchError((e) {
+            debugPrint(e.toString());
+            Navigator.pop(context);
+            main.prefs.put("isLoggedin", false);
+            toasts.error("Something went wrong, please try again!");
+          });
+        },
+        child: const Text(
+          'SIGN IN',
+          style: TextStyle(
+            fontSize: 16.0,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    ],
+    contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
+    backgroundColor: Theme.of(context).primaryColor,
+    actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
   );
   showModal(
       context: context,
