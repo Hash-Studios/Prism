@@ -596,7 +596,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   listen: false)
                                               .profileSetups[index]["icon"]
                                               .toString(),
-                                      tileType: "Icon",
+                                      tileType: "Icons",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 200),
                                     ),
@@ -713,7 +713,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       listen: false)
                                                   .profileSetups[index]["icon"]
                                                   .toString(),
-                                          tileType: "Icon",
+                                          tileType: "Icons",
                                           panelCollapsed: panelCollapsed,
                                           delay:
                                               const Duration(milliseconds: 200),
@@ -848,7 +848,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                     listen: false)
                                                 .profileSetups[index]["icon"]
                                                 .toString(),
-                                            tileType: "Icon",
+                                            tileType: "Icons",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(
                                                 milliseconds: 200),
