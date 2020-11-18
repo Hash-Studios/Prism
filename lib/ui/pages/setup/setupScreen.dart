@@ -207,9 +207,10 @@ class _SetupPageState extends State<SetupPage> {
                                 padding: EdgeInsets.only(
                                   top: pageNumber == index + 1 ||
                                           pageNumber == index - 1
-                                      ? MediaQuery.of(context).size.height * 0.1
+                                      ? MediaQuery.of(context).size.height *
+                                          0.12
                                       : MediaQuery.of(context).size.height *
-                                          0.0299,
+                                          0.0499,
                                 ),
                                 child: PremiumBannerSetupOld(
                                   comparator: index < 5,
@@ -225,11 +226,11 @@ class _SetupPageState extends State<SetupPage> {
                                           Container(
                                         width:
                                             MediaQuery.of(context).size.height *
-                                                0.72 *
+                                                0.65 *
                                                 (9 / 18),
                                         height:
                                             MediaQuery.of(context).size.height *
-                                                0.72,
+                                                0.65,
                                         decoration: BoxDecoration(
                                           boxShadow: pageNumber == index
                                               ? Provider.of<ThemeModel>(context)
@@ -280,11 +281,11 @@ class _SetupPageState extends State<SetupPage> {
                                               Container(
                                         width:
                                             MediaQuery.of(context).size.height *
-                                                0.72 *
+                                                0.65 *
                                                 (9 / 18),
                                         height:
                                             MediaQuery.of(context).size.height *
-                                                0.72,
+                                                0.65,
                                         child: Center(
                                           child: CircularProgressIndicator(
                                               valueColor:
