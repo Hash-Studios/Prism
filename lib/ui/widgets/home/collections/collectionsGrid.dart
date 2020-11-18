@@ -460,7 +460,8 @@ class PremiumBannerSetupOld extends StatelessWidget {
               child,
               Positioned(
                 top: MediaQuery.of(context).size.height * 0.65 - 33,
-                left: MediaQuery.of(context).size.height * 0.65 * (9 / 18) - 27,
+                left:
+                    MediaQuery.of(context).size.height * 0.65 * (9 / 19.5) - 17,
                 child: Container(
                   decoration: const BoxDecoration(
                       color: Color(0xFFFFB800),
