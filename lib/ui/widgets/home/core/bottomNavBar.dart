@@ -449,11 +449,28 @@ class _BottomNavBarState extends State<BottomNavBar>
                   SystemChrome.setSystemUIOverlayStyle(
                       const SystemUiOverlayStyle(
                           statusBarColor: Colors.transparent));
-                  navStack.last == "Profile"
-                      ? debugPrint("Currently on Profile")
-                      : navStack.last == "Home"
-                          ? Navigator.of(context).pushNamed(profileRoute)
-                          : Navigator.of(context).pushNamed(profileRoute);
+                  if (navStack.last == "Profile") {
+                    debugPrint("Currently on Profile");
+                  } else {
+                    if (navStack.last == "Home") {
+                      Navigator.of(context).pushNamed(profileRoute);
+                    } else {
+                      Navigator.of(context).popUntil((route) {
+                        if (navStack.last != "Home" &&
+                            navStack.last != "Profile") {
+                          navStack.removeLast();
+                          debugPrint(navStack.toString());
+                          return false;
+                        } else {
+                          debugPrint(navStack.toString());
+                          return true;
+                        }
+                      });
+                      if (navStack.last == "Home") {
+                        Navigator.of(context).pushNamed(profileRoute);
+                      }
+                    }
+                  }
                 },
               ),
             ),
