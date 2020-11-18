@@ -66,7 +66,7 @@ class DownloadList extends StatelessWidget {
                   builder: (context) => AlertDialog(
                     shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(
-                        Radius.circular(20),
+                        Radius.circular(10),
                       ),
                     ),
                     content: Container(
@@ -81,7 +81,8 @@ class DownloadList extends StatelessWidget {
                     ),
                     actions: <Widget>[
                       FlatButton(
-                        shape: const StadiumBorder(),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5)),
                         onPressed: () async {
                           Navigator.of(context).pop();
                           final dir = Directory("storage/emulated/0/Prism/");
@@ -125,14 +126,15 @@ class DownloadList extends StatelessWidget {
                           'YES',
                           style: TextStyle(
                             fontSize: 16.0,
-                            color: config.Colors().mainAccentColor(1),
+                            color: Theme.of(context).accentColor,
                           ),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FlatButton(
-                          shape: const StadiumBorder(),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5)),
                           color: config.Colors().mainAccentColor(1),
                           onPressed: () {
                             Navigator.of(context).pop();
@@ -147,6 +149,7 @@ class DownloadList extends StatelessWidget {
                         ),
                       ),
                     ],
+                    backgroundColor: Theme.of(context).primaryColor,
                   ),
                 );
               }),

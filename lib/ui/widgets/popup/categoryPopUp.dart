@@ -10,11 +10,11 @@ import 'package:Prism/theme/config.dart' as config;
 
 void showCategories(BuildContext context, CategoryMenu initialValue) {
   final controller = ScrollController();
-  final Dialog categoryPopUp = Dialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    child: Container(
+  final AlertDialog categoryPopUp = AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    content: Container(
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(10),
           color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
       child: Column(
@@ -23,11 +23,10 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
         children: <Widget>[
           Container(
             height: 75,
-            width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
                 borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20)),
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10)),
                 color: Theme.of(context).primaryColor),
             child: Center(
               child: Text("Categories",
@@ -120,30 +119,29 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
               ),
             ),
           ),
-          const SizedBox(
-            height: 25,
-          ),
-          FlatButton(
-            shape: const StadiumBorder(),
-            color: config.Colors().mainAccentColor(1),
-            onPressed: () {
-              Navigator.of(context).pop();
-              debugPrint('You have not chossed anything');
-            },
-            child: const Text(
-              'CLOSE',
-              style: TextStyle(
-                fontSize: 16.0,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
         ],
       ),
     ),
+    actions: [
+      FlatButton(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        color: config.Colors().mainAccentColor(1),
+        onPressed: () {
+          Navigator.of(context).pop();
+          debugPrint('You have not chossed anything');
+        },
+        child: const Text(
+          'OK',
+          style: TextStyle(
+            fontSize: 16.0,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    ],
+    contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
+    backgroundColor: Theme.of(context).primaryColor,
+    actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
   );
   showModal(
     context: context,

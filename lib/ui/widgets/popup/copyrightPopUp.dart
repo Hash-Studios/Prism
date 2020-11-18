@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:Prism/theme/config.dart' as config;
 
 class CopyrightPopUp extends StatelessWidget {
   final bool setup;
@@ -27,6 +28,8 @@ class CopyrightPopUp extends StatelessWidget {
       ),
       actions: [
         FlatButton(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+          color: config.Colors().mainAccentColor(1),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -36,6 +39,8 @@ class CopyrightPopUp extends StatelessWidget {
               )),
         )
       ],
+      backgroundColor: Theme.of(context).primaryColor,
+      actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
     );
   }
 }
