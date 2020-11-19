@@ -6,7 +6,7 @@
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
 ![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-10K+-green.svg)
-![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.5-blue.svg)
+![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.4-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
@@ -29,19 +29,15 @@ Main features like finding, downloading and setting up wallpapers don't require 
 
 ### Introducing Prism Premium
 
-Now get access to more premium and exclusive stuff by buying Prism Premium.
+Now get access to more premium and exclusive stuff by buying Prism Premium. It also removes the download wallpaper ad.
 
-You get access to Setups (Get more exclusive Home Screen setups! Free version includes only 5 free setups) and exclusive collections.
-Your uploads are also reviewed instantly, rather than the 24 hours time constraint in the free version.
-You also get a PRO badge in front of your profile, plus you directly support the development of this forever ad-free app.
-
-- Get exclusive setups (ultra-premium look)
-- Get exclusive collections
-- The ability to add filters on wallpapers before applying
-- Get PRO badge in front of your profile
-- Get wallpaper uploads reviewed instantly
-- Get rid of all rewarded video ads (Used for downloads)
 - Support development of the app
+- The ability to set and view details of setups (only 5 free setups can be applied in the free version)
+- The ability to use wallpaper filters
+- Get uploads reviewed instantly
+- Get rid of all rewarded video ads (Used for downloads)
+- Get PRO badge in front of your profile
+- The ability to view premium collections
 
 ### Telegram
 
@@ -91,33 +87,30 @@ Join us on Telegram now. [https://t.me/PrismWallpapers](https://t.me/PrismWallpa
 - Minimal design with smooth transitions and animations
 - Clear Cache, Downloads and Favourites with one-tap
 - Optimized storage using minimal packages
-- Application size under 13 MB
+- Application size about 12 MB
 - Adaptive UI (changes color based on wallpaper)
 
 ## Changelog
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-### v2.6.0
-- Setups' uploading is now out of beta
-- Added new themes & theme designer
-- Removed "Premium required" for variants
-- Added new Wallpaper Filters (beta)
-- Added new & improved in-app notifications
-- Fixed thousands of lint issues
-- Updated Sliding Up Panel
-- Added New About Page
-- Swapped Firebase Storage with GitHub in setups
-- Redesigned new category popup
-- Changed HomeScreen Layout to Tabs
-- Setups now don't require signin to view
-- Improved Scrolling Performance
-- Added High Refresh Rate Support 
-- Twitter and Instagram now visible in wallpapers' info
-- Added verfied users
-- Added dynamic svg Strings
-- Removed tutorial coach mark
-- Reduced assets & app size
+### v2.6.1
+- Added ability to favourite setups
+- Added setups to profile
+- Added more modifiers in in-app-notifications
+- Redesigned setup's info panel.
+- Redesigned profile page.
+- Added rightside - nav drawer in profile
+- Added support for smaller screen phone.
+- Updated dialogs' design
+- Added animations to dialogs
+- Added Ink ripple animations
+- Added more animations in sliding panel
+- Added support for Scoped Storage Android 11
+- Added more crop ratios in wallpaper upload
+- Added an easter egg
+- Fixed Profile Nav Issue
+- Added reshuffling of search tags
 - Minor bug fixes and improvements
 
 ## Demo
