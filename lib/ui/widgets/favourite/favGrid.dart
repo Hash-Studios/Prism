@@ -3,6 +3,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -92,6 +93,8 @@ class _FavouriteGridState extends State<FavouriteGrid>
 
   @override
   Widget build(BuildContext context) {
+    final ScrollController controller =
+        InheritedDataProvider.of(context).scrollController;
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshFavKey,
@@ -220,6 +223,7 @@ class _FavouriteGridState extends State<FavouriteGrid>
                     shrinkWrap: true,
                     cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+                    controller: controller,
                     itemCount:
                         Provider.of<FavouriteProvider>(context).liked.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -235,34 +239,52 @@ class _FavouriteGridState extends State<FavouriteGrid>
                       return FocusedMenuHolder(
                         provider: "Liked",
                         index: index,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (Provider.of<FavouriteProvider>(context,
-                                        listen: false)
-                                    .liked ==
-                                []) {
-                            } else {
-                              Navigator.pushNamed(context, favWallViewRoute,
-                                  arguments: [
-                                    index,
-                                    Provider.of<FavouriteProvider>(context,
-                                            listen: false)
-                                        .liked[index]["thumb"],
-                                  ]);
-                            }
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                                color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                      Provider.of<FavouriteProvider>(context)
-                                          .liked[index]["thumb"]
-                                          .toString(),
-                                    ),
-                                    fit: BoxFit.cover)),
-                          ),
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                        Provider.of<FavouriteProvider>(context)
+                                            .liked[index]["thumb"]
+                                            .toString(),
+                                      ),
+                                      fit: BoxFit.cover)),
+                            ),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  splashColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.3),
+                                  highlightColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.1),
+                                  onTap: () {
+                                    if (Provider.of<FavouriteProvider>(context,
+                                                listen: false)
+                                            .liked ==
+                                        []) {
+                                    } else {
+                                      Navigator.pushNamed(
+                                          context, favWallViewRoute,
+                                          arguments: [
+                                            index,
+                                            Provider.of<FavouriteProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["thumb"],
+                                          ]);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     })

@@ -19,41 +19,53 @@ class WallhavenTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        if (wData.walls == []) {
-        } else {
-          Navigator.pushNamed(context, wallpaperRoute, arguments: [
-            widget.provider,
-            index,
-            wData.walls[index].thumbs["small"].toString(),
-          ]);
-        }
-      },
-      child: Container(
-        decoration: wData.walls.isEmpty
-            ? BoxDecoration(
-                color: Provider.of<ThemeModel>(context, listen: false)
-                            .returnThemeType() ==
-                        "Dark"
-                    ? Colors.white10
-                    : Colors.black.withOpacity(.1),
-                borderRadius: BorderRadius.circular(20),
-              )
-            : BoxDecoration(
-                color: Provider.of<ThemeModel>(context, listen: false)
-                            .returnThemeType() ==
-                        "Dark"
-                    ? Colors.white10
-                    : Colors.black.withOpacity(.1),
-                borderRadius: BorderRadius.circular(20),
-                image: DecorationImage(
-                    image: CachedNetworkImageProvider(
-                      wData.walls[index].thumbs["original"].toString(),
-                    ),
-                    fit: BoxFit.cover),
-              ),
-      ),
+    return Stack(
+      children: [
+        Container(
+          decoration: wData.walls.isEmpty
+              ? BoxDecoration(
+                  color: Provider.of<ThemeModel>(context, listen: false)
+                              .returnThemeType() ==
+                          "Dark"
+                      ? Colors.white10
+                      : Colors.black.withOpacity(.1),
+                  borderRadius: BorderRadius.circular(20),
+                )
+              : BoxDecoration(
+                  color: Provider.of<ThemeModel>(context, listen: false)
+                              .returnThemeType() ==
+                          "Dark"
+                      ? Colors.white10
+                      : Colors.black.withOpacity(.1),
+                  borderRadius: BorderRadius.circular(20),
+                  image: DecorationImage(
+                      image: CachedNetworkImageProvider(
+                        wData.walls[index].thumbs["original"].toString(),
+                      ),
+                      fit: BoxFit.cover),
+                ),
+        ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              splashColor: Theme.of(context).accentColor.withOpacity(0.3),
+              highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
+              onTap: () {
+                if (wData.walls == []) {
+                } else {
+                  Navigator.pushNamed(context, wallpaperRoute, arguments: [
+                    widget.provider,
+                    index,
+                    wData.walls[index].thumbs["small"].toString(),
+                  ]);
+                }
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

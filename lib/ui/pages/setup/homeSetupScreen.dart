@@ -201,62 +201,56 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                           .setups[index]['image']
                                           .toString(),
                                       imageBuilder: (context, imageProvider) =>
-                                          Hero(
-                                        tag: "CustomHerotag$index",
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.642,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.62,
-                                          decoration: BoxDecoration(
-                                            boxShadow: pageNumber == index
-                                                ? Provider.of<ThemeModel>(
-                                                                context)
-                                                            .returnThemeType() ==
-                                                        "Light"
-                                                    ? [
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(.15),
-                                                          blurRadius: 38,
-                                                          offset: const Offset(
-                                                              0, 19),
-                                                        ),
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(.10),
-                                                          blurRadius: 12,
-                                                          offset: const Offset(
-                                                              0, 15),
-                                                        )
-                                                      ]
-                                                    : [
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(.7),
-                                                          blurRadius: 38,
-                                                          offset: const Offset(
-                                                              0, 19),
-                                                        ),
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(.6),
-                                                          blurRadius: 12,
-                                                          offset: const Offset(
-                                                              0, 15),
-                                                        )
-                                                      ]
-                                                : [],
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            image: DecorationImage(
-                                                image: imageProvider,
-                                                fit: BoxFit.fill),
-                                          ),
+                                          Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.642,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.62,
+                                        decoration: BoxDecoration(
+                                          boxShadow: pageNumber == index
+                                              ? Provider.of<ThemeModel>(context)
+                                                          .returnThemeType() ==
+                                                      "Light"
+                                                  ? [
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.15),
+                                                        blurRadius: 38,
+                                                        offset:
+                                                            const Offset(0, 19),
+                                                      ),
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.10),
+                                                        blurRadius: 12,
+                                                        offset:
+                                                            const Offset(0, 15),
+                                                      )
+                                                    ]
+                                                  : [
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.7),
+                                                        blurRadius: 38,
+                                                        offset:
+                                                            const Offset(0, 19),
+                                                      ),
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.6),
+                                                        blurRadius: 12,
+                                                        offset:
+                                                            const Offset(0, 15),
+                                                      )
+                                                    ]
+                                              : [],
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          image: DecorationImage(
+                                              image: imageProvider,
+                                              fit: BoxFit.fill),
                                         ),
                                       ),
                                       progressIndicatorBuilder:

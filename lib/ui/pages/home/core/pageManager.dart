@@ -84,7 +84,8 @@ class _PageManagerChildState extends State<PageManagerChild>
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: FlatButton(
-                  shape: const StadiumBorder(),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5)),
                   color: config.Colors().mainAccentColor(1),
                   onPressed: () async {
                     debugPrint(
@@ -128,7 +129,7 @@ class _PageManagerChildState extends State<PageManagerChild>
           },
           dialogStyle: DialogStyle(
             dialogShape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             messageStyle: Theme.of(context)
                 .textTheme
                 .headline6
@@ -250,11 +251,9 @@ class _PageManagerChildState extends State<PageManagerChild>
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          flexibleSpace: PreferredSize(
-            preferredSize: const Size(double.infinity, 55),
-            child: CategoriesBar(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height),
+          flexibleSpace: const PreferredSize(
+            preferredSize: Size(double.infinity, 55),
+            child: CategoriesBar(),
           ),
           bottom: TabBar(
               controller: tabController,

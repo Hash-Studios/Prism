@@ -55,6 +55,20 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
               "Upload Setup",
               style: TextStyle(color: Theme.of(context).accentColor),
             ),
+            actions: [
+              MediaQuery.of(context).size.height > 650
+                  ? Container()
+                  : TextButton(
+                      onPressed: () async => getSetup(),
+                      child: Text(
+                        "Continue",
+                        style: TextStyle(
+                          color: config.Colors().mainAccentColor(1),
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    )
+            ],
           ),
           body: Column(
             children: [
@@ -198,23 +212,25 @@ Guidelines for uploading setups -""",
               const Spacer(flex: 2),
             ],
           ),
-          floatingActionButton: Padding(
-            padding: const EdgeInsets.only(bottom: 50.0),
-            child: FloatingActionButton.extended(
-              backgroundColor: config.Colors().mainAccentColor(1),
-              onPressed: () async => getSetup(),
-              label: Text(
-                "Continue",
-                style: TextStyle(
-                    color: Theme.of(context).accentColor,
-                    fontWeight: FontWeight.normal),
-              ),
-              icon: Icon(
-                JamIcons.arrow_right,
-                color: Theme.of(context).accentColor,
-              ),
-            ),
-          ),
+          floatingActionButton: MediaQuery.of(context).size.height > 650
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 50.0),
+                  child: FloatingActionButton.extended(
+                    backgroundColor: config.Colors().mainAccentColor(1),
+                    onPressed: () async => getSetup(),
+                    label: Text(
+                      "Continue",
+                      style: TextStyle(
+                          color: Theme.of(context).accentColor,
+                          fontWeight: FontWeight.normal),
+                    ),
+                    icon: Icon(
+                      JamIcons.arrow_right,
+                      color: Theme.of(context).accentColor,
+                    ),
+                  ),
+                )
+              : Container(),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat),
     );

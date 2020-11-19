@@ -115,6 +115,7 @@ Future<List<WallPaper>> getData(String mode, int categories, int purity) async {
 }
 
 Future<WallPaper> getWallbyID(String id) async {
+  id = id.toLowerCase();
   debugPrint("https://wallhaven.cc/api/v1/w/$id");
   wall = null;
   http.get("https://wallhaven.cc/api/v1/w/$id").then(

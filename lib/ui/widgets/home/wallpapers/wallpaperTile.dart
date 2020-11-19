@@ -18,24 +18,9 @@ class WallpaperTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        if (Data.subPrismWalls == []) {
-        } else {
-          Navigator.pushNamed(
-            context,
-            wallpaperRoute,
-            arguments: [
-              widget.provider,
-              index,
-              Data.subPrismWalls[index]["wallpaper_thumb"],
-            ],
-          );
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(0),
-        child: Container(
+    return Stack(
+      children: [
+        Container(
           decoration: Data.subPrismWalls.isEmpty
               ? BoxDecoration(
                   color: Provider.of<ThemeModel>(context, listen: false)
@@ -59,7 +44,31 @@ class WallpaperTile extends StatelessWidget {
                     fit: BoxFit.cover,
                   )),
         ),
-      ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              splashColor: Theme.of(context).accentColor.withOpacity(0.3),
+              highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
+              onTap: () {
+                if (Data.subPrismWalls == []) {
+                } else {
+                  Navigator.pushNamed(
+                    context,
+                    wallpaperRoute,
+                    arguments: [
+                      widget.provider,
+                      index,
+                      Data.subPrismWalls[index]["wallpaper_thumb"],
+                    ],
+                  );
+                }
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

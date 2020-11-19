@@ -61,91 +61,65 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ? const Icon(JamIcons.bell)
                     : const Icon(JamIcons.bell_off),
                 onPressed: () {
-                  final Dialog notificationsPopUp = Dialog(
+                  final AlertDialog notificationsPopUp = AlertDialog(
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                    child: Container(
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: Theme.of(context).primaryColor),
-                      width: MediaQuery.of(context).size.width * .7,
-                      height: MediaQuery.of(context).size.height * .2,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
-                                child: Text(
-                                  main.prefs.get("Subscriber") == false
-                                      ? 'Subscribe to notifications?'
-                                      : 'Unsubscribe to notifications?',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                      color: Theme.of(context).accentColor),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 50,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: <Widget>[
-                              Container(width: 10),
-                              FlatButton(
-                                shape: const StadiumBorder(),
-                                color: main.prefs.get("Subscriber") == false
-                                    ? Theme.of(context).hintColor
-                                    : config.Colors().mainAccentColor(1),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text(
-                                  'NO',
-                                  style: TextStyle(
-                                    fontSize: 16.0,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              FlatButton(
-                                shape: const StadiumBorder(),
-                                color: main.prefs.get("Subscriber") == false
-                                    ? config.Colors().mainAccentColor(1)
-                                    : Theme.of(context).hintColor,
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                  if (main.prefs.get("Subscriber") == false) {
-                                    main.prefs.delete("Subscriber");
-                                    home.f.unsubscribeFromTopic(
-                                        'NoNotificationSquad');
-                                    toasts.codeSend("Succesfully Subscribed!");
-                                  } else {
-                                    main.prefs.put("Subscriber", false);
-                                    home.f.subscribeToTopic(
-                                        'NoNotificationSquad');
-                                    toasts
-                                        .codeSend("Succesfully unsubscribed!");
-                                  }
-                                },
-                                child: const Text(
-                                  'YES',
-                                  style: TextStyle(
-                                    fontSize: 16.0,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        borderRadius: BorderRadius.circular(10)),
+                    title: Text(
+                      main.prefs.get("Subscriber") == false
+                          ? 'Subscribe to notifications?'
+                          : 'Unsubscribe to notifications?',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: Theme.of(context).accentColor),
                     ),
+                    actions: [
+                      FlatButton(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5)),
+                        color: main.prefs.get("Subscriber") == false
+                            ? config.Colors().mainAccentColor(1)
+                            : Theme.of(context).hintColor,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          if (main.prefs.get("Subscriber") == false) {
+                            main.prefs.delete("Subscriber");
+                            home.f.unsubscribeFromTopic('NoNotificationSquad');
+                            toasts.codeSend("Succesfully Subscribed!");
+                          } else {
+                            main.prefs.put("Subscriber", false);
+                            home.f.subscribeToTopic('NoNotificationSquad');
+                            toasts.codeSend("Succesfully unsubscribed!");
+                          }
+                        },
+                        child: const Text(
+                          'YES',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      FlatButton(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5)),
+                        color: main.prefs.get("Subscriber") == false
+                            ? Theme.of(context).hintColor
+                            : config.Colors().mainAccentColor(1),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'NO',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                    backgroundColor: Theme.of(context).primaryColor,
+                    actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                   );
 
                   showModal(
@@ -206,79 +180,55 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ? FloatingActionButton(
                 mini: true,
                 onPressed: () {
-                  final Dialog deleteNotificationsPopUp = Dialog(
+                  final AlertDialog deleteNotificationsPopUp = AlertDialog(
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                    child: Container(
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: Theme.of(context).primaryColor),
-                      width: MediaQuery.of(context).size.width * .7,
-                      height: MediaQuery.of(context).size.height * .2,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
-                                child: Text(
-                                  'Delete all notifications?',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                      color: Theme.of(context).accentColor),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 50,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: <Widget>[
-                              Container(width: 10),
-                              FlatButton(
-                                shape: const StadiumBorder(),
-                                color: config.Colors().mainAccentColor(1),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text(
-                                  'NO',
-                                  style: TextStyle(
-                                    fontSize: 16.0,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              FlatButton(
-                                shape: const StadiumBorder(),
-                                color: Theme.of(context).hintColor,
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                  setState(() {
-                                    notifications = [];
-                                    final Box<List> box =
-                                        Hive.box('notifications');
-                                    box.put('notifications', notifications);
-                                  });
-                                },
-                                child: const Text(
-                                  'YES',
-                                  style: TextStyle(
-                                    fontSize: 16.0,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        borderRadius: BorderRadius.circular(10)),
+                    title: Text(
+                      'Delete all notifications?',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: Theme.of(context).accentColor),
                     ),
+                    actions: [
+                      FlatButton(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5)),
+                        color: Theme.of(context).hintColor,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          setState(() {
+                            notifications = [];
+                            final Box<List> box = Hive.box('notifications');
+                            box.put('notifications', notifications);
+                          });
+                        },
+                        child: const Text(
+                          'YES',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      FlatButton(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5)),
+                        color: config.Colors().mainAccentColor(1),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'NO',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                    backgroundColor: Theme.of(context).primaryColor,
+                    actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                   );
 
                   showModal(
