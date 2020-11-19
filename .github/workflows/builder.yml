@@ -7,8 +7,10 @@ jobs:
     steps:
       - run: mkdir android/app
       - run: 'echo "$FIREBASE_SECRET" > android/app/google-services.json'
+      - run: 'echo "$GITKEY_DART" > lib/gitkey.dart'
         env:
           FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
+          GITKEY_DART: ${{ secrets.GITKEY_DART }}
       - uses: actions/checkout@v1
       - uses: subosito/flutter-action@v1
         with:
