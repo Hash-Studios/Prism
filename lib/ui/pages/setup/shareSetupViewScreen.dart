@@ -8,6 +8,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
+import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/popup/copyrightPopUp.dart';
@@ -135,7 +136,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                       topRight: Radius.circular(20),
                     ),
                     boxShadow: const [],
-                    collapsed: CollapsedPanel(panelCollapsed: panelCollapsed),
+                    collapsed: CollapsedPanel(
+                              panelCollapsed: panelCollapsed,
+                              panelController: panelController,
+                            ),
+                    
                     minHeight: MediaQuery.of(context).size.height / 20,
                     parallaxEnabled: true,
                     parallaxOffset: 0.00,
@@ -1141,43 +1146,5 @@ class ModifiedShareSetWallpaperButton extends StatelessWidget {
               ),
             ),
           );
-  }
-}
-
-class CollapsedPanel extends StatelessWidget {
-  final bool panelCollapsed;
-  const CollapsedPanel({
-    Key key,
-    this.panelCollapsed,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 750),
-      margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
-        color: panelCollapsed
-            ? Theme.of(context).primaryColor.withOpacity(1)
-            : Theme.of(context).primaryColor.withOpacity(0),
-      ),
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height / 30,
-        child: Center(
-            child: AnimatedOpacity(
-          duration: const Duration(),
-          opacity: panelCollapsed ? 1.0 : 0.0,
-          child: Icon(
-            JamIcons.chevron_up,
-            color: Theme.of(context).accentColor,
-          ),
-        )),
-      ),
-    );
   }
 }
