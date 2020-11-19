@@ -40,6 +40,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   String tempid;
   TextEditingController wallpaperUrl = TextEditingController();
   String wallpaperUploadLink;
+  String wallpaperId = "";
   TextEditingController wallpaperAppName = TextEditingController();
   TextEditingController wallpaperAppWallName = TextEditingController();
   TextEditingController wallpaperAppLink = TextEditingController();
@@ -229,31 +230,33 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             name: 'upload_setup',
                             parameters: {'id': id, 'link': imageURL});
                         WallStore.createSetup(
-                            id,
-                            imageURL,
-                            wallpaperProvider,
-                            wallpaperThumb,
-                            wallpaperUploaded == true
-                                ? wallpaperUploadLink
-                                : wallpaperAppName.text != "" &&
-                                        wallpaperAppName.text != null &&
-                                        wallpaperAppLink.text != "" &&
-                                        wallpaperAppLink.text != null
-                                    ? [
-                                        wallpaperAppName.text,
-                                        wallpaperAppLink.text,
-                                        wallpaperAppWallName.text
-                                      ]
-                                    : wallpaperUrl.text,
-                            iconName.text,
-                            iconURL.text,
-                            widgetName1.text,
-                            widgetURL1.text,
-                            widgetName2.text,
-                            widgetURL2.text,
-                            setupName.text,
-                            setupDesc.text,
-                            review);
+                          id,
+                          imageURL,
+                          wallpaperProvider,
+                          wallpaperThumb,
+                          wallpaperUploaded == true
+                              ? wallpaperUploadLink
+                              : wallpaperAppName.text != "" &&
+                                      wallpaperAppName.text != null &&
+                                      wallpaperAppLink.text != "" &&
+                                      wallpaperAppLink.text != null
+                                  ? [
+                                      wallpaperAppName.text,
+                                      wallpaperAppLink.text,
+                                      wallpaperAppWallName.text
+                                    ]
+                                  : wallpaperUrl.text,
+                          iconName.text,
+                          iconURL.text,
+                          widgetName1.text,
+                          widgetURL1.text,
+                          widgetName2.text,
+                          widgetURL2.text,
+                          setupName.text,
+                          setupDesc.text,
+                          wallpaperId,
+                          review,
+                        );
                       }
                     }
                   : null,
@@ -773,13 +776,19 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     if (pickedFile != null) {
                                       Future.delayed(const Duration())
                                           .then((value) async {
-                                        final link = await Navigator.pushNamed(
-                                            context, uploadWallRoute,
-                                            arguments: [File(pickedFile.path)]);
-                                        if (link != null) {
+                                        final List argumentsFromWall =
+                                            await Navigator.pushNamed(
+                                                context, uploadWallRoute,
+                                                arguments: [
+                                              File(pickedFile.path)
+                                            ]);
+                                        if (argumentsFromWall != null &&
+                                            argumentsFromWall.length == 2) {
                                           setState(() {
                                             wallpaperUploadLink =
-                                                link.toString();
+                                                argumentsFromWall[0].toString();
+                                            wallpaperId =
+                                                argumentsFromWall[1].toString();
                                             wallpaperUploaded = true;
                                           });
                                         }
@@ -909,7 +918,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     disabledBorder: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
-                                    hintText: "Write wallpaper name (optional)",
+                                    hintText: "Write wallpaper name",
                                     hintStyle: Theme.of(context)
                                         .textTheme
                                         .headline5

@@ -6,11 +6,11 @@ import 'package:Prism/theme/config.dart' as config;
 
 void showChangelog(BuildContext context, Function func) {
   final controller = ScrollController();
-  final Dialog aboutPopUp = Dialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    child: Container(
+  final AlertDialog aboutPopUp = AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    content: Container(
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(10),
           color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
       child: Column(
@@ -22,8 +22,8 @@ void showChangelog(BuildContext context, Function func) {
             width: MediaQuery.of(context).size.width * .78,
             decoration: BoxDecoration(
                 borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20)),
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10)),
                 color: Theme.of(context).hintColor),
             child: const FlareActor(
               "assets/animations/Changelog.flr",
@@ -40,6 +40,40 @@ void showChangelog(BuildContext context, Function func) {
               child: SingleChildScrollView(
                 controller: controller,
                 child: Column(mainAxisSize: MainAxisSize.min, children: const [
+                  ChangeVersion(number: 'v2.6.1'),
+                  Change(
+                      icon: JamIcons.download,
+                      text: "Fixed wallpaper downloading in Android 11."),
+                  Change(
+                      icon: JamIcons.wrench,
+                      text: "Redesigned setups' info panel!"),
+                  Change(
+                      icon: JamIcons.instant_picture,
+                      text: "Now see your uploaded setups in your profile!"),
+                  Change(
+                      icon: JamIcons.heart,
+                      text: "Now see your favourite setups in your profile!"),
+                  Change(
+                      icon: JamIcons.tools, text: "Added more new animations!"),
+                  Change(
+                      icon: JamIcons.settings_alt,
+                      text: "Turned wallpaper optimisation off by default."),
+                  Change(icon: JamIcons.egg, text: "Added some easter eggs."),
+                  Change(
+                      icon: JamIcons.crop,
+                      text: "Added new crop ratios in wallpaper upload."),
+                  Change(
+                      icon: JamIcons.phone,
+                      text: "Added support for phones with smaller screens."),
+                  Change(
+                      icon: JamIcons.user_circle,
+                      text: "Redesigned Profile Page."),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Minor bug fixes and improvements."),
+                  SizedBox(
+                    height: 15,
+                  ),
                   ChangeVersion(number: 'v2.6.0'),
                   Change(
                       icon: JamIcons.instant_picture,
@@ -390,30 +424,29 @@ void showChangelog(BuildContext context, Function func) {
               ),
             ),
           ),
-          const SizedBox(
-            height: 25,
-          ),
-          FlatButton(
-            shape: const StadiumBorder(),
-            color: config.Colors().mainAccentColor(1),
-            onPressed: () {
-              Navigator.of(context).pop();
-              func();
-            },
-            child: const Text(
-              'CLOSE',
-              style: TextStyle(
-                fontSize: 16.0,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
         ],
       ),
     ),
+    actions: [
+      FlatButton(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        color: config.Colors().mainAccentColor(1),
+        onPressed: () {
+          Navigator.of(context).pop();
+          func();
+        },
+        child: const Text(
+          'CLOSE',
+          style: TextStyle(
+            fontSize: 16.0,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    ],
+    contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
+    backgroundColor: Theme.of(context).primaryColor,
+    actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
   );
   showModal(
       context: context,

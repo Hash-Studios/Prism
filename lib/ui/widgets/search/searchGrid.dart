@@ -221,98 +221,127 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                       if (offsetAnimation.value < 0.0) {
                         debugPrint('${offsetAnimation.value + 8.0}');
                       }
-                      return GestureDetector(
-                        onTap: () {
-                          if (widget.selectedProvider == "WallHaven") {
-                            if (wData.wallsS == []) {
-                            } else {
-                              Navigator.pushNamed(context, wallpaperRoute,
-                                  arguments: [
-                                    widget.query,
-                                    index,
-                                    wData.wallsS[index].thumbs["small"],
-                                  ]);
-                            }
-                          } else if (widget.selectedProvider == "Pexels") {
-                            if (pData.wallsPS == []) {
-                            } else {
-                              Navigator.pushNamed(context, searchWallpaperRoute,
-                                  arguments: [
-                                    widget.selectedProvider,
-                                    widget.query,
-                                    index,
-                                    pData.wallsPS[index].src["medium"],
-                                  ]);
-                            }
-                          }
-                        },
-                        onLongPress: () {
-                          setState(() {
-                            longTapIndex = index;
-                          });
-                          shakeController.forward(from: 0.0);
-                          if (widget.selectedProvider == "WallHaven") {
-                            if (wData.wallsS == []) {
-                            } else {
-                              HapticFeedback.vibrate();
-                              createDynamicLink(
-                                  wData.wallsS[index].id,
-                                  "WallHaven",
-                                  wData.wallsS[index].path,
-                                  wData.wallsS[index].thumbs["original"]
-                                      .toString());
-                            }
-                          } else if (widget.selectedProvider == "Pexels") {
-                            if (wData.wallsS == []) {
-                            } else {
-                              HapticFeedback.vibrate();
-                              createDynamicLink(
-                                  pData.wallsPS[index].id,
-                                  "Pexels",
-                                  pData.wallsPS[index].src["original"]
-                                      .toString(),
-                                  pData.wallsPS[index].src["medium"]
-                                      .toString());
-                            }
-                          }
-                        },
-                        child: Padding(
-                          padding: index == longTapIndex
-                              ? EdgeInsets.symmetric(
-                                  vertical: offsetAnimation.value / 2,
-                                  horizontal: offsetAnimation.value)
-                              : const EdgeInsets.all(0),
-                          child: Container(
-                            decoration: widget.selectedProvider == "WallHaven"
-                                ? wData.wallsS.isEmpty
-                                    ? BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                      )
-                                    : BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
-                                            image: CachedNetworkImageProvider(
-                                                wData.wallsS[index]
-                                                    .thumbs["original"]
-                                                    .toString()),
-                                            fit: BoxFit.cover))
-                                : pData.wallsPS.isEmpty
-                                    ? BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                      )
-                                    : BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
-                                            image: CachedNetworkImageProvider(
-                                                pData.wallsPS[index]
-                                                    .src["medium"]
-                                                    .toString()),
-                                            fit: BoxFit.cover)),
-                          ),
+                      return Padding(
+                        padding: index == longTapIndex
+                            ? EdgeInsets.symmetric(
+                                vertical: offsetAnimation.value / 2,
+                                horizontal: offsetAnimation.value)
+                            : const EdgeInsets.all(0),
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: widget.selectedProvider == "WallHaven"
+                                  ? wData.wallsS.isEmpty
+                                      ? BoxDecoration(
+                                          color: animation.value,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        )
+                                      : BoxDecoration(
+                                          color: animation.value,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          image: DecorationImage(
+                                              image: CachedNetworkImageProvider(
+                                                  wData.wallsS[index]
+                                                      .thumbs["original"]
+                                                      .toString()),
+                                              fit: BoxFit.cover))
+                                  : pData.wallsPS.isEmpty
+                                      ? BoxDecoration(
+                                          color: animation.value,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        )
+                                      : BoxDecoration(
+                                          color: animation.value,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          image: DecorationImage(
+                                              image: CachedNetworkImageProvider(
+                                                  pData.wallsPS[index]
+                                                      .src["medium"]
+                                                      .toString()),
+                                              fit: BoxFit.cover)),
+                            ),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  splashColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.3),
+                                  highlightColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.1),
+                                  onTap: () {
+                                    if (widget.selectedProvider ==
+                                        "WallHaven") {
+                                      if (wData.wallsS == []) {
+                                      } else {
+                                        Navigator.pushNamed(
+                                            context, wallpaperRoute,
+                                            arguments: [
+                                              widget.query,
+                                              index,
+                                              wData.wallsS[index]
+                                                  .thumbs["small"],
+                                            ]);
+                                      }
+                                    } else if (widget.selectedProvider ==
+                                        "Pexels") {
+                                      if (pData.wallsPS == []) {
+                                      } else {
+                                        Navigator.pushNamed(
+                                            context, searchWallpaperRoute,
+                                            arguments: [
+                                              widget.selectedProvider,
+                                              widget.query,
+                                              index,
+                                              pData
+                                                  .wallsPS[index].src["medium"],
+                                            ]);
+                                      }
+                                    }
+                                  },
+                                  onLongPress: () {
+                                    setState(() {
+                                      longTapIndex = index;
+                                    });
+                                    shakeController.forward(from: 0.0);
+                                    if (widget.selectedProvider ==
+                                        "WallHaven") {
+                                      if (wData.wallsS == []) {
+                                      } else {
+                                        HapticFeedback.vibrate();
+                                        createDynamicLink(
+                                            wData.wallsS[index].id,
+                                            "WallHaven",
+                                            wData.wallsS[index].path,
+                                            wData.wallsS[index]
+                                                .thumbs["original"]
+                                                .toString());
+                                      }
+                                    } else if (widget.selectedProvider ==
+                                        "Pexels") {
+                                      if (wData.wallsS == []) {
+                                      } else {
+                                        HapticFeedback.vibrate();
+                                        createDynamicLink(
+                                            pData.wallsPS[index].id,
+                                            "Pexels",
+                                            pData.wallsPS[index].src["original"]
+                                                .toString(),
+                                            pData.wallsPS[index].src["medium"]
+                                                .toString());
+                                      }
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     }));

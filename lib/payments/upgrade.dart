@@ -166,309 +166,320 @@ class _UpsellScreenState extends State<UpsellScreen> {
                     },
                   ),
                 ),
-                body: Container(
-                    height: MediaQuery.of(context).size.height,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Container(
-                          height: 200,
-                          width: MediaQuery.of(context).size.width,
-                          decoration:
-                              BoxDecoration(color: Theme.of(context).hintColor),
-                          child: const FlareActor(
-                            "assets/animations/Premium.flr",
-                            animation: "premium",
-                          ),
-                        ),
-                        const Spacer(
-                          flex: 4,
-                        ),
-                        Row(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                              child: Text(
-                                'PREMIUM UNLOCKS:',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                    color: Theme.of(context).accentColor),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Icon(
-                              JamIcons.pictures,
-                              size: 22,
-                              color: config.Colors().mainAccentColor(1),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Text(
-                                "View exclusive collections & walls!",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline6
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Icon(
-                              JamIcons.instant_picture,
-                              size: 22,
-                              color: config.Colors().mainAccentColor(1),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Text(
-                                "Unlock more than 5 setups!",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline6
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Icon(
-                              JamIcons.filter,
-                              size: 22,
-                              color: config.Colors().mainAccentColor(1),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Text(
-                                "Apply filters to wallpapers!",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline6
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Icon(
-                              JamIcons.user,
-                              size: 22,
-                              color: config.Colors().mainAccentColor(1),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Text(
-                                "Get PRO badge on your profile.",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline6
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Icon(
-                              JamIcons.clock,
-                              size: 22,
-                              color: config.Colors().mainAccentColor(1),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Text(
-                                "Get your uploads reviewed instantly.",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline6
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Icon(
-                              JamIcons.download,
-                              size: 22,
-                              color: config.Colors().mainAccentColor(1),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Text(
-                                "Download any wallpaper instantly.",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline6
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Icon(
-                              JamIcons.coffee,
-                              size: 22,
-                              color: config.Colors().mainAccentColor(1),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Text(
-                                "Prism is completely free of disturbing ads and therfore this is the only way to support the development of the app.",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline6
-                                    .copyWith(
-                                        color: Theme.of(context).accentColor),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(
-                          flex: 4,
-                        ),
-                        PurchaseButton(package: lifetime),
-                        const Spacer(
-                          flex: 2,
-                        ),
-                        FlatButton(
-                          // ignore: void_checks
-                          onPressed: () async {
-                            try {
-                              debugPrint('now trying to restore');
-                              final PurchaserInfo restoredInfo =
-                                  await Purchases.restoreTransactions();
-                              debugPrint('restore completed');
-                              debugPrint(restoredInfo.toString());
-
-                              appData.isPro = restoredInfo
-                                  .entitlements.all["prism_premium"].isActive;
-
-                              debugPrint('is user pro? ${appData.isPro}');
-
-                              if (appData.isPro) {
-                                main.prefs.put('premium', appData.isPro);
-                                toasts
-                                    .codeSend("You are now a premium member.");
-                                main.RestartWidget.restartApp(context);
-                              } else {
-                                toasts.error(
-                                    "There was an error. Please try again later.");
-                              }
-                            } on PlatformException catch (e) {
-                              debugPrint('----xx-----');
-                              final errorCode =
-                                  PurchasesErrorHelper.getErrorCode(e);
-                              if (errorCode ==
-                                  PurchasesErrorCode.purchaseCancelledError) {
-                                toasts.error("User cancelled purchase.");
-                              } else if (errorCode ==
-                                  PurchasesErrorCode.purchaseNotAllowedError) {
-                                toasts.error("User not allowed to purchase.");
-                              } else {
-                                toasts.error(e.toString());
-                              }
-                            }
-                            return UpgradeScreen();
-                          },
-                          child: Container(
-                            width: MediaQuery.of(context).size.width * 0.45,
+                body: Scrollbar(
+                  radius: const Radius.circular(500),
+                  thickness: 5,
+                  child: SingleChildScrollView(
+                    child: Container(
+                      height: MediaQuery.of(context).size.height > 650
+                          ? MediaQuery.of(context).size.height
+                          : 800,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Container(
+                            height: 200,
+                            width: MediaQuery.of(context).size.width,
                             decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .accentColor
-                                    .withOpacity(0.75),
-                                borderRadius: BorderRadius.circular(20)),
-                            padding: const EdgeInsets.all(10.0),
+                                color: Theme.of(context).hintColor),
+                            child: const FlareActor(
+                              "assets/animations/Premium.flr",
+                              animation: "premium",
+                            ),
+                          ),
+                          const Spacer(
+                            flex: 4,
+                          ),
+                          Row(
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 12, 0, 4),
+                                child: Text(
+                                  'PREMIUM UNLOCKS:',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                      color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Icon(
+                                JamIcons.pictures,
+                                size: 22,
+                                color: config.Colors().mainAccentColor(1),
+                              ),
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                child: Text(
+                                  "View exclusive collections & walls!",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline6
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Icon(
+                                JamIcons.instant_picture,
+                                size: 22,
+                                color: config.Colors().mainAccentColor(1),
+                              ),
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                child: Text(
+                                  "Unlock more than 5 setups!",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline6
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Icon(
+                                JamIcons.filter,
+                                size: 22,
+                                color: config.Colors().mainAccentColor(1),
+                              ),
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                child: Text(
+                                  "Apply filters to wallpapers!",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline6
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Icon(
+                                JamIcons.user,
+                                size: 22,
+                                color: config.Colors().mainAccentColor(1),
+                              ),
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                child: Text(
+                                  "Get PRO badge on your profile.",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline6
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Icon(
+                                JamIcons.clock,
+                                size: 22,
+                                color: config.Colors().mainAccentColor(1),
+                              ),
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                child: Text(
+                                  "Get your uploads reviewed instantly.",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline6
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Icon(
+                                JamIcons.download,
+                                size: 22,
+                                color: config.Colors().mainAccentColor(1),
+                              ),
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                child: Text(
+                                  "Download any wallpaper instantly.",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline6
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Icon(
+                                JamIcons.coffee,
+                                size: 22,
+                                color: config.Colors().mainAccentColor(1),
+                              ),
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                child: Text(
+                                  "Prism is completely free of disturbing ads and therfore this is the only way to support the development of the app.",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline6
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Spacer(
+                            flex: 4,
+                          ),
+                          PurchaseButton(package: lifetime),
+                          const Spacer(
+                            flex: 2,
+                          ),
+                          FlatButton(
+                            // ignore: void_checks
+                            onPressed: () async {
+                              try {
+                                debugPrint('now trying to restore');
+                                final PurchaserInfo restoredInfo =
+                                    await Purchases.restoreTransactions();
+                                debugPrint('restore completed');
+                                debugPrint(restoredInfo.toString());
+
+                                appData.isPro = restoredInfo
+                                    .entitlements.all["prism_premium"].isActive;
+
+                                debugPrint('is user pro? ${appData.isPro}');
+
+                                if (appData.isPro) {
+                                  main.prefs.put('premium', appData.isPro);
+                                  toasts.codeSend(
+                                      "You are now a premium member.");
+                                  main.RestartWidget.restartApp(context);
+                                } else {
+                                  toasts.error(
+                                      "There was an error. Please try again later.");
+                                }
+                              } on PlatformException catch (e) {
+                                debugPrint('----xx-----');
+                                final errorCode =
+                                    PurchasesErrorHelper.getErrorCode(e);
+                                if (errorCode ==
+                                    PurchasesErrorCode.purchaseCancelledError) {
+                                  toasts.error("User cancelled purchase.");
+                                } else if (errorCode ==
+                                    PurchasesErrorCode
+                                        .purchaseNotAllowedError) {
+                                  toasts.error("User not allowed to purchase.");
+                                } else {
+                                  toasts.error(e.toString());
+                                }
+                              }
+                              return UpgradeScreen();
+                            },
                             child: Container(
-                              width: MediaQuery.of(context).size.width * 0.4,
-                              child: Text(
-                                'Restore Purchases',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    color: Theme.of(context).primaryColor),
-                                textAlign: TextAlign.center,
+                              width: MediaQuery.of(context).size.width * 0.45,
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.75),
+                                  borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.all(10.0),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.4,
+                                child: Text(
+                                  'Restore Purchases',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      color: Theme.of(context).primaryColor),
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ))),
+                          const Spacer(),
+                        ],
+                      ),
+                    ),
+                  ),
+                )),
           );
         }
       }

@@ -33,7 +33,7 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   final PageController controller = PageController(
-    viewportFraction: 0.78,
+    viewportFraction: 0.74,
   );
   Future future;
 
@@ -125,19 +125,24 @@ class _SetupPageState extends State<SetupPage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(
-                      Provider.of<SetupProvider>(context, listen: false)
-                              .setups
-                              .isEmpty
-                          ? ""
-                          : Provider.of<SetupProvider>(context, listen: false)
-                              .setups[pageNumber]['name']
-                              .toString()
-                              .toUpperCase(),
-                      style: Theme.of(context)
-                          .textTheme
-                          .headline1
-                          .copyWith(fontSize: 30),
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      child: Text(
+                        Provider.of<SetupProvider>(context, listen: false)
+                                .setups
+                                .isEmpty
+                            ? ""
+                            : Provider.of<SetupProvider>(context, listen: false)
+                                .setups[pageNumber]['name']
+                                .toString()
+                                .toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .headline1
+                            .copyWith(fontSize: 30),
+                      ),
                     ),
                   ],
                 ),
@@ -202,9 +207,10 @@ class _SetupPageState extends State<SetupPage> {
                                 padding: EdgeInsets.only(
                                   top: pageNumber == index + 1 ||
                                           pageNumber == index - 1
-                                      ? MediaQuery.of(context).size.height * 0.1
+                                      ? MediaQuery.of(context).size.height *
+                                          0.12
                                       : MediaQuery.of(context).size.height *
-                                          0.0299,
+                                          0.0499,
                                 ),
                                 child: PremiumBannerSetupOld(
                                   comparator: index < 5,
@@ -217,73 +223,69 @@ class _SetupPageState extends State<SetupPage> {
                                           .setups[index]['image']
                                           .toString(),
                                       imageBuilder: (context, imageProvider) =>
-                                          Hero(
-                                        tag: "CustomHerotag$index",
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.712,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.72,
-                                          decoration: BoxDecoration(
-                                            boxShadow: pageNumber == index
-                                                ? Provider.of<ThemeModel>(
-                                                                context)
-                                                            .returnThemeType() ==
-                                                        "Light"
-                                                    ? [
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(.15),
-                                                          blurRadius: 38,
-                                                          offset: const Offset(
-                                                              0, 19),
-                                                        ),
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(.10),
-                                                          blurRadius: 12,
-                                                          offset: const Offset(
-                                                              0, 15),
-                                                        )
-                                                      ]
-                                                    : [
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(.7),
-                                                          blurRadius: 38,
-                                                          offset: const Offset(
-                                                              0, 19),
-                                                        ),
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(.6),
-                                                          blurRadius: 12,
-                                                          offset: const Offset(
-                                                              0, 15),
-                                                        )
-                                                      ]
-                                                : [],
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            image: DecorationImage(
-                                                image: imageProvider,
-                                                fit: BoxFit.fill),
-                                          ),
+                                          Container(
+                                        width:
+                                            MediaQuery.of(context).size.height *
+                                                0.65 *
+                                                (9 / 19.5),
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.65,
+                                        decoration: BoxDecoration(
+                                          boxShadow: pageNumber == index
+                                              ? Provider.of<ThemeModel>(context)
+                                                          .returnThemeType() ==
+                                                      "Light"
+                                                  ? [
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.15),
+                                                        blurRadius: 38,
+                                                        offset:
+                                                            const Offset(0, 19),
+                                                      ),
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.10),
+                                                        blurRadius: 12,
+                                                        offset:
+                                                            const Offset(0, 15),
+                                                      )
+                                                    ]
+                                                  : [
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.7),
+                                                        blurRadius: 38,
+                                                        offset:
+                                                            const Offset(0, 19),
+                                                      ),
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.6),
+                                                        blurRadius: 12,
+                                                        offset:
+                                                            const Offset(0, 15),
+                                                      )
+                                                    ]
+                                              : [],
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          image: DecorationImage(
+                                              image: imageProvider,
+                                              fit: BoxFit.fill),
                                         ),
                                       ),
                                       progressIndicatorBuilder:
                                           (context, url, downloadProgress) =>
                                               Container(
                                         width:
-                                            MediaQuery.of(context).size.width *
-                                                0.712,
+                                            MediaQuery.of(context).size.height *
+                                                0.65 *
+                                                (9 / 19.5),
                                         height:
                                             MediaQuery.of(context).size.height *
-                                                0.72,
+                                                0.65,
                                         child: Center(
                                           child: CircularProgressIndicator(
                                               valueColor:

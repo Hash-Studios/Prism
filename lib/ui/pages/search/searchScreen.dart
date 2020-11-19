@@ -47,6 +47,22 @@ class _SearchScreenState extends State<SearchScreen> {
     'Street',
     'Flowers',
     'Epic',
+    'Minimalism',
+    'Mountains',
+    'Field',
+    'Chocolate',
+    'Train',
+    'Walking',
+    'Food',
+    'Design',
+    'Love',
+    'Wildlife',
+    'Stock',
+    'Trees',
+    'Planets',
+    'Space',
+    'Winter',
+    'Beach',
   ];
   bool isSubmitted;
   TextEditingController searchController = TextEditingController();
@@ -56,6 +72,7 @@ class _SearchScreenState extends State<SearchScreen> {
     isSubmitted = false;
     selectedProvider = "WallHaven";
     selectedProviders = providers[0] as SearchProviderMenuItem;
+    tags.shuffle();
     super.initState();
   }
 

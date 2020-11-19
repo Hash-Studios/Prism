@@ -1,10 +1,13 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/payments/upgrade.dart';
+import 'package:Prism/ui/pages/favourite/favouriteSetupScreen.dart';
+import 'package:Prism/ui/pages/favourite/favouriteSetupViewScreen.dart';
+import 'package:Prism/ui/pages/favourite/favouriteWallScreen.dart';
 import 'package:Prism/ui/pages/home/collections/collectionViewScreen.dart';
 import 'package:Prism/ui/pages/download/downloadScreen.dart';
 import 'package:Prism/ui/pages/download/downloadWallpaperViewScreen.dart';
-import 'package:Prism/ui/pages/favourite/favouriteWallpaperScreen.dart';
+import 'package:Prism/ui/pages/favourite/favouriteWallViewScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/wallpaperFilterScreen.dart';
@@ -13,9 +16,12 @@ import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/pages/profile/photographerProfile.dart';
 import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
+import 'package:Prism/ui/pages/profile/profileSetupViewScreen.dart';
 import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
+import 'package:Prism/ui/pages/profile/settings.dart';
 import 'package:Prism/ui/pages/profile/sharePrismScreen.dart';
 import 'package:Prism/ui/pages/profile/themeView.dart';
+import 'package:Prism/ui/pages/profile/userProfileSetupViewScreen.dart';
 import 'package:Prism/ui/pages/profile/userProfileWallViewScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
 import 'package:Prism/ui/pages/search/searchWallpaperScreen.dart';
@@ -72,6 +78,18 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: downloadRoute);
       return CupertinoPageRoute(builder: (context) => DownloadScreen());
+    case favWallRoute:
+      navStack.add("Fav Walls");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: favWallRoute);
+      return CupertinoPageRoute(
+          builder: (context) => const FavouriteWallpaperScreen());
+    case favSetupRoute:
+      navStack.add("Fav Setups");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: favSetupRoute);
+      return CupertinoPageRoute(
+          builder: (context) => const FavouriteSetupScreen());
     case premiumRoute:
       navStack.add("Buy Premium");
       debugPrint(navStack.toString());
@@ -147,6 +165,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           builder: (context) =>
               FavWallpaperViewScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
+    case favSetupViewRoute:
+      navStack.add("Favourite Setup View");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: favSetupViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              FavSetupViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
     case setupRoute:
       navStack.add("Setups");
       debugPrint(navStack.toString());
@@ -158,24 +184,19 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("SetupView");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: setupViewRoute);
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            SetupViewScreen(
-          arguments: settings.arguments as List,
-        ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = 0.0;
-          const end = 1.0;
-          const curve = Curves.easeOut;
-
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          return ScaleTransition(
-            scale: animation.drive(tween),
-            child: child,
-          );
-        },
-      );
+      return CupertinoPageRoute(
+          builder: (context) =>
+              SetupViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
+    case profileSetupViewRoute:
+      navStack.add("ProfileSetupView");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: profileSetupViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) => ProfileSetupViewScreen(
+                arguments: settings.arguments as List,
+              ),
+          fullscreenDialog: true);
     case profileWallViewRoute:
       navStack.add("ProfileWallpaper");
       debugPrint(navStack.toString());
@@ -191,6 +212,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               UserProfileWallViewScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
+    case userProfileSetupViewRoute:
+      navStack.add("User ProfileSetup");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: userProfileSetupViewRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              UserProfileSetupViewScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     case themeViewRoute:
       navStack.add("Themes");
@@ -244,6 +273,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       analytics.setCurrentScreen(screenName: aboutRoute);
       return CupertinoPageRoute(
           builder: (context) => AboutScreen(), fullscreenDialog: true);
+    case settingsRoute:
+      navStack.add("Settings");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: settingsRoute);
+      return CupertinoPageRoute(
+          builder: (context) => const SettingsScreen(), fullscreenDialog: true);
     case sharePrismRoute:
       navStack.add("Share Prism");
       debugPrint(navStack.toString());

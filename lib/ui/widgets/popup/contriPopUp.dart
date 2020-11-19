@@ -17,11 +17,11 @@ void showContributorDetails(BuildContext context, String username) {
     return user;
   }
 
-  final Dialog userPopUp = Dialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    child: Container(
+  final AlertDialog userPopUp = AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    content: Container(
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(10),
           color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
       child: FutureBuilder<User>(
@@ -45,8 +45,8 @@ void showContributorDetails(BuildContext context, String username) {
                     width: MediaQuery.of(context).size.width * .78,
                     decoration: BoxDecoration(
                         borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20)),
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10)),
                         color: Theme.of(context).hintColor),
                     child: Row(
                       children: [
@@ -139,14 +139,13 @@ void showContributorDetails(BuildContext context, String username) {
                             snapshot.data.bio,
                             style: TextStyle(
                                 fontSize: 14,
-                                color: Theme.of(context).accentColor),
+                                color: Theme.of(context).accentColor,
+                                fontFamily: "Proxima Nova",
+                                fontWeight: FontWeight.normal),
                           ),
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(
-                    height: 10,
                   ),
                   Wrap(
                     alignment: WrapAlignment.center,
@@ -170,14 +169,13 @@ void showContributorDetails(BuildContext context, String username) {
                           : Container(),
                     ],
                   ),
-                  const SizedBox(
-                    height: 15,
-                  ),
                 ],
               );
             }
           }),
     ),
+    backgroundColor: Theme.of(context).primaryColor,
+    contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
   );
   showModal(
       context: context,

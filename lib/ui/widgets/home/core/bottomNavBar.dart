@@ -419,13 +419,16 @@ class _BottomNavBarState extends State<BottomNavBar>
                     Container(
                       height: navStack.last == "Profile" ? 9 : 0,
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(500),
-                          color: Theme.of(context).accentColor),
-                      child: Icon(JamIcons.user_circle,
-                          color: Theme.of(context).primaryColor),
-                    ),
+                    main.prefs.get("isLoggedin") == true
+                        ? Container(
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(500),
+                                color: Theme.of(context).accentColor),
+                            child: Icon(JamIcons.user_circle,
+                                color: Theme.of(context).primaryColor),
+                          )
+                        : Icon(JamIcons.cog_f,
+                            color: Theme.of(context).accentColor),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
@@ -449,11 +452,28 @@ class _BottomNavBarState extends State<BottomNavBar>
                   SystemChrome.setSystemUIOverlayStyle(
                       const SystemUiOverlayStyle(
                           statusBarColor: Colors.transparent));
-                  navStack.last == "Profile"
-                      ? debugPrint("Currently on Profile")
-                      : navStack.last == "Home"
-                          ? Navigator.of(context).pushNamed(profileRoute)
-                          : Navigator.of(context).pushNamed(profileRoute);
+                  if (navStack.last == "Profile") {
+                    debugPrint("Currently on Profile");
+                  } else {
+                    if (navStack.last == "Home") {
+                      Navigator.of(context).pushNamed(profileRoute);
+                    } else {
+                      Navigator.of(context).popUntil((route) {
+                        if (navStack.last != "Home" &&
+                            navStack.last != "Profile") {
+                          navStack.removeLast();
+                          debugPrint(navStack.toString());
+                          return false;
+                        } else {
+                          debugPrint(navStack.toString());
+                          return true;
+                        }
+                      });
+                      if (navStack.last == "Home") {
+                        Navigator.of(context).pushNamed(profileRoute);
+                      }
+                    }
+                  }
                 },
               ),
             ),
@@ -497,7 +517,9 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width * 0.85;
     return Container(
-      height: MediaQuery.of(context).size.height / 1.5,
+      height: MediaQuery.of(context).size.height / 1.5 > 500
+          ? MediaQuery.of(context).size.height / 1.5
+          : 500,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         borderRadius: const BorderRadius.only(

@@ -40,6 +40,32 @@ class ProfileWallProvider extends ChangeNotifier {
     Query db2;
     if (main.prefs.get('premium') == true) {
       db2 = databaseReference
+          .collection("setups")
+          .where('email', isEqualTo: main.prefs.get('email'))
+          .orderBy("created_at", descending: true);
+    } else {
+      db2 = databaseReference
+          .collection("setups")
+          .where('review', isEqualTo: true)
+          .where('email', isEqualTo: main.prefs.get('email'))
+          .orderBy("created_at", descending: true);
+    }
+    await db2.getDocuments().then((value) {
+      tempList = [];
+      for (final f in value.documents) {
+        tempList.add(f.data);
+      }
+      len = tempList.length;
+      debugPrint(len.toString());
+    }).catchError((e) {
+      debugPrint(e.toString());
+      debugPrint("data done with error");
+    });
+    main.prefs.put('userSetups', len);
+    var len2 = len;
+    tempList = [];
+    if (main.prefs.get('premium') == true) {
+      db2 = databaseReference
           .collection("walls")
           .where('email', isEqualTo: main.prefs.get('email'))
           .orderBy("createdAt", descending: true);
@@ -62,6 +88,6 @@ class ProfileWallProvider extends ChangeNotifier {
       debugPrint("data done with error");
     });
     main.prefs.put('userPosts', len);
-    return len;
+    return len + len2;
   }
 }

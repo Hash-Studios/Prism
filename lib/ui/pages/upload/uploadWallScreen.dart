@@ -298,7 +298,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               ? () async {
                   navStack.removeLast();
                   debugPrint(navStack.toString());
-                  Navigator.pop(context, wallpaperUrl);
+                  Navigator.pop(context, [wallpaperUrl, id]);
                   analytics.logEvent(
                       name: 'upload_wallpaper',
                       parameters: {'id': id, 'link': wallpaperUrl});

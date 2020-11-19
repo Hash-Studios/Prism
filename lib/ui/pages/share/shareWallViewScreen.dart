@@ -17,6 +17,8 @@ import 'package:Prism/ui/widgets/menuButton/editButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/shareButton.dart';
+import 'package:Prism/ui/widgets/popup/copyrightPopUp.dart';
+import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -490,14 +492,22 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             trash: false,
                                           ),
                                           ShareButton(
-                                              id: WData.wall.id.toString(),
+                                              id: WData.wall == null
+                                                  ? ""
+                                                  : WData.wall.id.toString(),
                                               provider: provider,
-                                              url: WData.wall.path.toString(),
-                                              thumbUrl: WData
-                                                  .wall.thumbs["original"]
-                                                  .toString()),
+                                              url: WData.wall == null
+                                                  ? ""
+                                                  : WData.wall.path.toString(),
+                                              thumbUrl: WData.wall == null
+                                                  ? ""
+                                                  : WData
+                                                      .wall.thumbs["original"]
+                                                      .toString()),
                                           EditButton(
-                                            url: WData.wall.path.toString(),
+                                            url: WData.wall == null
+                                                ? ""
+                                                : WData.wall.path.toString(),
                                           ),
                                         ],
                                       ),
@@ -996,30 +1006,47 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                       ],
                                                     ),
                                                     const SizedBox(height: 5),
-                                                    Row(
-                                                      children: [
-                                                        Text(
-                                                          provider.toString(),
-                                                          style: Theme.of(
-                                                                  context)
-                                                              .textTheme
-                                                              .bodyText2
-                                                              .copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor),
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 10),
-                                                        Icon(
-                                                          JamIcons.database,
-                                                          size: 20,
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .accentColor
-                                                              .withOpacity(.7),
-                                                        ),
-                                                      ],
+                                                    GestureDetector(
+                                                      onTap: () {
+                                                        showModal(
+                                                            context: context,
+                                                            configuration:
+                                                                const FadeScaleTransitionConfiguration(),
+                                                            builder: (BuildContext
+                                                                    context) =>
+                                                                const CopyrightPopUp(
+                                                                  setup: false,
+                                                                ));
+                                                      },
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                            "Copyright",
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodyText2
+                                                                .copyWith(
+                                                                    decoration:
+                                                                        TextDecoration
+                                                                            .underline,
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .accentColor),
+                                                          ),
+                                                          const SizedBox(
+                                                              width: 10),
+                                                          Icon(
+                                                            JamIcons.info,
+                                                            size: 20,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor
+                                                                .withOpacity(
+                                                                    .7),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
                                                   ],
                                                 ),

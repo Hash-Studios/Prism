@@ -117,43 +117,61 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
               if (offsetAnimation.value < 0.0) {
                 debugPrint('${offsetAnimation.value + 8.0}');
               }
-              return GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, shareRoute, arguments: [
-                    widget.arguments[index]["id"],
-                    widget.arguments[index]["wallpaper_provider"],
-                    widget.arguments[index]["wallpaper_url"],
-                    widget.arguments[index]["wallpaper_thumb"]
-                  ]);
-                },
-                onLongPress: () {
-                  setState(() {
-                    longTapIndex = index;
-                  });
-                  shakeController.forward(from: 0.0);
-                  HapticFeedback.vibrate();
-                  createDynamicLink(
-                      widget.arguments[index]["id"].toString(),
-                      widget.arguments[index]["wallpaper_provider"].toString(),
-                      widget.arguments[index]["wallpaper_url"].toString(),
-                      widget.arguments[index]["wallpaper_thumb"].toString());
-                },
-                child: Padding(
-                  padding: index == longTapIndex
-                      ? EdgeInsets.symmetric(
-                          vertical: offsetAnimation.value / 2,
-                          horizontal: offsetAnimation.value)
-                      : const EdgeInsets.all(0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: animation.value,
-                        borderRadius: BorderRadius.circular(20),
-                        image: DecorationImage(
-                            image: CachedNetworkImageProvider(widget
-                                .arguments[index]["wallpaper_thumb"]
-                                .toString()),
-                            fit: BoxFit.cover)),
-                  ),
+              return Padding(
+                padding: index == longTapIndex
+                    ? EdgeInsets.symmetric(
+                        vertical: offsetAnimation.value / 2,
+                        horizontal: offsetAnimation.value)
+                    : const EdgeInsets.all(0),
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                          color: animation.value,
+                          borderRadius: BorderRadius.circular(20),
+                          image: DecorationImage(
+                              image: CachedNetworkImageProvider(widget
+                                  .arguments[index]["wallpaper_thumb"]
+                                  .toString()),
+                              fit: BoxFit.cover)),
+                    ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          splashColor:
+                              Theme.of(context).accentColor.withOpacity(0.3),
+                          highlightColor:
+                              Theme.of(context).accentColor.withOpacity(0.1),
+                          onTap: () {
+                            Navigator.pushNamed(context, shareRoute,
+                                arguments: [
+                                  widget.arguments[index]["id"],
+                                  widget.arguments[index]["wallpaper_provider"],
+                                  widget.arguments[index]["wallpaper_url"],
+                                  widget.arguments[index]["wallpaper_thumb"]
+                                ]);
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              longTapIndex = index;
+                            });
+                            shakeController.forward(from: 0.0);
+                            HapticFeedback.vibrate();
+                            createDynamicLink(
+                                widget.arguments[index]["id"].toString(),
+                                widget.arguments[index]["wallpaper_provider"]
+                                    .toString(),
+                                widget.arguments[index]["wallpaper_url"]
+                                    .toString(),
+                                widget.arguments[index]["wallpaper_thumb"]
+                                    .toString());
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               );
             });
