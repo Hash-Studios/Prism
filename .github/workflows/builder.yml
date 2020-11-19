@@ -5,8 +5,8 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
+      - run: mkdir android/app
       - run: 'echo "$FIREBASE_SECRET" > android/app/google-services.json'
-        shell: bash
         env:
           FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
       - uses: actions/checkout@v1
