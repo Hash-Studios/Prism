@@ -6,6 +6,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - run: mkdir android/app
+      - run: mkdir lib
       - run: 'echo "$FIREBASE_SECRET" > android/app/google-services.json'
       - run: 'echo "$GITKEY_DART" > lib/gitkey.dart'
         env:
