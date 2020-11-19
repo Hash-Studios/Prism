@@ -22,7 +22,6 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -137,10 +136,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                     ),
                     boxShadow: const [],
                     collapsed: CollapsedPanel(
-                              panelCollapsed: panelCollapsed,
-                              panelController: panelController,
-                            ),
-                    
+                      panelCollapsed: panelCollapsed,
+                      panelController: panelController,
+                    ),
                     minHeight: MediaQuery.of(context).size.height / 20,
                     parallaxEnabled: true,
                     parallaxOffset: 0.00,
@@ -812,12 +810,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                             googleSignInPopUp(context, () {
                                               onFavSetup(
                                                   sdata.setup["id"].toString(),
-                                                  sdata.setup as Map);
+                                                  sdata.setup);
                                             });
                                           } else {
                                             onFavSetup(
                                                 sdata.setup["id"].toString(),
-                                                sdata.setup as Map);
+                                                sdata.setup);
                                           }
                                         },
                                         child: Container(

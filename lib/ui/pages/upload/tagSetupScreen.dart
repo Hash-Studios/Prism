@@ -230,8 +230,8 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
 class Tag extends StatefulWidget {
   final double xBound;
   final double yBound;
-  WidgetTag widgetTag;
-  Tag({
+  final WidgetTag widgetTag;
+  const Tag({
     @required this.xBound,
     @required this.yBound,
     @required this.widgetTag,

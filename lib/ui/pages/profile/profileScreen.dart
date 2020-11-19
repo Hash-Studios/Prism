@@ -5,7 +5,6 @@ import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
-import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/profile/aboutList.dart';
@@ -96,13 +95,14 @@ class _ProfileChildState extends State<ProfileChild> {
               .then((value2) {
             debugPrint(value.toString());
             debugPrint(value2.toString());
-            if (mounted)
+            if (mounted) {
               setState(
                 () {
                   favCount = value + value2;
                   main.prefs.put('userFavs', favCount);
                 },
               );
+            }
           });
         },
       );
@@ -157,7 +157,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                       children: [
                                         const Spacer(flex: 5),
                                         Table(
-                                          columnWidths: {
+                                          columnWidths: const {
                                             0: FlexColumnWidth(3),
                                             1: FlexColumnWidth(5)
                                           },
@@ -341,7 +341,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       MainAxisAlignment.center,
                                                   children: [
                                                     IconButton(
-                                                        icon: Icon(
+                                                        icon: const Icon(
                                                             JamIcons.twitter),
                                                         onPressed: main.prefs.get(
                                                                         "twitter") !=
@@ -477,7 +477,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                 );
                                                               }),
                                                     IconButton(
-                                                        icon: Icon(
+                                                        icon: const Icon(
                                                             JamIcons.instagram),
                                                         onPressed: main.prefs.get(
                                                                         "instagram") !=

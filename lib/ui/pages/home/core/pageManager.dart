@@ -6,7 +6,6 @@ import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
-import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +15,6 @@ import 'package:rate_my_app/rate_my_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/main.dart' as main;
 
 // PageController pageController = PageController();
 TabController tabController;

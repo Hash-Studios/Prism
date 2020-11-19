@@ -469,7 +469,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                           return true;
                         }
                       });
-                      if (navStack.last == "Home") {
+                      if ((navStack.last == "Home") == true) {
                         Navigator.of(context).pushNamed(profileRoute);
                       }
                     }

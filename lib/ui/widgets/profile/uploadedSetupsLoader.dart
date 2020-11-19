@@ -1,4 +1,3 @@
-import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/profile/uploadedSetupsGrid.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:flutter/material.dart';

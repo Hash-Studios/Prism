@@ -38,7 +38,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     super.initState();
   }
 
-  static const platform = const MethodChannel('flutter.prism.set_wallpaper');
+  static const platform = MethodChannel('flutter.prism.set_wallpaper');
 
   @override
   Widget build(BuildContext context) {

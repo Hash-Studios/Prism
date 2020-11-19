@@ -81,7 +81,7 @@ class _UserProfileState extends State<UserProfile> {
                             children: [
                               const Spacer(flex: 5),
                               Table(
-                                columnWidths: {
+                                columnWidths: const {
                                   0: FlexColumnWidth(3),
                                   1: FlexColumnWidth(5)
                                 },
