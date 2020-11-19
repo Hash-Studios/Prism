@@ -18,9 +18,15 @@ jobs:
         with:
           java-version: '12.x'
       - run: flutter pub get
-      - run: flutter build apk --split-per-abi --tree-shake-icons --shrink --obfuscate
+      - run: flutter build apk --split-per-abi --tree-shake-icons --shrink
       - name: Uploading build artifacts
         uses: actions/upload-artifact@v2.2.1
         with:
           name: APKs
           path:  build/app/outputs/apk/release/app*
+      - name: Telegram Notification
+        uses: appleboy/telegram-action@0.0.3
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          args: The build was complete.
