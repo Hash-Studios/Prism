@@ -20,6 +20,7 @@ Future<void> getNotifications() async {
       for (final f in value.documents) {
         Map<String, dynamic> map;
         map = f.data;
+        print(map['modifier']);
         if (map['modifier'] == "free") {
           if (main.prefs.get('premium') == false ||
               main.prefs.get('premium') == null) {
@@ -88,6 +89,15 @@ Future<void> getNotifications() async {
             } else if (map['modifier'] == "all") {
               counter++;
               writeNotifications(map);
+            } else if (map['modifier'] == globals.currentAppVersion) {
+              counter++;
+              writeNotifications(map);
+            } else if (map['modifier'] == main.prefs.get('email').toString()) {
+              if (main.prefs.get('email').toString() != "" &&
+                  main.prefs.get('email').toString() != null) {
+                counter++;
+                writeNotifications(map);
+              }
             }
           }
         }
