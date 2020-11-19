@@ -5,13 +5,6 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - run: mkdir android/app
-      - run: mkdir lib
-      - run: 'echo "$FIREBASE_SECRET" > android/app/google-services.json'
-      - run: 'echo "$GITKEY_DART" > lib/gitkey.dart'
-        env:
-          FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
-          GITKEY_DART: ${{ secrets.GITKEY_DART }}
       - uses: actions/checkout@v1
       - uses: subosito/flutter-action@v1
         with:
@@ -21,6 +14,11 @@ jobs:
         with:
           java-version: '12.x'
       - run: flutter pub get
+      - run: 'echo "$FIREBASE_SECRET" > android/app/google-services.json'
+      - run: 'echo "$GITKEY_DART" > lib/gitkey.dart'
+        env:
+          FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
+          GITKEY_DART: ${{ secrets.GITKEY_DART }}
       - run: flutter build apk --split-per-abi --tree-shake-icons --shrink
       - name: Uploading build artifacts
         uses: actions/upload-artifact@v2.2.1
