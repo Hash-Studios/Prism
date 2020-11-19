@@ -1,5 +1,24 @@
 ## Changelog
 
+### v2.6.1
+- Added ability to favourite setups
+- Added setups to profile
+- Added more modifiers in in-app-notifications
+- Redesigned setup's info panel.
+- Redesigned profile page.
+- Added rightside - nav drawer in profile
+- Added support for smaller screen phone.
+- Updated dialogs' design
+- Added animations to dialogs
+- Added Ink ripple animations
+- Added more animations in sliding panel
+- Added support for Scoped Storage Android 11
+- Added more crop ratios in wallpaper upload
+- Added an easter egg
+- Fixed Profile Nav Issue
+- Added reshuffling of search tags
+- Minor bug fixes and improvements
+
 ### v2.6.0
 - Setups' uploading is now out of beta
 - Added new themes & theme designer
