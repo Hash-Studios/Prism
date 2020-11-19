@@ -1,7 +1,5 @@
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
-import 'package:Prism/ui/widgets/profile/downloadList.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
 import 'package:Prism/ui/widgets/profile/premiumList.dart';
 import 'package:Prism/ui/widgets/profile/studioList.dart';

@@ -51,9 +51,7 @@ class _ShowUpTransitionState extends State<ShowUpTransition>
     super.initState();
     _animController = AnimationController(
         vsync: this,
-        duration: widget.duration == null
-            ? const Duration(milliseconds: 400)
-            : widget.duration);
+        duration: widget.duration ?? const Duration(milliseconds: 400));
     switch (widget.slideSide) {
       case SlideFromSlide.left:
         selectedSlide = slideSides[0];
@@ -81,7 +79,7 @@ class _ShowUpTransitionState extends State<ShowUpTransition>
 
   @override
   Widget build(BuildContext context) {
-    Timer(widget.delay == null ? Duration.zero : widget.delay, () {
+    Timer(widget.delay ?? Duration.zero, () {
       if (widget.forward) {
         if (mounted) _animController.forward();
       } else {

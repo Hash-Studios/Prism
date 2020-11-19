@@ -20,7 +20,6 @@ Future<void> getNotifications() async {
       for (final f in value.documents) {
         Map<String, dynamic> map;
         map = f.data;
-        print(map['modifier']);
         if (map['modifier'] == "free") {
           if (main.prefs.get('premium') == false ||
               main.prefs.get('premium') == null) {

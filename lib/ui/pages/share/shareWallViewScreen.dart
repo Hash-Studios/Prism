@@ -1652,10 +1652,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                     ),
                                                     PData.wall != null
                                                         ? ShareButton(
-                                                            id: PData.wall.id !=
-                                                                    null
-                                                                ? PData.wall.id
-                                                                : "",
+                                                            id: PData.wall.id ??
+                                                                "",
                                                             provider: provider,
                                                             url: url.toString(),
                                                             thumbUrl:

@@ -127,9 +127,9 @@ class _MyAppState extends State<MyApp> {
   Future<void> fetchModes() async {
     try {
       modes = await FlutterDisplayMode.supported;
-      // print(modes);
+      debugPrint(modes.toString());
     } on PlatformException catch (e) {
-      // print(e.toString());
+      debugPrint(e.toString());
     }
     selected =
         modes.firstWhere((DisplayMode m) => m.selected, orElse: () => null);

@@ -86,7 +86,7 @@ class ProfileDrawer extends StatelessWidget {
 
   Widget createDrawerBodyHeader({String text, BuildContext context}) {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 8, 0, 0),
+      padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
       child: Container(
         width: MediaQuery.of(context).size.width / 2,
         child: Text(text,
@@ -121,7 +121,7 @@ class ProfileDrawer extends StatelessWidget {
                     context: context),
             (main.prefs.get('premium') as bool == true)
                 ? Container()
-                : Divider(),
+                : const Divider(),
             createDrawerBodyHeader(text: "FAVOURITES", context: context),
             createDrawerBodyItem(
                 icon: JamIcons.picture,
@@ -139,7 +139,7 @@ class ProfileDrawer extends StatelessWidget {
                   Navigator.pushNamed(context, favSetupRoute);
                 },
                 context: context),
-            Divider(),
+            const Divider(),
             createDrawerBodyHeader(text: "DOWNLOADS", context: context),
             createDrawerBodyItem(
               icon: JamIcons.download,
@@ -250,7 +250,7 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
-            Divider(),
+            const Divider(),
             createDrawerBodyHeader(text: "CONNECTIONS", context: context),
             createDrawerBodyItem(
               icon: JamIcons.twitter,
@@ -464,7 +464,7 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
-            Divider(),
+            const Divider(),
             createDrawerBodyHeader(text: "CUSTOMISATION", context: context),
             createDrawerBodyItem(
               icon: JamIcons.wrench,
@@ -483,7 +483,7 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
-            Divider(),
+            const Divider(),
             createDrawerBodyHeader(text: "USER", context: context),
             main.prefs.get("name") != null &&
                     main.prefs.get("email") != null &&
@@ -523,7 +523,7 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
-            Divider(),
+            const Divider(),
             createDrawerBodyHeader(text: "SETTINGS", context: context),
             createDrawerBodyItem(
               icon: JamIcons.cog,
@@ -543,7 +543,7 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
-            Divider(),
+            const Divider(),
           ],
         ),
       ),

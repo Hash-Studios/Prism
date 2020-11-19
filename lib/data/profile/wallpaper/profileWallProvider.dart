@@ -62,7 +62,7 @@ class ProfileWallProvider extends ChangeNotifier {
       debugPrint("data done with error");
     });
     main.prefs.put('userSetups', len);
-    var len2 = len;
+    final len2 = len;
     tempList = [];
     if (main.prefs.get('premium') == true) {
       db2 = databaseReference
