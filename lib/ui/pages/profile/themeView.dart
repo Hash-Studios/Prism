@@ -227,17 +227,23 @@ class _ThemeViewState extends State<ThemeView> {
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.black12),
                                 borderRadius: BorderRadius.circular(10),
+                                color: themes[themes.keys.toList()[index]]
+                                    .hintColor,
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(JamIcons.brush_f),
                                   Padding(
                                     padding: const EdgeInsets.all(4.0),
                                     child: Text(
                                       themes.keys.toList()[index].substring(2),
-                                      style:
-                                          Theme.of(context).textTheme.subtitle2,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .subtitle2
+                                          .copyWith(
+                                              color: themes[themes.keys
+                                                      .toList()[index]]
+                                                  .accentColor),
                                     ),
                                   ),
                                 ],
