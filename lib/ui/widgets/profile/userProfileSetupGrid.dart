@@ -2,6 +2,8 @@ import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userdata;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:Prism/ui/widgets/setups/loadingSetups.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +28,23 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
   Animation<Color> animation;
   GlobalKey<RefreshIndicatorState> refreshProfileKey =
       GlobalKey<RefreshIndicatorState>();
+
+  void showPremiumPopUp(Function func) {
+    if (main.prefs.get("premium") == false) {
+      Navigator.pushNamed(context, premiumRoute);
+    } else {
+      func();
+    }
+  }
+
+  void showGooglePopUp(Function func) {
+    debugPrint(main.prefs.get("isLoggedin").toString());
+    if (main.prefs.get("isLoggedin") == false) {
+      googleSignInPopUp(context, func);
+    } else {
+      func();
+    }
+  }
 
   @override
   void initState() {
@@ -229,42 +248,55 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      return Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                                color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                      userdata.userProfileSetups[index]["image"]
-                                          .toString(),
-                                    ),
-                                    fit: BoxFit.cover)),
-                          ),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                splashColor: Theme.of(context)
-                                    .accentColor
-                                    .withOpacity(0.3),
-                                highlightColor: Theme.of(context)
-                                    .accentColor
-                                    .withOpacity(0.1),
-                                onTap: () {
-                                  if (userdata.userProfileSetups == []) {
-                                  } else {
-                                    Navigator.pushNamed(
-                                        context, userProfileSetupViewRoute,
-                                        arguments: [index]);
-                                  }
-                                },
+                      return PremiumBannerSetupPhotographer(
+                        comparator: false,
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                        userdata.userProfileSetups[index]
+                                                ["image"]
+                                            .toString(),
+                                      ),
+                                      fit: BoxFit.cover)),
+                            ),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  splashColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.3),
+                                  highlightColor: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.1),
+                                  onTap: () {
+                                    if (userdata.userProfileSetups == []) {
+                                    } else {
+                                      if (main.prefs.get('premium') == true) {
+                                        Navigator.pushNamed(
+                                            context, userProfileSetupViewRoute,
+                                            arguments: [index]);
+                                      } else {
+                                        showGooglePopUp(() {
+                                          showPremiumPopUp(() {
+                                            main.RestartWidget.restartApp(
+                                                context);
+                                          });
+                                        });
+                                      }
+                                    }
+                                  },
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       );
                     })
             : const LoadingSetupCards());
