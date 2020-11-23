@@ -60,10 +60,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     setState(() {
       isLoading = true;
     });
-    paletteGenerator = await PaletteGenerator.fromImageProvider(
-      CachedNetworkImageProvider(link),
-      maximumColorCount: 20,
-    );
+    await Future.delayed(const Duration(milliseconds: 500))
+        .then((value) async {
+      paletteGenerator = await PaletteGenerator.fromImageProvider(
+        CachedNetworkImageProvider(link),
+        maximumColorCount: 20,
+      );
+    });
     setState(() {
       isLoading = false;
     });
