@@ -82,8 +82,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   Future<Uint8List> compressFile(File file) async {
     final result = await FlutterImageCompress.compressWithFile(
       file.absolute.path,
-      minWidth: 250,
-      quality: 82,
+      minWidth: 400,
+      quality: 85,
     );
     debugPrint(file.lengthSync().toString());
     debugPrint(result.length.toString());
