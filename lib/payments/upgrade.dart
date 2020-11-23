@@ -251,7 +251,36 @@ class _UpsellScreenState extends State<UpsellScreen> {
                               Container(
                                 width: MediaQuery.of(context).size.width * 0.8,
                                 child: Text(
-                                  "Unlock more than 5 setups!",
+                                  "Unlock locked setups!",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headline6
+                                      .copyWith(
+                                          color: Theme.of(context).accentColor),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Icon(
+                                JamIcons.trophy,
+                                size: 22,
+                                color: config.Colors().mainAccentColor(1),
+                              ),
+                              const SizedBox(
+                                width: 20,
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                child: Text(
+                                  "Enter premium only giveaways!",
                                   style: Theme.of(context)
                                       .textTheme
                                       .headline6
