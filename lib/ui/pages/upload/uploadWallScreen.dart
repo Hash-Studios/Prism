@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flare_flutter/flare_actor.dart';
@@ -9,13 +10,13 @@ import 'package:path/path.dart' as Path;
 import 'package:Prism/routes/router.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
-import 'package:image/image.dart' as Img;
 import 'package:Prism/gitkey.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class UploadWallScreen extends StatefulWidget {
   final List arguments;
@@ -78,13 +79,15 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     debugPrint(id);
   }
 
-  static Future<List<int>> _resizeImage(File file) async {
-    final bytes = await file.readAsBytes();
-    final Img.Image image = Img.decodeImage(bytes);
-    final Img.Image resized = Img.copyResize(image, width: 250);
-    final List<int> resizedBytes = Img.encodeJpg(resized);
-
-    return resizedBytes;
+  Future<Uint8List> compressFile(File file) async {
+    final result = await FlutterImageCompress.compressWithFile(
+      file.absolute.path,
+      minWidth: 250,
+      quality: 82,
+    );
+    debugPrint(file.lengthSync().toString());
+    debugPrint(result.length.toString());
+    return result;
   }
 
   Future processImage() async {
@@ -104,7 +107,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         {wallpaperSize = "${(value / 1024 / 1024).toStringAsFixed(2)}MB"});
 
     imageBytes = await image.readAsBytes();
-    imageBytesThumb = await compute<File, List<int>>(_resizeImage, image);
+    imageBytesThumb = await compressFile(image);
 
     uploadFile();
   }
