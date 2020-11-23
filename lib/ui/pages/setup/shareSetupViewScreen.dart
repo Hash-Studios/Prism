@@ -25,6 +25,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class ShareSetupViewScreen extends StatefulWidget {
   final List arguments;
@@ -795,55 +796,120 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                               ),
                                   ),
                                 ),
-                                Expanded(
-                                  flex: 5,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: <Widget>[
-                                      ModifiedShareDownloadButton(),
-                                      ModifiedShareSetWallpaperButton(),
-                                      GestureDetector(
-                                        onTap: () {
-                                          if (main.prefs.get("isLoggedin") ==
-                                              false) {
-                                            googleSignInPopUp(context, () {
-                                              onFavSetup(
-                                                  sdata.setup["id"].toString(),
-                                                  sdata.setup);
-                                            });
-                                          } else {
-                                            onFavSetup(
-                                                sdata.setup["id"].toString(),
-                                                sdata.setup);
-                                          }
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(.25),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 4))
-                                            ],
-                                            borderRadius:
-                                                BorderRadius.circular(500),
-                                          ),
-                                          padding: const EdgeInsets.all(17),
-                                          child: Icon(
-                                            JamIcons.trash,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                            size: 20,
-                                          ),
+                                main.prefs.get('premium') == true
+                                    ? Expanded(
+                                        flex: 5,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: <Widget>[
+                                            ModifiedShareDownloadButton(),
+                                            ModifiedShareSetWallpaperButton(),
+                                            GestureDetector(
+                                              onTap: () {
+                                                if (main.prefs
+                                                        .get("isLoggedin") ==
+                                                    false) {
+                                                  googleSignInPopUp(context,
+                                                      () {
+                                                    onFavSetup(
+                                                        sdata.setup["id"]
+                                                            .toString(),
+                                                        sdata.setup);
+                                                  });
+                                                } else {
+                                                  onFavSetup(
+                                                      sdata.setup["id"]
+                                                          .toString(),
+                                                      sdata.setup);
+                                                }
+                                              },
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .primaryColor,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.25),
+                                                        blurRadius: 4,
+                                                        offset:
+                                                            const Offset(0, 4))
+                                                  ],
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          500),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.all(17),
+                                                child: Icon(
+                                                  JamIcons.trash,
+                                                  color: Theme.of(context)
+                                                      .accentColor,
+                                                  size: 20,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : Expanded(
+                                        flex: 5,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () async {
+                                                toasts.codeSend(
+                                                    "Applying Setups require Premium");
+                                                Navigator.pushNamed(
+                                                    context, premiumRoute);
+                                              },
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .primaryColor,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                        color: Colors.black
+                                                            .withOpacity(.25),
+                                                        blurRadius: 4,
+                                                        offset:
+                                                            const Offset(0, 4))
+                                                  ],
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          500),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.all(17),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      JamIcons.stop_sign,
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                      size: 30,
+                                                    ),
+                                                    const SizedBox(
+                                                      width: 4,
+                                                    ),
+                                                    Text(
+                                                      "Premium Required",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .headline4,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
                               ],
                             ),
                           ),
