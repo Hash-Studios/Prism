@@ -58,10 +58,12 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
     setState(() {
       isLoading = true;
     });
-    paletteGenerator = await PaletteGenerator.fromImageProvider(
-      CachedNetworkImageProvider(thumb),
-      maximumColorCount: 20,
-    );
+    await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
+      paletteGenerator = await PaletteGenerator.fromImageProvider(
+        CachedNetworkImageProvider(thumb),
+        maximumColorCount: 20,
+      );
+    });
     setState(() {
       isLoading = false;
     });

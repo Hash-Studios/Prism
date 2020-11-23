@@ -74,8 +74,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
     } catch (e) {
       e.toString();
     }
-    paletteGenerator = await PaletteGenerator.fromImageProvider(image,
-        maximumColorCount: 20, timeout: const Duration(seconds: 120));
+    await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
+      paletteGenerator = await PaletteGenerator.fromImageProvider(image,
+          maximumColorCount: 20, timeout: const Duration(seconds: 120));
+    });
     setState(() {
       isLoading = false;
     });
