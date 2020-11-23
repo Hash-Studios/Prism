@@ -49,8 +49,9 @@ class ColorBar extends StatelessWidget {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color:
-                      colors == null ? const Color(0xFF000000) : colors[color],
+                  color: colors == null
+                      ? Theme.of(context).accentColor.withOpacity(0.1)
+                      : colors[color],
                   borderRadius: BorderRadius.circular(500),
                 ),
                 height: MediaQuery.of(context).size.width / 8,
