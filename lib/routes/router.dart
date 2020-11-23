@@ -48,7 +48,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Splash");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: splashRoute);
-      return CupertinoPageRoute(builder: (context) => const SplashWidget());
+      return CupertinoPageRoute(builder: (context) => SplashWidget());
     case searchRoute:
       navStack.add("Search");
       debugPrint(navStack.toString());
