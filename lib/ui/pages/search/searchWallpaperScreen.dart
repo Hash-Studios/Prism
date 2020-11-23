@@ -558,9 +558,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                       ),
                     ),
                     Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                      alignment: main.prefs.get('hasNotch') == true
+                              ? Alignment.topLeft
+                              : Alignment.topRight,
+                          child: Padding(
+                            padding: main.prefs.get('hasNotch') == true
+                                ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
+                                : const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
                             final link = wdata.wallsS[index].path;
@@ -1054,9 +1058,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                       ),
                     ),
                     Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                      alignment:  main.prefs.get('hasNotch') == true
+                              ? Alignment.topLeft
+                              : Alignment.topRight,
+                          child: Padding(
+                            padding: main.prefs.get('hasNotch') == true
+                                ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
+                                : const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
                             final link = pdata.wallsPS[index].src["original"];

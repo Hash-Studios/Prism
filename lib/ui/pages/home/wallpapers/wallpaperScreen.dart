@@ -561,9 +561,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                       ),
                     ),
                     Align(
-                      alignment: Alignment.topRight,
+                      alignment: main.prefs.get('hasNotch') == true
+                          ? Alignment.topLeft
+                          : Alignment.topRight,
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: main.prefs.get('hasNotch') == true
+                            ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
+                            : const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
                             final link = wdata.walls[index].path;
@@ -1159,9 +1163,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                           ),
                         ),
                         Align(
-                          alignment: Alignment.topRight,
+                          alignment: main.prefs.get('hasNotch') == true
+                              ? Alignment.topLeft
+                              : Alignment.topRight,
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: main.prefs.get('hasNotch') == true
+                                ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
+                                : const EdgeInsets.all(8),
                             child: IconButton(
                               onPressed: () {
                                 final link =
@@ -1703,9 +1711,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               ),
                             ),
                             Align(
-                              alignment: Alignment.topRight,
+                              alignment: main.prefs.get('hasNotch') == true
+                                  ? Alignment.topLeft
+                                  : Alignment.topRight,
                               child: Padding(
-                                padding: const EdgeInsets.all(8.0),
+                                padding: main.prefs.get('hasNotch') == true
+                                    ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
+                                    : const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   onPressed: () {
                                     final link =
@@ -2288,9 +2300,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   ),
                                 ),
                                 Align(
-                                  alignment: Alignment.topRight,
+                                  alignment: main.prefs.get('hasNotch') == true
+                                      ? Alignment.topLeft
+                                      : Alignment.topRight,
                                   child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: main.prefs.get('hasNotch') == true
+                                        ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
+                                        : const EdgeInsets.all(8.0),
                                     child: IconButton(
                                       onPressed: () {
                                         final link =
@@ -2850,9 +2866,13 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   ),
                                 ),
                                 Align(
-                                  alignment: Alignment.topRight,
+                                  alignment: main.prefs.get('hasNotch') == true
+                                      ? Alignment.topLeft
+                                      : Alignment.topRight,
                                   child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: main.prefs.get('hasNotch') == true
+                                        ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
+                                        : const EdgeInsets.all(8.0),
                                     child: IconButton(
                                       onPressed: () {
                                         final link = wdata.wallsS[index].path;
