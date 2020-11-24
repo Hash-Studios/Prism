@@ -3,12 +3,15 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 
 class UserProfileGrid extends StatefulWidget {
   final String email;
@@ -230,53 +233,95 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      return FocusedMenuHolder(
-                        provider: "UserProfileWall",
-                        index: index,
-                        child: Stack(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                      image: CachedNetworkImageProvider(
-                                        userdata.userProfileWalls[index]
-                                                ["wallpaper_thumb"]
-                                            .toString(),
-                                      ),
-                                      fit: BoxFit.cover)),
-                            ),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  splashColor: Theme.of(context)
-                                      .accentColor
-                                      .withOpacity(0.3),
-                                  highlightColor: Theme.of(context)
-                                      .accentColor
-                                      .withOpacity(0.1),
-                                  onTap: () {
-                                    if (userdata.userProfileWalls == []) {
-                                    } else {
-                                      Navigator.pushNamed(
-                                          context, userProfileWallViewRoute,
-                                          arguments: [
-                                            index,
-                                            userdata.userProfileWalls[index]
-                                                ["wallpaper_thumb"],
-                                          ]);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
+                      return PremiumBannerWalls(
+                        comparator: !globals.isPremiumWall(
+                            globals.premiumCollections,
+                            userdata.userProfileWalls[index]["collections"]
+                                as List),
+                        defaultChild: FocusedMenuHolder(
+                          provider: "UserProfileWall",
+                          index: index,
+                          child: PhotographerWallTile(
+                              animation: animation, index: index),
+                        ),
+                        trueChild: PhotographerWallTile(
+                          animation: animation,
+                          index: index,
                         ),
                       );
                     })
             : const LoadingCards());
+  }
+}
+
+class PhotographerWallTile extends StatelessWidget {
+  const PhotographerWallTile({
+    Key key,
+    @required this.animation,
+    @required this.index,
+  }) : super(key: key);
+
+  final Animation<Color> animation;
+  final int index;
+
+  void showGooglePopUp(BuildContext context, Function func) {
+    debugPrint(main.prefs.get("isLoggedin").toString());
+    if (main.prefs.get("isLoggedin") == false) {
+      googleSignInPopUp(context, func);
+    } else {
+      func();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+              color: animation.value,
+              borderRadius: BorderRadius.circular(20),
+              image: DecorationImage(
+                  image: CachedNetworkImageProvider(
+                    userdata.userProfileWalls[index]["wallpaper_thumb"]
+                        .toString(),
+                  ),
+                  fit: BoxFit.cover)),
+        ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              splashColor: Theme.of(context).accentColor.withOpacity(0.3),
+              highlightColor: Theme.of(context).accentColor.withOpacity(0.1),
+              onTap: () {
+                if (userdata.userProfileWalls == []) {
+                } else {
+                  globals.isPremiumWall(
+                                  globals.premiumCollections,
+                                  userdata.userProfileWalls[index]
+                                      ["collections"] as List) ==
+                              true &&
+                          main.prefs.get('premium') != true
+                      ? showGooglePopUp(context, () {
+                          Navigator.pushNamed(
+                            context,
+                            premiumRoute,
+                          );
+                        })
+                      : Navigator.pushNamed(context, userProfileWallViewRoute,
+                          arguments: [
+                              index,
+                              userdata.userProfileWalls[index]
+                                  ["wallpaper_thumb"],
+                            ]);
+                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
