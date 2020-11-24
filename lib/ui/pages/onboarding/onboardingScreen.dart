@@ -161,7 +161,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               height: MediaQuery.of(context).size.height * 0.07,
                               child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
-                                itemCount: 3,
+                                itemCount: themes.length,
                                 itemBuilder: (context, index) {
                                   return Padding(
                                     padding:
@@ -378,7 +378,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             overlayColor: MaterialStateColor.resolveWith(
                                 (states) => Colors.white10)),
                         child: Container(
-                          width: 70,
+                          width: 75,
                           child: Text(
                             _currentPage == 2 ? "Finish" : "Skip",
                             textAlign: TextAlign.center,
@@ -441,7 +441,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               (states) => Colors.white),
                         ),
                         child: Container(
-                          width: 55,
+                          width: 60,
                           child: _currentPage != 2
                               ? Text(
                                   _currentPage == 0

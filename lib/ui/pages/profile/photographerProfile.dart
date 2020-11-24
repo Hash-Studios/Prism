@@ -149,10 +149,11 @@ class _UserProfileState extends State<UserProfile> {
                                                         .toString()
                                                         .toUpperCase(),
                                                     textAlign: TextAlign.center,
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                         fontFamily:
                                                             "Proxima Nova",
-                                                        color: Colors.white,
+                                                        color: Theme.of(context)
+                                                            .accentColor,
                                                         fontSize: 20,
                                                         fontWeight:
                                                             FontWeight.w600),
@@ -169,10 +170,12 @@ class _UserProfileState extends State<UserProfile> {
                                                         name
                                                             .toString()
                                                             .toUpperCase(),
-                                                        style: const TextStyle(
+                                                        style: TextStyle(
                                                             fontFamily:
                                                                 "Proxima Nova",
-                                                            color: Colors.white,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
                                                             fontSize: 20,
                                                             fontWeight:
                                                                 FontWeight
@@ -231,8 +234,11 @@ class _UserProfileState extends State<UserProfile> {
                                         children: [
                                           twitter != "" && twitter != null
                                               ? IconButton(
-                                                  icon: const Icon(
-                                                      JamIcons.twitter),
+                                                  icon: Icon(
+                                                    JamIcons.twitter,
+                                                    color: Theme.of(context)
+                                                        .accentColor,
+                                                  ),
                                                   onPressed: () {
                                                     launch(
                                                         "https://www.twitter.com/$twitter");
@@ -240,8 +246,11 @@ class _UserProfileState extends State<UserProfile> {
                                               : Container(),
                                           instagram != "" && instagram != null
                                               ? IconButton(
-                                                  icon: const Icon(
-                                                      JamIcons.instagram),
+                                                  icon: Icon(
+                                                    JamIcons.instagram,
+                                                    color: Theme.of(context)
+                                                        .accentColor,
+                                                  ),
                                                   onPressed: () {
                                                     launch(
                                                         "https://www.instagram.com/$instagram");
@@ -268,18 +277,24 @@ class _UserProfileState extends State<UserProfile> {
                                                       snapshot.data == null
                                                           ? "0 "
                                                           : "${snapshot.data.toString()} ",
-                                                      style: const TextStyle(
+                                                      style: TextStyle(
                                                           fontFamily:
                                                               "Proxima Nova",
                                                           fontSize: 24,
-                                                          color: Colors.white70,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      0.70),
                                                           fontWeight: FontWeight
                                                               .normal),
                                                     );
                                                   }),
-                                              const Icon(
+                                              Icon(
                                                 JamIcons.picture,
-                                                color: Colors.white70,
+                                                color: Theme.of(context)
+                                                    .accentColor
+                                                    .withOpacity(0.70),
                                               ),
                                             ],
                                           ),
@@ -295,18 +310,23 @@ class _UserProfileState extends State<UserProfile> {
                                                       snapshot.data == null
                                                           ? "0 "
                                                           : "${snapshot.data.toString()} ",
-                                                      style: const TextStyle(
+                                                      style: TextStyle(
                                                           fontFamily:
                                                               "Proxima Nova",
                                                           fontSize: 24,
-                                                          color: Colors.white70,
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .accentColor
+                                                              .withOpacity(0.7),
                                                           fontWeight: FontWeight
                                                               .normal),
                                                     );
                                                   }),
-                                              const Icon(
+                                              Icon(
                                                 JamIcons.instant_picture,
-                                                color: Colors.white70,
+                                                color: Theme.of(context)
+                                                    .accentColor
+                                                    .withOpacity(0.7),
                                               ),
                                             ],
                                           ),
