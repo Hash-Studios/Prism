@@ -1,11 +1,13 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/main.dart' as main;
 
 class WallpaperTile extends StatelessWidget {
   const WallpaperTile({
@@ -16,6 +18,15 @@ class WallpaperTile extends StatelessWidget {
 
   final WallpaperGrid widget;
   final int index;
+
+  void showGooglePopUp(BuildContext context, Function func) {
+    debugPrint(main.prefs.get("isLoggedin").toString());
+    if (main.prefs.get("isLoggedin") == false) {
+      googleSignInPopUp(context, func);
+    } else {
+      func();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,11 +67,18 @@ class WallpaperTile extends StatelessWidget {
                 if (Data.subPrismWalls == []) {
                 } else {
                   globals.isPremiumWall(
-                              globals.premiumCollections,
-                              Data.subPrismWalls[index]["collections"]
-                                  as List) ==
-                          false
-                      ? Navigator.pushNamed(
+                                  globals.premiumCollections,
+                                  Data.subPrismWalls[index]["collections"]
+                                      as List) ==
+                              true &&
+                          main.prefs.get('premium') != true
+                      ? showGooglePopUp(context, () {
+                          Navigator.pushNamed(
+                            context,
+                            premiumRoute,
+                          );
+                        })
+                      : Navigator.pushNamed(
                           context,
                           wallpaperRoute,
                           arguments: [
@@ -68,10 +86,6 @@ class WallpaperTile extends StatelessWidget {
                             index,
                             Data.subPrismWalls[index]["wallpaper_thumb"],
                           ],
-                        )
-                      : Navigator.pushNamed(
-                          context,
-                          premiumRoute,
                         );
                 }
               },

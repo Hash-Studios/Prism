@@ -6,6 +6,7 @@ import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dar
 import 'package:Prism/ui/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperTile.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -96,6 +97,15 @@ class _WallpaperGridState extends State<WallpaperGrid> {
     Data.getPrismWalls();
   }
 
+  void showGooglePopUp(BuildContext context, Function func) {
+    debugPrint(main.prefs.get("isLoggedin").toString());
+    if (main.prefs.get("isLoggedin") == false) {
+      googleSignInPopUp(context, func);
+    } else {
+      func();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ScrollController controller =
@@ -182,13 +192,27 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                               onTap: () {
                                 if (Data.subPrismWalls == []) {
                                 } else {
-                                  Navigator.pushNamed(context, wallpaperRoute,
-                                      arguments: [
-                                        widget.provider,
-                                        i,
-                                        Data.subPrismWalls[i]
-                                            ["wallpaper_thumb"],
-                                      ]);
+                                  globals.isPremiumWall(
+                                                  globals.premiumCollections,
+                                                  Data.subPrismWalls[i]
+                                                          ["collections"]
+                                                      as List) ==
+                                              true &&
+                                          main.prefs.get('premium') != true
+                                      ? showGooglePopUp(context, () {
+                                          Navigator.pushNamed(
+                                            context,
+                                            premiumRoute,
+                                          );
+                                        })
+                                      : Navigator.pushNamed(
+                                          context, wallpaperRoute,
+                                          arguments: [
+                                              widget.provider,
+                                              i,
+                                              Data.subPrismWalls[i]
+                                                  ["wallpaper_thumb"],
+                                            ]);
                                 }
                               },
                               child: Data.subPrismWalls.isEmpty
@@ -203,43 +227,52 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                     )
-                                  : Container(
-                                      decoration: BoxDecoration(
-                                          color: Provider.of<ThemeModel>(
-                                                          context,
-                                                          listen: false)
-                                                      .returnThemeType() ==
-                                                  "Dark"
-                                              ? Colors.white10
-                                              : Colors.black.withOpacity(.1),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                          image: DecorationImage(
-                                              image: CachedNetworkImageProvider(
-                                                  Data.subPrismWalls[i]
-                                                          ["wallpaper_thumb"]
-                                                      .toString()),
-                                              fit: BoxFit.cover)),
-                                      child: Center(
-                                        child: Container(
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          color: Colors.black.withOpacity(0.4),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(
-                                              globals.topTitleText[i]
-                                                  .toString(),
-                                              textAlign: TextAlign.center,
-                                              maxLines: 1,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headline2
-                                                  .copyWith(
-                                                      color: Colors.white,
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.bold),
+                                  : PremiumBannerWallsCarousel(
+                                      comparator: !globals.isPremiumWall(
+                                          globals.premiumCollections,
+                                          Data.subPrismWalls[i]["collections"]
+                                              as List),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                            color: Provider.of<ThemeModel>(
+                                                            context,
+                                                            listen: false)
+                                                        .returnThemeType() ==
+                                                    "Dark"
+                                                ? Colors.white10
+                                                : Colors.black.withOpacity(.1),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            image: DecorationImage(
+                                                image: CachedNetworkImageProvider(
+                                                    Data.subPrismWalls[i]
+                                                            ["wallpaper_thumb"]
+                                                        .toString()),
+                                                fit: BoxFit.cover)),
+                                        child: Center(
+                                          child: Container(
+                                            width: MediaQuery.of(context)
+                                                .size
+                                                .width,
+                                            color:
+                                                Colors.black.withOpacity(0.4),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                globals.topTitleText[i]
+                                                    .toString(),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 1,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .headline2
+                                                    .copyWith(
+                                                        color: Colors.white,
+                                                        fontSize: 20,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                              ),
                                             ),
                                           ),
                                         ),
