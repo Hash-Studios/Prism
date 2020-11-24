@@ -10,12 +10,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/config.dart' as config;
-import 'package:Prism/main.dart' as main;
 
 RemoteConfig remoteConfig;
 
 class SplashWidget extends StatelessWidget {
-  bool notchChecked = false;
   Future<void> rcInit() async {
     remoteConfig = await RemoteConfig.instance;
     await remoteConfig.setConfigSettings(RemoteConfigSettings());
@@ -71,27 +69,11 @@ class SplashWidget extends StatelessWidget {
     debugPrint(cList.toString());
   }
 
-  void checkNotch(BuildContext ctx) {
-    final height = MediaQuery.of(ctx).padding.top;
-    bool hasNotch;
-    if (height > 24) {
-      hasNotch = true;
-    } else {
-      hasNotch = false;
-    }
-    notchChecked = true;
-    main.prefs.put('hasNotch', hasNotch);
-    debugPrint('notch checked $hasNotch');
-  }
-
-  SplashWidget({
+  const SplashWidget({
     Key key,
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    if (!notchChecked) {
-      Future.delayed(const Duration(seconds: 0), () => checkNotch(context));
-    }
     SystemChrome.setEnabledSystemUIOverlays([]);
     return SplashScreen(
       'assets/animations/Prism Splash.flr',

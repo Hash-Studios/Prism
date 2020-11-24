@@ -534,13 +534,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                   ),
                 ),
                 Align(
-                  alignment: main.prefs.get('hasNotch') == true
-                      ? Alignment.topLeft
-                      : Alignment.topRight,
+                  alignment: Alignment.topRight,
                   child: Padding(
-                    padding: main.prefs.get('hasNotch') == true
-                        ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
-                        : const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(8.0),
                     child: IconButton(
                       onPressed: () {
                         final link =
