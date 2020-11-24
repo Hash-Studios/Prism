@@ -1,3 +1,4 @@
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
@@ -18,6 +19,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   PageController onboardingCarouselController = PageController();
   int _currentPage;
+  Color selectedAccentColor;
   int selectedTheme;
   bool isLoading;
   bool isSignedIn;
@@ -43,6 +45,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.initState();
     isLoading = false;
     isSignedIn = main.prefs.get('isLoggedin') as bool ?? false;
+    selectedTheme = 1;
+    selectedAccentColor = const Color(0xFFE57697);
     _currentPage = 0;
     onboardingCarouselController.addListener(() {
       setState(() {
@@ -178,7 +182,39 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                   themes.keys.toList()[index]);
                                           setState(() {
                                             selectedTheme = index;
+                                            selectedAccentColor = Color(int
+                                                .parse(Provider.of<ThemeModel>(
+                                                        context,
+                                                        listen: false)
+                                                    .currentTheme
+                                                    .errorColor
+                                                    .toString()
+                                                    .replaceAll(
+                                                        "MaterialColor(primary value: Color(0xff",
+                                                        "")
+                                                    .replaceAll("Color(", "")
+                                                    .replaceAll(")", "")));
                                           });
+                                          final accentColor = int.parse(
+                                              selectedAccentColor
+                                                  .toString()
+                                                  .replaceAll(
+                                                      "MaterialColor(primary value: Color(0xff",
+                                                      "")
+                                                  .replaceAll("Color(", "")
+                                                  .replaceAll(")", ""));
+                                          final hexString = selectedAccentColor
+                                              .toString()
+                                              .replaceAll(
+                                                  "MaterialColor(primary value: Color(0xff",
+                                                  "")
+                                              .replaceAll("Color(0xff", "")
+                                              .replaceAll(")", "");
+                                          main.prefs.put(
+                                              "mainAccentColor", accentColor);
+                                          analytics.logEvent(
+                                              name: "accent_changed",
+                                              parameters: {'color': hexString});
                                         },
                                         child: Stack(
                                           children: [
