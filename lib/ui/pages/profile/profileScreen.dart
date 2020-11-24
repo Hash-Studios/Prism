@@ -254,11 +254,12 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               textAlign:
                                                                   TextAlign
                                                                       .center,
-                                                              style: const TextStyle(
+                                                              style: TextStyle(
                                                                   fontFamily:
                                                                       "Proxima Nova",
-                                                                  color: Colors
-                                                                      .white,
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .accentColor,
                                                                   fontSize: 20,
                                                                   fontWeight:
                                                                       FontWeight
@@ -279,11 +280,12 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                           "name")
                                                                       .toString()
                                                                       .toUpperCase(),
-                                                                  style: const TextStyle(
+                                                                  style: TextStyle(
                                                                       fontFamily:
                                                                           "Proxima Nova",
-                                                                      color: Colors
-                                                                          .white,
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
                                                                       fontSize:
                                                                           20,
                                                                       fontWeight:
@@ -341,8 +343,12 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       MainAxisAlignment.center,
                                                   children: [
                                                     IconButton(
-                                                        icon: const Icon(
-                                                            JamIcons.twitter),
+                                                        icon: Icon(
+                                                          JamIcons.twitter,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                        ),
                                                         onPressed: main.prefs.get(
                                                                         "twitter") !=
                                                                     null &&
@@ -477,8 +483,12 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                 );
                                                               }),
                                                     IconButton(
-                                                        icon: const Icon(
-                                                            JamIcons.instagram),
+                                                        icon: Icon(
+                                                          JamIcons.instagram,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                        ),
                                                         onPressed: main.prefs.get(
                                                                         "instagram") !=
                                                                     null &&
@@ -628,19 +638,25 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       children: <Widget>[
                                                         Text(
                                                           "${favCount.toString()} ",
-                                                          style: const TextStyle(
+                                                          style: TextStyle(
                                                               fontFamily:
                                                                   "Proxima Nova",
                                                               fontSize: 24,
-                                                              color: Colors
-                                                                  .white70,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor
+                                                                  .withOpacity(
+                                                                      0.7),
                                                               fontWeight:
                                                                   FontWeight
                                                                       .normal),
                                                         ),
-                                                        const Icon(
+                                                        Icon(
                                                           JamIcons.heart_f,
-                                                          color: Colors.white70,
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .accentColor
+                                                              .withOpacity(0.7),
                                                         ),
                                                       ],
                                                     ),
@@ -660,21 +676,25 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                         null
                                                                     ? "${profileCount.toString()} "
                                                                     : "${snapshot.data.toString()} ",
-                                                                style: const TextStyle(
+                                                                style: TextStyle(
                                                                     fontFamily:
                                                                         "Proxima Nova",
                                                                     fontSize:
                                                                         24,
-                                                                    color: Colors
-                                                                        .white70,
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .accentColor,
                                                                     fontWeight:
                                                                         FontWeight
                                                                             .normal),
                                                               );
                                                             }),
-                                                        const Icon(
+                                                        Icon(
                                                           JamIcons.upload,
-                                                          color: Colors.white70,
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .accentColor
+                                                              .withOpacity(0.7),
                                                         ),
                                                       ],
                                                     ),
