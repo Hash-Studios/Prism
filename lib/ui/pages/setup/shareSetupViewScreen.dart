@@ -982,19 +982,21 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                 ),
                               );
                             }),
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: IconButton(
-                              onPressed: () {
-                                navStack.removeLast();
-                                debugPrint(navStack.toString());
-                                Navigator.pop(context);
-                              },
-                              color: Theme.of(context).accentColor,
-                              icon: const Icon(
-                                JamIcons.chevron_left,
+                        SafeArea(
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                onPressed: () {
+                                  navStack.removeLast();
+                                  debugPrint(navStack.toString());
+                                  Navigator.pop(context);
+                                },
+                                color: Theme.of(context).accentColor,
+                                icon: const Icon(
+                                  JamIcons.chevron_left,
+                                ),
                               ),
                             ),
                           ),

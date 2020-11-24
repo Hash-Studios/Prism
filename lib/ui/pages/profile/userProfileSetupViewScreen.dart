@@ -109,9 +109,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
           ),
           boxShadow: const [],
           collapsed: CollapsedPanel(
-                              panelCollapsed: panelCollapsed,
-                              panelController: panelController,
-                            ),
+            panelCollapsed: panelCollapsed,
+            panelController: panelController,
+          ),
           minHeight: MediaQuery.of(context).size.height / 20,
           parallaxEnabled: true,
           parallaxOffset: 0.00,
@@ -937,19 +937,21 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                       ),
                     );
                   }),
-              Align(
-                alignment: Alignment.topLeft,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: IconButton(
-                    onPressed: () {
-                      navStack.removeLast();
-                      debugPrint(navStack.toString());
-                      Navigator.pop(context);
-                    },
-                    color: Theme.of(context).accentColor,
-                    icon: const Icon(
-                      JamIcons.chevron_left,
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: IconButton(
+                      onPressed: () {
+                        navStack.removeLast();
+                        debugPrint(navStack.toString());
+                        Navigator.pop(context);
+                      },
+                      color: Theme.of(context).accentColor,
+                      icon: const Icon(
+                        JamIcons.chevron_left,
+                      ),
                     ),
                   ),
                 ),
