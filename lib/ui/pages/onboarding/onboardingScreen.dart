@@ -1,5 +1,7 @@
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -126,21 +128,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24.0),
-                            child: ShowUpTransition(
-                              forward: true,
-                              slideSide: SlideFromSlide.bottom,
-                              delay: Duration(milliseconds: 150),
-                              child: Text(
-                                'Customise your experience!',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.w500,
-                                ),
+                          const ShowUpTransition(
+                            forward: true,
+                            slideSide: SlideFromSlide.bottom,
+                            delay: Duration(milliseconds: 150),
+                            child: Text(
+                              'Customise your experience!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
@@ -268,41 +267,118 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ),
                           const SizedBox(
-                            height: 145,
+                            height: 17,
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24.0),
+                            child: ShowUpTransition(
+                              forward: true,
+                              slideSide: SlideFromSlide.bottom,
+                              delay: Duration(milliseconds: 250),
+                              child: Text(
+                                'These preferences will enhance your experience. You can always change these later.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 15,
+                                  fontFamily: "Roboto",
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 92,
                           ),
                         ],
                       ),
                     ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
-                    child: Image.asset(
-                      'assets/images/third.png',
-                      scale: 0.5,
-                    ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                        child: Image.asset(
+                          'assets/images/third.png',
+                          scale: 0.5,
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          const ShowUpTransition(
+                            forward: true,
+                            slideSide: SlideFromSlide.bottom,
+                            delay: Duration(milliseconds: 150),
+                            child: Text(
+                              'Continue with Google',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 17,
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24.0),
+                            child: ShowUpTransition(
+                              forward: true,
+                              slideSide: SlideFromSlide.bottom,
+                              delay: Duration(milliseconds: 200),
+                              child: Text(
+                                'Sign in to save & sync your data!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 15,
+                                  fontFamily: "Roboto",
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 179,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
               Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const SizedBox(
-                    height: 24,
-                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       TextButton(
-                        onPressed: () {
-                          onboardingCarouselController.animateToPage(2,
-                              duration: const Duration(milliseconds: 150),
-                              curve: Curves.easeOutCubic);
-                        },
+                        onPressed: _currentPage != 2
+                            ? () {
+                                onboardingCarouselController.animateToPage(2,
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeOutCubic);
+                              }
+                            : () {
+                                main.prefs.put('onboarded', true);
+                                Navigator.pop(context);
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const SplashWidget()));
+                              },
                         style: ButtonStyle(
                             overlayColor: MaterialStateColor.resolveWith(
                                 (states) => Colors.white10)),
                         child: Container(
-                          width: 65,
+                          width: 70,
                           child: Text(
                             _currentPage == 2 ? "Finish" : "Skip",
                             textAlign: TextAlign.center,
@@ -320,7 +396,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onPressed: _currentPage != 2
                             ? () {
                                 onboardingCarouselController.nextPage(
-                                    duration: const Duration(milliseconds: 150),
+                                    duration: const Duration(milliseconds: 250),
                                     curve: Curves.easeOutCubic);
                               }
                             : isSignedIn
@@ -338,6 +414,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             .then((value) {
                                           toasts.codeSend("Login Successful!");
                                           main.prefs.put("isLoggedin", true);
+                                          Future.delayed(const Duration(
+                                                  milliseconds: 500))
+                                              .then((value) {
+                                            main.prefs.put('onboarded', true);
+                                            Navigator.pop(context);
+                                            Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const SplashWidget()));
+                                          });
                                         }).catchError((e) {
                                           debugPrint(e.toString());
                                           main.prefs.put("isLoggedin", false);
