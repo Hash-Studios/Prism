@@ -35,3 +35,13 @@ List verifiedUsers = [
 String bannerText = "Join our Telegram";
 
 String bannerURL = "https://t.me/PrismWallpapers";
+
+bool isPremiumWall(List premiumCollections, List wallCollections) {
+  bool result = false;
+  wallCollections.forEach((element) {
+    if (premiumCollections.contains(element)) {
+      result = true;
+    } else {}
+  });
+  return result;
+}
