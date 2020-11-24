@@ -60,8 +60,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     setState(() {
       isLoading = true;
     });
-    await Future.delayed(const Duration(milliseconds: 500))
-        .then((value) async {
+    await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
       paletteGenerator = await PaletteGenerator.fromImageProvider(
         CachedNetworkImageProvider(link),
         maximumColorCount: 20,
@@ -539,62 +538,66 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             ),
                           );
                         }),
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: IconButton(
-                          onPressed: () {
-                            navStack.removeLast();
-                            debugPrint(navStack.toString());
-                            Navigator.pop(context);
-                          },
-                          color: isLoading
-                              ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                          icon: const Icon(
-                            JamIcons.chevron_left,
+                    SafeArea(
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () {
+                              navStack.removeLast();
+                              debugPrint(navStack.toString());
+                              Navigator.pop(context);
+                            },
+                            color: isLoading
+                                ? Theme.of(context).accentColor
+                                : accent.computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                            icon: const Icon(
+                              JamIcons.chevron_left,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: IconButton(
-                          onPressed: () {
-                            final link = wdata.wallsS[index].path;
-                            Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                    transitionDuration:
-                                        const Duration(milliseconds: 300),
-                                    pageBuilder: (context, animation,
-                                        secondaryAnimation) {
-                                      animation = Tween(begin: 0.0, end: 1.0)
-                                          .animate(animation);
-                                      return FadeTransition(
-                                          opacity: animation,
-                                          child: ClockOverlay(
-                                            colorChanged: colorChanged,
-                                            accent: accent,
-                                            link: link,
-                                            file: false,
-                                          ));
-                                    },
-                                    fullscreenDialog: true,
-                                    opaque: false));
-                          },
-                          color: isLoading
-                              ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                          icon: const Icon(
-                            JamIcons.clock,
+                    SafeArea(
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () {
+                              final link = wdata.wallsS[index].path;
+                              Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                      transitionDuration:
+                                          const Duration(milliseconds: 300),
+                                      pageBuilder: (context, animation,
+                                          secondaryAnimation) {
+                                        animation = Tween(begin: 0.0, end: 1.0)
+                                            .animate(animation);
+                                        return FadeTransition(
+                                            opacity: animation,
+                                            child: ClockOverlay(
+                                              colorChanged: colorChanged,
+                                              accent: accent,
+                                              link: link,
+                                              file: false,
+                                            ));
+                                      },
+                                      fullscreenDialog: true,
+                                      opaque: false));
+                            },
+                            color: isLoading
+                                ? Theme.of(context).accentColor
+                                : accent.computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                            icon: const Icon(
+                              JamIcons.clock,
+                            ),
                           ),
                         ),
                       ),
@@ -1035,62 +1038,66 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                             ),
                           );
                         }),
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: IconButton(
-                          onPressed: () {
-                            navStack.removeLast();
-                            debugPrint(navStack.toString());
-                            Navigator.pop(context);
-                          },
-                          color: isLoading
-                              ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                          icon: const Icon(
-                            JamIcons.chevron_left,
+                    SafeArea(
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () {
+                              navStack.removeLast();
+                              debugPrint(navStack.toString());
+                              Navigator.pop(context);
+                            },
+                            color: isLoading
+                                ? Theme.of(context).accentColor
+                                : accent.computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                            icon: const Icon(
+                              JamIcons.chevron_left,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: IconButton(
-                          onPressed: () {
-                            final link = pdata.wallsPS[index].src["original"];
-                            Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                    transitionDuration:
-                                        const Duration(milliseconds: 300),
-                                    pageBuilder: (context, animation,
-                                        secondaryAnimation) {
-                                      animation = Tween(begin: 0.0, end: 1.0)
-                                          .animate(animation);
-                                      return FadeTransition(
-                                          opacity: animation,
-                                          child: ClockOverlay(
-                                            colorChanged: colorChanged,
-                                            accent: accent,
-                                            link: link.toString(),
-                                            file: false,
-                                          ));
-                                    },
-                                    fullscreenDialog: true,
-                                    opaque: false));
-                          },
-                          color: isLoading
-                              ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                          icon: const Icon(
-                            JamIcons.clock,
+                    SafeArea(
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IconButton(
+                            onPressed: () {
+                              final link = pdata.wallsPS[index].src["original"];
+                              Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                      transitionDuration:
+                                          const Duration(milliseconds: 300),
+                                      pageBuilder: (context, animation,
+                                          secondaryAnimation) {
+                                        animation = Tween(begin: 0.0, end: 1.0)
+                                            .animate(animation);
+                                        return FadeTransition(
+                                            opacity: animation,
+                                            child: ClockOverlay(
+                                              colorChanged: colorChanged,
+                                              accent: accent,
+                                              link: link.toString(),
+                                              file: false,
+                                            ));
+                                      },
+                                      fullscreenDialog: true,
+                                      opaque: false));
+                            },
+                            color: isLoading
+                                ? Theme.of(context).accentColor
+                                : accent.computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                            icon: const Icon(
+                              JamIcons.clock,
+                            ),
                           ),
                         ),
                       ),
