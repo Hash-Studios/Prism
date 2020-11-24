@@ -988,13 +988,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       ),
                     ),
                     Align(
-                      alignment:  main.prefs.get('hasNotch') == true
-                              ? Alignment.topLeft
-                              : Alignment.topRight,
-                          child: Padding(
-                            padding: main.prefs.get('hasNotch') == true
-                                ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
-                                : const EdgeInsets.all(8.0),
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
                             final link = Provider.of<FavouriteProvider>(context,
@@ -1631,13 +1627,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       ),
                     ),
                     Align(
-                      alignment:  main.prefs.get('hasNotch') == true
-                              ? Alignment.topLeft
-                              : Alignment.topRight,
-                          child: Padding(
-                            padding: main.prefs.get('hasNotch') == true
-                                ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
-                                : const EdgeInsets.all(8.0),
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
                             final link =

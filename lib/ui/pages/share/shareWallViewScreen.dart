@@ -624,13 +624,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                       ),
                     ),
                     Align(
-                      alignment: main.prefs.get('hasNotch') == true
-                              ? Alignment.topLeft
-                              : Alignment.topRight,
-                          child: Padding(
-                            padding: main.prefs.get('hasNotch') == true
-                                ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
-                                : const EdgeInsets.all(8.0),
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
                         child: IconButton(
                           onPressed: () {
                             final link = url;
@@ -1227,13 +1223,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                           ),
                         ),
                         Align(
-                          alignment:  main.prefs.get('hasNotch') == true
-                              ? Alignment.topLeft
-                              : Alignment.topRight,
+                          alignment: Alignment.topRight,
                           child: Padding(
-                            padding: main.prefs.get('hasNotch') == true
-                                ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
-                                : const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(8.0),
                             child: IconButton(
                               onPressed: () {
                                 final link = url;
@@ -1792,13 +1784,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                               ),
                             ),
                             Align(
-                              alignment:  main.prefs.get('hasNotch') == true
-                              ? Alignment.topLeft
-                              : Alignment.topRight,
-                          child: Padding(
-                            padding: main.prefs.get('hasNotch') == true
-                                ? const EdgeInsets.fromLTRB(56, 8, 8, 8)
-                                : const EdgeInsets.all(8.0),
+                              alignment: Alignment.topRight,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   onPressed: () {
                                     final link = url;
