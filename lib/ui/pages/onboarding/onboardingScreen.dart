@@ -60,16 +60,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      ShowUpTransition(
-                        forward: true,
-                        slideSide: SlideFromSlide.bottom,
-                        delay: const Duration(milliseconds: 50),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 120, 8, 8),
-                          child: Image.asset(
-                            'assets/images/prism.png',
-                            scale: 0.5,
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                        child: Image.asset(
+                          'assets/images/first.png',
+                          scale: 0.5,
                         ),
                       ),
                       Column(
@@ -121,62 +116,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                        child: Image.asset(
+                          'assets/images/second.png',
+                          scale: 0.5,
+                        ),
+                      ),
                       Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          const SizedBox(
-                            height: 24,
-                          ),
-                          const ShowUpTransition(
-                            forward: true,
-                            slideSide: SlideFromSlide.bottom,
-                            delay: Duration(milliseconds: 50),
-                            child: Text(
-                              'Customise your experience!',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontFamily: "Roboto",
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 17,
-                          ),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 24.0),
                             child: ShowUpTransition(
                               forward: true,
                               slideSide: SlideFromSlide.bottom,
-                              delay: Duration(milliseconds: 200),
+                              delay: Duration(milliseconds: 150),
                               child: Text(
-                                'These preferences will enhance your experience. You can always change these later.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 15,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 36,
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24.0),
-                            child: ShowUpTransition(
-                              forward: true,
-                              slideSide: SlideFromSlide.bottom,
-                              delay: Duration(milliseconds: 200),
-                              child: Text(
-                                'Select a theme',
+                                'Customise your experience!',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 16,
+                                  fontSize: 24,
                                   fontFamily: "Roboto",
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -186,253 +147,139 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           const SizedBox(
                             height: 17,
                           ),
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.935,
-                            height: MediaQuery.of(context).size.height * 0.07,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: 3,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(5),
-                                    child: MaterialButton(
-                                      color: Theme.of(context).hintColor,
-                                      padding: EdgeInsets.zero,
-                                      onPressed: () {
-                                        Provider.of<ThemeModel>(context,
-                                                listen: false)
-                                            .changeThemeByID(
-                                                themes.keys.toList()[index]);
-                                        setState(() {
-                                          selectedTheme = index;
-                                        });
-                                      },
-                                      child: Stack(
-                                        children: [
-                                          Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.27,
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.06,
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: Colors.black12),
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                              color: themes[themes.keys
-                                                      .toList()[index]]
-                                                  .hintColor,
-                                            ),
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(4.0),
-                                                  child: Text(
-                                                    themes.keys
-                                                        .toList()[index]
-                                                        .substring(2),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .subtitle2
-                                                        .copyWith(
-                                                            color: themes[themes
-                                                                        .keys
-                                                                        .toList()[
-                                                                    index]]
-                                                                .accentColor),
+                          ShowUpTransition(
+                            forward: true,
+                            slideSide: SlideFromSlide.bottom,
+                            delay: const Duration(milliseconds: 200),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width * 0.935,
+                              height: MediaQuery.of(context).size.height * 0.07,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 3,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(5),
+                                      child: MaterialButton(
+                                        color: Theme.of(context).hintColor,
+                                        padding: EdgeInsets.zero,
+                                        onPressed: () {
+                                          Provider.of<ThemeModel>(context,
+                                                  listen: false)
+                                              .changeThemeByID(
+                                                  themes.keys.toList()[index]);
+                                          setState(() {
+                                            selectedTheme = index;
+                                          });
+                                        },
+                                        child: Stack(
+                                          children: [
+                                            Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.27,
+                                              height: MediaQuery.of(context)
+                                                      .size
+                                                      .height *
+                                                  0.06,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.black12),
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: themes[themes.keys
+                                                        .toList()[index]]
+                                                    .hintColor,
+                                              ),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            4.0),
+                                                    child: Text(
+                                                      themes.keys
+                                                          .toList()[index]
+                                                          .substring(2),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .subtitle2
+                                                          .copyWith(
+                                                              color: themes[themes
+                                                                          .keys
+                                                                          .toList()[
+                                                                      index]]
+                                                                  .accentColor),
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                          index == selectedTheme
-                                              ? Container(
-                                                  width: MediaQuery.of(context)
-                                                          .size
-                                                          .width *
-                                                      0.27,
-                                                  height: MediaQuery.of(context)
-                                                          .size
-                                                          .height *
-                                                      0.06,
-                                                  decoration: BoxDecoration(
-                                                      color: Theme.of(context)
-                                                          .accentColor
-                                                          .withOpacity(0.5),
-                                                      border: Border.all(
-                                                          color:
-                                                              Colors.black45),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              5)),
-                                                  child: Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Icon(
-                                                        JamIcons.check,
+                                            index == selectedTheme
+                                                ? Container(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.27,
+                                                    height:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.06,
+                                                    decoration: BoxDecoration(
                                                         color: Theme.of(context)
-                                                            .primaryColor,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                )
-                                              : Container(),
-                                        ],
+                                                            .accentColor
+                                                            .withOpacity(0.5),
+                                                        border: Border.all(
+                                                            color:
+                                                                Colors.black45),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5)),
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(
+                                                          JamIcons.check,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )
+                                                : Container(),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                          )
-                        ],
-                      ),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24.0),
-                            child: ShowUpTransition(
-                              forward: true,
-                              slideSide: SlideFromSlide.bottom,
-                              delay: Duration(milliseconds: 200),
-                              child: Text(
-                                'By clicking next you are agreeing to the Terms and Conditions and Privacy Policy.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 15,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.normal,
-                                ),
+                                  );
+                                },
                               ),
                             ),
                           ),
                           const SizedBox(
-                            height: 179,
+                            height: 145,
                           ),
                         ],
                       ),
                     ],
                   ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ShowUpTransition(
-                        forward: true,
-                        slideSide: SlideFromSlide.bottom,
-                        delay: const Duration(milliseconds: 50),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 120, 8, 8),
-                          child: Container(),
-                        ),
-                      ),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          const ShowUpTransition(
-                            forward: true,
-                            slideSide: SlideFromSlide.bottom,
-                            delay: Duration(milliseconds: 150),
-                            child: Text(
-                              'Sign-in with Google',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontFamily: "Roboto",
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 17,
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24.0),
-                            child: ShowUpTransition(
-                              forward: true,
-                              slideSide: SlideFromSlide.bottom,
-                              delay: Duration(milliseconds: 200),
-                              child: Text(
-                                'to securely save your data\non cloud.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 15,
-                                  fontFamily: "Roboto",
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Padding(
-                          //   padding:
-                          //       const EdgeInsets.symmetric(horizontal: 24.0),
-                          //   child: ShowUpTransition(
-                          //     forward: true,
-                          //     slideSide: SlideFromSlide.bottom,
-                          //     delay: const Duration(milliseconds: 200),
-                          //     child: Container(
-                          //       width: MediaQuery.of(context).size.width * 0.8,
-                          //       decoration: BoxDecoration(
-                          //           color: Colors.white.withOpacity(0.1),
-                          //           borderRadius: BorderRadius.circular(5)),
-                          //       child: Row(
-                          //         mainAxisAlignment:
-                          //             MainAxisAlignment.spaceEvenly,
-                          //         children: [
-                          //           const Spacer(flex: 4),
-                          //           const Text(
-                          //             'Continue with ',
-                          //             textAlign: TextAlign.center,
-                          //             style: TextStyle(
-                          //               color: Colors.white70,
-                          //               fontSize: 15,
-                          //               fontFamily: "Roboto",
-                          //               fontWeight: FontWeight.normal,
-                          //             ),
-                          //           ),
-                          //           const Spacer(),
-                          //           const Icon(
-                          //             JamIcons.google,
-                          //             color: Colors.white,
-                          //           ),
-                          //           const Spacer(flex: 16),
-                          //           ElevatedButton(
-                          //             onPressed: () {},
-                          //             style: ButtonStyle(
-                          //               backgroundColor:
-                          //                   MaterialStateColor.resolveWith(
-                          //                       (states) => Colors.white),
-                          //             ),
-                          //             child: const Icon(JamIcons.arrow_right,
-                          //                 color: Color(0xFFE57697)),
-                          //           ),
-                          //           const Spacer(flex: 4),
-                          //         ],
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ),
-                          const SizedBox(
-                            height: 179,
-                          ),
-                        ],
-                      ),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                    child: Image.asset(
+                      'assets/images/third.png',
+                      scale: 0.5,
+                    ),
                   ),
                 ],
               ),
@@ -447,7 +294,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     children: [
                       TextButton(
                         onPressed: () {
-                          onboardingCarouselController.nextPage(
+                          onboardingCarouselController.animateToPage(2,
                               duration: const Duration(milliseconds: 150),
                               curve: Curves.easeOutCubic);
                         },
