@@ -439,108 +439,92 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  _currentPage != 2
-                      ? ElevatedButton(
-                          onPressed: () {
-                            onboardingCarouselController.nextPage(
-                                duration: const Duration(milliseconds: 150),
-                                curve: Curves.easeOutCubic);
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateColor.resolveWith(
-                                (states) => _currentPage == 2
-                                    ? const Color(0xFFE57697)
-                                    : Colors.white),
-                          ),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutCubic,
-                            padding: _currentPage == 0
-                                ? const EdgeInsets.fromLTRB(4, 0, 4, 0)
-                                : _currentPage == 1
-                                    ? const EdgeInsets.fromLTRB(2, 0, 2, 0)
-                                    : const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                            child: Text(
-                              _currentPage == 0
-                                  ? 'GET STARTED'
-                                  : _currentPage == 1
-                                      ? 'NEXT'
-                                      : 'FINISH',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _currentPage == 2
-                                    ? Colors.white
-                                    : const Color(0xFFE57697),
-                                fontSize: 15,
-                                fontFamily: "Roboto",
-                                fontWeight: FontWeight.w500,
-                              ),
+                  const SizedBox(
+                    height: 24,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          onboardingCarouselController.nextPage(
+                              duration: const Duration(milliseconds: 150),
+                              curve: Curves.easeOutCubic);
+                        },
+                        style: ButtonStyle(
+                            overlayColor: MaterialStateColor.resolveWith(
+                                (states) => Colors.white10)),
+                        child: Container(
+                          width: 65,
+                          child: Text(
+                            _currentPage == 2 ? "Finish" : "Skip",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontFamily: "Roboto",
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {
+                        ),
+                      ),
+                      OBIndicator(currentPage: _currentPage),
+                      ElevatedButton(
+                        onPressed: _currentPage != 2
+                            ? () {
                                 onboardingCarouselController.nextPage(
                                     duration: const Duration(milliseconds: 150),
                                     curve: Curves.easeOutCubic);
-                              },
-                              style: ButtonStyle(
-                                backgroundColor: MaterialStateColor.resolveWith(
-                                    (states) => const Color(0xFFE57697)),
-                              ),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 250),
-                                curve: Curves.easeOutCubic,
-                                padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                                child: const Text(
-                                  'FINISH',
+                              }
+                            : isSignedIn
+                                ? () {
+                                    toasts.codeSend("Already signed-in!");
+                                  }
+                                : isLoading
+                                    ? () {}
+                                    : () async {
+                                        setState(() {
+                                          isLoading = true;
+                                        });
+                                        await globals.gAuth
+                                            .signInWithGoogle()
+                                            .then((value) {
+                                          toasts.codeSend("Login Successful!");
+                                          main.prefs.put("isLoggedin", true);
+                                        }).catchError((e) {
+                                          debugPrint(e.toString());
+                                          main.prefs.put("isLoggedin", false);
+                                          toasts.error(
+                                              "Something went wrong, please try again!");
+                                        });
+                                        setState(() {
+                                          isLoading = false;
+                                          isSignedIn = main.prefs
+                                              .get('isLoggedin') as bool;
+                                        });
+                                      },
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateColor.resolveWith(
+                              (states) => Colors.white),
+                        ),
+                        child: Container(
+                          width: 55,
+                          child: _currentPage != 2
+                              ? Text(
+                                  _currentPage == 0
+                                      ? 'NEXT'
+                                      : _currentPage == 1
+                                          ? 'NEXT'
+                                          : 'SIGN IN',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
+                                  style: const TextStyle(
+                                    color: Color(0xFFE57697),
                                     fontSize: 15,
                                     fontFamily: "Roboto",
                                     fontWeight: FontWeight.w500,
                                   ),
-                                ),
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: isSignedIn
-                                  ? () {
-                                      toasts.codeSend("Already signed-in!");
-                                    }
-                                  : isLoading
-                                      ? () {}
-                                      : () async {
-                                          setState(() {
-                                            isLoading = true;
-                                          });
-                                          await globals.gAuth
-                                              .signInWithGoogle()
-                                              .then((value) {
-                                            toasts
-                                                .codeSend("Login Successful!");
-                                            main.prefs.put("isLoggedin", true);
-                                          }).catchError((e) {
-                                            debugPrint(e.toString());
-                                            main.prefs.put("isLoggedin", false);
-                                            toasts.error(
-                                                "Something went wrong, please try again!");
-                                          });
-                                          setState(() {
-                                            isLoading = false;
-                                            isSignedIn = main.prefs
-                                                .get('isLoggedin') as bool;
-                                          });
-                                        },
-                              style: ButtonStyle(
-                                backgroundColor: MaterialStateColor.resolveWith(
-                                    (states) => Colors.white),
-                              ),
-                              child: isSignedIn
+                                )
+                              : isSignedIn
                                   ? const Icon(
                                       JamIcons.check,
                                       color: Color(0xFFE57697),
@@ -557,22 +541,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             ),
                                           ),
                                         )
-                                      : const Text(
-                                          "SIGN-IN",
-                                          style: TextStyle(
+                                      : Text(
+                                          _currentPage == 0
+                                              ? 'NEXT'
+                                              : _currentPage == 1
+                                                  ? 'NEXT'
+                                                  : 'SIGN IN',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
                                             color: Color(0xFFE57697),
                                             fontSize: 15,
                                             fontFamily: "Roboto",
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                            ),
-                          ],
                         ),
-                  const SizedBox(
-                    height: 24,
+                      ),
+                    ],
                   ),
-                  OBIndicator(currentPage: _currentPage),
                   const SizedBox(
                     height: 24,
                   ),
