@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:provider/provider.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class WallpaperTile extends StatelessWidget {
   const WallpaperTile({
@@ -54,15 +55,24 @@ class WallpaperTile extends StatelessWidget {
               onTap: () {
                 if (Data.subPrismWalls == []) {
                 } else {
-                  Navigator.pushNamed(
-                    context,
-                    wallpaperRoute,
-                    arguments: [
-                      widget.provider,
-                      index,
-                      Data.subPrismWalls[index]["wallpaper_thumb"],
-                    ],
-                  );
+                  globals.isPremiumWall(
+                              globals.premiumCollections,
+                              Data.subPrismWalls[index]["collections"]
+                                  as List) ==
+                          false
+                      ? Navigator.pushNamed(
+                          context,
+                          wallpaperRoute,
+                          arguments: [
+                            widget.provider,
+                            index,
+                            Data.subPrismWalls[index]["wallpaper_thumb"],
+                          ],
+                        )
+                      : Navigator.pushNamed(
+                          context,
+                          premiumRoute,
+                        );
                 }
               },
             ),

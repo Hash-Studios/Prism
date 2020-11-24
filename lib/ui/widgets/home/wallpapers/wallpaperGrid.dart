@@ -1,6 +1,7 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
@@ -12,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/main.dart' as main;
 
 class WallpaperGrid extends StatefulWidget {
   final String provider;
@@ -303,15 +305,31 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     },
                   );
                 }
-                return FocusedMenuHolder(
-                  provider: widget.provider,
-                  index: index,
-                  // child: AnimatedBuilder(
-                  // builder: (buildContext, child) {
-                  child: WallpaperTile(widget: widget, index: index),
-                  // },
-                  // ),
-                );
+                return main.prefs.get('premium') == true
+                    ? FocusedMenuHolder(
+                        provider: widget.provider,
+                        index: index,
+                        // child: AnimatedBuilder(
+                        // builder: (buildContext, child) {
+                        child: WallpaperTile(widget: widget, index: index),
+                        // },
+                        // ),
+                      )
+                    : PremiumBannerWalls(
+                        comparator: !globals.isPremiumWall(
+                            globals.premiumCollections,
+                            Data.subPrismWalls[index]["collections"] as List),
+                        defaultChild: FocusedMenuHolder(
+                          provider: widget.provider,
+                          index: index,
+                          // child: AnimatedBuilder(
+                          // builder: (buildContext, child) {
+                          child: WallpaperTile(widget: widget, index: index),
+                          // },
+                          // ),
+                        ),
+                        trueChild: WallpaperTile(widget: widget, index: index),
+                      );
               },
             ),
           ),
