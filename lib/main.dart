@@ -11,6 +11,7 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
+import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/undefinedScreen.dart';
 import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/gestures.dart';
@@ -213,7 +214,9 @@ class _MyAppState extends State<MyApp> {
               )),
       theme: Provider.of<ThemeModel>(context).currentTheme,
       // debugShowCheckedModeBanner: false,
-      home: const SplashWidget(),
+      home: ((prefs.get('onboarded') as bool) ?? false)
+          ? const SplashWidget()
+          : OnboardingScreen(),
     );
   }
 }

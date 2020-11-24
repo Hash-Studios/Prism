@@ -5,8 +5,8 @@ import 'package:Prism/main.dart' as main;
 Map<String, ThemeData> themes = {
   "kLFrost White": kLightTheme,
   "kDMaterial Dark": kDarkTheme,
-  "kLCoffee": kLightTheme2,
   "kDAMOLED": kDarkTheme2,
+  "kLCoffee": kLightTheme2,
   "kLRose": kLightTheme3,
   "kLCotton Blue": kLightTheme4,
   "kDOlive": kDarkTheme3,
