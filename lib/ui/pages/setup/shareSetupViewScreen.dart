@@ -152,9 +152,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                         //                 .setups[index]["widget2"] ==
                         //             null
                         // ?
-                        MediaQuery.of(context).size.height * .70 > 600
-                            ? MediaQuery.of(context).size.height * .70
-                            : 600
+                        main.prefs.get('premium') == true
+                            ? MediaQuery.of(context).size.height * .70 > 600
+                                ? MediaQuery.of(context).size.height * .70
+                                : 600
+                            : 300
                     // : MediaQuery.of(context).size.height * .85 > 650
                     //     ? MediaQuery.of(context).size.height * .85
                     //     : 650
@@ -180,9 +182,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                           //                 .setups[index]["widget2"] ==
                           //             null
                           // ?
-                          MediaQuery.of(context).size.height * .70 > 600
-                              ? MediaQuery.of(context).size.height * .70
-                              : 600
+                          main.prefs.get('premium') == true
+                              ? MediaQuery.of(context).size.height * .70 > 600
+                                  ? MediaQuery.of(context).size.height * .70
+                                  : 600
+                              : 300
                       // : MediaQuery.of(context).size.height * .85 > 650
                       //     ? MediaQuery.of(context).size.height * .85
                       //     : 650
@@ -488,200 +492,20 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                           ),
                                   ),
                                 ),
-                                Expanded(
-                                  flex: 16,
-                                  child: Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                                    child: sdata.setup["widget"] == "" ||
-                                            sdata.setup["widget"] == null
-                                        ? Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SetupDetailsTile(
-                                                onTap: () async {
-                                                  if (sdata.setup[
-                                                              "wallpaper_url"]
-                                                          .toString()[0] !=
-                                                      "[") {
-                                                    if (sdata
-                                                            .setup["wall_id"] ==
-                                                        null) {
-                                                      debugPrint(
-                                                          "Id Not Found!");
-                                                    } else {
-                                                      Navigator.pushNamed(
-                                                          context, shareRoute,
-                                                          arguments: [
-                                                            sdata.setup[
-                                                                    "wall_id"]
-                                                                .toString(),
-                                                            sdata.setup[
-                                                                    "wallpaper_provider"]
-                                                                .toString(),
-                                                            sdata.setup[
-                                                                    "wallpaper_url"]
-                                                                .toString(),
-                                                            sdata.setup[
-                                                                    "wallpaper_url"]
-                                                                .toString(),
-                                                          ]);
-                                                    }
-                                                  } else {
-                                                    launch(sdata
-                                                        .setup["wallpaper_url"]
-                                                            [1]
-                                                        .toString());
-                                                  }
-                                                },
-                                                tileText: sdata.setup[
-                                                                "wallpaper_url"]
-                                                            .toString()[0] !=
-                                                        "["
-                                                    ? "Prism"
-                                                    : sdata.setup[
-                                                                "wallpaper_url"]
-                                                                [0]
-                                                            .toString() +
-                                                        " - " +
-                                                        ((sdata.setup["wallpaper_url"]
-                                                                        as List)
-                                                                    .length >
-                                                                2
-                                                            ? sdata.setup[
-                                                                    "wallpaper_url"]
-                                                                    [2]
-                                                                .toString()
-                                                            : ""),
-                                                tileType: "Wallpaper",
-                                                panelCollapsed: panelCollapsed,
-                                                delay: const Duration(
-                                                    milliseconds: 150),
-                                              ),
-                                              SetupDetailsTile(
-                                                onTap: () async {
-                                                  launch(sdata.setup["icon_url"]
-                                                      .toString());
-                                                },
-                                                tileText: sdata.setup["icon"]
-                                                    .toString(),
-                                                tileType: "Icons",
-                                                panelCollapsed: panelCollapsed,
-                                                delay: const Duration(
-                                                    milliseconds: 200),
-                                              ),
-                                            ],
-                                          )
-                                        : sdata.setup["widget2"] == "" ||
-                                                sdata.setup["widget2"] == null
-                                            ? Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceEvenly,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  SetupDetailsTile(
-                                                    onTap: () async {
-                                                      if (sdata.setup[
-                                                                  "wallpaper_url"]
-                                                              .toString()[0] !=
-                                                          "[") {
-                                                        if (sdata.setup[
-                                                                "wall_id"] ==
-                                                            null) {
-                                                          debugPrint(
-                                                              "Id Not Found!");
-                                                        } else {
-                                                          Navigator.pushNamed(
-                                                              context,
-                                                              shareRoute,
-                                                              arguments: [
-                                                                sdata.setup[
-                                                                        "wall_id"]
-                                                                    .toString(),
-                                                                sdata.setup[
-                                                                        "wallpaper_provider"]
-                                                                    .toString(),
-                                                                sdata.setup[
-                                                                        "wallpaper_url"]
-                                                                    .toString(),
-                                                                sdata.setup[
-                                                                        "wallpaper_url"]
-                                                                    .toString(),
-                                                              ]);
-                                                        }
-                                                      } else {
-                                                        launch(sdata.setup[
-                                                                "wallpaper_url"]
-                                                                [1]
-                                                            .toString());
-                                                      }
-                                                    },
-                                                    tileText: sdata.setup[
-                                                                        "wallpaper_url"]
-                                                                    .toString()[
-                                                                0] !=
-                                                            "["
-                                                        ? "Prism"
-                                                        : sdata.setup[
-                                                                    "wallpaper_url"]
-                                                                    [0]
-                                                                .toString() +
-                                                            " - " +
-                                                            ((sdata.setup["wallpaper_url"]
-                                                                            as List)
-                                                                        .length >
-                                                                    2
-                                                                ? sdata.setup[
-                                                                        "wallpaper_url"]
-                                                                        [2]
-                                                                    .toString()
-                                                                : ""),
-                                                    tileType: "Wallpaper",
-                                                    panelCollapsed:
-                                                        panelCollapsed,
-                                                    delay: const Duration(
-                                                        milliseconds: 150),
-                                                  ),
-                                                  SetupDetailsTile(
-                                                    onTap: () async {
-                                                      launch(sdata
-                                                          .setup["icon_url"]
-                                                          .toString());
-                                                    },
-                                                    tileText: sdata
-                                                        .setup["icon"]
-                                                        .toString(),
-                                                    tileType: "Icons",
-                                                    panelCollapsed:
-                                                        panelCollapsed,
-                                                    delay: const Duration(
-                                                        milliseconds: 200),
-                                                  ),
-                                                  SetupDetailsTile(
-                                                    onTap: () async {
-                                                      launch(sdata
-                                                          .setup["widget_url"]
-                                                          .toString());
-                                                    },
-                                                    tileText: sdata
-                                                        .setup["widget"]
-                                                        .toString(),
-                                                    tileType: "Widget",
-                                                    panelCollapsed:
-                                                        panelCollapsed,
-                                                    delay: const Duration(
-                                                        milliseconds: 250),
-                                                  ),
-                                                ],
-                                              )
-                                            : Scrollbar(
-                                                radius:
-                                                    const Radius.circular(500),
-                                                thickness: 5,
-                                                child: ListView(
+                                main.prefs.get('premium') == true
+                                    ? Expanded(
+                                        flex: 16,
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              35, 0, 35, 0),
+                                          child: sdata.setup["widget"] == "" ||
+                                                  sdata.setup["widget"] == null
+                                              ? Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
                                                   children: [
                                                     SetupDetailsTile(
                                                       onTap: () async {
@@ -761,41 +585,252 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                       delay: const Duration(
                                                           milliseconds: 200),
                                                     ),
-                                                    SetupDetailsTile(
-                                                      onTap: () async {
-                                                        launch(sdata
-                                                            .setup["widget_url"]
-                                                            .toString());
-                                                      },
-                                                      tileText: sdata
-                                                          .setup["widget"]
-                                                          .toString(),
-                                                      tileType: "Widget",
-                                                      panelCollapsed:
-                                                          panelCollapsed,
-                                                      delay: const Duration(
-                                                          milliseconds: 250),
-                                                    ),
-                                                    SetupDetailsTile(
-                                                      onTap: () async {
-                                                        launch(sdata.setup[
-                                                                "widget_url2"]
-                                                            .toString());
-                                                      },
-                                                      tileText: sdata
-                                                          .setup["widget2"]
-                                                          .toString(),
-                                                      tileType: "Widget",
-                                                      panelCollapsed:
-                                                          panelCollapsed,
-                                                      delay: const Duration(
-                                                          milliseconds: 300),
-                                                    ),
                                                   ],
-                                                ),
-                                              ),
-                                  ),
-                                ),
+                                                )
+                                              : sdata.setup["widget2"] == "" ||
+                                                      sdata.setup["widget2"] ==
+                                                          null
+                                                  ? Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceEvenly,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        SetupDetailsTile(
+                                                          onTap: () async {
+                                                            if (sdata.setup[
+                                                                        "wallpaper_url"]
+                                                                    .toString()[0] !=
+                                                                "[") {
+                                                              if (sdata.setup[
+                                                                      "wall_id"] ==
+                                                                  null) {
+                                                                debugPrint(
+                                                                    "Id Not Found!");
+                                                              } else {
+                                                                Navigator.pushNamed(
+                                                                    context,
+                                                                    shareRoute,
+                                                                    arguments: [
+                                                                      sdata
+                                                                          .setup[
+                                                                              "wall_id"]
+                                                                          .toString(),
+                                                                      sdata
+                                                                          .setup[
+                                                                              "wallpaper_provider"]
+                                                                          .toString(),
+                                                                      sdata
+                                                                          .setup[
+                                                                              "wallpaper_url"]
+                                                                          .toString(),
+                                                                      sdata
+                                                                          .setup[
+                                                                              "wallpaper_url"]
+                                                                          .toString(),
+                                                                    ]);
+                                                              }
+                                                            } else {
+                                                              launch(sdata
+                                                                  .setup[
+                                                                      "wallpaper_url"]
+                                                                      [1]
+                                                                  .toString());
+                                                            }
+                                                          },
+                                                          tileText: sdata.setup[
+                                                                              "wallpaper_url"]
+                                                                          .toString()[
+                                                                      0] !=
+                                                                  "["
+                                                              ? "Prism"
+                                                              : sdata.setup[
+                                                                          "wallpaper_url"]
+                                                                          [0]
+                                                                      .toString() +
+                                                                  " - " +
+                                                                  ((sdata.setup["wallpaper_url"] as List)
+                                                                              .length >
+                                                                          2
+                                                                      ? sdata
+                                                                          .setup[
+                                                                              "wallpaper_url"]
+                                                                              [2]
+                                                                          .toString()
+                                                                      : ""),
+                                                          tileType: "Wallpaper",
+                                                          panelCollapsed:
+                                                              panelCollapsed,
+                                                          delay: const Duration(
+                                                              milliseconds:
+                                                                  150),
+                                                        ),
+                                                        SetupDetailsTile(
+                                                          onTap: () async {
+                                                            launch(sdata.setup[
+                                                                    "icon_url"]
+                                                                .toString());
+                                                          },
+                                                          tileText: sdata
+                                                              .setup["icon"]
+                                                              .toString(),
+                                                          tileType: "Icons",
+                                                          panelCollapsed:
+                                                              panelCollapsed,
+                                                          delay: const Duration(
+                                                              milliseconds:
+                                                                  200),
+                                                        ),
+                                                        SetupDetailsTile(
+                                                          onTap: () async {
+                                                            launch(sdata.setup[
+                                                                    "widget_url"]
+                                                                .toString());
+                                                          },
+                                                          tileText: sdata
+                                                              .setup["widget"]
+                                                              .toString(),
+                                                          tileType: "Widget",
+                                                          panelCollapsed:
+                                                              panelCollapsed,
+                                                          delay: const Duration(
+                                                              milliseconds:
+                                                                  250),
+                                                        ),
+                                                      ],
+                                                    )
+                                                  : Scrollbar(
+                                                      radius:
+                                                          const Radius.circular(
+                                                              500),
+                                                      thickness: 5,
+                                                      child: ListView(
+                                                        children: [
+                                                          SetupDetailsTile(
+                                                            onTap: () async {
+                                                              if (sdata.setup[
+                                                                          "wallpaper_url"]
+                                                                      .toString()[0] !=
+                                                                  "[") {
+                                                                if (sdata.setup[
+                                                                        "wall_id"] ==
+                                                                    null) {
+                                                                  debugPrint(
+                                                                      "Id Not Found!");
+                                                                } else {
+                                                                  Navigator.pushNamed(
+                                                                      context,
+                                                                      shareRoute,
+                                                                      arguments: [
+                                                                        sdata
+                                                                            .setup["wall_id"]
+                                                                            .toString(),
+                                                                        sdata
+                                                                            .setup["wallpaper_provider"]
+                                                                            .toString(),
+                                                                        sdata
+                                                                            .setup["wallpaper_url"]
+                                                                            .toString(),
+                                                                        sdata
+                                                                            .setup["wallpaper_url"]
+                                                                            .toString(),
+                                                                      ]);
+                                                                }
+                                                              } else {
+                                                                launch(sdata
+                                                                    .setup[
+                                                                        "wallpaper_url"]
+                                                                        [1]
+                                                                    .toString());
+                                                              }
+                                                            },
+                                                            tileText: sdata.setup["wallpaper_url"]
+                                                                            .toString()[
+                                                                        0] !=
+                                                                    "["
+                                                                ? "Prism"
+                                                                : sdata.setup[
+                                                                            "wallpaper_url"]
+                                                                            [0]
+                                                                        .toString() +
+                                                                    " - " +
+                                                                    ((sdata.setup["wallpaper_url"] as List).length >
+                                                                            2
+                                                                        ? sdata
+                                                                            .setup["wallpaper_url"][2]
+                                                                            .toString()
+                                                                        : ""),
+                                                            tileType:
+                                                                "Wallpaper",
+                                                            panelCollapsed:
+                                                                panelCollapsed,
+                                                            delay:
+                                                                const Duration(
+                                                                    milliseconds:
+                                                                        150),
+                                                          ),
+                                                          SetupDetailsTile(
+                                                            onTap: () async {
+                                                              launch(sdata
+                                                                  .setup[
+                                                                      "icon_url"]
+                                                                  .toString());
+                                                            },
+                                                            tileText: sdata
+                                                                .setup["icon"]
+                                                                .toString(),
+                                                            tileType: "Icons",
+                                                            panelCollapsed:
+                                                                panelCollapsed,
+                                                            delay:
+                                                                const Duration(
+                                                                    milliseconds:
+                                                                        200),
+                                                          ),
+                                                          SetupDetailsTile(
+                                                            onTap: () async {
+                                                              launch(sdata
+                                                                  .setup[
+                                                                      "widget_url"]
+                                                                  .toString());
+                                                            },
+                                                            tileText: sdata
+                                                                .setup["widget"]
+                                                                .toString(),
+                                                            tileType: "Widget",
+                                                            panelCollapsed:
+                                                                panelCollapsed,
+                                                            delay:
+                                                                const Duration(
+                                                                    milliseconds:
+                                                                        250),
+                                                          ),
+                                                          SetupDetailsTile(
+                                                            onTap: () async {
+                                                              launch(sdata
+                                                                  .setup[
+                                                                      "widget_url2"]
+                                                                  .toString());
+                                                            },
+                                                            tileText: sdata
+                                                                .setup[
+                                                                    "widget2"]
+                                                                .toString(),
+                                                            tileType: "Widget",
+                                                            panelCollapsed:
+                                                                panelCollapsed,
+                                                            delay:
+                                                                const Duration(
+                                                                    milliseconds:
+                                                                        300),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                        ),
+                                      )
+                                    : Container(),
                                 main.prefs.get('premium') == true
                                     ? Expanded(
                                         flex: 5,
