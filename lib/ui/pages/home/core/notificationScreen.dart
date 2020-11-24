@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/routes/router.dart';
@@ -312,10 +314,26 @@ class NotificationCard extends StatelessWidget {
           child: Ink(
             child: Stack(
               children: [
-                CachedNetworkImage(
-                  imageUrl: notification.imageUrl ??
-                      "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
-                  fit: BoxFit.cover,
+                SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.width * 9 / 16,
+                  child: CachedNetworkImage(
+                    imageUrl: notification.imageUrl ??
+                        "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.width * 9 / 16,
+                    child: CachedNetworkImage(
+                      imageUrl: notification.imageUrl ??
+                          "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
