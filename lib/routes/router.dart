@@ -12,6 +12,7 @@ import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/wallpaperFilterScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/wallpaperScreen.dart';
+import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/pages/profile/photographerProfile.dart';
 import 'package:Prism/ui/pages/categories/colorScreen.dart';
@@ -297,6 +298,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
                 finalFilename: (settings.arguments as List)[3] as String,
               ),
           fullscreenDialog: true);
+    case onboardingRoute:
+      navStack.add("Onboarding");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: wallpaperFilterRoute);
+      return CupertinoPageRoute(
+        builder: (context) => OnboardingScreen(),
+      );
     default:
       navStack.add("undefined");
       debugPrint(navStack.toString());

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
+import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flare_splash_screen/flare_splash_screen.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/main.dart' as main;
 
 RemoteConfig remoteConfig;
 
@@ -79,7 +81,10 @@ class SplashWidget extends StatelessWidget {
       'assets/animations/Prism Splash.flr',
       (context) {
         debugPrint("splash done");
-        return PageManager();
+        if ((main.prefs.get('onboarded') as bool) ?? false) {
+          return PageManager();
+        }
+        return OnboardingScreen();
       },
       startAnimation:
           Provider.of<ThemeModel>(context).currentTheme == kLightTheme
