@@ -33,3 +33,4 @@ const String sharePrismRoute = '/shareprism';
 const String wallpaperFilterRoute = '/wallpaperfilter';
 const String profileSetupViewRoute = '/profilesetupsview';
 const String settingsRoute = '/settings';
+const String onboardingRoute = '/onboarding';
