@@ -138,7 +138,7 @@ class _UserProfileState extends State<UserProfile> {
                                           TableCellVerticalAlignment.bottom,
                                       child: Padding(
                                         padding:
-                                            const EdgeInsets.only(bottom: 8),
+                                            const EdgeInsets.only(bottom: 20),
                                         child: name == null
                                             ? Container()
                                             : premium == false
@@ -281,9 +281,7 @@ class _UserProfileState extends State<UserProfile> {
                                                           fontSize: 24,
                                                           color:
                                                               Theme.of(context)
-                                                                  .accentColor
-                                                                  .withOpacity(
-                                                                      0.70),
+                                                                  .accentColor,
                                                           fontWeight: FontWeight
                                                               .normal),
                                                     );
@@ -291,8 +289,7 @@ class _UserProfileState extends State<UserProfile> {
                                               Icon(
                                                 JamIcons.picture,
                                                 color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(0.70),
+                                                    .accentColor,
                                               ),
                                             ],
                                           ),
@@ -312,10 +309,9 @@ class _UserProfileState extends State<UserProfile> {
                                                           fontFamily:
                                                               "Proxima Nova",
                                                           fontSize: 24,
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .accentColor
-                                                              .withOpacity(0.7),
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
                                                           fontWeight: FontWeight
                                                               .normal),
                                                     );
@@ -323,8 +319,7 @@ class _UserProfileState extends State<UserProfile> {
                                               Icon(
                                                 JamIcons.instant_picture,
                                                 color: Theme.of(context)
-                                                    .accentColor
-                                                    .withOpacity(0.7),
+                                                    .accentColor,
                                               ),
                                             ],
                                           ),

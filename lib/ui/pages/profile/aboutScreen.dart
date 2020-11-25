@@ -98,7 +98,7 @@ class AboutScreen extends StatelessWidget {
                   alignment: WrapAlignment.center,
                   children: const [
                     ActionButton(
-                      icon: JamIcons.github_circle,
+                      icon: JamIcons.github,
                       text: "GITHUB",
                       link: "https://www.github.com/Hash-Studios/Prism",
                     ),
@@ -109,7 +109,7 @@ class AboutScreen extends StatelessWidget {
                           "https://play.google.com/store/apps/details?id=com.hash.prism",
                     ),
                     ActionButton(
-                      icon: JamIcons.twitter_circle,
+                      icon: JamIcons.twitter,
                       text: "TWITTER",
                       link: "https://twitter.com/PrismWallpapers",
                     ),
