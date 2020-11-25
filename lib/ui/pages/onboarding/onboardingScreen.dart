@@ -40,8 +40,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     image1 = Image.asset('assets/images/first.png');
     image2 = Image.asset('assets/images/second.png');
     image3 = Image.asset('assets/images/third.png');
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     super.initState();
     isLoading = false;
     isSignedIn = main.prefs.get('isLoggedin') as bool ?? false;

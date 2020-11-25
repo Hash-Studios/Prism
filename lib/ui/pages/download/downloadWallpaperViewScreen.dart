@@ -32,7 +32,6 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays([]);
     provider = widget.arguments[0] as String;
     file = widget.arguments[1] as File;
   }
@@ -41,8 +40,6 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
   void dispose() {
     shakeController.dispose();
     super.dispose();
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
   @override

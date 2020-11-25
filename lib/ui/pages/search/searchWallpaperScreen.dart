@@ -96,7 +96,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays([]);
     selectedProvider = widget.arguments[0].toString();
     query = widget.arguments[1].toString();
     index = widget.arguments[2] as int;
@@ -109,8 +108,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
   void dispose() {
     super.dispose();
     shakeController.dispose();
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
   @override
@@ -850,11 +847,6 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                                     Alignment.centerRight,
                                                 child: ActionChip(
                                                   onPressed: () {
-                                                    SystemChrome
-                                                        .setEnabledSystemUIOverlays([
-                                                      SystemUiOverlay.top,
-                                                      SystemUiOverlay.bottom
-                                                    ]);
                                                     launch(pdata
                                                         .wallsPS[index].url);
                                                   },

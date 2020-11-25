@@ -41,8 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isNew;
   @override
   void initState() {
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     super.initState();
     isNew = true;
     _updateToken();

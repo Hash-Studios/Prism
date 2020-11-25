@@ -121,15 +121,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
     }
     _updatePaletteGenerator();
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
   @override
   void dispose() {
     shakeController.dispose();
     super.dispose();
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
   Future<bool> onWillPop() async {
@@ -908,10 +905,6 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                             null
                                                                         ? () {}
                                                                         : () {
-                                                                            SystemChrome.setEnabledSystemUIOverlays([
-                                                                              SystemUiOverlay.top,
-                                                                              SystemUiOverlay.bottom
-                                                                            ]);
                                                                             Navigator.pushNamed(context, photographerProfileRoute, arguments: [
                                                                               Data.wall["by"],
                                                                               Data.wall["email"],

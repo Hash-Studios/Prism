@@ -86,7 +86,6 @@ class SplashWidget extends StatelessWidget {
     if (!notchChecked) {
       checkNotch(context);
     }
-    SystemChrome.setEnabledSystemUIOverlays([]);
     return SplashScreen(
       'assets/animations/Prism Splash.flr',
       (context) {

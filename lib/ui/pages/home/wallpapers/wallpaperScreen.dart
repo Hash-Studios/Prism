@@ -102,7 +102,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays([]);
     provider = widget.arguments[0] as String;
     index = widget.arguments[1] as int;
     link = widget.arguments[2] as String;
@@ -114,8 +113,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   void dispose() {
     super.dispose();
     shakeController.dispose();
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
   @override
@@ -822,12 +819,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                           Alignment.topRight,
                                                       child: ActionChip(
                                                         onPressed: () {
-                                                          SystemChrome
-                                                              .setEnabledSystemUIOverlays([
-                                                            SystemUiOverlay.top,
-                                                            SystemUiOverlay
-                                                                .bottom
-                                                          ]);
                                                           Navigator.pushNamed(
                                                               context,
                                                               photographerProfileRoute,
@@ -1468,13 +1459,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                             .centerRight,
                                                         child: ActionChip(
                                                           onPressed: () {
-                                                            SystemChrome
-                                                                .setEnabledSystemUIOverlays([
-                                                              SystemUiOverlay
-                                                                  .top,
-                                                              SystemUiOverlay
-                                                                  .bottom
-                                                            ]);
                                                             launch(pdata
                                                                 .wallsP[index]
                                                                 .url);
@@ -2029,13 +2013,6 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                 .centerRight,
                                                             child: ActionChip(
                                                               onPressed: () {
-                                                                SystemChrome
-                                                                    .setEnabledSystemUIOverlays([
-                                                                  SystemUiOverlay
-                                                                      .top,
-                                                                  SystemUiOverlay
-                                                                      .bottom
-                                                                ]);
                                                                 launch(pdata
                                                                     .wallsC[
                                                                         index]

@@ -76,6 +76,8 @@ void main() {
       SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
         systemNavigationBarColor: config.Colors().mainAccentColor(1),
       ));
+      SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
           .then(
         (value) => runZoned<Future<void>>(

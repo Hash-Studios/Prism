@@ -57,15 +57,12 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     index = widget.arguments[0] as int;
     isLoading = true;
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
   @override
   void dispose() {
     shakeController.dispose();
     super.dispose();
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
   Future<void> onFavSetup(String id, Map setupMap) async {
@@ -381,12 +378,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                     .fromLTRB(
                                                                 7, 3, 7, 3),
                                                         onPressed: () {
-                                                          SystemChrome
-                                                              .setEnabledSystemUIOverlays([
-                                                            SystemUiOverlay.top,
-                                                            SystemUiOverlay
-                                                                .bottom
-                                                          ]);
                                                           Navigator.pushNamed(
                                                               context,
                                                               photographerProfileRoute,
