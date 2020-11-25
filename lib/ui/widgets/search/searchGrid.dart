@@ -144,7 +144,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
         },
         child: GridView.builder(
           controller: controller,
-          padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+          padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
           itemCount: widget.selectedProvider == "WallHaven"
               ? wData.wallsS.isEmpty
                   ? 24

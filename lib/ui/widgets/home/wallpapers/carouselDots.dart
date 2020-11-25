@@ -20,19 +20,14 @@ class CarouselDots extends StatelessWidget {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
-            width: _current == i ? 8.0 : 7.0,
-            height: _current == i ? 8.0 : 7.0,
+            width: _current == i ? 12.0 : 7.0,
+            height: 7.0,
             margin: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 2.0),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(500),
               color: _current == i
                   ? config.Colors().mainAccentColor(1)
-                  : config.Colors().mainAccentColor(1).withOpacity(0),
-              border: Border.all(
-                color: _current == i
-                    ? config.Colors().mainAccentColor(1).withOpacity(0)
-                    : config.Colors().mainAccentColor(1),
-              ),
+                  : config.Colors().mainAccentColor(.38),
             ),
           );
         }).toList(),

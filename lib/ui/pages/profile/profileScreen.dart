@@ -135,7 +135,9 @@ class _ProfileChildState extends State<ProfileChild> {
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: IconButton(
-                                          icon: const Icon(JamIcons.menu),
+                                          icon: Icon(JamIcons.menu,
+                                              color: Theme.of(context)
+                                                  .accentColor),
                                           onPressed: () {
                                             scaffoldKey.currentState
                                                 .openEndDrawer();

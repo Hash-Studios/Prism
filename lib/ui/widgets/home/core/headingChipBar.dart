@@ -18,7 +18,8 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
       automaticallyImplyLeading: false,
       titleSpacing: 0,
       leading: IconButton(
-          icon: const Icon(JamIcons.chevron_left),
+          icon:
+              Icon(JamIcons.chevron_left, color: Theme.of(context).accentColor),
           onPressed: () {
             Navigator.pop(context);
             if (navStack.length > 1) {
@@ -32,7 +33,10 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
           }),
       title: Text(
         widget.current,
-        style: Theme.of(context).textTheme.headline3,
+        style: Theme.of(context)
+            .textTheme
+            .headline3
+            .copyWith(color: Theme.of(context).accentColor),
       ),
     );
   }
