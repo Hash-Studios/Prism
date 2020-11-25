@@ -21,9 +21,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int selectedTheme;
   bool isLoading;
   bool isSignedIn;
+  Image image1;
+  Image image2;
+  Image image3;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(image1.image, context);
+    precacheImage(image2.image, context);
+    precacheImage(image3.image, context);
+  }
 
   @override
   void initState() {
+    image1 = Image.asset('assets/images/first.png');
+    image2 = Image.asset('assets/images/second.png');
+    image3 = Image.asset('assets/images/third.png');
     SystemChrome.setEnabledSystemUIOverlays(
         [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     super.initState();
@@ -63,12 +77,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
-                        child: Image.asset(
-                          'assets/images/first.png',
-                          scale: 0.5,
-                        ),
-                      ),
+                          padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                          child: image1),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -119,12 +129,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
-                        child: Image.asset(
-                          'assets/images/second.png',
-                          scale: 0.5,
-                        ),
-                      ),
+                          padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                          child: image2),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -298,12 +304,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
-                        child: Image.asset(
-                          'assets/images/third.png',
-                          scale: 0.5,
-                        ),
-                      ),
+                          padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                          child: image3),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -366,9 +368,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     curve: Curves.easeOutCubic);
                               }
                             : () {
-                                main.prefs.put('onboarded', true);
-                                Navigator.pop(context);
-                                Navigator.push(
+                                // main.prefs.put('onboarded', true);
+                                Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) =>
@@ -417,9 +418,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           Future.delayed(const Duration(
                                                   milliseconds: 500))
                                               .then((value) {
-                                            main.prefs.put('onboarded', true);
-                                            Navigator.pop(context);
-                                            Navigator.push(
+                                            // main.prefs.put('onboarded', true);
+                                            Navigator.pushReplacement(
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
