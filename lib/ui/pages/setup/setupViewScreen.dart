@@ -1032,11 +1032,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                       ),
                     );
                   }),
-              SafeArea(
-                              child: Align(
+              Align(
                   alignment: Alignment.topLeft,
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: EdgeInsets.fromLTRB(
+                8.0, globals.notchSize + 8, 8, 8),
                     child: IconButton(
                       onPressed: () {
                         navStack.removeLast();
@@ -1050,7 +1050,6 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                     ),
                   ),
                 ),
-              ),
               // Align(
               //   alignment: Alignment.topRight,
               //   child: Padding(
