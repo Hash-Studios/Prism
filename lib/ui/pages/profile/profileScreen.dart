@@ -312,8 +312,9 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                       borderRadius:
                                                                           BorderRadius.circular(
                                                                               50),
-                                                                      color: const Color(
-                                                                          0xFFFFFFFF),
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
                                                                     ),
                                                                     child: Text(
                                                                       "PRO",
@@ -702,7 +703,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                             ]),
                                           ],
                                         ),
-                                        const Spacer(),
+                                        // const Spacer(),
                                       ],
                                     ),
                                   ),
@@ -721,7 +722,7 @@ class _ProfileChildState extends State<ProfileChild> {
                               width: MediaQuery.of(context).size.width,
                               height: 57,
                               child: Container(
-                                color: Theme.of(context).primaryColor,
+                                color: config.Colors().mainAccentColor(1),
                                 child: SizedBox.expand(
                                   child: TabBar(
                                       indicatorColor:

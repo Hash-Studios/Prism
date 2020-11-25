@@ -50,7 +50,7 @@ class ColorBar extends StatelessWidget {
                   color: colors == null
                       ? Theme.of(context).accentColor.withOpacity(0.1)
                       : colors[color],
-                  borderRadius: BorderRadius.circular(500),
+                  shape: BoxShape.circle,
                 ),
                 height: MediaQuery.of(context).size.width / 8,
                 width: MediaQuery.of(context).size.width / 8,
