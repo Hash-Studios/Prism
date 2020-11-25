@@ -88,18 +88,6 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid>
     super.dispose();
   }
 
-  // Future<List<Color>> _updatePaletteGenerator(String link) async {
-  //   paletteGenerator = await PaletteGenerator.fromImageProvider(
-  //       CachedNetworkImageProvider(link),
-  //       maximumColorCount: 5,
-  //       region: Rect.fromLTRB(0, 0, 10, 10));
-  //   colors = paletteGenerator.colors.toList();
-  //   if (paletteGenerator.colors.length > 5) {
-  //     colors = colors.sublist(0, 5);
-  //   }
-  //   return colors;
-  // }
-
   Future<void> refreshList() async {
     refreshProfileSetupKey.currentState?.show();
     await Future.delayed(const Duration(milliseconds: 500));
