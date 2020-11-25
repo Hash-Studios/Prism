@@ -19,45 +19,49 @@ class ProfileDrawer extends StatelessWidget {
   final TextEditingController _twitterController = TextEditingController();
   final TextEditingController _igController = TextEditingController();
   Widget createDrawerHeader(BuildContext context) {
-    return DrawerHeader(
-        margin: EdgeInsets.zero,
-        padding: EdgeInsets.zero,
-        child: Stack(children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16.0),
-              child: Container(
-                height: 70,
-                child: Column(
-                  children: [
-                    Container(
-                      width: MediaQuery.of(context).size.width / 2,
-                      child: Text(
-                        main.prefs.get('premium') as bool == true
-                            ? "Prism Pro"
-                            : "Prism Wallpapers",
-                        style: Theme.of(context).textTheme.headline3,
+    return Container(
+      height: 150,
+      child: DrawerHeader(
+          margin: EdgeInsets.zero,
+          padding: EdgeInsets.zero,
+          child: Stack(children: <Widget>[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16.0),
+                child: Container(
+                  height: 70,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          main.prefs.get('premium') as bool == true
+                              ? "Prism Pro"
+                              : "Prism",
+                          style: Theme.of(context).textTheme.headline3,
+                        ),
                       ),
-                    ),
-                    Container(
-                      width: MediaQuery.of(context).size.width / 2,
-                      child: Text(
-                        main.prefs.get('premium') as bool == true
-                            ? "Exclusive premium wallpapers & more!"
-                            : "Exclusive wallpapers & setups!",
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2
-                            .copyWith(color: Theme.of(context).accentColor),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: Text(
+                          main.prefs.get('premium') as bool == true
+                              ? "Exclusive premium walls & setups!"
+                              : "Exclusive wallpapers & setups!",
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyText2
+                              .copyWith(color: Theme.of(context).accentColor),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ]));
+          ])),
+    );
   }
 
   Widget createDrawerBodyItem(
@@ -67,10 +71,11 @@ class ProfileDrawer extends StatelessWidget {
       BuildContext context}) {
     return ListTile(
       dense: true,
+      trailing: const Icon(JamIcons.chevron_right),
       visualDensity: VisualDensity.adaptivePlatformDensity,
       leading: Icon(
         icon,
-        color: config.Colors().mainAccentColor(1),
+        color: Theme.of(context).accentColor,
       ),
       title: Container(
         width: MediaQuery.of(context).size.width / 2,
@@ -534,16 +539,18 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
-            createDrawerBodyItem(
-              icon: JamIcons.info,
-              text: 'About Prism',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, aboutRoute);
-              },
-              context: context,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 100),
+              child: createDrawerBodyItem(
+                icon: JamIcons.info,
+                text: 'About Prism',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, aboutRoute);
+                },
+                context: context,
+              ),
             ),
-            const Divider(),
           ],
         ),
       ),
