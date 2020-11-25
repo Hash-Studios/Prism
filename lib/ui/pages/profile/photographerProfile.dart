@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userData;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -197,8 +196,9 @@ class _UserProfileState extends State<UserProfile> {
                                                                 BorderRadius
                                                                     .circular(
                                                                         50),
-                                                            color: const Color(
-                                                                0xFFFFFFFF),
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
                                                           ),
                                                           child: Text(
                                                             "PRO",
@@ -330,7 +330,6 @@ class _UserProfileState extends State<UserProfile> {
                                   ]),
                                 ],
                               ),
-                              const Spacer(),
                             ],
                           ),
                         ),
@@ -364,7 +363,7 @@ class _UserProfileState extends State<UserProfile> {
                     width: MediaQuery.of(context).size.width,
                     height: 57,
                     child: Container(
-                      color: Theme.of(context).primaryColor,
+                      color: config.Colors().mainAccentColor(1),
                       child: SizedBox.expand(
                         child: TabBar(
                             indicatorColor: Theme.of(context).accentColor,
