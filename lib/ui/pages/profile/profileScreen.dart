@@ -238,7 +238,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                 child: Padding(
                                                   padding:
                                                       const EdgeInsets.only(
-                                                          bottom: 8),
+                                                          bottom: 20),
                                                   child: main.prefs
                                                               .get("name") ==
                                                           null
@@ -644,19 +644,16 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               fontSize: 24,
                                                               color: Theme.of(
                                                                       context)
-                                                                  .accentColor
-                                                                  .withOpacity(
-                                                                      0.7),
+                                                                  .accentColor,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .normal),
                                                         ),
                                                         Icon(
                                                           JamIcons.heart_f,
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .accentColor
-                                                              .withOpacity(0.7),
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
                                                         ),
                                                       ],
                                                     ),
@@ -691,10 +688,9 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             }),
                                                         Icon(
                                                           JamIcons.upload,
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .accentColor
-                                                              .withOpacity(0.7),
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
                                                         ),
                                                       ],
                                                     ),

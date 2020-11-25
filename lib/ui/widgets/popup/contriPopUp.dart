@@ -157,12 +157,12 @@ void showContributorDetails(BuildContext context, String username) {
                               text: "WEBSITE")
                           : Container(),
                       ActionButton(
-                          icon: JamIcons.github_circle,
+                          icon: JamIcons.github,
                           link: snapshot.data.htmlUrl,
                           text: "GITHUB"),
                       snapshot.data.twitterUsername != null
                           ? ActionButton(
-                              icon: JamIcons.twitter_circle,
+                              icon: JamIcons.twitter,
                               link:
                                   "https://www.twitter.com/${snapshot.data.twitterUsername}",
                               text: "TWITTER")
