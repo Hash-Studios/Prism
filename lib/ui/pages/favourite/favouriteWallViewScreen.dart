@@ -98,15 +98,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     isLoading = true;
     _updatePaletteGenerator();
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
   @override
   void dispose() {
     shakeController.dispose();
     super.dispose();
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
   @override

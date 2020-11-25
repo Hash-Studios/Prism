@@ -64,8 +64,6 @@ class _PageManagerChildState extends State<PageManagerChild>
   void initState() {
     super.initState();
     tabController = TabController(length: 2, vsync: this);
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     // Provider.of<TabProvider>(context, listen: false)
     //     .updateSelectedTab("Wallpapers");
     checkConnection();
@@ -236,8 +234,6 @@ class _PageManagerChildState extends State<PageManagerChild>
   @override
   Widget build(BuildContext context) {
     Future.delayed(const Duration(seconds: 1), () => initDynamicLinks(context));
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     return WillPopScope(
       onWillPop: () async {
         if (tabController.index != 0) {

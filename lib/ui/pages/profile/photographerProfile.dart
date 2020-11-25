@@ -46,9 +46,7 @@ class _UserProfileState extends State<UserProfile> {
       if ((navStack.last == "Wallpaper") ||
           (navStack.last == "Search Wallpaper") ||
           (navStack.last == "SharedWallpaper") ||
-          (navStack.last == "SetupView")) {
-        SystemChrome.setEnabledSystemUIOverlays([]);
-      }
+          (navStack.last == "SetupView")) {}
     }
     debugPrint(navStack.toString());
     return true;
@@ -355,9 +353,7 @@ class _UserProfileState extends State<UserProfile> {
                         if ((navStack.last == "Wallpaper") ||
                             (navStack.last == "Search Wallpaper") ||
                             (navStack.last == "SharedWallpaper") ||
-                            (navStack.last == "SetupView")) {
-                          SystemChrome.setEnabledSystemUIOverlays([]);
-                        }
+                            (navStack.last == "SetupView")) {}
                       }
                       debugPrint(navStack.toString());
                     },

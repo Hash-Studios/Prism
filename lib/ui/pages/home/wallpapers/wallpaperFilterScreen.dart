@@ -93,7 +93,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<bool> onWillPop() async {
-    SystemChrome.setEnabledSystemUIOverlays([]);
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
     return true;
@@ -329,7 +328,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           leading: IconButton(
               icon: const Icon(JamIcons.close),
               onPressed: () {
-                SystemChrome.setEnabledSystemUIOverlays([]);
                 navStack.removeLast();
                 debugPrint(navStack.toString());
                 Navigator.pop(context);

@@ -62,7 +62,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
     _future = sdata.getSetupFromName(name);
     isLoading = true;
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays([]);
   }
 
   // getData() async {
@@ -75,8 +74,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
   void dispose() {
     shakeController.dispose();
     super.dispose();
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 
   Future<void> onFavSetup(String id, Map setupMap) async {
@@ -432,13 +429,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                           3),
                                                                   onPressed:
                                                                       () {
-                                                                    SystemChrome
-                                                                        .setEnabledSystemUIOverlays([
-                                                                      SystemUiOverlay
-                                                                          .top,
-                                                                      SystemUiOverlay
-                                                                          .bottom
-                                                                    ]);
                                                                     Navigator.pushNamed(
                                                                         context,
                                                                         photographerProfileRoute,

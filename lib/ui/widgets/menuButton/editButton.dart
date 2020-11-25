@@ -96,8 +96,6 @@ class _EditButtonState extends State<EditButton> {
       imageThumbData = filePathAndNameThumb;
       isLoading = false;
     });
-    SystemChrome.setEnabledSystemUIOverlays(
-        [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     Navigator.pushNamed(context, wallpaperFilterRoute, arguments: [
       imagelib.decodeImage(File(imageThumbData).readAsBytesSync()),
       imagelib.decodeImage(File(imageData).readAsBytesSync()),

@@ -241,9 +241,6 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
-                  SystemChrome.setSystemUIOverlayStyle(
-                      const SystemUiOverlayStyle(
-                          statusBarColor: Colors.transparent));
                   navStack.last == "Home"
                       ? debugPrint("Currently on Home")
                       : Navigator.of(context).popUntil((route) {
@@ -292,9 +289,6 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
-                  SystemChrome.setSystemUIOverlayStyle(
-                      const SystemUiOverlayStyle(
-                          statusBarColor: Colors.transparent));
                   navStack.last == "Search"
                       ? debugPrint("Currently on Search")
                       : navStack.last == "Home"
@@ -395,9 +389,6 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   // showGooglePopUp(() {
-                  SystemChrome.setSystemUIOverlayStyle(
-                      const SystemUiOverlayStyle(
-                          statusBarColor: Colors.transparent));
                   navStack.last == "Setups"
                       ? debugPrint("Currently on Setups")
                       : navStack.last == "Home"
@@ -449,9 +440,6 @@ class _BottomNavBarState extends State<BottomNavBar>
                   ],
                 ),
                 onPressed: () {
-                  SystemChrome.setSystemUIOverlayStyle(
-                      const SystemUiOverlayStyle(
-                          statusBarColor: Colors.transparent));
                   if (navStack.last == "Profile") {
                     debugPrint("Currently on Profile");
                   } else {

@@ -33,8 +33,6 @@ class ColorBar extends StatelessWidget {
                 });
               },
               onTap: () {
-                SystemChrome.setEnabledSystemUIOverlays(
-                    [SystemUiOverlay.top, SystemUiOverlay.bottom]);
                 Future.delayed(const Duration())
                     .then((value) => Navigator.pushNamed(
                           context,
