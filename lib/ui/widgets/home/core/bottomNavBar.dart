@@ -395,9 +395,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                 ),
                 onPressed: () {
                   // showGooglePopUp(() {
-                  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-                      statusBarColor:
-                          Color(main.prefs.get("mainAccentColor") as int)));
+                  SystemChrome.setSystemUIOverlayStyle(
+                      const SystemUiOverlayStyle(
+                          statusBarColor: Colors.transparent));
                   navStack.last == "Setups"
                       ? debugPrint("Currently on Setups")
                       : navStack.last == "Home"

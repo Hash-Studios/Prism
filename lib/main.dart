@@ -215,7 +215,7 @@ class _MyAppState extends State<MyApp> {
       theme: Provider.of<ThemeModel>(context).currentTheme,
       // debugShowCheckedModeBanner: false,
       home: ((prefs.get('onboarded') as bool) ?? false)
-          ? const SplashWidget()
+          ? SplashWidget()
           : OnboardingScreen(),
     );
   }
@@ -223,9 +223,7 @@ class _MyAppState extends State<MyApp> {
 
 class RestartWidget extends StatefulWidget {
   const RestartWidget({this.child});
-
   final Widget child;
-
   static void restartApp(BuildContext context) {
     router.navStack = ["Home"];
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(

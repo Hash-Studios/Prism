@@ -372,8 +372,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) =>
-                                            const SplashWidget()));
+                                        builder: (context) => SplashWidget()));
                               },
                         style: ButtonStyle(
                             overlayColor: MaterialStateColor.resolveWith(
@@ -423,7 +422,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
-                                                        const SplashWidget()));
+                                                        SplashWidget()));
                                           });
                                         }).catchError((e) {
                                           debugPrint(e.toString());

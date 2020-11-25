@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/global/globals.dart' as globals;
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({
@@ -50,6 +51,7 @@ class _SetupScreenState extends State<SetupScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         body: BottomBar(
           child: SafeArea(
+            top: false,
             child: SetupPage(future: future, controller: controller),
           ),
         ),
@@ -120,7 +122,7 @@ class _SetupPageState extends State<SetupPage> {
               alignment: Alignment.topLeft,
               child: Container(
                 width: MediaQuery.of(context).size.width - 25,
-                padding: const EdgeInsets.only(left: 25, top: 25),
+                padding: EdgeInsets.only(left: 25, top: 5 + globals.notchSize),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -151,7 +153,7 @@ class _SetupPageState extends State<SetupPage> {
         ),
         Padding(
           padding:
-              EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
+              EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.12),
           child: FutureBuilder(
               future: widget.future,
               builder: (context, snapshot) {
