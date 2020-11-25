@@ -47,7 +47,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         body: BottomBar(
           child: ProfileChild(),
         ),
-        endDrawer: ProfileDrawer());
+        endDrawer: Container(
+            width: MediaQuery.of(context).size.width * 0.66,
+            child: ProfileDrawer()));
   }
 }
 
