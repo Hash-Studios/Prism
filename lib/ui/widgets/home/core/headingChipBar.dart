@@ -16,7 +16,6 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
   Widget build(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
-      elevation: 0,
       titleSpacing: 0,
       leading: IconButton(
           icon: const Icon(JamIcons.chevron_left),
@@ -27,8 +26,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
               if ((navStack.last == "Wallpaper") ||
                   (navStack.last == "Search Wallpaper") ||
                   (navStack.last == "SharedWallpaper") ||
-                  (navStack.last == "SetupView")) {
-              }
+                  (navStack.last == "SetupView")) {}
             }
             debugPrint(navStack.toString());
           }),

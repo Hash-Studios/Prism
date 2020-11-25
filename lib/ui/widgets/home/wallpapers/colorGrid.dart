@@ -125,7 +125,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
         },
         child: GridView.builder(
           controller: controller,
-          padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+          padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
           itemCount: PData.wallsC.isEmpty ? 24 : PData.wallsC.length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
