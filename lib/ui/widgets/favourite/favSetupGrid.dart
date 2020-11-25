@@ -222,7 +222,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
                 : GridView.builder(
                     shrinkWrap: true,
                     cacheExtent: 50000,
-                    padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+                    padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
                     controller: controller,
                     itemCount: Provider.of<FavouriteSetupProvider>(context)
                         .liked

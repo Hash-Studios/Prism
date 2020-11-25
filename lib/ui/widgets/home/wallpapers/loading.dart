@@ -87,7 +87,7 @@ class _LoadingCardsState extends State<LoadingCards>
     return controller != null
         ? GridView.builder(
             controller: controller,
-            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+            padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -108,7 +108,7 @@ class _LoadingCardsState extends State<LoadingCards>
             },
           )
         : GridView.builder(
-            padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+            padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
             itemCount: 24,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(

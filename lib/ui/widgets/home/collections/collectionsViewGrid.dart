@@ -99,7 +99,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid>
         InheritedDataProvider.of(context).scrollController;
     return GridView.builder(
       controller: controller,
-      padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
       itemCount: widget.arguments.length,
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(

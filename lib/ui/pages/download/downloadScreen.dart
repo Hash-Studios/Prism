@@ -113,7 +113,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
             child: dataFetched
                 ? GridView.builder(
                     shrinkWrap: true,
-                    padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+                    padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
                     itemCount: files.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
