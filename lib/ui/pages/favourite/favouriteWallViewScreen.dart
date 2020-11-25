@@ -75,6 +75,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     setState(() {
       accent = colors[0];
     });
+    if (accent.computeLuminance() > 0.5) {
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+          .copyWith(statusBarIconBrightness: Brightness.dark));
+    } else {
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+          .copyWith(statusBarIconBrightness: Brightness.light));
+    }
   }
 
   void updateAccent() {
@@ -86,6 +93,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
       setState(() {
         colorChanged = true;
       });
+      if (accent.computeLuminance() > 0.5) {
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+          .copyWith(statusBarIconBrightness: Brightness.dark));
+    } else {
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+          .copyWith(statusBarIconBrightness: Brightness.light));
+    }
     }
   }
 

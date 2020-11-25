@@ -77,6 +77,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
     setState(() {
       accent = colors[0];
     });
+    if (accent.computeLuminance() > 0.5) {
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+          .copyWith(statusBarIconBrightness: Brightness.dark));
+    } else {
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+          .copyWith(statusBarIconBrightness: Brightness.light));
+    }
   }
 
   void updateAccent() {
@@ -88,6 +95,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
       setState(() {
         colorChanged = true;
       });
+      if (accent.computeLuminance() > 0.5) {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+            .copyWith(statusBarIconBrightness: Brightness.dark));
+      } else {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+            .copyWith(statusBarIconBrightness: Brightness.light));
+      }
     }
   }
 
