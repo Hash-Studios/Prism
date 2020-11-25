@@ -42,7 +42,10 @@ class ProfileDrawer extends StatelessWidget {
                           main.prefs.get('premium') as bool == true
                               ? "Prism Pro"
                               : "Prism",
-                          style: Theme.of(context).textTheme.headline3,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline3
+                              .copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),
                       Container(
@@ -73,8 +76,10 @@ class ProfileDrawer extends StatelessWidget {
       BuildContext context}) {
     return ListTile(
       dense: true,
-      trailing:
-          Icon(JamIcons.chevron_right, color: Theme.of(context).accentColor),
+      trailing: Icon(
+        JamIcons.chevron_right,
+        color: Theme.of(context).accentColor,
+      ),
       visualDensity: VisualDensity.adaptivePlatformDensity,
       leading: Icon(
         icon,
@@ -82,11 +87,11 @@ class ProfileDrawer extends StatelessWidget {
       ),
       title: Container(
         width: MediaQuery.of(context).size.width / 2,
-        child: Text(text,
-            style: Theme.of(context)
-                .textTheme
-                .caption
-                .copyWith(fontFamily: "Proxima Nova")),
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.caption.copyWith(
+              fontFamily: "Proxima Nova", color: Theme.of(context).accentColor),
+        ),
       ),
       onTap: onTap,
     );

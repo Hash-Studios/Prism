@@ -84,7 +84,6 @@ class _SearchScreenState extends State<SearchScreen> {
           backgroundColor: Theme.of(context).primaryColor,
           appBar: AppBar(
             automaticallyImplyLeading: false,
-            elevation: 0,
             titleSpacing: 0,
             title: Row(
               mainAxisSize: MainAxisSize.min,
