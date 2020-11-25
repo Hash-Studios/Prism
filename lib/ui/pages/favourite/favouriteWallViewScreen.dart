@@ -19,6 +19,7 @@ import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/config.dart' as config;
 
 class FavWallpaperViewScreen extends StatefulWidget {
@@ -58,8 +59,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     setState(() {
       isLoading = true;
     });
-    await Future.delayed(const Duration(milliseconds: 500))
-        .then((value) async {
+    await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
       paletteGenerator = await PaletteGenerator.fromImageProvider(
         CachedNetworkImageProvider(thumb),
         maximumColorCount: 20,
@@ -194,10 +194,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                   topRight: Radius.circular(20),
                 ),
                 boxShadow: const [],
-                collapsed:CollapsedPanel(
-                              panelCollapsed: panelCollapsed,
-                              panelController: panelController,
-                            ),
+                collapsed: CollapsedPanel(
+                  panelCollapsed: panelCollapsed,
+                  panelController: panelController,
+                ),
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.0,
@@ -871,13 +871,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               listen: false)
                                           .liked[index]["thumb"]
                                           .toString()),
-                                           EditButton(
-                                                url: Provider.of<FavouriteProvider>(
-                                              context,
-                                              listen: false)
-                                          .liked[index]["url"]
-                                          .toString(),
-                                              ),
+                                  EditButton(
+                                    url: Provider.of<FavouriteProvider>(context,
+                                            listen: false)
+                                        .liked[index]["url"]
+                                        .toString(),
+                                  ),
                                 ],
                               ),
                             ),
@@ -966,10 +965,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             ),
                           );
                         }),
-                    SafeArea(child:Align(
+                    Align(
                       alignment: Alignment.topLeft,
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: EdgeInsets.fromLTRB(
+                            8.0, globals.notchSize + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -986,46 +986,45 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           ),
                         ),
                       ),
-                    ),),
-                    SafeArea(
-                                          child: Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: IconButton(
-                            onPressed: () {
-                              final link = Provider.of<FavouriteProvider>(context,
-                                      listen: false)
-                                  .liked[index]["url"];
-                              Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                      transitionDuration:
-                                          const Duration(milliseconds: 300),
-                                      pageBuilder: (context, animation,
-                                          secondaryAnimation) {
-                                        animation = Tween(begin: 0.0, end: 1.0)
-                                            .animate(animation);
-                                        return FadeTransition(
-                                            opacity: animation,
-                                            child: ClockOverlay(
-                                              colorChanged: colorChanged,
-                                              accent: accent,
-                                              link: link.toString(),
-                                              file: false,
-                                            ));
-                                      },
-                                      fullscreenDialog: true,
-                                      opaque: false));
-                            },
-                            color: isLoading
-                                ? Theme.of(context).accentColor
-                                : accent.computeLuminance() > 0.5
-                                    ? Colors.black
-                                    : Colors.white,
-                            icon: const Icon(
-                              JamIcons.clock,
-                            ),
+                    ),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                            8.0, globals.notchSize + 8, 8, 8),
+                        child: IconButton(
+                          onPressed: () {
+                            final link = Provider.of<FavouriteProvider>(context,
+                                    listen: false)
+                                .liked[index]["url"];
+                            Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                    transitionDuration:
+                                        const Duration(milliseconds: 300),
+                                    pageBuilder: (context, animation,
+                                        secondaryAnimation) {
+                                      animation = Tween(begin: 0.0, end: 1.0)
+                                          .animate(animation);
+                                      return FadeTransition(
+                                          opacity: animation,
+                                          child: ClockOverlay(
+                                            colorChanged: colorChanged,
+                                            accent: accent,
+                                            link: link.toString(),
+                                            file: false,
+                                          ));
+                                    },
+                                    fullscreenDialog: true,
+                                    opaque: false));
+                          },
+                          color: isLoading
+                              ? Theme.of(context).accentColor
+                              : accent.computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                          icon: const Icon(
+                            JamIcons.clock,
                           ),
                         ),
                       ),
@@ -1099,9 +1098,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                 ),
                 boxShadow: const [],
                 collapsed: CollapsedPanel(
-                              panelCollapsed: panelCollapsed,
-                              panelController: panelController,
-                            ),
+                  panelCollapsed: panelCollapsed,
+                  panelController: panelController,
+                ),
                 minHeight: MediaQuery.of(context).size.height / 20,
                 parallaxEnabled: true,
                 parallaxOffset: 0.0,
@@ -1341,13 +1340,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                             listen: false)
                                                         .liked[index]["thumb"]
                                                         .toString()),
-                                                        EditButton(
-                                                url:  Provider.of<FavouriteProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .liked[index]["url"]
-                                                    .toString(),
-                                              ),
+                                            EditButton(
+                                              url: Provider.of<
+                                                          FavouriteProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["url"]
+                                                  .toString(),
+                                            ),
                                           ]
                                         : <Widget>[
                                             DownloadButton(
@@ -1607,7 +1607,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             ),
                           );
                         }),
-                    SafeArea(child:Align(
+                    Align(
                       alignment: Alignment.topLeft,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -1627,11 +1627,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           ),
                         ),
                       ),
-                    ),),
-                   SafeArea(child: Align(
+                    ),
+                    Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: EdgeInsets.fromLTRB(
+                            8.0, globals.notchSize + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             final link =
@@ -1667,7 +1668,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           ),
                         ),
                       ),
-                    ),),
+                    ),
                   ],
                 ),
               ),

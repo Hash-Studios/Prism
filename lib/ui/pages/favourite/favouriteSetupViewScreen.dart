@@ -110,9 +110,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
           ),
           boxShadow: const [],
           collapsed: CollapsedPanel(
-                              panelCollapsed: panelCollapsed,
-                              panelController: panelController,
-                            ),
+            panelCollapsed: panelCollapsed,
+            panelController: panelController,
+          ),
           minHeight: MediaQuery.of(context).size.height / 20,
           parallaxEnabled: true,
           parallaxOffset: 0.00,
@@ -1052,21 +1052,20 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                       ),
                     );
                   }),
-              SafeArea(
-                              child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: IconButton(
-                      onPressed: () {
-                        navStack.removeLast();
-                        debugPrint(navStack.toString());
-                        Navigator.pop(context);
-                      },
-                      color: Theme.of(context).accentColor,
-                      icon: const Icon(
-                        JamIcons.chevron_left,
-                      ),
+              Align(
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding:
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                  child: IconButton(
+                    onPressed: () {
+                      navStack.removeLast();
+                      debugPrint(navStack.toString());
+                      Navigator.pop(context);
+                    },
+                    color: Theme.of(context).accentColor,
+                    icon: const Icon(
+                      JamIcons.chevron_left,
                     ),
                   ),
                 ),

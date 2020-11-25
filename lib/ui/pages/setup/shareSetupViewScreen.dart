@@ -1017,21 +1017,20 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                 ),
                               );
                             }),
-                        SafeArea(
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: IconButton(
-                                onPressed: () {
-                                  navStack.removeLast();
-                                  debugPrint(navStack.toString());
-                                  Navigator.pop(context);
-                                },
-                                color: Theme.of(context).accentColor,
-                                icon: const Icon(
-                                  JamIcons.chevron_left,
-                                ),
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(
+                                8.0, globals.notchSize + 8, 8, 8),
+                            child: IconButton(
+                              onPressed: () {
+                                navStack.removeLast();
+                                debugPrint(navStack.toString());
+                                Navigator.pop(context);
+                              },
+                              color: Theme.of(context).accentColor,
+                              icon: const Icon(
+                                JamIcons.chevron_left,
                               ),
                             ),
                           ),
