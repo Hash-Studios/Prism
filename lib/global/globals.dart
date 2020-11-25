@@ -8,6 +8,8 @@ bool updateAvailable = false;
 Map versionInfo = {};
 bool loadingAd = true;
 bool updateAlerted = false;
+bool hasNotch = false;
+double notchSize;
 
 List topTitleText = [
   "TOP-RATED",

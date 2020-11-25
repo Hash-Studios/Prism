@@ -14,6 +14,7 @@ import 'package:Prism/theme/config.dart' as config;
 RemoteConfig remoteConfig;
 
 class SplashWidget extends StatelessWidget {
+  bool notchChecked = false;
   Future<void> rcInit() async {
     remoteConfig = await RemoteConfig.instance;
     await remoteConfig.setConfigSettings(RemoteConfigSettings());
@@ -69,11 +70,22 @@ class SplashWidget extends StatelessWidget {
     debugPrint(cList.toString());
   }
 
-  const SplashWidget({
+  void checkNotch(BuildContext context) {
+    final height = MediaQuery.of(context).padding.top;
+    globals.hasNotch = height > 24;
+    globals.notchSize = height;
+    notchChecked = true;
+    print('Notch Height = $height');
+  }
+
+  SplashWidget({
     Key key,
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
+    if (!notchChecked) {
+      checkNotch(context);
+    }
     SystemChrome.setEnabledSystemUIOverlays([]);
     return SplashScreen(
       'assets/animations/Prism Splash.flr',
