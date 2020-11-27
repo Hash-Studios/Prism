@@ -12,6 +12,8 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
@@ -531,6 +533,23 @@ class ProfileDrawer extends StatelessWidget {
             ),
             const Divider(),
             createDrawerBodyHeader(text: "SETTINGS", context: context),
+            createDrawerBodyItem(
+              icon: JamIcons.pie_chart_alt,
+              text: 'Clear cache',
+              onTap: () async {
+                Navigator.pop(context);
+                DefaultCacheManager().emptyCache();
+                PaintingBinding.instance.imageCache.clear();
+                await Hive.box('wallpapers').deleteFromDisk();
+                await Hive.openBox('wallpapers');
+                await Hive.box('collections').deleteFromDisk();
+                await Hive.openBox('collections');
+                await Hive.box('setups').deleteFromDisk();
+                await Hive.openBox('setups');
+                toasts.codeSend("Cleared cache!");
+              },
+              context: context,
+            ),
             createDrawerBodyItem(
               icon: JamIcons.cog,
               text: 'Settings',
