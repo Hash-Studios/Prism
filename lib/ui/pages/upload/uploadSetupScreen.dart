@@ -328,8 +328,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                         color: Theme.of(context).accentColor,
                       ),
                       decoration: InputDecoration(
-                        labelText: "* Write a description...",
-                        hintText: "* Write a description...",
+                        labelText: "* Write a description... (50 chars only)",
+                        hintText: "* Write a description... (50 chars only)",
                         hintStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
