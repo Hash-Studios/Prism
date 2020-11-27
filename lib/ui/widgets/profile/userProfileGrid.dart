@@ -237,7 +237,8 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         comparator: !globals.isPremiumWall(
                             globals.premiumCollections,
                             userdata.userProfileWalls[index]["collections"]
-                                as List),
+                                    as List ??
+                                []),
                         defaultChild: FocusedMenuHolder(
                           provider: "UserProfileWall",
                           index: index,
@@ -301,7 +302,8 @@ class PhotographerWallTile extends StatelessWidget {
                   globals.isPremiumWall(
                                   globals.premiumCollections,
                                   userdata.userProfileWalls[index]
-                                      ["collections"] as List) ==
+                                          ["collections"] as List ??
+                                      []) ==
                               true &&
                           main.prefs.get('premium') != true
                       ? showGooglePopUp(context, () {

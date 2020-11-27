@@ -195,8 +195,9 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                   globals.isPremiumWall(
                                                   globals.premiumCollections,
                                                   Data.subPrismWalls[i]
-                                                          ["collections"]
-                                                      as List) ==
+                                                              ["collections"]
+                                                          as List ??
+                                                      []) ==
                                               true &&
                                           main.prefs.get('premium') != true
                                       ? showGooglePopUp(context, () {
@@ -231,7 +232,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                       comparator: !globals.isPremiumWall(
                                           globals.premiumCollections,
                                           Data.subPrismWalls[i]["collections"]
-                                              as List),
+                                                  as List ??
+                                              []),
                                       child: Container(
                                         decoration: BoxDecoration(
                                             color: Provider.of<ThemeModel>(
@@ -351,7 +353,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     : PremiumBannerWalls(
                         comparator: !globals.isPremiumWall(
                             globals.premiumCollections,
-                            Data.subPrismWalls[index]["collections"] as List),
+                            Data.subPrismWalls[index]["collections"] as List ??
+                                []),
                         defaultChild: FocusedMenuHolder(
                           provider: widget.provider,
                           index: index,
