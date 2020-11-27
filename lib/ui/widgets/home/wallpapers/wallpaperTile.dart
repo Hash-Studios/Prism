@@ -69,7 +69,8 @@ class WallpaperTile extends StatelessWidget {
                   globals.isPremiumWall(
                                   globals.premiumCollections,
                                   Data.subPrismWalls[index]["collections"]
-                                      as List) ==
+                                          as List ??
+                                      []) ==
                               true &&
                           main.prefs.get('premium') != true
                       ? showGooglePopUp(context, () {
