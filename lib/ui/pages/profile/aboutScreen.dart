@@ -1,5 +1,7 @@
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/contriPopUp.dart';
 import 'package:Prism/ui/widgets/profile/prismList.dart';
@@ -7,6 +9,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:github/github.dart';
+import 'package:provider/provider.dart';
+import 'package:Prism/theme/config.dart' as config;
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -237,7 +241,7 @@ class AboutScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              "Made with ❤ in India!",
+              "Made with ❤ in India with Flutter!",
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme
@@ -318,7 +322,12 @@ class ActionButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(4.0),
       child: ActionChip(
-          avatar: Icon(icon),
+          avatar: Icon(icon,
+              color: Provider.of<ThemeModel>(context, listen: false)
+                          .currentTheme !=
+                      kDarkTheme2
+                  ? config.Colors().mainAccentColor(1)
+                  : Theme.of(context).accentColor),
           label: Text(
             text,
             textAlign: TextAlign.center,
