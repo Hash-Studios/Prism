@@ -105,9 +105,9 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
           ),
           boxShadow: const [],
           collapsed: CollapsedPanel(
-                              panelCollapsed: panelCollapsed,
-                              panelController: panelController,
-                            ),
+            panelCollapsed: panelCollapsed,
+            panelController: panelController,
+          ),
           minHeight: MediaQuery.of(context).size.height / 20,
           parallaxEnabled: true,
           parallaxOffset: 0.00,
@@ -285,16 +285,24 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                             ),
                                           ),
                                           GestureDetector(
-                                            onTap: () {
-                                              showModal(
-                                                  context: context,
-                                                  configuration:
-                                                      const FadeScaleTransitionConfiguration(),
-                                                  builder:
-                                                      (BuildContext context) =>
-                                                          const CopyrightPopUp(
-                                                            setup: true,
-                                                          ));
+                                            onTap: () async {
+                                              await createCopyrightLink(
+                                                  true, context,
+                                                  index: index.toString(),
+                                                  name: Provider.of<
+                                                              ProfileSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .profileSetups[index]
+                                                          ["name"]
+                                                      .toString(),
+                                                  thumbUrl: Provider.of<
+                                                              ProfileSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .profileSetups[index]
+                                                          ["image"]
+                                                      .toString());
                                             },
                                             child: Row(
                                               children: [
@@ -379,7 +387,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             const EdgeInsets
                                                                     .fromLTRB(
                                                                 7, 3, 7, 3),
-                                                        onPressed: () {                                                          
+                                                        onPressed: () {
                                                           Navigator.pushNamed(
                                                               context,
                                                               photographerProfileRoute,
@@ -1056,23 +1064,23 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                     );
                   }),
               Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                   padding: EdgeInsets.fromLTRB(
-                                8.0, globals.notchSize + 8, 8, 8),
-                    child: IconButton(
-                      onPressed: () {
-                        navStack.removeLast();
-                        debugPrint(navStack.toString());
-                        Navigator.pop(context);
-                      },
-                      color: Theme.of(context).accentColor,
-                      icon: const Icon(
-                        JamIcons.chevron_left,
-                      ),
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding:
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                  child: IconButton(
+                    onPressed: () {
+                      navStack.removeLast();
+                      debugPrint(navStack.toString());
+                      Navigator.pop(context);
+                    },
+                    color: Theme.of(context).accentColor,
+                    icon: const Icon(
+                      JamIcons.chevron_left,
                     ),
                   ),
                 ),
+              ),
               // Align(
               //   alignment: Alignment.topRight,
               //   child: Padding(

@@ -1032,8 +1032,10 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                 const FadeScaleTransitionConfiguration(),
                                                             builder: (BuildContext
                                                                     context) =>
-                                                                const CopyrightPopUp(
+                                                                CopyrightPopUp(
                                                                   setup: false,
+                                                                  shortlink:
+                                                                      "Wallpaper ID - ${Data.wall["id"]}",
                                                                 ));
                                                       },
                                                       child: Row(

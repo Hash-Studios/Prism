@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:url_launcher/url_launcher.dart';
 
 class CopyrightPopUp extends StatelessWidget {
   final bool setup;
-  const CopyrightPopUp({@required this.setup});
+  final String shortlink;
+  const CopyrightPopUp({@required this.setup, @required this.shortlink});
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -29,6 +31,22 @@ class CopyrightPopUp extends StatelessWidget {
       actions: [
         FlatButton(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+          color: Colors.transparent,
+          onPressed: () {
+            Navigator.pop(context);
+            setup == true
+                ? launch(
+                    "mailto:hash.studios.inc@gmail.com?subject=%5BREPORT%20SETUP%5D&body=----x-x-x----%0D%0A$shortlink%0D%0A%0D%0AEnter%20the%20original%20source%20below%20---")
+                : launch(
+                    "mailto:hash.studios.inc@gmail.com?subject=%5BREPORT%20WALL%5D&body=----x-x-x----%0D%0A$shortlink%0D%0A%0D%0AEnter%20the%20original%20source%20below%20---");
+          },
+          child: Text("REPORT",
+              style: TextStyle(
+                color: config.Colors().mainAccentColor(1),
+              )),
+        ),
+        FlatButton(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
           color: config.Colors().mainAccentColor(1),
           onPressed: () {
             Navigator.pop(context);
@@ -37,7 +55,7 @@ class CopyrightPopUp extends StatelessWidget {
               style: TextStyle(
                 color: Theme.of(context).accentColor,
               )),
-        )
+        ),
       ],
       backgroundColor: Theme.of(context).primaryColor,
       actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
