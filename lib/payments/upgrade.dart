@@ -189,11 +189,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
                         child: Stack(
                           children: [
                             Container(
-                              height: 300,
+                              height: 400,
                               width: MediaQuery.of(context).size.width,
                               child: CachedNetworkImage(
                                 imageUrl:
                                     "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fprism%20mock.png?alt=media&token=a86d1386-dbb5-493f-8399-ff0160b1a86a",
+                                fit: BoxFit.fitHeight,
                               ),
                             ),
                             Column(
@@ -331,14 +332,18 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                                       color: Colors.white),
                                               textAlign: TextAlign.center,
                                             ),
-                                            Text(
-                                              'SALE',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headline6
-                                                  .copyWith(color: Colors.red),
-                                              textAlign: TextAlign.center,
-                                            ),
+                                            lifetime.product.title
+                                                    .contains("SALE")
+                                                ? Text(
+                                                    'SALE',
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .headline6
+                                                        .copyWith(
+                                                            color: Colors.red),
+                                                    textAlign: TextAlign.center,
+                                                  )
+                                                : Container(),
                                           ],
                                         ),
                                         const Spacer(flex: 4),
