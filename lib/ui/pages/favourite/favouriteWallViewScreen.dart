@@ -94,12 +94,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
         colorChanged = true;
       });
       if (accent.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.dark));
-    } else {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
-          .copyWith(statusBarIconBrightness: Brightness.light));
-    }
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+            .copyWith(statusBarIconBrightness: Brightness.dark));
+      } else {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+            .copyWith(statusBarIconBrightness: Brightness.light));
+      }
     }
   }
 
@@ -1621,7 +1621,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                     Align(
                       alignment: Alignment.topLeft,
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: EdgeInsets.fromLTRB(
+                            8.0, globals.notchSize + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
