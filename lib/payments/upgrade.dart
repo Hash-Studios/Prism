@@ -149,10 +149,48 @@ Future<bool> onWillPop() async {
 
 class _UpsellScreenState extends State<UpsellScreen> {
   final ScrollController _scrollController = ScrollController();
+  List<Widget> features = [
+    const SizedBox(
+      width: 30,
+    ),
+    const FeatureChip(icon: JamIcons.picture, text: "Exclusive wallpapers"),
+    const FeatureChip(
+        icon: JamIcons.instant_picture, text: "No restrictions on setups"),
+    const FeatureChip(icon: JamIcons.trophy, text: "Premium only giveaways"),
+    const FeatureChip(icon: JamIcons.filter, text: "Apply filters on walls"),
+    const FeatureChip(
+        icon: JamIcons.user, text: "Unique PRO badge on your profile"),
+    const FeatureChip(icon: JamIcons.upload, text: "Faster upload reviews"),
+    const FeatureChip(icon: JamIcons.stop_sign, text: "Remove Ads"),
+    const FeatureChip(
+        icon: JamIcons.coffee_cup,
+        text: "Support development, and content growth"),
+  ];
 
   void _scrollToBottom() {
     _scrollController.animateTo(_scrollController.position.maxScrollExtent,
-        duration: const Duration(seconds: 60), curve: Curves.linear);
+        duration: const Duration(seconds: 6000), curve: Curves.linear);
+  }
+
+  @override
+  void initState() {
+    for (var i = 0; i < 100; i++) {
+      features.addAll(const [
+        FeatureChip(icon: JamIcons.picture, text: "Exclusive wallpapers"),
+        FeatureChip(
+            icon: JamIcons.instant_picture, text: "No restrictions on setups"),
+        FeatureChip(icon: JamIcons.trophy, text: "Premium only giveaways"),
+        FeatureChip(icon: JamIcons.filter, text: "Apply filters on walls"),
+        FeatureChip(
+            icon: JamIcons.user, text: "Unique PRO badge on your profile"),
+        FeatureChip(icon: JamIcons.upload, text: "Faster upload reviews"),
+        FeatureChip(icon: JamIcons.stop_sign, text: "Remove Ads"),
+        FeatureChip(
+            icon: JamIcons.coffee_cup,
+            text: "Support development, and content growth"),
+      ]);
+    }
+    super.initState();
   }
 
   @override
@@ -189,7 +227,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                         child: Stack(
                           children: [
                             Container(
-                              height: 400,
+                              height: 420,
                               width: MediaQuery.of(context).size.width,
                               child: CachedNetworkImage(
                                 imageUrl:
@@ -206,7 +244,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                 Row(
                                   children: [
                                     const SizedBox(
-                                      width: 20,
+                                      width: 30,
                                     ),
                                     SizedBox(
                                         width: 40,
@@ -237,7 +275,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                 Row(
                                   children: [
                                     const SizedBox(
-                                      width: 20,
+                                      width: 30,
                                     ),
                                     Container(
                                       width: MediaQuery.of(context).size.width *
@@ -253,111 +291,86 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(
+                                Container(
+                                  margin:
+                                      const EdgeInsets.fromLTRB(0, 10, 0, 0),
                                   width: MediaQuery.of(context).size.width,
                                   height: 58,
-                                  child: ListView(
-                                    controller: _scrollController,
-                                    scrollDirection: Axis.horizontal,
-                                    children: const [
-                                      SizedBox(
-                                        width: 20,
-                                      ),
-                                      FeatureChip(
-                                          icon: JamIcons.picture,
-                                          text: "Exclusive wallpapers"),
-                                      FeatureChip(
-                                          icon: JamIcons.instant_picture,
-                                          text: "No restrictions on setups"),
-                                      FeatureChip(
-                                          icon: JamIcons.trophy,
-                                          text: "Premium only giveaways"),
-                                      FeatureChip(
-                                          icon: JamIcons.filter,
-                                          text: "Apply filters on walls"),
-                                      FeatureChip(
-                                          icon: JamIcons.user,
-                                          text:
-                                              "Unique PRO badge on your profile"),
-                                      FeatureChip(
-                                          icon: JamIcons.upload,
-                                          text: "Faster upload reviews"),
-                                      FeatureChip(
-                                          icon: JamIcons.stop_sign,
-                                          text: "Remove Ads"),
-                                      FeatureChip(
-                                          icon: JamIcons.coffee_cup,
-                                          text:
-                                              "Support development, and content growth"),
-                                    ],
+                                  child: GestureDetector(
+                                    onTap: _scrollToBottom,
+                                    child: ListView(
+                                      controller: _scrollController,
+                                      scrollDirection: Axis.horizontal,
+                                      children: features,
+                                    ),
                                   ),
                                 ),
                                 const Spacer(),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 18.0),
-                                  child: Container(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.8,
-                                    decoration: BoxDecoration(
-                                        border: Border.all(
-                                            color:
-                                                Provider.of<ThemeModel>(context)
-                                                            .currentTheme ==
-                                                        kDarkTheme2
-                                                    ? Theme.of(context)
-                                                        .accentColor
-                                                    : config.Colors()
-                                                        .mainAccentColor(1),
-                                            width: 4),
-                                        color: const Color(0x15ffffff),
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
-                                    child: Row(
-                                      children: [
-                                        const Spacer(),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Lifetime',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headline3
-                                                  .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.white),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            lifetime.product.title
-                                                    .contains("SALE")
-                                                ? Text(
-                                                    'SALE',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .headline6
-                                                        .copyWith(
-                                                            color: Colors.red),
-                                                    textAlign: TextAlign.center,
-                                                  )
-                                                : Container(),
-                                          ],
-                                        ),
-                                        const Spacer(flex: 4),
-                                        Text(
-                                          lifetime.product.priceString,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline3
-                                              .copyWith(color: Colors.white),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        const Spacer(),
-                                      ],
-                                    ),
+                                Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.8,
+                                  decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: Provider.of<ThemeModel>(
+                                                          context)
+                                                      .currentTheme ==
+                                                  kDarkTheme2
+                                              ? config.Colors()
+                                                          .mainAccentColor(1) ==
+                                                      Colors.black
+                                                  ? Theme.of(context)
+                                                      .accentColor
+                                                  : config.Colors()
+                                                      .mainAccentColor(1)
+                                              : config.Colors()
+                                                  .mainAccentColor(1),
+                                          width: 4),
+                                      color: const Color(0x15ffffff),
+                                      borderRadius: BorderRadius.circular(10)),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  child: Row(
+                                    children: [
+                                      const Spacer(),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Lifetime',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline3
+                                                .copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          lifetime.product.title
+                                                  .contains("SALE")
+                                              ? Text(
+                                                  'SALE',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .headline6
+                                                      .copyWith(
+                                                          color: Colors.red),
+                                                  textAlign: TextAlign.center,
+                                                )
+                                              : Container(),
+                                        ],
+                                      ),
+                                      const Spacer(flex: 4),
+                                      Text(
+                                        lifetime.product.priceString,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline3
+                                            .copyWith(color: Colors.white),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const Spacer(),
+                                    ],
                                   ),
                                 ),
                                 PurchaseButton(package: lifetime),
@@ -531,7 +544,9 @@ class _PurchaseButtonState extends State<PurchaseButton> {
           decoration: BoxDecoration(
               color:
                   Provider.of<ThemeModel>(context).currentTheme == kDarkTheme2
-                      ? Theme.of(context).accentColor
+                      ? config.Colors().mainAccentColor(1) == Colors.black
+                          ? Theme.of(context).accentColor
+                          : config.Colors().mainAccentColor(1)
                       : config.Colors().mainAccentColor(1),
               borderRadius: BorderRadius.circular(500)),
           padding: const EdgeInsets.symmetric(vertical: 12),
