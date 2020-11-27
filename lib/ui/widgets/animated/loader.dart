@@ -1,5 +1,8 @@
+import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/themeModel.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:provider/provider.dart';
 
 class Loader extends StatefulWidget {
   @override
@@ -67,9 +70,11 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: config.Colors().mainAccentColor(1) == Colors.black
-                ? const Color(0xFFE57697)
-                : config.Colors().mainAccentColor(1),
+            color:
+                Provider.of<ThemeModel>(context, listen: false).currentTheme !=
+                        kDarkTheme2
+                    ? config.Colors().mainAccentColor(1)
+                    : Theme.of(context).accentColor,
           ),
           child: const SizedBox(
             width: 55,
