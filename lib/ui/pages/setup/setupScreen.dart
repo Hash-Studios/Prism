@@ -2,6 +2,7 @@ import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
@@ -33,7 +34,7 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   final PageController controller = PageController(
-    viewportFraction: 0.74,
+    viewportFraction: 0.68,
   );
   Future future;
 
@@ -227,11 +228,11 @@ class _SetupPageState extends State<SetupPage> {
                                           Container(
                                         width:
                                             MediaQuery.of(context).size.height *
-                                                0.65 *
+                                                0.7 *
                                                 (9 / 19.5),
                                         height:
                                             MediaQuery.of(context).size.height *
-                                                0.65,
+                                                0.7,
                                         decoration: BoxDecoration(
                                           boxShadow: pageNumber == index
                                               ? Provider.of<ThemeModel>(context)
@@ -282,17 +283,23 @@ class _SetupPageState extends State<SetupPage> {
                                               Container(
                                         width:
                                             MediaQuery.of(context).size.height *
-                                                0.65 *
+                                                0.7 *
                                                 (9 / 19.5),
                                         height:
                                             MediaQuery.of(context).size.height *
-                                                0.65,
+                                                0.7,
                                         child: Center(
                                           child: CircularProgressIndicator(
                                               valueColor:
                                                   AlwaysStoppedAnimation(
-                                                config.Colors()
-                                                    .mainAccentColor(1),
+                                                Provider.of<ThemeModel>(context,
+                                                                listen: false)
+                                                            .currentTheme !=
+                                                        kDarkTheme2
+                                                    ? config.Colors()
+                                                        .mainAccentColor(1)
+                                                    : Theme.of(context)
+                                                        .accentColor,
                                               ),
                                               value: downloadProgress.progress),
                                         ),
@@ -326,7 +333,14 @@ class _SetupPageState extends State<SetupPage> {
                         curve: Curves.fastOutSlowIn);
                     HapticFeedback.vibrate();
                   },
-                  child: const Icon(JamIcons.chevron_left),
+                  child: Icon(
+                    JamIcons.chevron_left,
+                    color: Provider.of<ThemeModel>(context, listen: false)
+                                .currentTheme !=
+                            kDarkTheme2
+                        ? config.Colors().mainAccentColor(1)
+                        : Theme.of(context).accentColor,
+                  ),
                 ),
               ),
         pageNumber ==
@@ -345,7 +359,14 @@ class _SetupPageState extends State<SetupPage> {
                         curve: Curves.fastOutSlowIn);
                     HapticFeedback.vibrate();
                   },
-                  child: const Icon(JamIcons.chevron_right),
+                  child: Icon(
+                    JamIcons.chevron_right,
+                    color: Provider.of<ThemeModel>(context, listen: false)
+                                .currentTheme !=
+                            kDarkTheme2
+                        ? config.Colors().mainAccentColor(1)
+                        : Theme.of(context).accentColor,
+                  ),
                 ),
               ),
       ],
