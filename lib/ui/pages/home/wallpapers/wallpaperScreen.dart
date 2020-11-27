@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
+import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
 import 'package:Prism/routes/router.dart';
@@ -973,16 +974,22 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             ),
                                             const SizedBox(height: 5),
                                             GestureDetector(
-                                              onTap: () {
-                                                showModal(
-                                                    context: context,
-                                                    configuration:
-                                                        const FadeScaleTransitionConfiguration(),
-                                                    builder: (BuildContext
-                                                            context) =>
-                                                        const CopyrightPopUp(
-                                                          setup: false,
-                                                        ));
+                                              onTap: () async {
+                                                await createCopyrightLink(
+                                                    false, context,
+                                                    id: data
+                                                        .subPrismWalls[index]
+                                                            ["id"]
+                                                        .toString(),
+                                                    provider: provider,
+                                                    url: data
+                                                        .subPrismWalls[index]
+                                                            ["wallpaper_url"]
+                                                        .toString(),
+                                                    thumbUrl: data
+                                                        .subPrismWalls[index]
+                                                            ["wallpaper_thumb"]
+                                                        .toString());
                                               },
                                               child: Row(
                                                 children: [

@@ -335,8 +335,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                 const FadeScaleTransitionConfiguration(),
                                                             builder: (BuildContext
                                                                     context) =>
-                                                                const CopyrightPopUp(
+                                                                CopyrightPopUp(
                                                                   setup: true,
+                                                                  shortlink:
+                                                                      "Setup ID - ${sdata.setup["id"]}",
                                                                 ));
                                                       },
                                                       child: Row(

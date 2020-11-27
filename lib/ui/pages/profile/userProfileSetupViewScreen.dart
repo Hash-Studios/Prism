@@ -280,16 +280,18 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                             ),
                                           ),
                                           GestureDetector(
-                                            onTap: () {
-                                              showModal(
-                                                  context: context,
-                                                  configuration:
-                                                      const FadeScaleTransitionConfiguration(),
-                                                  builder:
-                                                      (BuildContext context) =>
-                                                          const CopyrightPopUp(
-                                                            setup: true,
-                                                          ));
+                                            onTap: () async {
+                                              await createCopyrightLink(
+                                                  true, context,
+                                                  index: index.toString(),
+                                                  name: user_data
+                                                      .userProfileSetups[index]
+                                                          ["name"]
+                                                      .toString(),
+                                                  thumbUrl: user_data
+                                                      .userProfileSetups[index]
+                                                          ["image"]
+                                                      .toString());
                                             },
                                             child: Row(
                                               children: [
@@ -928,25 +930,25 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                       ),
                     );
                   }),
-               Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                                8.0, globals.notchSize + 8, 8, 8),
-                    child: IconButton(
-                      onPressed: () {
-                        navStack.removeLast();
-                        debugPrint(navStack.toString());
-                        Navigator.pop(context);
-                      },
-                      color: Theme.of(context).accentColor,
-                      icon: const Icon(
-                        JamIcons.chevron_left,
-                      ),
+              Align(
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding:
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                  child: IconButton(
+                    onPressed: () {
+                      navStack.removeLast();
+                      debugPrint(navStack.toString());
+                      Navigator.pop(context);
+                    },
+                    color: Theme.of(context).accentColor,
+                    icon: const Icon(
+                      JamIcons.chevron_left,
                     ),
                   ),
                 ),
-              
+              ),
+
               // Align(
               //   alignment: Alignment.topRight,
               //   child: Padding(

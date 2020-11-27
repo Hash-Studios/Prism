@@ -287,16 +287,22 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                             ),
                                           ),
                                           GestureDetector(
-                                            onTap: () {
-                                              showModal(
-                                                  context: context,
-                                                  configuration:
-                                                      const FadeScaleTransitionConfiguration(),
-                                                  builder:
-                                                      (BuildContext context) =>
-                                                          const CopyrightPopUp(
-                                                            setup: true,
-                                                          ));
+                                            onTap: () async {
+                                              await createCopyrightLink(
+                                                  true, context,
+                                                  index: index.toString(),
+                                                  name: Provider.of<
+                                                              FavouriteSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .liked[index]["name"]
+                                                      .toString(),
+                                                  thumbUrl: Provider.of<
+                                                              FavouriteSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .liked[index]["image"]
+                                                      .toString());
                                             },
                                             child: Row(
                                               children: [
