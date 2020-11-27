@@ -71,7 +71,8 @@ class ProfileDrawer extends StatelessWidget {
       BuildContext context}) {
     return ListTile(
       dense: true,
-      trailing: const Icon(JamIcons.chevron_right),
+      trailing:
+          Icon(JamIcons.chevron_right, color: Theme.of(context).accentColor),
       visualDensity: VisualDensity.adaptivePlatformDensity,
       leading: Icon(
         icon,
