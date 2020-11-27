@@ -22,8 +22,6 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
-import 'package:Prism/ui/widgets/popup/copyrightPopUp.dart';
-import 'package:animations/animations.dart';
 
 class FavSetupViewScreen extends StatefulWidget {
   final List arguments;
