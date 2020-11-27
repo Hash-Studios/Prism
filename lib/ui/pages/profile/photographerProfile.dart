@@ -372,17 +372,21 @@ class _UserProfileState extends State<UserProfile> {
                                 const Color(0xFFFFFFFF).withOpacity(0.5),
                             labelColor: const Color(0xFFFFFFFF),
                             tabs: [
-                              Tab(
-                                icon: Icon(
-                                  JamIcons.picture,
-                                  color: Theme.of(context).accentColor,
-                                ),
+                              Text(
+                                "Wallpapers",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyText2
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
                               ),
-                              Tab(
-                                icon: Icon(
-                                  JamIcons.instant_picture,
-                                  color: Theme.of(context).accentColor,
-                                ),
+                              Text(
+                                "Setups",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyText2
+                                    .copyWith(
+                                        color: Theme.of(context).accentColor),
                               ),
                             ]),
                       ),
