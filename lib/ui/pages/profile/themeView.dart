@@ -31,7 +31,6 @@ List<Color> accentColors = [
   const Color(0xFF795548),
   const Color(0xFF9e9e9e),
   const Color(0xFF607d8b),
-  const Color(0xFF000000),
 ];
 
 class ThemeView extends StatefulWidget {
