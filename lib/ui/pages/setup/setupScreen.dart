@@ -34,7 +34,7 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   final PageController controller = PageController(
-    viewportFraction: 0.68,
+    viewportFraction: 0.78,
   );
   Future future;
 
@@ -214,102 +214,115 @@ class _SetupPageState extends State<SetupPage> {
                                       : MediaQuery.of(context).size.height *
                                           0.0499,
                                 ),
-                                child: PremiumBannerSetupOld(
-                                  comparator: index < 5,
-                                  child: Align(
-                                    alignment: Alignment.topCenter,
-                                    child: CachedNetworkImage(
-                                      imageUrl: Provider.of<SetupProvider>(
-                                              context,
-                                              listen: false)
-                                          .setups[index]['image']
-                                          .toString(),
-                                      imageBuilder: (context, imageProvider) =>
-                                          Container(
-                                        width:
-                                            MediaQuery.of(context).size.height *
-                                                0.7 *
-                                                (9 / 19.5),
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.7,
-                                        decoration: BoxDecoration(
-                                          boxShadow: pageNumber == index
-                                              ? Provider.of<ThemeModel>(context)
-                                                          .returnThemeType() ==
-                                                      "Light"
-                                                  ? [
-                                                      BoxShadow(
-                                                        color: Colors.black
-                                                            .withOpacity(.15),
-                                                        blurRadius: 38,
-                                                        offset:
-                                                            const Offset(0, 19),
-                                                      ),
-                                                      BoxShadow(
-                                                        color: Colors.black
-                                                            .withOpacity(.10),
-                                                        blurRadius: 12,
-                                                        offset:
-                                                            const Offset(0, 15),
-                                                      )
-                                                    ]
-                                                  : [
-                                                      BoxShadow(
-                                                        color: Colors.black
-                                                            .withOpacity(.7),
-                                                        blurRadius: 38,
-                                                        offset:
-                                                            const Offset(0, 19),
-                                                      ),
-                                                      BoxShadow(
-                                                        color: Colors.black
-                                                            .withOpacity(.6),
-                                                        blurRadius: 12,
-                                                        offset:
-                                                            const Offset(0, 15),
-                                                      )
-                                                    ]
-                                              : [],
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: CachedNetworkImage(
+                                    imageUrl: Provider.of<SetupProvider>(
+                                            context,
+                                            listen: false)
+                                        .setups[index]['image']
+                                        .toString(),
+                                    imageBuilder: (context, imageProvider) =>
+                                        Container(
+                                      width:
+                                          MediaQuery.of(context).size.height *
+                                              0.7 *
+                                              (9 / 19.5),
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.7,
+                                      decoration: BoxDecoration(
+                                        boxShadow: pageNumber == index
+                                            ? Provider.of<ThemeModel>(context)
+                                                        .returnThemeType() ==
+                                                    "Light"
+                                                ? [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withOpacity(.15),
+                                                      blurRadius: 38,
+                                                      offset:
+                                                          const Offset(0, 19),
+                                                    ),
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withOpacity(.10),
+                                                      blurRadius: 12,
+                                                      offset:
+                                                          const Offset(0, 15),
+                                                    )
+                                                  ]
+                                                : [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withOpacity(.7),
+                                                      blurRadius: 38,
+                                                      offset:
+                                                          const Offset(0, 19),
+                                                    ),
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withOpacity(.6),
+                                                      blurRadius: 12,
+                                                      offset:
+                                                          const Offset(0, 15),
+                                                    )
+                                                  ]
+                                            : [],
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: PremiumBannerSetupOld(
+                                        comparator: index < 5,
+                                        child: ClipRRect(
                                           borderRadius:
                                               BorderRadius.circular(10),
-                                          image: DecorationImage(
-                                              image: imageProvider,
-                                              fit: BoxFit.fill),
-                                        ),
-                                      ),
-                                      progressIndicatorBuilder:
-                                          (context, url, downloadProgress) =>
-                                              Container(
-                                        width:
-                                            MediaQuery.of(context).size.height *
+                                          child: Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
                                                 0.7 *
                                                 (9 / 19.5),
-                                        height:
-                                            MediaQuery.of(context).size.height *
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
                                                 0.7,
-                                        child: Center(
-                                          child: CircularProgressIndicator(
-                                              valueColor:
-                                                  AlwaysStoppedAnimation(
-                                                Provider.of<ThemeModel>(context,
-                                                                listen: false)
-                                                            .currentTheme !=
-                                                        kDarkTheme2
-                                                    ? config.Colors()
-                                                        .mainAccentColor(1)
-                                                    : Theme.of(context)
-                                                        .accentColor,
-                                              ),
-                                              value: downloadProgress.progress),
+                                            child: Image(
+                                                image: imageProvider,
+                                                fit: BoxFit.fill),
+                                          ),
                                         ),
                                       ),
-                                      errorWidget: (context, url, error) =>
-                                          Center(
-                                        child: Icon(
-                                          JamIcons.close_circle_f,
-                                          color: Theme.of(context).accentColor,
-                                        ),
+                                    ),
+                                    progressIndicatorBuilder:
+                                        (context, url, downloadProgress) =>
+                                            Container(
+                                      width:
+                                          MediaQuery.of(context).size.height *
+                                              0.7 *
+                                              (9 / 19.5),
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.7,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                            valueColor: AlwaysStoppedAnimation(
+                                              Provider.of<ThemeModel>(context,
+                                                              listen: false)
+                                                          .currentTheme !=
+                                                      kDarkTheme2
+                                                  ? config.Colors()
+                                                      .mainAccentColor(1)
+                                                  : Theme.of(context)
+                                                      .accentColor,
+                                            ),
+                                            value: downloadProgress.progress),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Center(
+                                      child: Icon(
+                                        JamIcons.close_circle_f,
+                                        color: Theme.of(context).accentColor,
                                       ),
                                     ),
                                   ),
