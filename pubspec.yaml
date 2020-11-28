@@ -57,6 +57,7 @@ dependencies:
   provider: ^4.1.3
   purchases_flutter: ^1.2.1
   rate_my_app: ^0.7.2
+  rive: ^0.6.3
   screenshot: ^0.2.0
   share: ^0.6.4
   sliding_up_panel: ^1.0.2
