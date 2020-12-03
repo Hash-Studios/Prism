@@ -776,21 +776,23 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     if (pickedFile != null) {
                                       Future.delayed(const Duration())
                                           .then((value) async {
-                                        final List argumentsFromWall =
+                                        final argumentsFromWall =
                                             await Navigator.pushNamed(
                                                 context, uploadWallRoute,
                                                 arguments: [
                                               File(pickedFile.path)
                                             ]);
-                                        if (argumentsFromWall != null &&
-                                            argumentsFromWall.length == 2) {
-                                          setState(() {
-                                            wallpaperUploadLink =
-                                                argumentsFromWall[0].toString();
-                                            wallpaperId =
-                                                argumentsFromWall[1].toString();
-                                            wallpaperUploaded = true;
-                                          });
+                                        if (argumentsFromWall != null) {
+                                          final List argsC =
+                                              argumentsFromWall as List;
+                                          if (argsC.length == 2) {
+                                            setState(() {
+                                              wallpaperUploadLink =
+                                                  argsC[0].toString();
+                                              wallpaperId = argsC[1].toString();
+                                              wallpaperUploaded = true;
+                                            });
+                                          }
                                         }
                                       });
                                     }
