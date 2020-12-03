@@ -477,6 +477,10 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                   ["wall_id"] ==
                                               null) {
                                             debugPrint("Id Not Found!");
+                                             launch(user_data
+                                              .userProfileSetups[index]
+                                                  ["wallpaper_url"]
+                                              .toString());
                                           } else {
                                             Navigator.pushNamed(
                                                 context, shareRoute,
@@ -567,6 +571,10 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                       index]["wall_id"] ==
                                                   null) {
                                                 debugPrint("Id Not Found!");
+                                                 launch(user_data
+                                                  .userProfileSetups[index]
+                                                      ["wallpaper_url"]
+                                                  .toString());
                                               } else {
                                                 Navigator.pushNamed(
                                                     context, shareRoute,
@@ -672,6 +680,10 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                         index]["wall_id"] ==
                                                     null) {
                                                   debugPrint("Id Not Found!");
+                                                   launch(user_data
+                                                    .userProfileSetups[index]
+                                                        ["wallpaper_url"]
+                                                    .toString());
                                                 } else {
                                                   Navigator.pushNamed(
                                                       context, shareRoute,
