@@ -510,6 +510,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                               null) {
                                                             debugPrint(
                                                                 "Id Not Found!");
+                                                            launch(sdata.setup[
+                                                                    "wallpaper_url"]
+                                                                .toString());
                                                           } else {
                                                             Navigator.pushNamed(
                                                                 context,
@@ -600,6 +603,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                   null) {
                                                                 debugPrint(
                                                                     "Id Not Found!");
+                                                                launch(sdata
+                                                                    .setup[
+                                                                        "wallpaper_url"]
+                                                                    .toString());
                                                               } else {
                                                                 Navigator.pushNamed(
                                                                     context,
@@ -710,6 +717,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                     null) {
                                                                   debugPrint(
                                                                       "Id Not Found!");
+                                                                  launch(sdata
+                                                                      .setup[
+                                                                          "wallpaper_url"]
+                                                                      .toString());
                                                                 } else {
                                                                   Navigator.pushNamed(
                                                                       context,
