@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:animations/animations.dart';
@@ -314,25 +315,26 @@ class NotificationCard extends StatelessWidget {
           child: Ink(
             child: Stack(
               children: [
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.width * 9 / 16,
-                  child: CachedNetworkImage(
-                    imageUrl: notification.imageUrl ??
-                        "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                ColorFiltered(
+                  colorFilter: const ColorFilter.mode(
+                      Colors.black, BlendMode.saturation),
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.width * 9 / 16,
                     child: CachedNetworkImage(
                       imageUrl: notification.imageUrl ??
                           "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
-                      fit: BoxFit.contain,
+                      fit: BoxFit.cover,
                     ),
+                  ),
+                ),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.width * 9 / 16,
+                  child: CachedNetworkImage(
+                    imageUrl: notification.imageUrl ??
+                        "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
+                    fit: BoxFit.contain,
                   ),
                 ),
                 Padding(
