@@ -243,9 +243,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                               child: AnimatedOpacity(
                                 duration: const Duration(),
                                 opacity: panelCollapsed ? 0.0 : 1.0,
-                                child: Icon(
-                                  JamIcons.chevron_down,
-                                  color: Theme.of(context).accentColor,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    panelController.close();
+                                  },
+                                  child: Icon(
+                                    JamIcons.chevron_down,
+                                    color: Theme.of(context).accentColor,
+                                  ),
                                 ),
                               ),
                             )),
@@ -724,9 +729,14 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   child: AnimatedOpacity(
                                     duration: const Duration(),
                                     opacity: panelCollapsed ? 0.0 : 1.0,
-                                    child: Icon(
-                                      JamIcons.chevron_down,
-                                      color: Theme.of(context).accentColor,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        panelController.close();
+                                      },
+                                      child: Icon(
+                                        JamIcons.chevron_down,
+                                        color: Theme.of(context).accentColor,
+                                      ),
                                     ),
                                   ),
                                 )),
@@ -1327,9 +1337,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       child: AnimatedOpacity(
                                         duration: const Duration(),
                                         opacity: panelCollapsed ? 0.0 : 1.0,
-                                        child: Icon(
-                                          JamIcons.chevron_down,
-                                          color: Theme.of(context).accentColor,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            panelController.close();
+                                          },
+                                          child: Icon(
+                                            JamIcons.chevron_down,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                          ),
                                         ),
                                       ),
                                     )),
@@ -1870,10 +1886,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           child: AnimatedOpacity(
                                             duration: const Duration(),
                                             opacity: panelCollapsed ? 0.0 : 1.0,
-                                            child: Icon(
-                                              JamIcons.chevron_down,
-                                              color:
-                                                  Theme.of(context).accentColor,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                panelController.close();
+                                              },
+                                              child: Icon(
+                                                JamIcons.chevron_down,
+                                                color: Theme.of(context)
+                                                    .accentColor,
+                                              ),
                                             ),
                                           ),
                                         )),
@@ -2452,10 +2473,15 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                           child: AnimatedOpacity(
                                             duration: const Duration(),
                                             opacity: panelCollapsed ? 0.0 : 1.0,
-                                            child: Icon(
-                                              JamIcons.chevron_down,
-                                              color:
-                                                  Theme.of(context).accentColor,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                panelController.close();
+                                              },
+                                              child: Icon(
+                                                JamIcons.chevron_down,
+                                                color: Theme.of(context)
+                                                    .accentColor,
+                                              ),
                                             ),
                                           ),
                                         )),

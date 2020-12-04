@@ -214,10 +214,14 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                   child: AnimatedOpacity(
                                     duration: const Duration(),
                                     opacity: panelCollapsed ? 0.0 : 1.0,
-                                    child: Icon(
-                                      JamIcons.chevron_down,
-                                      color: Theme.of(context).accentColor,
-                                    ),
+                                    child: GestureDetector(
+                            onTap: (){
+                              panelController.close();
+                            },
+                                                      child: Icon(
+                              JamIcons.chevron_down,
+                              color: Theme.of(context).accentColor,
+                            ),),
                                   ),
                                 )),
                                 Expanded(
@@ -881,7 +885,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                 padding:
                                                     const EdgeInsets.all(17),
                                                 child: Icon(
-                                                  JamIcons.trash,
+                                                  JamIcons.heart,
                                                   color: Theme.of(context)
                                                       .accentColor,
                                                   size: 20,
