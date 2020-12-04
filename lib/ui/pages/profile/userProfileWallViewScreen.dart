@@ -229,10 +229,14 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                           child: AnimatedOpacity(
                             duration: const Duration(),
                             opacity: panelCollapsed ? 0.0 : 1.0,
-                            child: Icon(
+                            child: GestureDetector(
+                            onTap: (){
+                              panelController.close();
+                            },
+                                                      child: Icon(
                               JamIcons.chevron_down,
                               color: Theme.of(context).accentColor,
-                            ),
+                            ),),
                           ),
                         )),
                         ColorBar(colors: colors),
