@@ -233,23 +233,30 @@ class _UserProfileGridState extends State<UserProfileGrid>
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 8),
                     itemBuilder: (context, index) {
-                      return PremiumBannerWalls(
-                        comparator: !globals.isPremiumWall(
-                            globals.premiumCollections,
-                            userdata.userProfileWalls[index]["collections"]
-                                    as List ??
-                                []),
-                        defaultChild: FocusedMenuHolder(
-                          provider: "UserProfileWall",
-                          index: index,
-                          child: PhotographerWallTile(
-                              animation: animation, index: index),
-                        ),
-                        trueChild: PhotographerWallTile(
-                          animation: animation,
-                          index: index,
-                        ),
-                      );
+                      return main.prefs.get('premium') != true
+                          ? PremiumBannerWalls(
+                              comparator: !globals.isPremiumWall(
+                                  globals.premiumCollections,
+                                  userdata.userProfileWalls[index]
+                                          ["collections"] as List ??
+                                      []),
+                              defaultChild: FocusedMenuHolder(
+                                provider: "UserProfileWall",
+                                index: index,
+                                child: PhotographerWallTile(
+                                    animation: animation, index: index),
+                              ),
+                              trueChild: PhotographerWallTile(
+                                animation: animation,
+                                index: index,
+                              ),
+                            )
+                          : FocusedMenuHolder(
+                              provider: "UserProfileWall",
+                              index: index,
+                              child: PhotographerWallTile(
+                                  animation: animation, index: index),
+                            );
                     })
             : const LoadingCards());
   }

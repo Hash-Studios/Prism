@@ -514,6 +514,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                   .liked[index]["wall_id"] ==
                                               null) {
                                             debugPrint("Id Not Found!");
+                                            launch(Provider.of<
+                                                      FavouriteSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["wallpaper_url"]
+                                              .toString());
                                           } else {
                                             Navigator.pushNamed(
                                                 context, shareRoute,
@@ -627,6 +633,13 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       ["wall_id"] ==
                                                   null) {
                                                 debugPrint("Id Not Found!");
+                                                 launch(Provider.of<
+                                                          FavouriteSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["wallpaper_url"]
+                                                      
+                                                  .toString());
                                               } else {
                                                 Navigator.pushNamed(
                                                     context, shareRoute,
@@ -755,6 +768,13 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         ["wall_id"] ==
                                                     null) {
                                                   debugPrint("Id Not Found!");
+                                                   launch(Provider.of<
+                                                            FavouriteSetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .liked[index]
+                                                        ["wallpaper_url"]
+                                                    .toString());
                                                 } else {
                                                   Navigator.pushNamed(
                                                       context, shareRoute,

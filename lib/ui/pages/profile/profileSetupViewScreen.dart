@@ -517,6 +517,13 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   ["wall_id"] ==
                                               null) {
                                             debugPrint("Id Not Found!");
+                                            launch(
+                                              Provider.of<ProfileSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .profileSetups[index]
+                                                      ["wallpaper_url"]
+                                                  .toString());
                                           } else {
                                             Navigator.pushNamed(
                                                 context, shareRoute,
@@ -633,6 +640,13 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       ["wall_id"] ==
                                                   null) {
                                                 debugPrint("Id Not Found!");
+                                                 launch(Provider.of<
+                                                          ProfileSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .profileSetups[index]
+                                                      ["wallpaper_url"]
+                                                  .toString());
                                               } else {
                                                 Navigator.pushNamed(
                                                     context, shareRoute,
@@ -764,6 +778,13 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                         index]["wall_id"] ==
                                                     null) {
                                                   debugPrint("Id Not Found!");
+                                                  launch(Provider.of<
+                                                            ProfileSetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .profileSetups[index]
+                                                        ["wallpaper_url"]
+                                                    .toString());
                                                 } else {
                                                   Navigator.pushNamed(
                                                       context, shareRoute,
