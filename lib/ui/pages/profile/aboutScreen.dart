@@ -322,12 +322,14 @@ class ActionButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(4.0),
       child: ActionChip(
-          avatar: Icon(icon,
-              color: Provider.of<ThemeModel>(context, listen: false)
-                          .currentTheme !=
-                      kDarkTheme2
-                  ? config.Colors().mainAccentColor(1)
-                  : Theme.of(context).accentColor),
+          avatar: Icon(
+            icon,
+            color: Provider.of<ThemeModel>(context).currentTheme == kDarkTheme2
+                ? config.Colors().mainAccentColor(1) == Colors.black
+                    ? Theme.of(context).accentColor
+                    : config.Colors().mainAccentColor(1)
+                : config.Colors().mainAccentColor(1),
+          ),
           label: Text(
             text,
             textAlign: TextAlign.center,
