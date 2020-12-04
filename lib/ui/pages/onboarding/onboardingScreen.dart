@@ -457,7 +457,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
-                                                        OptionalInfo()));
+                                                        OptionalInfo(
+                                                          img: Image.asset(
+                                                              'assets/images/first.png'),
+                                                          heading:
+                                                              'Interact with community',
+                                                          subheading:
+                                                              'Add your twitter or instagram handles below',
+                                                          showSkip: true,
+                                                          skipText: "Skip",
+                                                          doneText: "DONE",
+                                                        )));
                                           });
                                         }).catchError((e) {
                                           debugPrint(e.toString());
