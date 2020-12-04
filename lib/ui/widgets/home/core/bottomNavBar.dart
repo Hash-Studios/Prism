@@ -706,7 +706,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             child: Container(
               width: MediaQuery.of(context).size.width * 0.8,
               child: Text(
-                "Now you can upload your wallpapers & setups, and zip bada boom, in a matter of seconds, they will be live and everyone across the globe can view them.",
+                "Please only upload high-quaity original wallpapers and setups. Please do not upload wallpapers from other apps. You can also report wallpapers or setups by clicking the copyright button after opening them.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
