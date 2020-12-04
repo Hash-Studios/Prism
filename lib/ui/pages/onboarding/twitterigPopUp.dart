@@ -566,7 +566,7 @@ class ApplyButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 15),
       child: GestureDetector(
         onTap: () {
-          launch("formURL");
+          launch("https://forms.gle/MnSu824XXrpMXcox7");
         },
         child: Container(
             height: 50,
