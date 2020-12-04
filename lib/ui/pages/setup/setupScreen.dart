@@ -306,14 +306,19 @@ class _SetupPageState extends State<SetupPage> {
                                       child: Center(
                                         child: CircularProgressIndicator(
                                             valueColor: AlwaysStoppedAnimation(
-                                              Provider.of<ThemeModel>(context,
-                                                              listen: false)
-                                                          .currentTheme !=
+                                              Provider.of<ThemeModel>(context)
+                                                          .currentTheme ==
                                                       kDarkTheme2
                                                   ? config.Colors()
-                                                      .mainAccentColor(1)
-                                                  : Theme.of(context)
-                                                      .accentColor,
+                                                              .mainAccentColor(
+                                                                  1) ==
+                                                          Colors.black
+                                                      ? Theme.of(context)
+                                                          .accentColor
+                                                      : config.Colors()
+                                                          .mainAccentColor(1)
+                                                  : config.Colors()
+                                                      .mainAccentColor(1),
                                             ),
                                             value: downloadProgress.progress),
                                       ),
@@ -348,11 +353,12 @@ class _SetupPageState extends State<SetupPage> {
                   },
                   child: Icon(
                     JamIcons.chevron_left,
-                    color: Provider.of<ThemeModel>(context, listen: false)
-                                .currentTheme !=
+                    color: Provider.of<ThemeModel>(context).currentTheme ==
                             kDarkTheme2
-                        ? config.Colors().mainAccentColor(1)
-                        : Theme.of(context).accentColor,
+                        ? config.Colors().mainAccentColor(1) == Colors.black
+                            ? Theme.of(context).accentColor
+                            : config.Colors().mainAccentColor(1)
+                        : config.Colors().mainAccentColor(1),
                   ),
                 ),
               ),
@@ -374,11 +380,12 @@ class _SetupPageState extends State<SetupPage> {
                   },
                   child: Icon(
                     JamIcons.chevron_right,
-                    color: Provider.of<ThemeModel>(context, listen: false)
-                                .currentTheme !=
+                    color: Provider.of<ThemeModel>(context).currentTheme ==
                             kDarkTheme2
-                        ? config.Colors().mainAccentColor(1)
-                        : Theme.of(context).accentColor,
+                        ? config.Colors().mainAccentColor(1) == Colors.black
+                            ? Theme.of(context).accentColor
+                            : config.Colors().mainAccentColor(1)
+                        : config.Colors().mainAccentColor(1),
                   ),
                 ),
               ),
