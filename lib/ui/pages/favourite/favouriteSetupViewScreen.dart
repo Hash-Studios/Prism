@@ -177,9 +177,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                         child: AnimatedOpacity(
                           duration: const Duration(),
                           opacity: panelCollapsed ? 0.0 : 1.0,
-                          child: Icon(
-                            JamIcons.chevron_down,
-                            color: Theme.of(context).accentColor,
+                          child: GestureDetector(
+                            onTap: () {
+                              panelController.close();
+                            },
+                            child: Icon(
+                              JamIcons.chevron_down,
+                              color: Theme.of(context).accentColor,
+                            ),
                           ),
                         ),
                       )),
@@ -515,11 +520,11 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                               null) {
                                             debugPrint("Id Not Found!");
                                             launch(Provider.of<
-                                                      FavouriteSetupProvider>(
-                                                  context,
-                                                  listen: false)
-                                              .liked[index]["wallpaper_url"]
-                                              .toString());
+                                                        FavouriteSetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[index]["wallpaper_url"]
+                                                .toString());
                                           } else {
                                             Navigator.pushNamed(
                                                 context, shareRoute,
@@ -633,13 +638,13 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       ["wall_id"] ==
                                                   null) {
                                                 debugPrint("Id Not Found!");
-                                                 launch(Provider.of<
-                                                          FavouriteSetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["wallpaper_url"]
-                                                      
-                                                  .toString());
+                                                launch(Provider.of<
+                                                            FavouriteSetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .liked[index]
+                                                        ["wallpaper_url"]
+                                                    .toString());
                                               } else {
                                                 Navigator.pushNamed(
                                                     context, shareRoute,
@@ -768,13 +773,13 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         ["wall_id"] ==
                                                     null) {
                                                   debugPrint("Id Not Found!");
-                                                   launch(Provider.of<
-                                                            FavouriteSetupProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .liked[index]
-                                                        ["wallpaper_url"]
-                                                    .toString());
+                                                  launch(Provider.of<
+                                                              FavouriteSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .liked[index]
+                                                          ["wallpaper_url"]
+                                                      .toString());
                                                 } else {
                                                   Navigator.pushNamed(
                                                       context, shareRoute,

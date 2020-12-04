@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
 
 class CategoriesBar extends StatefulWidget {
   const CategoriesBar({
@@ -77,16 +78,30 @@ class _CategoriesBarState extends State<CategoriesBar> {
         alignment: Alignment.centerLeft,
         child: Container(
           height: 26,
-          width: 110,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: SvgPicture.string(
-              prismTextLogo.replaceAll(
-                "black",
-                "#${Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2)}",
-              ),
-            ),
-          ),
+          width: Provider.of<CategorySupplier>(context).getCurrentChoice ==
+                  "Community"
+              ? 110
+              : 200,
+          child: Provider.of<CategorySupplier>(context).getCurrentChoice ==
+                  "Community"
+              ? SvgPicture.string(
+                  prismTextLogo.replaceAll(
+                    "black",
+                    "#${Theme.of(context).accentColor.value.toRadixString(16).toString().substring(2)}",
+                  ),
+                )
+              : Text(
+                  "   ${Provider.of<CategorySupplier>(context).getCurrentChoice}"
+                      .toUpperCase(),
+                  maxLines: 1,
+                  textAlign: TextAlign.left,
+                  overflow: TextOverflow.fade,
+                  style: Theme.of(context).textTheme.headline3.copyWith(
+                        fontFamily: "Proxima Nova",
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).accentColor,
+                      ),
+                ),
         ),
       ),
       actions: [
