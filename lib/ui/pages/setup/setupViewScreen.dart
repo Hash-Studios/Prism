@@ -510,6 +510,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   .setups[index]["wall_id"] ==
                                               null) {
                                             debugPrint("Id Not Found!");
+                                            launch(Provider.of<SetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .setups[index]["wallpaper_url"]
+                                                .toString());
                                           } else {
                                             Navigator.pushNamed(
                                                 context, shareRoute,
@@ -619,6 +624,13 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                       ["wall_id"] ==
                                                   null) {
                                                 debugPrint("Id Not Found!");
+                                                launch(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["wallpaper_url"]
+                                                        .toString());
                                               } else {
                                                 Navigator.pushNamed(
                                                     context, shareRoute,
@@ -742,6 +754,13 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                         ["wall_id"] ==
                                                     null) {
                                                   debugPrint("Id Not Found!");
+                                                  launch(Provider.of<
+                                                              SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["wallpaper_url"]
+                                                      .toString());
                                                 } else {
                                                   Navigator.pushNamed(
                                                       context, shareRoute,
