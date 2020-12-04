@@ -136,23 +136,17 @@ You can also report bugs, upload your setups/walls on our telegram channel
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-### v2.6.1
-- Added ability to favourite setups
-- Added setups to profile
-- Added more modifiers in in-app-notifications
-- Redesigned setup's info panel.
-- Redesigned profile page.
-- Added rightside - nav drawer in profile
-- Added support for smaller screen phone.
-- Updated dialogs' design
-- Added animations to dialogs
-- Added Ink ripple animations
-- Added more animations in sliding panel
-- Added support for Scoped Storage Android 11
-- Added more crop ratios in wallpaper upload
-- Added an easter egg
-- Fixed Profile Nav Issue
-- Added reshuffling of search tags
+### v2.6.2
+- Fixed notification modifiers
+- Added new image compression technique
+- Fixed premium wallpapers & setups
+- Added new onboarding pages
+- Added report button in walls and setups
+- Redesigned premium page
+- Redesigned settings page
+- Increased content value in premium
+- Fixed wallpaper uploading in setups
+- Added new filters (Blur, Invert, Edge & Sharpen)
 - Minor bug fixes and improvements
 
 ## Demo
