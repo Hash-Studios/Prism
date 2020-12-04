@@ -6,6 +6,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/pages/home/wallpapers/customFilters.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:animations/animations.dart';
@@ -51,16 +52,19 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     NoFilter(),
     AdenFilter(),
     AmaroFilter(),
+    BlurFilter(),
     BrannanFilter(),
     BrooklynFilter(),
     ClarendonFilter(),
     DogpatchFilter(),
+    EdgeDetectionFilter(),
     GinghamFilter(),
     GinzaFilter(),
     HefeFilter(),
     HelenaFilter(),
     HudsonFilter(),
     InkwellFilter(),
+    InvertFilter(),
     JunoFilter(),
     KelvinFilter(),
     LarkFilter(),
@@ -69,6 +73,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     MayfairFilter(),
     MoonFilter(),
     ReyesFilter(),
+    SharpenFilter(),
     SkylineFilter(),
     SutroFilter(),
     VesperFilter(),
@@ -374,6 +379,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                       child: Container(
                         color: Theme.of(context).primaryColor,
                         child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                           scrollDirection: Axis.horizontal,
                           itemCount: selectedFilters.length,
                           itemBuilder: (BuildContext context, int index) {
@@ -382,7 +388,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                 _filter = selectedFilters[index];
                               }),
                               child: Container(
-                                padding: const EdgeInsets.fromLTRB(16, 8, 0, 8),
+                                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: <Widget>[
