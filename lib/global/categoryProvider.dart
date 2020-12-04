@@ -35,6 +35,10 @@ class CategorySupplier extends ChangeNotifier {
     notifyListeners();
   }
 
+  String get getCurrentChoice {
+    return selectedChoice.name;
+  }
+
   Future<List> changeWallpaperFuture(CategoryMenu choice, String mode) async {
     for (final category in categories) {
       if (category['name'] == choice.name) {
