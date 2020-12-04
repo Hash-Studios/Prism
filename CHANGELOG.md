@@ -1,5 +1,18 @@
 ## Changelog
 
+### v2.6.2
+- Fixed notification modifiers
+- Added new image compression technique
+- Fixed premium wallpapers & setups
+- Added new onboarding pages
+- Added report button in walls and setups
+- Redesigned premium page
+- Redesigned settings page
+- Increased content value in premium
+- Fixed wallpaper uploading in setups
+- Added new filters (Blur, Invert, Edge & Sharpen)
+- Minor bug fixes and improvements
+
 ### v2.6.1
 - Added ability to favourite setups
 - Added setups to profile
