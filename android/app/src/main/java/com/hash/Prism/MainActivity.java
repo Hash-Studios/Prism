@@ -171,6 +171,9 @@ public class MainActivity extends FlutterActivity {
                     } else if (call.method.equals("save_image")) {
                         String link = call.argument("link");
                         Picasso.get().load(link).into(saveImageTarget);
+                    } else if (call.method.equals("save_image_file")) {
+                        String link = call.argument("link");
+                        Picasso.get().load("file://" + link).into(saveImageTarget);
                     }
                 });
     }
