@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
 import 'package:Prism/data/share/createDynamicLink.dart';
@@ -119,6 +120,9 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     index = widget.arguments[1] as int;
     link = widget.arguments[2] as String;
     isLoading = true;
+    if (provider == "Prism") {
+      updateViews(data.subPrismWalls[index]["id"].toString().toUpperCase());
+    }
     _updatePaletteGenerator();
   }
 
