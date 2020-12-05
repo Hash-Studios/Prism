@@ -25,6 +25,7 @@ dependencies:
   cloud_firestore: ^0.13.5
   confetti: ^0.5.4+1
   data_connection_checker: ^0.3.4
+  device_apps: ^1.2.0
   device_info: ^0.4.2+7
   extended_image: ^0.9.0
   firebase_admob: ^0.9.3+4

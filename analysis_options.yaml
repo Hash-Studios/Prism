@@ -1,5 +1,8 @@
 # include: package:effective_dart/analysis_options.yaml
 include: package:lint/analysis_options.yaml
+linter:
+  rules:
+    lowercase_with_underscores: false
 analyzer:
   errors:
     # unused_import: ignore

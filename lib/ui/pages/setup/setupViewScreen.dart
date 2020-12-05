@@ -14,6 +14,7 @@ import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -508,6 +509,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     SetupDetailsTile(
+                                      isInstalled: Future.value(false),
                                       onTap: () async {
                                         if (Provider.of<SetupProvider>(context,
                                                     listen: false)
@@ -587,12 +589,55 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
+                                      isInstalled: Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["icon_url"]
+                                              .toString()
+                                              .contains('play.google.com/store/apps/details?id=')
+                                          ? DeviceApps.isAppInstalled(
+                                              Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["icon_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0])
+                                          : Future.value(false),
                                       onTap: () async {
-                                        launch(Provider.of<SetupProvider>(
-                                                context,
-                                                listen: false)
-                                            .setups[index]["icon_url"]
-                                            .toString());
+                                       if( Provider.of<SetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .setups[index]["icon_url"]
+                                              .toString()
+                                              .contains('play.google.com/store/apps/details?id=')
+                                          ) {final isInstalled =
+                                            await DeviceApps.isAppInstalled(
+                                                Provider.of<SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0]);
+                                        isInstalled
+                                            ? DeviceApps.openApp(
+                                                Provider.of<SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]["icon_url"]
+                                                    .toString()
+                                                    .split("details?id=")[1]
+                                                    .split("&")[0])
+                                            : launch(Provider.of<SetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .setups[index]["icon_url"]
+                                                .toString());}else{launch(Provider.of<SetupProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .setups[index]["icon_url"]
+                                                .toString());}
                                       },
                                       tileText: Provider.of<SetupProvider>(
                                               context,
@@ -619,6 +664,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         SetupDetailsTile(
+                                          isInstalled: Future.value(false),
                                           onTap: () async {
                                             if (Provider.of<SetupProvider>(
                                                         context,
@@ -706,12 +752,62 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               const Duration(milliseconds: 150),
                                         ),
                                         SetupDetailsTile(
+                                          isInstalled: Provider.of<
+                                                          SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["icon_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')
+                                              ? DeviceApps.isAppInstalled(
+                                                  Provider.of<SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]["icon_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                              : Future.value(false),
                                           onTap: () async {
-                                            launch(Provider.of<SetupProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .setups[index]["icon_url"]
-                                                .toString());
+                                            if(Provider.of<
+                                                          SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["icon_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')){final isInstalled =
+                                                await DeviceApps.isAppInstalled(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["icon_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0]);
+                                            isInstalled
+                                                ? DeviceApps.openApp(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["icon_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                : launch(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["icon_url"]
+                                                        .toString());}else{launch(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["icon_url"]
+                                                        .toString());}
                                           },
                                           tileText: Provider.of<SetupProvider>(
                                                   context,
@@ -724,12 +820,63 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               const Duration(milliseconds: 200),
                                         ),
                                         SetupDetailsTile(
+                                          isInstalled: Provider.of<
+                                                          SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["widget_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')
+                                              ? DeviceApps.isAppInstalled(
+                                                  Provider.of<SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["widget_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                              : Future.value(false),
                                           onTap: () async {
-                                            launch(Provider.of<SetupProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .setups[index]["widget_url"]
-                                                .toString());
+                                            if(Provider.of<
+                                                          SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["widget_url"]
+                                                  .toString()
+                                                  .contains('play.google.com/store/apps/details?id=')){final isInstalled =
+                                                await DeviceApps.isAppInstalled(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["widget_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0]);
+                                            isInstalled
+                                                ? DeviceApps.openApp(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["widget_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                : launch(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["widget_url"]
+                                                        .toString());}else{launch(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["widget_url"]
+                                                        .toString());}
                                           },
                                           tileText: Provider.of<SetupProvider>(
                                                   context,
@@ -749,6 +896,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       child: ListView(
                                         children: [
                                           SetupDetailsTile(
+                                            isInstalled: Future.value(false),
                                             onTap: () async {
                                               if (Provider.of<SetupProvider>(
                                                           context,
@@ -837,12 +985,62 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                 milliseconds: 150),
                                           ),
                                           SetupDetailsTile(
+                                            isInstalled: Provider.of<
+                                                            SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]["icon_url"]
+                                                    .toString()
+                                                    .contains('play.google.com/store/apps/details?id=')
+                                                ? DeviceApps.isAppInstalled(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["icon_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                : Future.value(false),
                                             onTap: () async {
-                                              launch(Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups[index]["icon_url"]
-                                                  .toString());
+                                             if(Provider.of<
+                                                            SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]["icon_url"]
+                                                    .toString()
+                                                    .contains('play.google.com/store/apps/details?id=')){ final isInstalled =
+                                                  await DeviceApps
+                                                      .isAppInstalled(Provider
+                                                              .of<SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                          .setups[index]
+                                                              ["icon_url"]
+                                                          .toString()
+                                                          .split(
+                                                              "details?id=")[1]
+                                                          .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(Provider
+                                                          .of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                      .setups[index]["icon_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                                  : launch(Provider.of<
+                                                              SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]["icon_url"]
+                                                      .toString());}else{launch(Provider.of<
+                                                              SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]["icon_url"]
+                                                      .toString());}
                                             },
                                             tileText:
                                                 Provider.of<SetupProvider>(
@@ -856,12 +1054,65 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                 milliseconds: 200),
                                           ),
                                           SetupDetailsTile(
+                                            isInstalled: Provider.of<
+                                                            SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]["widget_url"]
+                                                    .toString()
+                                                    .contains('play.google.com/store/apps/details?id=')
+                                                ? DeviceApps.isAppInstalled(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["widget_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                : Future.value(false),
                                             onTap: () async {
-                                              launch(Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups[index]["widget_url"]
-                                                  .toString());
+                                              if(Provider.of<
+                                                            SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]["widget_url"]
+                                                    .toString()
+                                                    .contains('play.google.com/store/apps/details?id=')){final isInstalled =
+                                                  await DeviceApps
+                                                      .isAppInstalled(Provider
+                                                              .of<SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                          .setups[index]
+                                                              ["widget_url"]
+                                                          .toString()
+                                                          .split(
+                                                              "details?id=")[1]
+                                                          .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(Provider
+                                                          .of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                      .setups[index]
+                                                          ["widget_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                                  : launch(Provider.of<
+                                                              SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["widget_url"]
+                                                      .toString());}else{launch(Provider.of<
+                                                              SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["widget_url"]
+                                                      .toString());}
                                             },
                                             tileText:
                                                 Provider.of<SetupProvider>(
@@ -875,12 +1126,67 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                 milliseconds: 250),
                                           ),
                                           SetupDetailsTile(
+                                            isInstalled: Provider.of<
+                                                            SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]
+                                                        ["widget_url2"]
+                                                    .toString()
+                                                    .contains('play.google.com/store/apps/details?id=')
+                                                ? DeviceApps.isAppInstalled(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]
+                                                            ["widget_url2"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                : Future.value(false),
                                             onTap: () async {
-                                              launch(Provider.of<SetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .setups[index]["widget_url2"]
-                                                  .toString());
+                                             if( Provider.of<
+                                                            SetupProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .setups[index]
+                                                        ["widget_url2"]
+                                                    .toString()
+                                                    .contains('play.google.com/store/apps/details?id=')){ final isInstalled =
+                                                  await DeviceApps
+                                                      .isAppInstalled(Provider
+                                                              .of<SetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                          .setups[index]
+                                                              ["widget_url2"]
+                                                          .toString()
+                                                          .split(
+                                                              "details?id=")[1]
+                                                          .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(Provider
+                                                          .of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                      .setups[index]
+                                                          ["widget_url2"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                                  : launch(Provider.of<
+                                                              SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["widget_url2"]
+                                                      .toString());}else{ launch(Provider.of<
+                                                              SetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .setups[index]
+                                                          ["widget_url2"]
+                                                      .toString());}
                                             },
                                             tileText:
                                                 Provider.of<SetupProvider>(
@@ -1114,6 +1420,7 @@ class SetupDetailsTile extends StatelessWidget {
   final String tileType;
   final String tileText;
   final Function onTap;
+  final Future<bool> isInstalled;
   const SetupDetailsTile({
     Key key,
     @required this.delay,
@@ -1121,6 +1428,7 @@ class SetupDetailsTile extends StatelessWidget {
     @required this.tileType,
     @required this.onTap,
     @required this.panelCollapsed,
+    @required this.isInstalled,
   }) : super(key: key);
 
   @override
@@ -1176,9 +1484,22 @@ class SetupDetailsTile extends StatelessWidget {
                                     ),
                                   )),
                               Expanded(
-                                child: Icon(
-                                  JamIcons.chevron_right,
-                                  color: Theme.of(context).accentColor,
+                                child: FutureBuilder<bool>(
+                                  future: isInstalled,
+                                  initialData: false,
+                                  builder: (BuildContext context,
+                                      AsyncSnapshot snapshot) {
+                                    if (snapshot.data == true) {
+                                      return Icon(
+                                        JamIcons.check,
+                                        color: Theme.of(context).accentColor,
+                                      );
+                                    }
+                                    return Icon(
+                                      JamIcons.chevron_right,
+                                      color: Theme.of(context).accentColor,
+                                    );
+                                  },
                                 ),
                               )
                             ],
