@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
+import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
@@ -54,6 +55,10 @@ class _SetupViewScreenState extends State<SetupViewScreen>
         duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments[0] as int;
     isLoading = true;
+    updateViewsSetup(Provider.of<SetupProvider>(context, listen: false)
+        .setups[index]["id"]
+        .toString()
+        .toUpperCase());
     super.initState();
   }
 
@@ -175,14 +180,15 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                         child: AnimatedOpacity(
                           duration: const Duration(),
                           opacity: panelCollapsed ? 0.0 : 1.0,
-                          child:GestureDetector(
-                            onTap: (){
+                          child: GestureDetector(
+                            onTap: () {
                               panelController.close();
                             },
-                                                      child: Icon(
+                            child: Icon(
                               JamIcons.chevron_down,
                               color: Theme.of(context).accentColor,
-                            ),),
+                            ),
+                          ),
                         ),
                       )),
                       Expanded(
