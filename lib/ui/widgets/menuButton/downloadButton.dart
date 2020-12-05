@@ -121,24 +121,45 @@ class _DownloadButtonState extends State<DownloadButton> {
     toasts.codeSend("Starting Download");
 
     if (sdkInt >= 30) {
-      await platform
-          .invokeMethod('save_image', {"link": widget.link}).then((value) {
-        if (value as bool) {
-          analytics.logEvent(
-              name: 'download_wallpaper', parameters: {'link': widget.link});
-          toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-        } else {
-          toasts.error("Couldn't download! Please Retry!");
-        }
-        setState(() {
-          isLoading = false;
+      if (widget.link.contains("com.hash.prism")) {
+        await platform.invokeMethod(
+            'save_image_file', {"link": widget.link}).then((value) {
+          if (value as bool) {
+            analytics.logEvent(
+                name: 'download_wallpaper', parameters: {'link': widget.link});
+            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+          } else {
+            toasts.error("Couldn't download! Please Retry!");
+          }
+          setState(() {
+            isLoading = false;
+          });
+        }).catchError((e) {
+          debugPrint(e.toString());
+          setState(() {
+            isLoading = false;
+          });
         });
-      }).catchError((e) {
-        debugPrint(e.toString());
-        setState(() {
-          isLoading = false;
+      } else {
+        await platform
+            .invokeMethod('save_image', {"link": widget.link}).then((value) {
+          if (value as bool) {
+            analytics.logEvent(
+                name: 'download_wallpaper', parameters: {'link': widget.link});
+            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+          } else {
+            toasts.error("Couldn't download! Please Retry!");
+          }
+          setState(() {
+            isLoading = false;
+          });
+        }).catchError((e) {
+          debugPrint(e.toString());
+          setState(() {
+            isLoading = false;
+          });
         });
-      });
+      }
     } else {
       GallerySaver.saveImage(widget.link, albumName: "Prism").then((value) {
         analytics.logEvent(
