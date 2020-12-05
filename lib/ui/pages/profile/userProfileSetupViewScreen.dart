@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as user_data;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
@@ -54,6 +55,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments[0] as int;
+    updateViewsSetup(
+                        user_data.userProfileSetups[index]
+                                                ["id"].toString().toUpperCase());
     isLoading = true;
     super.initState();
   }
