@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
@@ -110,6 +111,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     index = widget.arguments[0] as int;
     thumb = widget.arguments[1] as String;
     isLoading = true;
+    if (Provider.of<FavouriteProvider>(context, listen: false).liked[index]
+            ["provider"] ==
+        "Prism") {
+      updateViews(Provider.of<FavouriteProvider>(context, listen: false)
+          .liked[index]["id"]
+          .toString()
+          .toUpperCase());
+    }
     _updatePaletteGenerator();
     super.initState();
   }
@@ -241,13 +250,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 duration: const Duration(),
                                 opacity: panelCollapsed ? 0.0 : 1.0,
                                 child: GestureDetector(
-                            onTap: (){
-                              panelController.close();
-                            },
-                                                      child: Icon(
-                              JamIcons.chevron_down,
-                              color: Theme.of(context).accentColor,
-                            ),),
+                                  onTap: () {
+                                    panelController.close();
+                                  },
+                                  child: Icon(
+                                    JamIcons.chevron_down,
+                                    color: Theme.of(context).accentColor,
+                                  ),
+                                ),
                               ),
                             )),
                             ColorBar(colors: colors),
@@ -1148,13 +1158,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 duration: const Duration(),
                                 opacity: panelCollapsed ? 0.0 : 1.0,
                                 child: GestureDetector(
-                            onTap: (){
-                              panelController.close();
-                            },
-                                                      child: Icon(
-                              JamIcons.chevron_down,
-                              color: Theme.of(context).accentColor,
-                            ),),
+                                  onTap: () {
+                                    panelController.close();
+                                  },
+                                  child: Icon(
+                                    JamIcons.chevron_down,
+                                    color: Theme.of(context).accentColor,
+                                  ),
+                                ),
                               ),
                             )),
                             ColorBar(colors: colors),
