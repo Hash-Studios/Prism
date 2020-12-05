@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
+import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart' as sdata;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -52,9 +53,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
   PanelController panelController = PanelController();
   AnimationController shakeController;
   bool panelCollapsed = true;
+  bool viewCounted;
 
   @override
   void initState() {
+    viewCounted = false;
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     name = widget.arguments[0].toString();
@@ -126,6 +129,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                 if (snapshot.hasError) {
                   return Center(child: Loader());
                 } else {
+                  if (viewCounted == false) {
+                    updateViewsSetup(
+                        sdata.setup["id"].toString().toUpperCase());
+                    viewCounted = true;
+                  }
                   return SlidingUpPanel(
                     backdropEnabled: true,
                     borderRadius: const BorderRadius.only(
@@ -215,13 +223,14 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                     duration: const Duration(),
                                     opacity: panelCollapsed ? 0.0 : 1.0,
                                     child: GestureDetector(
-                            onTap: (){
-                              panelController.close();
-                            },
-                                                      child: Icon(
-                              JamIcons.chevron_down,
-                              color: Theme.of(context).accentColor,
-                            ),),
+                                      onTap: () {
+                                        panelController.close();
+                                      },
+                                      child: Icon(
+                                        JamIcons.chevron_down,
+                                        color: Theme.of(context).accentColor,
+                                      ),
+                                    ),
                                   ),
                                 )),
                                 Expanded(
