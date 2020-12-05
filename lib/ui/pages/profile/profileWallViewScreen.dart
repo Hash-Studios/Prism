@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -110,6 +111,10 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
     index = widget.arguments[0] as int;
     thumb = widget.arguments[1].toString();
     isLoading = true;
+    updateViews(Provider.of<ProfileWallProvider>(context, listen: false)
+        .profileWalls[index]["id"]
+        .toString()
+        .toUpperCase());
     _updatePaletteGenerator();
     super.initState();
   }
@@ -230,13 +235,14 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                             duration: const Duration(),
                             opacity: panelCollapsed ? 0.0 : 1.0,
                             child: GestureDetector(
-                            onTap: (){
-                              panelController.close();
-                            },
-                                                      child: Icon(
-                              JamIcons.chevron_down,
-                              color: Theme.of(context).accentColor,
-                            ),),
+                              onTap: () {
+                                panelController.close();
+                              },
+                              child: Icon(
+                                JamIcons.chevron_down,
+                                color: Theme.of(context).accentColor,
+                              ),
+                            ),
                           ),
                         )),
                         ColorBar(colors: colors),
