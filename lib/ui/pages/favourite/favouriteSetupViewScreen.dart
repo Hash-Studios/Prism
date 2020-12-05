@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
+import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
@@ -52,6 +53,10 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments[0] as int;
+    updateViewsSetup(Provider.of<FavouriteSetupProvider>(context, listen: false)
+        .liked[index]["id"]
+        .toString()
+        .toUpperCase());
     isLoading = true;
     super.initState();
   }
