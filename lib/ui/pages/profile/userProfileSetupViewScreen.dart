@@ -10,6 +10,7 @@ import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -56,8 +57,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
         duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.arguments[0] as int;
     updateViewsSetup(
-                        user_data.userProfileSetups[index]
-                                                ["id"].toString().toUpperCase());
+        user_data.userProfileSetups[index]["id"].toString().toUpperCase());
     isLoading = true;
     super.initState();
   }
@@ -181,13 +181,14 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                           duration: const Duration(),
                           opacity: panelCollapsed ? 0.0 : 1.0,
                           child: GestureDetector(
-                            onTap: (){
+                            onTap: () {
                               panelController.close();
                             },
-                                                      child: Icon(
+                            child: Icon(
                               JamIcons.chevron_down,
                               color: Theme.of(context).accentColor,
-                            ),),
+                            ),
+                          ),
                         ),
                       )),
                       Expanded(
@@ -476,6 +477,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     SetupDetailsTile(
+                                      isInstalled: Future.value(false),
                                       onTap: () async {
                                         if (user_data.userProfileSetups[index]
                                                     ["wallpaper_url"]
@@ -485,10 +487,10 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                   ["wall_id"] ==
                                               null) {
                                             debugPrint("Id Not Found!");
-                                             launch(user_data
-                                              .userProfileSetups[index]
-                                                  ["wallpaper_url"]
-                                              .toString());
+                                            launch(user_data
+                                                .userProfileSetups[index]
+                                                    ["wallpaper_url"]
+                                                .toString());
                                           } else {
                                             Navigator.pushNamed(
                                                 context, shareRoute,
@@ -543,11 +545,50 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
+                                      isInstalled: user_data
+                                              .userProfileSetups[index]
+                                                  ["icon_url"]
+                                              .toString()
+                                              .contains(
+                                                  'play.google.com/store/apps/details?id=')
+                                          ? DeviceApps.isAppInstalled(user_data
+                                              .userProfileSetups[index]
+                                                  ["icon_url"]
+                                              .toString()
+                                              .split("details?id=")[1]
+                                              .split("&")[0])
+                                          : Future.value(false),
                                       onTap: () async {
-                                        launch(user_data
-                                            .userProfileSetups[index]
+                                        if (user_data.userProfileSetups[index]
                                                 ["icon_url"]
-                                            .toString());
+                                            .toString()
+                                            .contains(
+                                                'play.google.com/store/apps/details?id=')) {
+                                          final isInstalled =
+                                              await DeviceApps.isAppInstalled(
+                                                  user_data
+                                                      .userProfileSetups[index]
+                                                          ["icon_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0]);
+                                          isInstalled
+                                              ? DeviceApps.openApp(user_data
+                                                  .userProfileSetups[index]
+                                                      ["icon_url"]
+                                                  .toString()
+                                                  .split("details?id=")[1]
+                                                  .split("&")[0])
+                                              : launch(user_data
+                                                  .userProfileSetups[index]
+                                                      ["icon_url"]
+                                                  .toString());
+                                        } else {
+                                          launch(user_data
+                                              .userProfileSetups[index]
+                                                  ["icon_url"]
+                                              .toString());
+                                        }
                                       },
                                       tileText: user_data
                                           .userProfileSetups[index]["icon"]
@@ -569,6 +610,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         SetupDetailsTile(
+                                          isInstalled: Future.value(false),
                                           onTap: () async {
                                             if (user_data
                                                     .userProfileSetups[index]
@@ -579,10 +621,10 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                       index]["wall_id"] ==
                                                   null) {
                                                 debugPrint("Id Not Found!");
-                                                 launch(user_data
-                                                  .userProfileSetups[index]
-                                                      ["wallpaper_url"]
-                                                  .toString());
+                                                launch(user_data
+                                                    .userProfileSetups[index]
+                                                        ["wallpaper_url"]
+                                                    .toString());
                                               } else {
                                                 Navigator.pushNamed(
                                                     context, shareRoute,
@@ -640,11 +682,53 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               const Duration(milliseconds: 150),
                                         ),
                                         SetupDetailsTile(
+                                          isInstalled: user_data
+                                                  .userProfileSetups[index]
+                                                      ["icon_url"]
+                                                  .toString()
+                                                  .contains(
+                                                      'play.google.com/store/apps/details?id=')
+                                              ? DeviceApps.isAppInstalled(
+                                                  user_data
+                                                      .userProfileSetups[index]
+                                                          ["icon_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                              : Future.value(false),
                                           onTap: () async {
-                                            launch(user_data
+                                            if (user_data
                                                 .userProfileSetups[index]
                                                     ["icon_url"]
-                                                .toString());
+                                                .toString()
+                                                .contains(
+                                                    'play.google.com/store/apps/details?id=')) {
+                                              final isInstalled =
+                                                  await DeviceApps
+                                                      .isAppInstalled(user_data
+                                                          .userProfileSetups[
+                                                              index]["icon_url"]
+                                                          .toString()
+                                                          .split(
+                                                              "details?id=")[1]
+                                                          .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(user_data
+                                                      .userProfileSetups[index]
+                                                          ["icon_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                                  : launch(user_data
+                                                      .userProfileSetups[index]
+                                                          ["icon_url"]
+                                                      .toString());
+                                            } else {
+                                              launch(user_data
+                                                  .userProfileSetups[index]
+                                                      ["icon_url"]
+                                                  .toString());
+                                            }
                                           },
                                           tileText: user_data
                                               .userProfileSetups[index]["icon"]
@@ -655,11 +739,54 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               const Duration(milliseconds: 200),
                                         ),
                                         SetupDetailsTile(
+                                          isInstalled: user_data
+                                                  .userProfileSetups[index]
+                                                      ["widget_url"]
+                                                  .toString()
+                                                  .contains(
+                                                      'play.google.com/store/apps/details?id=')
+                                              ? DeviceApps.isAppInstalled(
+                                                  user_data
+                                                      .userProfileSetups[index]
+                                                          ["widget_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                              : Future.value(false),
                                           onTap: () async {
-                                            launch(user_data
+                                            if (user_data
                                                 .userProfileSetups[index]
                                                     ["widget_url"]
-                                                .toString());
+                                                .toString()
+                                                .contains(
+                                                    'play.google.com/store/apps/details?id=')) {
+                                              final isInstalled =
+                                                  await DeviceApps
+                                                      .isAppInstalled(user_data
+                                                          .userProfileSetups[
+                                                              index]
+                                                              ["widget_url"]
+                                                          .toString()
+                                                          .split(
+                                                              "details?id=")[1]
+                                                          .split("&")[0]);
+                                              isInstalled
+                                                  ? DeviceApps.openApp(user_data
+                                                      .userProfileSetups[index]
+                                                          ["widget_url"]
+                                                      .toString()
+                                                      .split("details?id=")[1]
+                                                      .split("&")[0])
+                                                  : launch(user_data
+                                                      .userProfileSetups[index]
+                                                          ["widget_url"]
+                                                      .toString());
+                                            } else {
+                                              launch(user_data
+                                                  .userProfileSetups[index]
+                                                      ["widget_url"]
+                                                  .toString());
+                                            }
                                           },
                                           tileText: user_data
                                               .userProfileSetups[index]
@@ -678,6 +805,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       child: ListView(
                                         children: [
                                           SetupDetailsTile(
+                                            isInstalled: Future.value(false),
                                             onTap: () async {
                                               if (user_data
                                                       .userProfileSetups[index]
@@ -688,10 +816,10 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                         index]["wall_id"] ==
                                                     null) {
                                                   debugPrint("Id Not Found!");
-                                                   launch(user_data
-                                                    .userProfileSetups[index]
-                                                        ["wallpaper_url"]
-                                                    .toString());
+                                                  launch(user_data
+                                                      .userProfileSetups[index]
+                                                          ["wallpaper_url"]
+                                                      .toString());
                                                 } else {
                                                   Navigator.pushNamed(
                                                       context, shareRoute,
@@ -750,11 +878,53 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 milliseconds: 150),
                                           ),
                                           SetupDetailsTile(
+                                            isInstalled: user_data
+                                                    .userProfileSetups[index]
+                                                        ["icon_url"]
+                                                    .toString()
+                                                    .contains(
+                                                        'play.google.com/store/apps/details?id=')
+                                                ? DeviceApps.isAppInstalled(
+                                                    user_data.userProfileSetups[
+                                                            index]["icon_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                : Future.value(false),
                                             onTap: () async {
-                                              launch(user_data
+                                              if (user_data
                                                   .userProfileSetups[index]
                                                       ["icon_url"]
-                                                  .toString());
+                                                  .toString()
+                                                  .contains(
+                                                      'play.google.com/store/apps/details?id=')) {
+                                                final isInstalled =
+                                                    await DeviceApps
+                                                        .isAppInstalled(user_data
+                                                            .userProfileSetups[
+                                                                index]
+                                                                ["icon_url"]
+                                                            .toString()
+                                                            .split(
+                                                                "details?id=")[1]
+                                                            .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(user_data
+                                                        .userProfileSetups[
+                                                            index]["icon_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                    : launch(user_data
+                                                        .userProfileSetups[
+                                                            index]["icon_url"]
+                                                        .toString());
+                                              } else {
+                                                launch(user_data
+                                                    .userProfileSetups[index]
+                                                        ["icon_url"]
+                                                    .toString());
+                                              }
                                             },
                                             tileText: user_data
                                                 .userProfileSetups[index]
@@ -766,11 +936,53 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 milliseconds: 200),
                                           ),
                                           SetupDetailsTile(
+                                            isInstalled: user_data
+                                                    .userProfileSetups[index]
+                                                        ["widget_url"]
+                                                    .toString()
+                                                    .contains(
+                                                        'play.google.com/store/apps/details?id=')
+                                                ? DeviceApps.isAppInstalled(
+                                                    user_data.userProfileSetups[
+                                                            index]["widget_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                : Future.value(false),
                                             onTap: () async {
-                                              launch(user_data
+                                              if (user_data
                                                   .userProfileSetups[index]
                                                       ["widget_url"]
-                                                  .toString());
+                                                  .toString()
+                                                  .contains(
+                                                      'play.google.com/store/apps/details?id=')) {
+                                                final isInstalled =
+                                                    await DeviceApps
+                                                        .isAppInstalled(user_data
+                                                            .userProfileSetups[
+                                                                index]
+                                                                ["widget_url"]
+                                                            .toString()
+                                                            .split(
+                                                                "details?id=")[1]
+                                                            .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(user_data
+                                                        .userProfileSetups[
+                                                            index]["widget_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                    : launch(user_data
+                                                        .userProfileSetups[
+                                                            index]["widget_url"]
+                                                        .toString());
+                                              } else {
+                                                launch(user_data
+                                                    .userProfileSetups[index]
+                                                        ["widget_url"]
+                                                    .toString());
+                                              }
                                             },
                                             tileText: user_data
                                                 .userProfileSetups[index]
@@ -782,11 +994,56 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 milliseconds: 250),
                                           ),
                                           SetupDetailsTile(
+                                            isInstalled: user_data
+                                                    .userProfileSetups[index]
+                                                        ["widget_url2"]
+                                                    .toString()
+                                                    .contains(
+                                                        'play.google.com/store/apps/details?id=')
+                                                ? DeviceApps.isAppInstalled(
+                                                    user_data.userProfileSetups[
+                                                            index]
+                                                            ["widget_url2"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                : Future.value(false),
                                             onTap: () async {
-                                              launch(user_data
+                                              if (user_data
                                                   .userProfileSetups[index]
                                                       ["widget_url2"]
-                                                  .toString());
+                                                  .toString()
+                                                  .contains(
+                                                      'play.google.com/store/apps/details?id=')) {
+                                                final isInstalled =
+                                                    await DeviceApps
+                                                        .isAppInstalled(user_data
+                                                            .userProfileSetups[
+                                                                index]
+                                                                ["widget_url2"]
+                                                            .toString()
+                                                            .split(
+                                                                "details?id=")[1]
+                                                            .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(user_data
+                                                        .userProfileSetups[
+                                                            index]
+                                                            ["widget_url2"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                    : launch(user_data
+                                                        .userProfileSetups[
+                                                            index]
+                                                            ["widget_url2"]
+                                                        .toString());
+                                              } else {
+                                                launch(user_data
+                                                    .userProfileSetups[index]
+                                                        ["widget_url2"]
+                                                    .toString());
+                                              }
                                             },
                                             tileText: user_data
                                                 .userProfileSetups[index]
@@ -1007,6 +1264,7 @@ class SetupDetailsTile extends StatelessWidget {
   final String tileType;
   final String tileText;
   final Function onTap;
+  final Future<bool> isInstalled;
   const SetupDetailsTile({
     Key key,
     @required this.delay,
@@ -1014,6 +1272,7 @@ class SetupDetailsTile extends StatelessWidget {
     @required this.tileType,
     @required this.onTap,
     @required this.panelCollapsed,
+    @required this.isInstalled,
   }) : super(key: key);
 
   @override
@@ -1069,9 +1328,22 @@ class SetupDetailsTile extends StatelessWidget {
                                     ),
                                   )),
                               Expanded(
-                                child: Icon(
-                                  JamIcons.chevron_right,
-                                  color: Theme.of(context).accentColor,
+                                child: FutureBuilder<bool>(
+                                  future: isInstalled,
+                                  initialData: false,
+                                  builder: (BuildContext context,
+                                      AsyncSnapshot snapshot) {
+                                    if (snapshot.data == true) {
+                                      return Icon(
+                                        JamIcons.check,
+                                        color: Theme.of(context).accentColor,
+                                      );
+                                    }
+                                    return Icon(
+                                      JamIcons.chevron_right,
+                                      color: Theme.of(context).accentColor,
+                                    );
+                                  },
                                 ),
                               )
                             ],
