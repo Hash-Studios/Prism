@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
@@ -132,6 +133,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
       futureP = PData.getWallbyIDP(id);
     } else if (provider == "Prism") {
       futureM = Data.getDataByID(id);
+      updateViews(id.toString().toUpperCase());
     }
     _updatePaletteGenerator();
     super.initState();
