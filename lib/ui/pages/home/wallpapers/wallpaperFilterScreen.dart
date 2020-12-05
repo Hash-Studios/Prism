@@ -6,6 +6,8 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/wallpapers/customFilters.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
@@ -21,6 +23,7 @@ import 'package:photofilters/filters/preset_filters.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
+import 'package:provider/provider.dart';
 
 class WallpaperFilterScreen extends StatefulWidget {
   final imagelib.Image image;
@@ -459,7 +462,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   width: 90.0,
-                  height: 140.0,
+                  height: MediaQuery.of(context).size.height * 0.15,
                   color: Theme.of(context).primaryColor,
                   child: Center(
                     child: Loader(),
@@ -475,7 +478,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   width: 90.0,
-                  height: 140.0,
+                  height: MediaQuery.of(context).size.height * 0.15,
                   color: Theme.of(context).primaryColor,
                   child: Image(
                     image: MemoryImage(
@@ -494,7 +497,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         borderRadius: BorderRadius.circular(10),
         child: Container(
           width: 90.0,
-          height: 140.0,
+          height: MediaQuery.of(context).size.height * 0.15,
           color: Theme.of(context).primaryColor,
           child: Image(
             image: MemoryImage(
@@ -543,25 +546,87 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           case ConnectionState.none:
             return cachedFilters[filter?.name ?? "_"] == null
                 ? Center(child: Loader())
-                : PhotoView(
-                    imageProvider: MemoryImage(
-                      cachedFilters[filter?.name ?? "_"] as Uint8List,
-                    ),
-                    backgroundDecoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                    ),
+                : Stack(
+                    children: [
+                      PhotoView(
+                        imageProvider: MemoryImage(
+                          cachedFilters[filter?.name ?? "_"] as Uint8List,
+                        ),
+                        backgroundDecoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      Positioned(
+                        right: 10,
+                        top: 10,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              height: 25,
+                              width: 25,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation(
+                                  Provider.of<ThemeModel>(context)
+                                              .currentTheme ==
+                                          kDarkTheme2
+                                      ? config.Colors().mainAccentColor(1) ==
+                                              Colors.black
+                                          ? Theme.of(context).accentColor
+                                          : config.Colors().mainAccentColor(1)
+                                      : config.Colors().mainAccentColor(1),
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.high_quality_rounded,
+                                color: Theme.of(context).accentColor),
+                          ],
+                        ),
+                      ),
+                    ],
                   );
           case ConnectionState.active:
           case ConnectionState.waiting:
             return cachedFilters[filter?.name ?? "_"] == null
                 ? Center(child: Loader())
-                : PhotoView(
-                    imageProvider: MemoryImage(
-                      cachedFilters[filter?.name ?? "_"] as Uint8List,
-                    ),
-                    backgroundDecoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                    ),
+                : Stack(
+                    children: [
+                      PhotoView(
+                        imageProvider: MemoryImage(
+                          cachedFilters[filter?.name ?? "_"] as Uint8List,
+                        ),
+                        backgroundDecoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      Positioned(
+                        right: 10,
+                        top: 10,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              height: 25,
+                              width: 25,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation(
+                                  Provider.of<ThemeModel>(context)
+                                              .currentTheme ==
+                                          kDarkTheme2
+                                      ? config.Colors().mainAccentColor(1) ==
+                                              Colors.black
+                                          ? Theme.of(context).accentColor
+                                          : config.Colors().mainAccentColor(1)
+                                      : config.Colors().mainAccentColor(1),
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.high_quality_rounded,
+                                color: Theme.of(context).accentColor),
+                          ],
+                        ),
+                      ),
+                    ],
                   );
           case ConnectionState.done:
             if (snapshot.hasError) {
