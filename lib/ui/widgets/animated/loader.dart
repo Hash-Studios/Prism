@@ -77,8 +77,8 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
                 : config.Colors().mainAccentColor(1),
           ),
           child: const SizedBox(
-            width: 55,
-            height: 55,
+            width: 45,
+            height: 45,
           ),
         ),
       ),
