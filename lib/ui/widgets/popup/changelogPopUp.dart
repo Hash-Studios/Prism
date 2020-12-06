@@ -57,7 +57,9 @@ void showChangelog(BuildContext context, Function func) {
                       icon: JamIcons.upload,
                       text: "Fixed wallpaper uploading in setups."),
                   Change(
-                      icon: JamIcons.pencil, text: "Added more new filters!"),
+                      icon: JamIcons.pencil,
+                      text: "Added 4 new filters (Blur, Invert & more!)"),
+                  Change(icon: JamIcons.coin, text: "Redesigned premium page."),
                   Change(
                       icon: JamIcons.brush,
                       text: "Improved look & feel of the app."),
