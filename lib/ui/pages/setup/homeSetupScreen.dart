@@ -145,7 +145,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                   return Center(child: Loader());
                 } else {
                   Future.delayed(const Duration()).then((value) =>
-                      (this.mounted) ? {setState(() {})} : debugPrint(""));
+                      mounted == true ? {setState(() {})} : debugPrint(""));
                   return GestureDetector(
                     onTap: () {
                       if (pageNumber >= 5) {

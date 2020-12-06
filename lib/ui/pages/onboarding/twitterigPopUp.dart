@@ -588,7 +588,7 @@ class ApplyButton extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const Spacer(flex: 1),
+                const Spacer(),
                 Container(
                   width: 20,
                   height: 20,
