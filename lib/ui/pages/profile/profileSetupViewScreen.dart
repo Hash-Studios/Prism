@@ -527,7 +527,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                           listen: false)
                                                       .profileSetups[index]
                                                   ["wall_id"] ==
-                                              null) {
+                                              null || Provider.of<ProfileSetupProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .profileSetups[index]
+                                                  ["wall_id"] ==
+                                              "") {
                                             debugPrint("Id Not Found!");
                                             launch(Provider.of<
                                                         ProfileSetupProvider>(
@@ -705,7 +710,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                               listen: false)
                                                           .profileSetups[index]
                                                       ["wall_id"] ==
-                                                  null) {
+                                                  null || Provider.of<ProfileSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .profileSetups[index]
+                                                      ["wall_id"] ==
+                                                  "") {
                                                 debugPrint("Id Not Found!");
                                                 launch(Provider.of<
                                                             ProfileSetupProvider>(
@@ -958,7 +968,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                 listen: false)
                                                             .profileSetups[
                                                         index]["wall_id"] ==
-                                                    null) {
+                                                    null || Provider.of<ProfileSetupProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .profileSetups[
+                                                        index]["wall_id"] ==
+                                                    "") {
                                                   debugPrint("Id Not Found!");
                                                   launch(Provider.of<
                                                               ProfileSetupProvider>(
