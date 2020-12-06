@@ -6,7 +6,7 @@ import 'package:github/github.dart';
 String jsonFile = 'dummy.json';
 
 Future<Map> getMapFromGitHub() async {
-  Codec<String, String> stringToBase64 = utf8.fuse(base64);
+  final Codec<String, String> stringToBase64 = utf8.fuse(base64);
   final github = GitHub(auth: Authentication.withToken(token));
   Map jsonMap;
   await github.repositories
@@ -18,7 +18,7 @@ Future<Map> getMapFromGitHub() async {
 }
 
 Future<void> updateViews(String id) async {
-  Codec<String, String> stringToBase64 = utf8.fuse(base64);
+  final Codec<String, String> stringToBase64 = utf8.fuse(base64);
   final github = GitHub(auth: Authentication.withToken(token));
   RepositoryContents repoContents;
   Map jsonMap;
@@ -43,7 +43,7 @@ Future<void> updateViews(String id) async {
 }
 
 Future<void> updateDownloads(String id) async {
-  Codec<String, String> stringToBase64 = utf8.fuse(base64);
+  final Codec<String, String> stringToBase64 = utf8.fuse(base64);
   final github = GitHub(auth: Authentication.withToken(token));
   RepositoryContents repoContents;
   Map jsonMap;
@@ -68,7 +68,7 @@ Future<void> updateDownloads(String id) async {
 }
 
 Future<void> updateFavorites(String id) async {
-  Codec<String, String> stringToBase64 = utf8.fuse(base64);
+  final Codec<String, String> stringToBase64 = utf8.fuse(base64);
   final github = GitHub(auth: Authentication.withToken(token));
   RepositoryContents repoContents;
   Map jsonMap;
@@ -93,7 +93,7 @@ Future<void> updateFavorites(String id) async {
 }
 
 Future<void> updateViewsSetup(String id) async {
-  Codec<String, String> stringToBase64 = utf8.fuse(base64);
+  final Codec<String, String> stringToBase64 = utf8.fuse(base64);
   final github = GitHub(auth: Authentication.withToken(token));
   RepositoryContents repoContents;
   Map jsonMap;
@@ -117,7 +117,7 @@ Future<void> updateViewsSetup(String id) async {
 }
 
 Future<void> updateDownloadsSetup(String id) async {
-  Codec<String, String> stringToBase64 = utf8.fuse(base64);
+  final Codec<String, String> stringToBase64 = utf8.fuse(base64);
   final github = GitHub(auth: Authentication.withToken(token));
   RepositoryContents repoContents;
   Map jsonMap;
@@ -142,7 +142,7 @@ Future<void> updateDownloadsSetup(String id) async {
 }
 
 Future<void> updateFavsSetup(String id) async {
-  Codec<String, String> stringToBase64 = utf8.fuse(base64);
+  final Codec<String, String> stringToBase64 = utf8.fuse(base64);
   final github = GitHub(auth: Authentication.withToken(token));
   RepositoryContents repoContents;
   Map jsonMap;

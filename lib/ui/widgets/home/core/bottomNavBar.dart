@@ -8,7 +8,6 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:Prism/theme/config.dart' as config;
 

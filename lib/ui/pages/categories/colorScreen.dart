@@ -5,7 +5,6 @@ import 'package:Prism/ui/widgets/home/wallpapers/colorLoader.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 
 class ColorScreen extends StatelessWidget {
   final List arguments;

@@ -12,7 +12,6 @@ import 'package:provider/provider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/ui/pages/home/core/pageManager.dart' as PM;
 
 class CategoriesBar extends StatefulWidget {
   const CategoriesBar({
