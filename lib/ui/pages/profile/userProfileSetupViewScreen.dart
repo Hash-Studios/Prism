@@ -485,7 +485,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                             "[") {
                                           if (user_data.userProfileSetups[index]
                                                   ["wall_id"] ==
-                                              null) {
+                                              null || user_data.userProfileSetups[index]
+                                                  ["wall_id"] ==
+                                              "") {
                                             debugPrint("Id Not Found!");
                                             launch(user_data
                                                 .userProfileSetups[index]
@@ -619,7 +621,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 "[") {
                                               if (user_data.userProfileSetups[
                                                       index]["wall_id"] ==
-                                                  null) {
+                                                  null || user_data.userProfileSetups[
+                                                      index]["wall_id"] ==
+                                                  "") {
                                                 debugPrint("Id Not Found!");
                                                 launch(user_data
                                                     .userProfileSetups[index]
@@ -814,7 +818,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                   "[") {
                                                 if (user_data.userProfileSetups[
                                                         index]["wall_id"] ==
-                                                    null) {
+                                                    null || user_data.userProfileSetups[
+                                                        index]["wall_id"] ==
+                                                    "") {
                                                   debugPrint("Id Not Found!");
                                                   launch(user_data
                                                       .userProfileSetups[index]

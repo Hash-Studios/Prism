@@ -524,7 +524,11 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       context,
                                                       listen: false)
                                                   .liked[index]["wall_id"] ==
-                                              null) {
+                                              null || Provider.of<FavouriteSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["wall_id"] ==
+                                              "") {
                                             debugPrint("Id Not Found!");
                                             launch(Provider.of<
                                                         FavouriteSetupProvider>(
@@ -694,7 +698,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               listen: false)
                                                           .liked[index]
                                                       ["wall_id"] ==
-                                                  null) {
+                                                  null || Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                      ["wall_id"] ==
+                                                  "") {
                                                 debugPrint("Id Not Found!");
                                                 launch(Provider.of<
                                                             FavouriteSetupProvider>(
@@ -935,7 +944,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                 listen: false)
                                                             .liked[index]
                                                         ["wall_id"] ==
-                                                    null) {
+                                                    null || Provider.of<FavouriteSetupProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .liked[index]
+                                                        ["wall_id"] ==
+                                                    "") {
                                                   debugPrint("Id Not Found!");
                                                   launch(Provider.of<
                                                               FavouriteSetupProvider>(

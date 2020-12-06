@@ -525,8 +525,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                     .toString()[0] !=
                                                                 "[") {
                                                               if (sdata.setup[
-                                                                      "wall_id"] ==
-                                                                  null) {
+                                                                          "wall_id"] ==
+                                                                      null ||
+                                                                  sdata.setup[
+                                                                          "wall_id"] ==
+                                                                      "") {
                                                                 debugPrint(
                                                                     "Id Not Found!");
                                                                 launch(sdata
@@ -678,8 +681,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                         .toString()[0] !=
                                                                     "[") {
                                                                   if (sdata.setup[
-                                                                          "wall_id"] ==
-                                                                      null) {
+                                                                              "wall_id"] ==
+                                                                          null ||
+                                                                      sdata.setup[
+                                                                              "wall_id"] ==
+                                                                          "") {
                                                                     debugPrint(
                                                                         "Id Not Found!");
                                                                     launch(sdata
@@ -873,9 +879,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                                               "wallpaper_url"]
                                                                           .toString()[0] !=
                                                                       "[") {
-                                                                    if (sdata.setup[
-                                                                            "wall_id"] ==
-                                                                        null) {
+                                                                    if (sdata.setup["wall_id"] ==
+                                                                            null ||
+                                                                        sdata.setup["wall_id"] ==
+                                                                            "") {
                                                                       debugPrint(
                                                                           "Id Not Found!");
                                                                       launch(sdata

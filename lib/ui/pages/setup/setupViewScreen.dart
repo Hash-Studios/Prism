@@ -520,7 +520,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                       context,
                                                       listen: false)
                                                   .setups[index]["wall_id"] ==
-                                              null) {
+                                              null || Provider.of<SetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setups[index]["wall_id"] ==
+                                              "") {
                                             debugPrint("Id Not Found!");
                                             launch(Provider.of<SetupProvider>(
                                                     context,
@@ -678,7 +682,12 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               listen: false)
                                                           .setups[index]
                                                       ["wall_id"] ==
-                                                  null) {
+                                                  null || Provider.of<SetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .setups[index]
+                                                      ["wall_id"] ==
+                                                  "") {
                                                 debugPrint("Id Not Found!");
                                                 launch(
                                                     Provider.of<SetupProvider>(
@@ -910,7 +919,12 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 listen: false)
                                                             .setups[index]
                                                         ["wall_id"] ==
-                                                    null) {
+                                                    null || Provider.of<SetupProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .setups[index]
+                                                        ["wall_id"] ==
+                                                    "") {
                                                   debugPrint("Id Not Found!");
                                                   launch(Provider.of<
                                                               SetupProvider>(
