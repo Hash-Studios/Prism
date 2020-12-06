@@ -75,7 +75,7 @@ class SplashWidget extends StatelessWidget {
     globals.hasNotch = height > 24;
     globals.notchSize = height;
     notchChecked = true;
-    print('Notch Height = $height');
+    debugPrint('Notch Height = $height');
   }
 
   SplashWidget({
