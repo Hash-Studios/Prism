@@ -457,7 +457,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     builder: (context) =>
                                                         OptionalInfo(
                                                           img: Image.asset(
-                                                              'assets/images/first.png'),
+                                                              'assets/images/fourth.png'),
                                                           heading:
                                                               'Interact with community',
                                                           subheading:
