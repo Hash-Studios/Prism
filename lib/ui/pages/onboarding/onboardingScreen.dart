@@ -78,7 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                          padding: const EdgeInsets.fromLTRB(0, 110, 0, 8),
                           child: image1),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -130,7 +130,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                          padding: const EdgeInsets.fromLTRB(0, 110, 0, 8),
                           child: image2),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -337,7 +337,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 120, 0, 8),
+                          padding: const EdgeInsets.fromLTRB(0, 110, 0, 8),
                           child: image3),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -457,7 +457,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     builder: (context) =>
                                                         OptionalInfo(
                                                           img: Image.asset(
-                                                              'assets/images/fourth.png'),
+                                                            'assets/images/fourth.png',
+                                                            height: MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .height *
+                                                                2 /
+                                                                5,
+                                                          ),
                                                           heading:
                                                               'Interact with community',
                                                           subheading:
