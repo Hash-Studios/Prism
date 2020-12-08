@@ -2,6 +2,8 @@
 
 ### v2.6.2
 - Fixed notification modifiers
+- Added apps check in setups view
+- Added view counters for analytics
 - Added new image compression technique
 - Fixed premium wallpapers & setups
 - Added new onboarding pages

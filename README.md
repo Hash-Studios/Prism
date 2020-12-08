@@ -138,6 +138,8 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 
 ### v2.6.2
 - Fixed notification modifiers
+- Added apps check in setups view
+- Added view counters for analytics
 - Added new image compression technique
 - Fixed premium wallpapers & setups
 - Added new onboarding pages
