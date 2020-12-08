@@ -401,7 +401,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     curve: Curves.easeOutCubic);
                               }
                             : () {
-                                main.prefs.put('onboarded', true);
+                                main.prefs.put('onboarded_new', true);
                                 Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
@@ -450,7 +450,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           Future.delayed(const Duration(
                                                   milliseconds: 500))
                                               .then((value) {
-                                            main.prefs.put('onboarded', true);
+                                            main.prefs.put('onboarded_new', true);
                                             Navigator.pushReplacement(
                                                 context,
                                                 MaterialPageRoute(

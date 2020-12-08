@@ -216,7 +216,7 @@ class _MyAppState extends State<MyApp> {
               )),
       theme: Provider.of<ThemeModel>(context).currentTheme,
       // debugShowCheckedModeBanner: false,
-      home: ((prefs.get('onboarded') as bool) ?? false)
+      home: ((prefs.get('onboarded_new') as bool) ?? false)
           ? SplashWidget()
           : OnboardingScreen(),
     );
