@@ -7,6 +7,7 @@ import 'package:Prism/data/profile/wallpaper/profileSetupProvider.dart';
 import 'package:Prism/data/profile/wallpaper/profileWallProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/widgets/profile/aboutList.dart';
 import 'package:Prism/ui/widgets/profile/drawerWidget.dart';
 import 'package:Prism/ui/widgets/profile/generalList.dart';
@@ -639,28 +640,35 @@ class _ProfileChildState extends State<ProfileChild> {
                                                       MainAxisAlignment
                                                           .spaceEvenly,
                                                   children: <Widget>[
-                                                    Row(
-                                                      children: <Widget>[
-                                                        Text(
-                                                          "${favCount.toString()} ",
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  "Proxima Nova",
-                                                              fontSize: 24,
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .normal),
-                                                        ),
-                                                        Icon(
-                                                          JamIcons.heart_f,
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor,
-                                                        ),
-                                                      ],
+                                                    GestureDetector(
+                                                      onTap: () {
+                                                        Navigator.pushNamed(
+                                                            context,
+                                                            favWallRoute);
+                                                      },
+                                                      child: Row(
+                                                        children: <Widget>[
+                                                          Text(
+                                                            "${favCount.toString()} ",
+                                                            style: TextStyle(
+                                                                fontFamily:
+                                                                    "Proxima Nova",
+                                                                fontSize: 24,
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .accentColor,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .normal),
+                                                          ),
+                                                          Icon(
+                                                            JamIcons.heart_f,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
                                                     Row(
                                                       children: <Widget>[
