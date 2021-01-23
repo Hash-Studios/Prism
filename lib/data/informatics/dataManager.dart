@@ -28,7 +28,9 @@ Future<String> getViews(String id) async {
   jsonMap = json.decode(
           stringToBase64.decode(repoContents.file.content.replaceAll("\n", "")))
       as Map;
-  return jsonMap["wallpapers"][id]["views"].toString();
+  return jsonMap["wallpapers"][id] != null
+      ? jsonMap["wallpapers"][id]["views"].toString()
+      : "0";
 }
 
 Future<void> updateViews(String id) async {
@@ -104,6 +106,22 @@ Future<void> updateFavorites(String id) async {
       "Updated favorites for $id",
       stringToBase64.encode(json.encode(jsonMap)),
       repoContents.file.sha);
+}
+
+Future<String> getViewsSetup(String id) async {
+  final Codec<String, String> stringToBase64 = utf8.fuse(base64);
+  final github = GitHub(auth: Authentication.withToken(token));
+  RepositoryContents repoContents;
+  Map jsonMap;
+  await github.repositories
+      .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
+      .then((value) => repoContents = value);
+  jsonMap = json.decode(
+          stringToBase64.decode(repoContents.file.content.replaceAll("\n", "")))
+      as Map;
+  return jsonMap["setups"][id] != null
+      ? jsonMap["setups"][id]["views"].toString()
+      : "0";
 }
 
 Future<void> updateViewsSetup(String id) async {
