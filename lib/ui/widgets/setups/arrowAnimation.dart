@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class ArrowBounceAnimation extends StatefulWidget {
   final Function onTap;
@@ -42,11 +42,15 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
   @override
   Widget build(BuildContext context) {
     final double scale = 1.3 - animation.value;
-    return GestureDetector(
-      onTap: _onTap,
-      child: Transform.scale(
-        scale: scale,
-        child: Container(child: widget.child),
+    return Transform.scale(
+      scale: scale,
+      child: GestureDetector(
+        onTap: _onTap,
+        child: Container(
+            color: Colors.transparent,
+            height: 250,
+            width: 40,
+            child: widget.child),
       ),
     );
   }
