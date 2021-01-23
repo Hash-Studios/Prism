@@ -3,6 +3,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
+import 'package:Prism/ui/pages/home/wallpapers/trendingScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
@@ -62,7 +63,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 2, vsync: this);
+    tabController = TabController(length: 3, vsync: this);
     // Provider.of<TabProvider>(context, listen: false)
     //     .updateSelectedTab("Wallpapers");
     checkConnection();
@@ -276,6 +277,25 @@ class _PageManagerChildState extends State<PageManagerChild>
                 // ),
                 Tab(
                   // icon: Icon(
+                  //   JamIcons.picture,
+                  //   color: Theme.of(context).accentColor,
+                  // ),
+                  child: Text(
+                    "Trending",
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyText2
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
+                ),
+                // Tab(
+                //   icon: Icon(
+                //     JamIcons.instant_picture,
+                //     color: Theme.of(context).accentColor,
+                //   ),
+                // ),
+                Tab(
+                  // icon: Icon(
                   //   JamIcons.pictures,
                   //   color: Theme.of(context).accentColor,
                   // ),
@@ -293,6 +313,7 @@ class _PageManagerChildState extends State<PageManagerChild>
           children: <Widget>[
             TabBarView(controller: tabController, children: const [
               HomeScreen(),
+              TrendingScreen(),
               // const HomeSetupScreen(),
               CollectionScreen()
             ]),
