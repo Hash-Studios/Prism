@@ -81,7 +81,7 @@ class TrendingTile extends StatelessWidget {
                         })
                       : Navigator.pushNamed(
                           context,
-                          wallpaperRoute,
+                          trendingWallpaperRoute,
                           arguments: [
                             widget.provider,
                             index,
