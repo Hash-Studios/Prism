@@ -123,7 +123,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     isLoading = true;
     if (provider == "Prism") {
       updateViews(data.subPrismWalls[index]["id"].toString().toUpperCase());
-      _futureView = getViews(data.subPrismWalls[index]["id"].toString());
+      _futureView =
+          getViews(data.subPrismWalls[index]["id"].toString().toUpperCase());
     }
     _updatePaletteGenerator();
   }

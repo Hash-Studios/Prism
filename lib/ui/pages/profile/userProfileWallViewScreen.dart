@@ -55,6 +55,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
   AnimationController shakeController;
   bool panelClosed = true;
   bool panelCollapsed = true;
+  Future<String> _futureView;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -112,6 +113,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
     thumb = widget.arguments[1].toString();
     isLoading = true;
     updateViews(
+        user_data.userProfileWalls[index]["id"].toString().toUpperCase());
+    _futureView = getViews(
         user_data.userProfileWalls[index]["id"].toString().toUpperCase());
     _updatePaletteGenerator();
     super.initState();
@@ -259,16 +262,89 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                     Padding(
                                       padding: const EdgeInsets.fromLTRB(
                                           0, 5, 0, 10),
-                                      child: Text(
-                                        user_data.userProfileWalls[index]["id"]
-                                            .toString()
-                                            .toUpperCase(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyText1
-                                            .copyWith(
-                                                color: Theme.of(context)
-                                                    .accentColor),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            user_data.userProfileWalls[index]
+                                                    ["id"]
+                                                .toString()
+                                                .toUpperCase(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText1
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6.0),
+                                            child: Container(
+                                              height: 20,
+                                              color:
+                                                  Theme.of(context).accentColor,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          FutureBuilder(
+                                            future: _futureView,
+                                            builder: (context, snapshot) {
+                                              switch (
+                                                  snapshot.connectionState) {
+                                                case ConnectionState.waiting:
+                                                  return Text(
+                                                    "",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText1
+                                                        .copyWith(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                            fontSize: 16),
+                                                  );
+                                                case ConnectionState.none:
+                                                  return Text(
+                                                    "",
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText1
+                                                        .copyWith(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                            fontSize: 16),
+                                                  );
+                                                default:
+                                                  if (snapshot.hasError) {
+                                                    return Text(
+                                                      "",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyText1
+                                                          .copyWith(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor,
+                                                              fontSize: 16),
+                                                    );
+                                                  } else {
+                                                    return Text(
+                                                      "${snapshot.data} views",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyText1
+                                                          .copyWith(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor,
+                                                              fontSize: 16),
+                                                    );
+                                                  }
+                                              }
+                                            },
+                                          ),
+                                        ],
                                       ),
                                     ),
                                     Row(
