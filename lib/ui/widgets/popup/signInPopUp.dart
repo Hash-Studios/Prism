@@ -71,7 +71,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.heart,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1),
+                  color: config.Colors().mainAccentColor(1) == Colors.black
+                      ? Colors.white
+                      : config.Colors().mainAccentColor(1),
                 ),
                 const SizedBox(
                   width: 20,
@@ -99,7 +101,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.upload,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1),
+                  color: config.Colors().mainAccentColor(1) == Colors.black
+                      ? Colors.white
+                      : config.Colors().mainAccentColor(1),
                 ),
                 const SizedBox(
                   width: 20,
@@ -127,7 +131,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.instant_picture,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1),
+                  color: config.Colors().mainAccentColor(1) == Colors.black
+                      ? Colors.white
+                      : config.Colors().mainAccentColor(1),
                 ),
                 const SizedBox(
                   width: 20,
@@ -155,7 +161,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.coin,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1),
+                  color: config.Colors().mainAccentColor(1) == Colors.black
+                      ? Colors.white
+                      : config.Colors().mainAccentColor(1),
                 ),
                 const SizedBox(
                   width: 20,
@@ -183,7 +191,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.cloud,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1),
+                  color: config.Colors().mainAccentColor(1) == Colors.black
+                      ? Colors.white
+                      : config.Colors().mainAccentColor(1),
                 ),
                 const SizedBox(
                   width: 20,

@@ -431,7 +431,11 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       width: MediaQuery.of(context).size.width *
                                           0.8,
                                       decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: config.Colors()
+                                                      .mainAccentColor(1) ==
+                                                  Colors.black
+                                              ? Colors.white10
+                                              : Colors.white,
                                           borderRadius:
                                               BorderRadius.circular(500)),
                                       padding: const EdgeInsets.symmetric(
@@ -443,8 +447,13 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                             .headline3
                                             .copyWith(
                                                 fontWeight: FontWeight.bold,
-                                                color: Theme.of(context)
-                                                    .primaryColor),
+                                                color: config.Colors()
+                                                            .mainAccentColor(
+                                                                1) ==
+                                                        Colors.black
+                                                    ? Colors.white
+                                                    : Theme.of(context)
+                                                        .primaryColor),
                                         textAlign: TextAlign.center,
                                       ),
                                     ),
