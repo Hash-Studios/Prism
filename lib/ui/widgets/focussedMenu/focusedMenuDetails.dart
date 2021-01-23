@@ -127,537 +127,284 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
   @override
   Widget build(BuildContext context) {
     debugPrint(widget.provider);
-    try {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            GestureDetector(
+    // try {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: Container(
+                color: Provider.of<ThemeModel>(context, listen: false)
+                            .returnThemeType() ==
+                        "Dark"
+                    ? Colors.black.withOpacity(0.75)
+                    : Colors.white.withOpacity(0.75),
+              )),
+          Positioned(
+              top: widget.childOffset.dy,
+              left: widget.childOffset.dx,
+              child: GestureDetector(
                 onTap: () {
                   Navigator.pop(context);
                 },
-                child: Container(
-                  color: Provider.of<ThemeModel>(context, listen: false)
-                              .returnThemeType() ==
-                          "Dark"
-                      ? Colors.black.withOpacity(0.75)
-                      : Colors.white.withOpacity(0.75),
-                )),
-            Positioned(
-                top: widget.childOffset.dy,
-                left: widget.childOffset.dx,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: AbsorbPointer(
-                      child: Container(
-                          width: widget.childSize.width,
-                          height: widget.childSize.height,
-                          child: widget.child)),
-                )),
-            widget.provider == "WallHaven"
-                ? Positioned(
-                    top: widget.childOffset.dy +
-                        widget.childSize.height * 4 / 10,
-                    left: widget.childOffset.dx,
-                    child: TweenAnimationBuilder(
-                      duration: const Duration(milliseconds: 150),
-                      builder:
-                          (BuildContext context, double value, Widget child) {
-                        return Transform.scale(
-                          scale: value,
-                          alignment: Alignment.bottomRight,
-                          child: child,
-                        );
-                      },
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      child: Container(
+                child: AbsorbPointer(
+                    child: Container(
                         width: widget.childSize.width,
-                        height: widget.childSize.height * 6 / 10,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).hintColor,
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(20.0)),
-                        ),
-                        child: ClipRRect(
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(20.0)),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: <Widget>[
-                              Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    ActionChip(
-                                        pressElevation: 5,
-                                        padding: const EdgeInsets.fromLTRB(
-                                            14, 11, 14, 11),
-                                        avatar: Icon(
-                                          JamIcons.ordered_list,
-                                          color: HexColor(WData
-                                                          .walls[widget.index]
-                                                          .colors[WData
-                                                                  .walls[widget
-                                                                      .index]
-                                                                  .colors
-                                                                  .length -
-                                                              1]
-                                                          .toString())
-                                                      .computeLuminance() >
-                                                  0.5
-                                              ? Colors.black
-                                              : Colors.white,
-                                          size: 20,
-                                        ),
-                                        backgroundColor: HexColor(WData
-                                            .walls[widget.index]
-                                            .colors[WData.walls[widget.index]
-                                                    .colors.length -
-                                                1]
-                                            .toString()),
-                                        label: Text(
-                                          WData.walls[widget.index].category
-                                                  .toString()[0]
-                                                  .toUpperCase() +
-                                              WData.walls[widget.index].category
-                                                  .toString()
-                                                  .substring(1),
-                                          style:
-                                              Theme.of(context)
-                                                  .textTheme
-                                                  .headline4
-                                                  .copyWith(
-                                                    color: HexColor(WData
-                                                                    .walls[widget
-                                                                        .index]
-                                                                    .colors[WData
-                                                                            .walls[widget.index]
-                                                                            .colors
-                                                                            .length -
-                                                                        1]
-                                                                    .toString())
-                                                                .computeLuminance() >
-                                                            0.5
-                                                        ? Colors.black
-                                                        : Colors.white,
-                                                  ),
-                                        ),
-                                        onPressed: () {}),
-                                    Padding(
+                        height: widget.childSize.height,
+                        child: widget.child)),
+              )),
+          widget.provider == "WallHaven"
+              ? Positioned(
+                  top: widget.childOffset.dy + widget.childSize.height * 4 / 10,
+                  left: widget.childOffset.dx,
+                  child: TweenAnimationBuilder(
+                    duration: const Duration(milliseconds: 150),
+                    builder:
+                        (BuildContext context, double value, Widget child) {
+                      return Transform.scale(
+                        scale: value,
+                        alignment: Alignment.bottomRight,
+                        child: child,
+                      );
+                    },
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    child: Container(
+                      width: widget.childSize.width,
+                      height: widget.childSize.height * 6 / 10,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).hintColor,
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(20.0)),
+                      ),
+                      child: ClipRRect(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(20.0)),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  ActionChip(
+                                      pressElevation: 5,
                                       padding: const EdgeInsets.fromLTRB(
-                                          0, 5, 0, 10),
-                                      child: Text(
-                                        WData.walls[widget.index].id
-                                            .toString()
-                                            .toUpperCase(),
+                                          14, 11, 14, 11),
+                                      avatar: Icon(
+                                        JamIcons.ordered_list,
+                                        color: HexColor(WData
+                                                        .walls[widget.index]
+                                                        .colors[WData
+                                                                .walls[widget
+                                                                    .index]
+                                                                .colors
+                                                                .length -
+                                                            1]
+                                                        .toString())
+                                                    .computeLuminance() >
+                                                0.5
+                                            ? Colors.black
+                                            : Colors.white,
+                                        size: 20,
+                                      ),
+                                      backgroundColor: HexColor(WData
+                                          .walls[widget.index]
+                                          .colors[WData.walls[widget.index]
+                                                  .colors.length -
+                                              1]
+                                          .toString()),
+                                      label: Text(
+                                        WData.walls[widget.index].category
+                                                .toString()[0]
+                                                .toUpperCase() +
+                                            WData.walls[widget.index].category
+                                                .toString()
+                                                .substring(1),
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline5
+                                            .headline4
+                                            .copyWith(
+                                              color: HexColor(WData
+                                                              .walls[
+                                                                  widget.index]
+                                                              .colors[WData
+                                                                      .walls[widget
+                                                                          .index]
+                                                                      .colors
+                                                                      .length -
+                                                                  1]
+                                                              .toString())
+                                                          .computeLuminance() >
+                                                      0.5
+                                                  ? Colors.black
+                                                  : Colors.white,
+                                            ),
+                                      ),
+                                      onPressed: () {}),
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                    child: Text(
+                                      WData.walls[widget.index].id
+                                          .toString()
+                                          .toUpperCase(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline5
+                                          .copyWith(
+                                              color: Theme.of(context)
+                                                  .accentColor),
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        JamIcons.eye,
+                                        size: 20,
+                                        color: Theme.of(context).accentColor,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        "Views: ${WData.walls[widget.index].views.toString()}",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2
                                             .copyWith(
                                                 color: Theme.of(context)
                                                     .accentColor),
                                       ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          JamIcons.eye,
-                                          size: 20,
-                                          color: Theme.of(context).accentColor,
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          "Views: ${WData.walls[widget.index].views.toString()}",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          JamIcons.set_square,
-                                          size: 20,
-                                          color: Theme.of(context).accentColor,
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          WData.walls[widget.index].resolution
-                                              .toString(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyText2
-                                              .copyWith(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                        color: Theme.of(context).hintColor,
-                                        borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(20),
-                                            bottomRight: Radius.circular(20))),
-                                    padding: const EdgeInsets.all(0),
-                                    child: Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          10, 5, 10, 5),
-                                      child: Icon(
-                                        JamIcons.close,
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        JamIcons.set_square,
+                                        size: 20,
                                         color: Theme.of(context).accentColor,
                                       ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                : widget.provider == "Prism"
-                    ? Positioned(
-                        top: widget.childOffset.dy +
-                            widget.childSize.height * 4 / 10,
-                        left: widget.childOffset.dx,
-                        child: TweenAnimationBuilder(
-                          duration: const Duration(milliseconds: 150),
-                          builder: (BuildContext context, double value,
-                              Widget child) {
-                            return Transform.scale(
-                              scale: value,
-                              alignment: Alignment.bottomRight,
-                              child: child,
-                            );
-                          },
-                          tween: Tween(begin: 0.0, end: 1.0),
-                          child: Container(
-                            width: widget.childSize.width,
-                            height: widget.childSize.height * 6 / 10,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).hintColor,
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(20.0)),
-                            ),
-                            child: ClipRRect(
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(20.0)),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: <Widget>[
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        15, 7, 15, 15),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        Stack(
-                                            alignment: globals.verifiedUsers
-                                                    .contains(Data
-                                                        .subPrismWalls[widget
-                                                            .index]["email"]
-                                                        .toString())
-                                                ? Alignment.topRight
-                                                : Alignment.centerLeft,
-                                            children: [
-                                              ActionChip(
-                                                  pressElevation: 5,
-                                                  padding:
-                                                      const EdgeInsets.all(5),
-                                                  avatar: CircleAvatar(
-                                                    backgroundImage:
-                                                        CachedNetworkImageProvider(
-                                                            Data
-                                                                .subPrismWalls[
-                                                                    widget
-                                                                        .index][
-                                                                    "userPhoto"]
-                                                                .toString()),
-                                                  ),
-                                                  backgroundColor: Colors.black,
-                                                  labelPadding:
-                                                      const EdgeInsets.fromLTRB(
-                                                          7, 3, 7, 3),
-                                                  label: Text(
-                                                    Data.subPrismWalls[widget
-                                                                .index]["by"]
-                                                            .toString()[0]
-                                                            .toUpperCase() +
-                                                        Data.subPrismWalls[
-                                                                widget.index]
-                                                                ["by"]
-                                                            .toString()
-                                                            .substring(1),
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .headline4
-                                                        .copyWith(
-                                                          color: Colors.white,
-                                                        ),
-                                                  ),
-                                                  onPressed: () {
-                                                    Navigator.pushNamed(
-                                                        context,
-                                                        photographerProfileRoute,
-                                                        arguments: [
-                                                          Data.subPrismWalls[
-                                                                  widget.index]
-                                                              ["by"],
-                                                          Data.subPrismWalls[
-                                                                  widget.index]
-                                                              ["email"],
-                                                          Data.subPrismWalls[
-                                                                  widget.index]
-                                                              ["userPhoto"],
-                                                          false,
-                                                          Data.subPrismWalls[widget.index]
-                                                                          [
-                                                                          "twitter"] !=
-                                                                      null &&
-                                                                  Data.subPrismWalls[widget.index]
-                                                                          [
-                                                                          "twitter"] !=
-                                                                      ""
-                                                              ? Data
-                                                                  .subPrismWalls[
-                                                                      widget
-                                                                          .index]
-                                                                      [
-                                                                      "twitter"]
-                                                                  .toString()
-                                                                  .split(
-                                                                      "https://www.twitter.com/")[1]
-                                                              : "",
-                                                          Data.subPrismWalls[widget.index]
-                                                                          [
-                                                                          "instagram"] !=
-                                                                      null &&
-                                                                  Data.subPrismWalls[widget.index]
-                                                                          [
-                                                                          "instagram"] !=
-                                                                      ""
-                                                              ? Data
-                                                                  .subPrismWalls[
-                                                                      widget
-                                                                          .index]
-                                                                      [
-                                                                      "instagram"]
-                                                                  .toString()
-                                                                  .split(
-                                                                      "https://www.instagram.com/")[1]
-                                                              : "",
-                                                        ]);
-                                                  }),
-                                              globals.verifiedUsers.contains(
-                                                      Data.subPrismWalls[widget
-                                                              .index]["email"]
-                                                          .toString())
-                                                  ? Container(
-                                                      width: 20,
-                                                      height: 20,
-                                                      child: SvgPicture.string(
-                                                          verifiedIcon.replaceAll(
-                                                              "E57697",
-                                                              config.Colors().mainAccentColor(
-                                                                          1) ==
-                                                                      Colors
-                                                                          .black
-                                                                  ? "E57697"
-                                                                  : main.prefs
-                                                                      .get(
-                                                                          "mainAccentColor")
-                                                                      .toRadixString(
-                                                                          16)
-                                                                      .toString()
-                                                                      .substring(
-                                                                          2))),
-                                                    )
-                                                  : Container(),
-                                            ]),
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              0, 5, 0, 10),
-                                          child: Text(
-                                            Data.subPrismWalls[widget.index]
-                                                    ["id"]
-                                                .toString()
-                                                .toUpperCase(),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headline5
-                                                .copyWith(
-                                                    color: Theme.of(context)
-                                                        .accentColor),
-                                          ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.save,
-                                              size: 20,
-                                              color:
-                                                  Theme.of(context).accentColor,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              Data.subPrismWalls[widget.index]
-                                                      ["size"]
-                                                  .toString(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText2
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.set_square,
-                                              size: 20,
-                                              color:
-                                                  Theme.of(context).accentColor,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              Data.subPrismWalls[widget.index]
-                                                      ["resolution"]
-                                                  .toString(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyText2
-                                                  .copyWith(
-                                                      color: Theme.of(context)
-                                                          .accentColor),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Align(
-                                    alignment: Alignment.bottomRight,
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                            color: Theme.of(context).hintColor,
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                                    topLeft:
-                                                        Radius.circular(20),
-                                                    bottomRight:
-                                                        Radius.circular(20))),
-                                        padding: const EdgeInsets.all(0),
-                                        child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              10, 5, 10, 5),
-                                          child: Icon(
-                                            JamIcons.close,
-                                            color:
-                                                Theme.of(context).accentColor,
-                                          ),
-                                        ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        WData.walls[widget.index].resolution
+                                            .toString(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2
+                                            .copyWith(
+                                                color: Theme.of(context)
+                                                    .accentColor),
                                       ),
-                                    ),
-                                  )
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
-                          ),
-                        ),
-                      )
-                    : widget.provider == "ProfileWall"
-                        ? Positioned(
-                            top: widget.childOffset.dy +
-                                widget.childSize.height * 4 / 10,
-                            left: widget.childOffset.dx,
-                            child: TweenAnimationBuilder(
-                              duration: const Duration(milliseconds: 150),
-                              builder: (BuildContext context, double value,
-                                  Widget child) {
-                                return Transform.scale(
-                                  scale: value,
-                                  alignment: Alignment.bottomRight,
-                                  child: child,
-                                );
-                              },
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              child: Container(
-                                width: widget.childSize.width,
-                                height: widget.childSize.height * 6 / 10,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).hintColor,
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(20.0)),
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  Navigator.pop(context);
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: Theme.of(context).hintColor,
+                                      borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(20),
+                                          bottomRight: Radius.circular(20))),
+                                  padding: const EdgeInsets.all(0),
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                                    child: Icon(
+                                      JamIcons.close,
+                                      color: Theme.of(context).accentColor,
+                                    ),
+                                  ),
                                 ),
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(20.0)),
-                                  child: Stack(
-                                    fit: StackFit.expand,
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : widget.provider == "Prism"
+                  ? Positioned(
+                      top: widget.childOffset.dy +
+                          widget.childSize.height * 4 / 10,
+                      left: widget.childOffset.dx,
+                      child: TweenAnimationBuilder(
+                        duration: const Duration(milliseconds: 150),
+                        builder:
+                            (BuildContext context, double value, Widget child) {
+                          return Transform.scale(
+                            scale: value,
+                            alignment: Alignment.bottomRight,
+                            child: child,
+                          );
+                        },
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        child: Container(
+                          width: widget.childSize.width,
+                          height: widget.childSize.height * 6 / 10,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).hintColor,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(20.0)),
+                          ),
+                          child: ClipRRect(
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(20.0)),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: <Widget>[
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                                  child: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: <Widget>[
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            15, 7, 15, 15),
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: <Widget>[
+                                      Stack(
+                                          alignment: globals.verifiedUsers
+                                                  .contains(Data.subPrismWalls[
+                                                          widget.index]["email"]
+                                                      .toString())
+                                              ? Alignment.topRight
+                                              : Alignment.centerLeft,
+                                          children: [
                                             ActionChip(
                                                 pressElevation: 5,
                                                 padding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        14, 11, 14, 11),
-                                                avatar: const Icon(
-                                                  JamIcons.camera,
-                                                  color: Colors.white,
-                                                  size: 20,
+                                                    const EdgeInsets.all(5),
+                                                avatar: CircleAvatar(
+                                                  backgroundImage:
+                                                      CachedNetworkImageProvider(
+                                                          Data
+                                                              .subPrismWalls[
+                                                                  widget.index]
+                                                                  ["userPhoto"]
+                                                              .toString()),
                                                 ),
                                                 backgroundColor: Colors.black,
+                                                labelPadding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        7, 3, 7, 3),
                                                 label: Text(
-                                                  Provider.of<ProfileWallProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .profileWalls[widget
+                                                  Data.subPrismWalls[widget
                                                               .index]["by"]
                                                           .toString()[0]
                                                           .toUpperCase() +
-                                                      Provider.of<ProfileWallProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .profileWalls[widget
+                                                      Data.subPrismWalls[widget
                                                               .index]["by"]
                                                           .toString()
                                                           .substring(1),
@@ -668,178 +415,248 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         color: Colors.white,
                                                       ),
                                                 ),
-                                                onPressed: () {}),
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      0, 5, 0, 10),
-                                              child: Text(
-                                                Provider.of<ProfileWallProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .profileWalls[widget.index]
-                                                        ["id"]
-                                                    .toString()
-                                                    .toUpperCase(),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline5
-                                                    .copyWith(
-                                                        color: Theme.of(context)
-                                                            .accentColor),
-                                              ),
-                                            ),
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  JamIcons.save,
-                                                  size: 20,
+                                                onPressed: () {
+                                                  Navigator.pushNamed(context,
+                                                      photographerProfileRoute,
+                                                      arguments: [
+                                                        Data.subPrismWalls[
+                                                            widget.index]["by"],
+                                                        Data.subPrismWalls[
+                                                                widget.index]
+                                                            ["email"],
+                                                        Data.subPrismWalls[
+                                                                widget.index]
+                                                            ["userPhoto"],
+                                                        false,
+                                                        Data.subPrismWalls[widget
+                                                                            .index]
+                                                                        [
+                                                                        "twitter"] !=
+                                                                    null &&
+                                                                Data.subPrismWalls[
+                                                                            widget.index]
+                                                                        [
+                                                                        "twitter"] !=
+                                                                    ""
+                                                            ? Data
+                                                                .subPrismWalls[
+                                                                    widget.index]
+                                                                    ["twitter"]
+                                                                .toString()
+                                                                .split(
+                                                                    "https://www.twitter.com/")[1]
+                                                            : "",
+                                                        Data.subPrismWalls[widget
+                                                                            .index]
+                                                                        [
+                                                                        "instagram"] !=
+                                                                    null &&
+                                                                Data.subPrismWalls[
+                                                                            widget.index]
+                                                                        [
+                                                                        "instagram"] !=
+                                                                    ""
+                                                            ? Data
+                                                                .subPrismWalls[
+                                                                    widget
+                                                                        .index]
+                                                                    ["instagram"]
+                                                                .toString()
+                                                                .split("https://www.instagram.com/")[1]
+                                                            : "",
+                                                      ]);
+                                                }),
+                                            globals.verifiedUsers.contains(Data
+                                                    .subPrismWalls[widget.index]
+                                                        ["email"]
+                                                    .toString())
+                                                ? Container(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: SvgPicture.string(
+                                                        verifiedIcon.replaceAll(
+                                                            "E57697",
+                                                            config.Colors()
+                                                                        .mainAccentColor(
+                                                                            1) ==
+                                                                    Colors.black
+                                                                ? "E57697"
+                                                                : main.prefs
+                                                                    .get(
+                                                                        "mainAccentColor")
+                                                                    .toRadixString(
+                                                                        16)
+                                                                    .toString()
+                                                                    .substring(
+                                                                        2))),
+                                                  )
+                                                : Container(),
+                                          ]),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            0, 5, 0, 10),
+                                        child: Text(
+                                          Data.subPrismWalls[widget.index]["id"]
+                                              .toString()
+                                              .toUpperCase(),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headline5
+                                              .copyWith(
                                                   color: Theme.of(context)
-                                                      .accentColor,
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  Provider.of<ProfileWallProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .profileWalls[
-                                                          widget.index]["size"]
-                                                      .toString(),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText2
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
-                                                ),
-                                              ],
-                                            ),
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  JamIcons.set_square,
-                                                  size: 20,
-                                                  color: Theme.of(context)
-                                                      .accentColor,
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  Provider.of<ProfileWallProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .profileWalls[widget
-                                                          .index]["resolution"]
-                                                      .toString(),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText2
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
+                                                      .accentColor),
                                         ),
                                       ),
-                                      Align(
-                                        alignment: Alignment.bottomRight,
-                                        child: GestureDetector(
-                                          onTap: () async {
-                                            Navigator.pop(context);
-                                          },
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                                color:
-                                                    Theme.of(context).hintColor,
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                        topLeft:
-                                                            Radius.circular(20),
-                                                        bottomRight:
-                                                            Radius.circular(
-                                                                20))),
-                                            padding: const EdgeInsets.all(0),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      10, 5, 10, 5),
-                                              child: Icon(
-                                                JamIcons.close,
-                                                color: Theme.of(context)
-                                                    .accentColor,
-                                              ),
-                                            ),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            JamIcons.save,
+                                            size: 20,
+                                            color:
+                                                Theme.of(context).accentColor,
                                           ),
-                                        ),
-                                      )
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            Data.subPrismWalls[widget.index]
+                                                    ["size"]
+                                                .toString(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            JamIcons.set_square,
+                                            size: 20,
+                                            color:
+                                                Theme.of(context).accentColor,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            Data.subPrismWalls[widget.index]
+                                                    ["resolution"]
+                                                .toString(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2
+                                                .copyWith(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
-                              ),
-                            ),
-                          )
-                        : widget.provider == "UserProfileWall"
-                            ? Positioned(
-                                top: widget.childOffset.dy +
-                                    widget.childSize.height * 4 / 10,
-                                left: widget.childOffset.dx,
-                                child: TweenAnimationBuilder(
-                                  duration: const Duration(milliseconds: 150),
-                                  builder: (BuildContext context, double value,
-                                      Widget child) {
-                                    return Transform.scale(
-                                      scale: value,
-                                      alignment: Alignment.bottomRight,
-                                      child: child,
-                                    );
-                                  },
-                                  tween: Tween(begin: 0.0, end: 1.0),
-                                  child: Container(
-                                    width: widget.childSize.width,
-                                    height: widget.childSize.height * 6 / 10,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).hintColor,
-                                      borderRadius: const BorderRadius.all(
-                                          Radius.circular(20.0)),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                          color: Theme.of(context).hintColor,
+                                          borderRadius: const BorderRadius.only(
+                                              topLeft: Radius.circular(20),
+                                              bottomRight:
+                                                  Radius.circular(20))),
+                                      padding: const EdgeInsets.all(0),
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            10, 5, 10, 5),
+                                        child: Icon(
+                                          JamIcons.close,
+                                          color: Theme.of(context).accentColor,
+                                        ),
+                                      ),
                                     ),
-                                    child: ClipRRect(
-                                      borderRadius: const BorderRadius.all(
-                                          Radius.circular(20.0)),
-                                      child: Stack(
-                                        fit: StackFit.expand,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : widget.provider == "Trending"
+                      ? Positioned(
+                          top: widget.childOffset.dy +
+                              widget.childSize.height * 4 / 10,
+                          left: widget.childOffset.dx,
+                          child: TweenAnimationBuilder(
+                            duration: const Duration(milliseconds: 150),
+                            builder: (BuildContext context, double value,
+                                Widget child) {
+                              return Transform.scale(
+                                scale: value,
+                                alignment: Alignment.bottomRight,
+                                child: child,
+                              );
+                            },
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            child: Container(
+                              width: widget.childSize.width,
+                              height: widget.childSize.height * 6 / 10,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).hintColor,
+                                borderRadius: const BorderRadius.all(
+                                    Radius.circular(20.0)),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.all(
+                                    Radius.circular(20.0)),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: <Widget>[
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          15, 7, 15, 15),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: <Widget>[
-                                          Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                15, 7, 15, 15),
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: <Widget>[
+                                          Stack(
+                                              alignment: globals.verifiedUsers
+                                                      .contains(Data
+                                                          .subSortedData[widget
+                                                              .index]["email"]
+                                                          .toString())
+                                                  ? Alignment.topRight
+                                                  : Alignment.centerLeft,
+                                              children: [
                                                 ActionChip(
                                                     pressElevation: 5,
-                                                    padding: const EdgeInsets
-                                                            .fromLTRB(
-                                                        14, 11, 14, 11),
-                                                    avatar: const Icon(
-                                                      JamIcons.camera,
-                                                      color: Colors.white,
-                                                      size: 20,
-                                                    ),
-                                                    backgroundColor:
-                                                        Colors.black,
-                                                    label: Text(
-                                                      UserData.userProfileWalls[
+                                                    padding:
+                                                        const EdgeInsets.all(5),
+                                                    avatar: CircleAvatar(
+                                                      backgroundImage:
+                                                          CachedNetworkImageProvider(Data
+                                                              .subSortedData[
                                                                   widget.index]
-                                                                  ["by"]
+                                                                  ["userPhoto"]
+                                                              .toString()),
+                                                    ),
+                                                    backgroundColor: Colors
+                                                        .black,
+                                                    labelPadding:
+                                                        const EdgeInsets
+                                                                .fromLTRB(
+                                                            7, 3, 7, 3),
+                                                    label: Text(
+                                                      Data.subSortedData[widget
+                                                                  .index]["by"]
                                                               .toString()[0]
                                                               .toUpperCase() +
-                                                          UserData
-                                                              .userProfileWalls[
+                                                          Data.subSortedData[
                                                                   widget.index]
                                                                   ["by"]
                                                               .toString()
@@ -851,477 +668,885 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             color: Colors.white,
                                                           ),
                                                     ),
-                                                    onPressed: () {}),
-                                                Padding(
+                                                    onPressed: () {
+                                                      Navigator.pushNamed(
+                                                          context,
+                                                          photographerProfileRoute,
+                                                          arguments: [
+                                                            Data.subSortedData[
+                                                                    widget
+                                                                        .index]
+                                                                ["by"],
+                                                            Data.subSortedData[
+                                                                    widget
+                                                                        .index]
+                                                                ["email"],
+                                                            Data.subSortedData[
+                                                                    widget
+                                                                        .index]
+                                                                ["userPhoto"],
+                                                            false,
+                                                            Data.subSortedData[widget.index]
+                                                                            [
+                                                                            "twitter"] !=
+                                                                        null &&
+                                                                    Data.subSortedData[widget.index]
+                                                                            [
+                                                                            "twitter"] !=
+                                                                        ""
+                                                                ? Data
+                                                                    .subSortedData[
+                                                                        widget
+                                                                            .index]
+                                                                        [
+                                                                        "twitter"]
+                                                                    .toString()
+                                                                    .split(
+                                                                        "https://www.twitter.com/")[1]
+                                                                : "",
+                                                            Data.subSortedData[widget.index]
+                                                                            [
+                                                                            "instagram"] !=
+                                                                        null &&
+                                                                    Data.subSortedData[widget.index]
+                                                                            [
+                                                                            "instagram"] !=
+                                                                        ""
+                                                                ? Data
+                                                                    .subSortedData[
+                                                                        widget
+                                                                            .index]
+                                                                        [
+                                                                        "instagram"]
+                                                                    .toString()
+                                                                    .split(
+                                                                        "https://www.instagram.com/")[1]
+                                                                : "",
+                                                          ]);
+                                                    }),
+                                                globals.verifiedUsers.contains(
+                                                        Data.subSortedData[
+                                                                widget.index]
+                                                                ["email"]
+                                                            .toString())
+                                                    ? Container(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child: SvgPicture.string(verifiedIcon.replaceAll(
+                                                            "E57697",
+                                                            config.Colors()
+                                                                        .mainAccentColor(
+                                                                            1) ==
+                                                                    Colors.black
+                                                                ? "E57697"
+                                                                : main.prefs
+                                                                    .get(
+                                                                        "mainAccentColor")
+                                                                    .toRadixString(
+                                                                        16)
+                                                                    .toString()
+                                                                    .substring(
+                                                                        2))),
+                                                      )
+                                                    : Container(),
+                                              ]),
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                0, 5, 0, 10),
+                                            child: Text(
+                                              Data.subSortedData[widget.index]
+                                                      ["id"]
+                                                  .toString()
+                                                  .toUpperCase(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headline5
+                                                  .copyWith(
+                                                      color: Theme.of(context)
+                                                          .accentColor),
+                                            ),
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.eye,
+                                                size: 20,
+                                                color: Theme.of(context)
+                                                    .accentColor,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                int.parse(Data.wallsDataL[
+                                                                widget.index][
+                                                                Data.subSortedData[
+                                                                        widget
+                                                                            .index]
+                                                                        ["id"]
+                                                                    .toString()]
+                                                            .toString()) >
+                                                        1000
+                                                    ? "${(int.parse(Data.wallsDataL[widget.index][Data.subSortedData[widget.index]["id"].toString()].toString()) / 1000).toStringAsFixed(1)}K views"
+                                                    : "${Data.wallsDataL[widget.index][Data.subSortedData[widget.index]["id"].toString()].toString()} views",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.set_square,
+                                                size: 20,
+                                                color: Theme.of(context)
+                                                    .accentColor,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                Data.subSortedData[widget.index]
+                                                        ["resolution"]
+                                                    .toString(),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyText2
+                                                    .copyWith(
+                                                        color: Theme.of(context)
+                                                            .accentColor),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.bottomRight,
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                              color:
+                                                  Theme.of(context).hintColor,
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                      topLeft:
+                                                          Radius.circular(20),
+                                                      bottomRight:
+                                                          Radius.circular(20))),
+                                          padding: const EdgeInsets.all(0),
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                10, 5, 10, 5),
+                                            child: Icon(
+                                              JamIcons.close,
+                                              color:
+                                                  Theme.of(context).accentColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : widget.provider == "ProfileWall"
+                          ? Positioned(
+                              top: widget.childOffset.dy +
+                                  widget.childSize.height * 4 / 10,
+                              left: widget.childOffset.dx,
+                              child: TweenAnimationBuilder(
+                                duration: const Duration(milliseconds: 150),
+                                builder: (BuildContext context, double value,
+                                    Widget child) {
+                                  return Transform.scale(
+                                    scale: value,
+                                    alignment: Alignment.bottomRight,
+                                    child: child,
+                                  );
+                                },
+                                tween: Tween(begin: 0.0, end: 1.0),
+                                child: Container(
+                                  width: widget.childSize.width,
+                                  height: widget.childSize.height * 6 / 10,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).hintColor,
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(20.0)),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(20.0)),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: <Widget>[
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              15, 7, 15, 15),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              ActionChip(
+                                                  pressElevation: 5,
                                                   padding:
                                                       const EdgeInsets.fromLTRB(
-                                                          0, 5, 0, 10),
-                                                  child: Text(
-                                                    UserData.userProfileWalls[
-                                                            widget.index]["id"]
-                                                        .toString()
-                                                        .toUpperCase(),
+                                                          14, 11, 14, 11),
+                                                  avatar: const Icon(
+                                                    JamIcons.camera,
+                                                    color: Colors.white,
+                                                    size: 20,
+                                                  ),
+                                                  backgroundColor: Colors.black,
+                                                  label: Text(
+                                                    Provider.of<ProfileWallProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .profileWalls[widget
+                                                                .index]["by"]
+                                                            .toString()[0]
+                                                            .toUpperCase() +
+                                                        Provider.of<ProfileWallProvider>(
+                                                                context,
+                                                                listen: false)
+                                                            .profileWalls[widget
+                                                                .index]["by"]
+                                                            .toString()
+                                                            .substring(1),
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .headline5
+                                                        .headline4
+                                                        .copyWith(
+                                                          color: Colors.white,
+                                                        ),
+                                                  ),
+                                                  onPressed: () {}),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        0, 5, 0, 10),
+                                                child: Text(
+                                                  Provider.of<ProfileWallProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .profileWalls[
+                                                          widget.index]["id"]
+                                                      .toString()
+                                                      .toUpperCase(),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .headline5
+                                                      .copyWith(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor),
+                                                ),
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.save,
+                                                    size: 20,
+                                                    color: Theme.of(context)
+                                                        .accentColor,
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    Provider.of<ProfileWallProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .profileWalls[widget
+                                                            .index]["size"]
+                                                        .toString(),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2
                                                         .copyWith(
                                                             color: Theme.of(
                                                                     context)
                                                                 .accentColor),
                                                   ),
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      JamIcons.save,
-                                                      size: 20,
-                                                      color: Theme.of(context)
-                                                          .accentColor,
-                                                    ),
-                                                    const SizedBox(width: 10),
-                                                    Text(
-                                                      UserData.userProfileWalls[
-                                                              widget.index]
-                                                              ["size"]
-                                                          .toString(),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText2
-                                                          .copyWith(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      JamIcons.set_square,
-                                                      size: 20,
-                                                      color: Theme.of(context)
-                                                          .accentColor,
-                                                    ),
-                                                    const SizedBox(width: 10),
-                                                    Text(
-                                                      UserData.userProfileWalls[
-                                                              widget.index]
-                                                              ["resolution"]
-                                                          .toString(),
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyText2
-                                                          .copyWith(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .accentColor),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: Alignment.bottomRight,
-                                            child: GestureDetector(
-                                              onTap: () async {
-                                                Navigator.pop(context);
-                                              },
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                    color: Theme.of(context)
-                                                        .hintColor,
-                                                    borderRadius:
-                                                        const BorderRadius.only(
-                                                            topLeft:
-                                                                Radius.circular(
-                                                                    20),
-                                                            bottomRight:
-                                                                Radius.circular(
-                                                                    20))),
-                                                padding:
-                                                    const EdgeInsets.all(0),
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.fromLTRB(
-                                                          10, 5, 10, 5),
-                                                  child: Icon(
-                                                    JamIcons.close,
+                                                ],
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.set_square,
+                                                    size: 20,
                                                     color: Theme.of(context)
                                                         .accentColor,
                                                   ),
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    Provider.of<ProfileWallProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .profileWalls[
+                                                            widget.index]
+                                                            ["resolution"]
+                                                        .toString(),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText2
+                                                        .copyWith(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Align(
+                                          alignment: Alignment.bottomRight,
+                                          child: GestureDetector(
+                                            onTap: () async {
+                                              Navigator.pop(context);
+                                            },
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .hintColor,
+                                                  borderRadius:
+                                                      const BorderRadius.only(
+                                                          topLeft:
+                                                              Radius.circular(
+                                                                  20),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  20))),
+                                              padding: const EdgeInsets.all(0),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        10, 5, 10, 5),
+                                                child: Icon(
+                                                  JamIcons.close,
+                                                  color: Theme.of(context)
+                                                      .accentColor,
                                                 ),
                                               ),
                                             ),
-                                          )
-                                        ],
-                                      ),
+                                          ),
+                                        )
+                                      ],
                                     ),
                                   ),
                                 ),
-                              )
-                            : widget.provider == "Pexels"
-                                ? Positioned(
-                                    top: widget.childOffset.dy +
-                                        widget.childSize.height * 4 / 10,
-                                    left: widget.childOffset.dx,
-                                    child: TweenAnimationBuilder(
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      builder: (BuildContext context,
-                                          double value, Widget child) {
-                                        return Transform.scale(
-                                          scale: value,
-                                          alignment: Alignment.bottomRight,
-                                          child: child,
-                                        );
-                                      },
-                                      tween: Tween(begin: 0.0, end: 1.0),
-                                      child: Container(
-                                        width: widget.childSize.width,
-                                        height:
-                                            widget.childSize.height * 6 / 10,
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).hintColor,
-                                          borderRadius: const BorderRadius.all(
-                                              Radius.circular(20.0)),
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: const BorderRadius.all(
-                                              Radius.circular(20.0)),
-                                          child: Stack(
-                                            fit: StackFit.expand,
-                                            children: <Widget>[
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        15, 7, 15, 15),
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceEvenly,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: <Widget>[
-                                                    ActionChip(
-                                                        pressElevation: 5,
-                                                        padding:
-                                                            const EdgeInsets
-                                                                    .fromLTRB(
-                                                                14, 11, 14, 11),
-                                                        backgroundColor:
-                                                            Colors.black,
-                                                        avatar: const Icon(
-                                                            JamIcons.camera,
-                                                            color: Colors.white,
-                                                            size: 20),
-                                                        label: Text(
-                                                          PData
-                                                              .wallsP[
-                                                                  widget.index]
-                                                              .photographer
-                                                              .toString(),
-                                                          style:
-                                                              Theme.of(context)
-                                                                  .textTheme
-                                                                  .headline4
-                                                                  .copyWith(
-                                                                    color: Colors
-                                                                        .white,
-                                                                  ),
-                                                        ),
-                                                        onPressed: () {
-                                                          launch(PData
-                                                              .wallsP[
-                                                                  widget.index]
-                                                              .url);
-                                                        }),
-                                                    Padding(
+                              ),
+                            )
+                          : widget.provider == "UserProfileWall"
+                              ? Positioned(
+                                  top: widget.childOffset.dy +
+                                      widget.childSize.height * 4 / 10,
+                                  left: widget.childOffset.dx,
+                                  child: TweenAnimationBuilder(
+                                    duration: const Duration(milliseconds: 150),
+                                    builder: (BuildContext context,
+                                        double value, Widget child) {
+                                      return Transform.scale(
+                                        scale: value,
+                                        alignment: Alignment.bottomRight,
+                                        child: child,
+                                      );
+                                    },
+                                    tween: Tween(begin: 0.0, end: 1.0),
+                                    child: Container(
+                                      width: widget.childSize.width,
+                                      height: widget.childSize.height * 6 / 10,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).hintColor,
+                                        borderRadius: const BorderRadius.all(
+                                            Radius.circular(20.0)),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: const BorderRadius.all(
+                                            Radius.circular(20.0)),
+                                        child: Stack(
+                                          fit: StackFit.expand,
+                                          children: <Widget>[
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      15, 7, 15, 15),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: <Widget>[
+                                                  ActionChip(
+                                                      pressElevation: 5,
                                                       padding: const EdgeInsets
                                                               .fromLTRB(
-                                                          0, 5, 0, 10),
-                                                      child: Text(
-                                                        PData.wallsP[widget.index].url
-                                                                    .toString()
-                                                                    .replaceAll(
-                                                                        "https://www.pexels.com/photo/", "")
-                                                                    .replaceAll(
-                                                                        "-", " ")
-                                                                    .replaceAll(
-                                                                        "/", "")
-                                                                    .length >
-                                                                8
-                                                            ? PData.wallsP[widget.index].url
-                                                                    .toString()
-                                                                    .replaceAll(
-                                                                        "https://www.pexels.com/photo/", "")
-                                                                    .replaceAll(
-                                                                        "-", " ")
-                                                                    .replaceAll(
-                                                                        "/",
-                                                                        "")[0]
-                                                                    .toUpperCase() +
-                                                                PData.wallsP[widget.index].url
-                                                                    .toString()
-                                                                    .replaceAll(
-                                                                        "https://www.pexels.com/photo/", "")
-                                                                    .replaceAll(
-                                                                        "-", " ")
-                                                                    .replaceAll("/", "")
-                                                                    .substring(1, PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length - 7)
-                                                            : PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
+                                                          14, 11, 14, 11),
+                                                      avatar: const Icon(
+                                                        JamIcons.camera,
+                                                        color: Colors.white,
+                                                        size: 20,
+                                                      ),
+                                                      backgroundColor:
+                                                          Colors.black,
+                                                      label: Text(
+                                                        UserData.userProfileWalls[
+                                                                    widget
+                                                                        .index]
+                                                                    ["by"]
+                                                                .toString()[0]
+                                                                .toUpperCase() +
+                                                            UserData
+                                                                .userProfileWalls[
+                                                                    widget
+                                                                        .index]
+                                                                    ["by"]
+                                                                .toString()
+                                                                .substring(1),
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .headline5
+                                                            .headline4
+                                                            .copyWith(
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                      ),
+                                                      onPressed: () {}),
+                                                  Padding(
+                                                    padding: const EdgeInsets
+                                                        .fromLTRB(0, 5, 0, 10),
+                                                    child: Text(
+                                                      UserData.userProfileWalls[
+                                                              widget.index]
+                                                              ["id"]
+                                                          .toString()
+                                                          .toUpperCase(),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .headline5
+                                                          .copyWith(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor),
+                                                    ),
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        JamIcons.save,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor,
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        UserData
+                                                            .userProfileWalls[
+                                                                widget.index]
+                                                                ["size"]
+                                                            .toString(),
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
                                                                     .accentColor),
                                                       ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        JamIcons.set_square,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor,
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Text(
+                                                        UserData
+                                                            .userProfileWalls[
+                                                                widget.index]
+                                                                ["resolution"]
+                                                            .toString(),
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyText2
+                                                            .copyWith(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .accentColor),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.bottomRight,
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  Navigator.pop(context);
+                                                },
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .hintColor,
+                                                      borderRadius:
+                                                          const BorderRadius
+                                                                  .only(
+                                                              topLeft: Radius
+                                                                  .circular(20),
+                                                              bottomRight:
+                                                                  Radius
+                                                                      .circular(
+                                                                          20))),
+                                                  padding:
+                                                      const EdgeInsets.all(0),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .fromLTRB(10, 5, 10, 5),
+                                                    child: Icon(
+                                                      JamIcons.close,
+                                                      color: Theme.of(context)
+                                                          .accentColor,
                                                     ),
-                                                    Row(
-                                                      children: [
-                                                        Icon(
-                                                          JamIcons.set_square,
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor,
-                                                          size: 20,
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 5),
-                                                        Text(
-                                                          "${PData.wallsP[widget.index].width.toString()}x${PData.wallsP[widget.index].height.toString()}",
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : widget.provider == "Pexels"
+                                  ? Positioned(
+                                      top: widget.childOffset.dy +
+                                          widget.childSize.height * 4 / 10,
+                                      left: widget.childOffset.dx,
+                                      child: TweenAnimationBuilder(
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        builder: (BuildContext context,
+                                            double value, Widget child) {
+                                          return Transform.scale(
+                                            scale: value,
+                                            alignment: Alignment.bottomRight,
+                                            child: child,
+                                          );
+                                        },
+                                        tween: Tween(begin: 0.0, end: 1.0),
+                                        child: Container(
+                                          width: widget.childSize.width,
+                                          height:
+                                              widget.childSize.height * 6 / 10,
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).hintColor,
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(20.0)),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(20.0)),
+                                            child: Stack(
+                                              fit: StackFit.expand,
+                                              children: <Widget>[
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          15, 7, 15, 15),
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceEvenly,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: <Widget>[
+                                                      ActionChip(
+                                                          pressElevation: 5,
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .fromLTRB(
+                                                                  14,
+                                                                  11,
+                                                                  14,
+                                                                  11),
+                                                          backgroundColor:
+                                                              Colors.black,
+                                                          avatar: const Icon(
+                                                              JamIcons.camera,
+                                                              color:
+                                                                  Colors.white,
+                                                              size: 20),
+                                                          label: Text(
+                                                            PData
+                                                                .wallsP[widget
+                                                                    .index]
+                                                                .photographer
+                                                                .toString(),
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .headline4
+                                                                .copyWith(
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                          ),
+                                                          onPressed: () {
+                                                            launch(PData
+                                                                .wallsP[widget
+                                                                    .index]
+                                                                .url);
+                                                          }),
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .fromLTRB(
+                                                                0, 5, 0, 10),
+                                                        child: Text(
+                                                          PData.wallsP[widget.index].url
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          "https://www.pexels.com/photo/", "")
+                                                                      .replaceAll(
+                                                                          "-", " ")
+                                                                      .replaceAll(
+                                                                          "/", "")
+                                                                      .length >
+                                                                  8
+                                                              ? PData.wallsP[widget.index].url
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          "https://www.pexels.com/photo/", "")
+                                                                      .replaceAll(
+                                                                          "-", " ")
+                                                                      .replaceAll(
+                                                                          "/",
+                                                                          "")[0]
+                                                                      .toUpperCase() +
+                                                                  PData.wallsP[widget.index].url
+                                                                      .toString()
+                                                                      .replaceAll(
+                                                                          "https://www.pexels.com/photo/", "")
+                                                                      .replaceAll(
+                                                                          "-", " ")
+                                                                      .replaceAll("/", "")
+                                                                      .substring(1, PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length - 7)
+                                                              : PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .headline6
+                                                              .headline5
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
                                                                       .accentColor),
                                                         ),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Align(
-                                                alignment:
-                                                    Alignment.bottomRight,
-                                                child: GestureDetector(
-                                                  onTap: () async {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                        color: Theme.of(context)
-                                                            .hintColor,
-                                                        borderRadius:
-                                                            const BorderRadius
-                                                                    .only(
-                                                                topLeft: Radius
-                                                                    .circular(
-                                                                        20),
-                                                                bottomRight: Radius
-                                                                    .circular(
-                                                                        20))),
-                                                    padding:
-                                                        const EdgeInsets.all(0),
-                                                    child: Padding(
-                                                      padding: const EdgeInsets
-                                                              .fromLTRB(
-                                                          10, 5, 10, 5),
-                                                      child: Icon(
-                                                        JamIcons.close,
-                                                        color: Theme.of(context)
-                                                            .accentColor,
                                                       ),
-                                                    ),
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            JamIcons.set_square,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                            size: 20,
+                                                          ),
+                                                          const SizedBox(
+                                                              width: 5),
+                                                          Text(
+                                                            "${PData.wallsP[widget.index].width.toString()}x${PData.wallsP[widget.index].height.toString()}",
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .headline6
+                                                                .copyWith(
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .accentColor),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
-                                              )
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : widget.provider == "Liked"
-                                    ? Provider.of<FavouriteProvider>(context,
-                                                        listen: false)
-                                                    .liked[widget.index]
-                                                ["provider"] ==
-                                            "WallHaven"
-                                        ? Positioned(
-                                            top: widget.childOffset.dy +
-                                                widget.childSize.height * 2 / 8,
-                                            left: widget.childOffset.dx,
-                                            child: TweenAnimationBuilder(
-                                              duration: const Duration(
-                                                  milliseconds: 200),
-                                              builder: (BuildContext context,
-                                                  double value, Widget child) {
-                                                return Transform.scale(
-                                                  scale: value,
+                                                Align(
                                                   alignment:
                                                       Alignment.bottomRight,
-                                                  child: child,
-                                                );
-                                              },
-                                              tween:
-                                                  Tween(begin: 0.0, end: 1.0),
-                                              child: Container(
-                                                width: widget.childSize.width,
-                                                height:
-                                                    widget.childSize.height *
-                                                        6 /
-                                                        8,
-                                                decoration: BoxDecoration(
-                                                  color: Theme.of(context)
-                                                      .hintColor,
-                                                  borderRadius:
-                                                      const BorderRadius.all(
-                                                          Radius.circular(
-                                                              20.0)),
-                                                ),
-                                                child: ClipRRect(
-                                                  borderRadius:
-                                                      const BorderRadius.all(
-                                                          Radius.circular(
-                                                              20.0)),
-                                                  child: Stack(
-                                                    fit: StackFit.expand,
-                                                    children: <Widget>[
-                                                      Padding(
+                                                  child: GestureDetector(
+                                                    onTap: () async {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .hintColor,
+                                                          borderRadius:
+                                                              const BorderRadius
+                                                                      .only(
+                                                                  topLeft: Radius
+                                                                      .circular(
+                                                                          20),
+                                                                  bottomRight: Radius
+                                                                      .circular(
+                                                                          20))),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              0),
+                                                      child: Padding(
                                                         padding:
                                                             const EdgeInsets
                                                                     .fromLTRB(
-                                                                15, 7, 15, 15),
-                                                        child: Column(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceEvenly,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: <Widget>[
-                                                            ActionChip(
-                                                                pressElevation:
-                                                                    5,
+                                                                10, 5, 10, 5),
+                                                        child: Icon(
+                                                          JamIcons.close,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : widget.provider == "Liked"
+                                      ? Provider.of<FavouriteProvider>(context,
+                                                          listen: false)
+                                                      .liked[widget.index]
+                                                  ["provider"] ==
+                                              "WallHaven"
+                                          ? Positioned(
+                                              top: widget.childOffset.dy +
+                                                  widget.childSize.height *
+                                                      2 /
+                                                      8,
+                                              left: widget.childOffset.dx,
+                                              child: TweenAnimationBuilder(
+                                                duration: const Duration(
+                                                    milliseconds: 200),
+                                                builder: (BuildContext context,
+                                                    double value,
+                                                    Widget child) {
+                                                  return Transform.scale(
+                                                    scale: value,
+                                                    alignment:
+                                                        Alignment.bottomRight,
+                                                    child: child,
+                                                  );
+                                                },
+                                                tween:
+                                                    Tween(begin: 0.0, end: 1.0),
+                                                child: Container(
+                                                  width: widget.childSize.width,
+                                                  height:
+                                                      widget.childSize.height *
+                                                          6 /
+                                                          8,
+                                                  decoration: BoxDecoration(
+                                                    color: Theme.of(context)
+                                                        .hintColor,
+                                                    borderRadius:
+                                                        const BorderRadius.all(
+                                                            Radius.circular(
+                                                                20.0)),
+                                                  ),
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        const BorderRadius.all(
+                                                            Radius.circular(
+                                                                20.0)),
+                                                    child: Stack(
+                                                      fit: StackFit.expand,
+                                                      children: <Widget>[
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .fromLTRB(
+                                                                  15,
+                                                                  7,
+                                                                  15,
+                                                                  15),
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceEvenly,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: <Widget>[
+                                                              ActionChip(
+                                                                  pressElevation:
+                                                                      5,
+                                                                  padding:
+                                                                      const EdgeInsets.fromLTRB(
+                                                                          14,
+                                                                          11,
+                                                                          14,
+                                                                          11),
+                                                                  avatar:
+                                                                      const Icon(
+                                                                    JamIcons
+                                                                        .ordered_list,
+                                                                    color: Colors
+                                                                        .white,
+                                                                    size: 20,
+                                                                  ),
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .black,
+                                                                  label: Text(
+                                                                    Provider.of<FavouriteProvider>(context, listen: false)
+                                                                            .liked[widget.index][
+                                                                                "category"]
+                                                                            .toString()[
+                                                                                0]
+                                                                            .toUpperCase() +
+                                                                        Provider.of<FavouriteProvider>(context,
+                                                                                listen: false)
+                                                                            .liked[widget.index]["category"]
+                                                                            .toString()
+                                                                            .substring(1),
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .headline4
+                                                                        .copyWith(
+                                                                          color:
+                                                                              Colors.white,
+                                                                        ),
+                                                                  ),
+                                                                  onPressed:
+                                                                      () {}),
+                                                              Padding(
                                                                 padding:
                                                                     const EdgeInsets
                                                                             .fromLTRB(
-                                                                        14,
-                                                                        11,
-                                                                        14,
-                                                                        11),
-                                                                avatar:
-                                                                    const Icon(
-                                                                  JamIcons
-                                                                      .ordered_list,
-                                                                  color: Colors
-                                                                      .white,
-                                                                  size: 20,
-                                                                ),
-                                                                backgroundColor:
-                                                                    Colors
-                                                                        .black,
-                                                                label: Text(
-                                                                  Provider.of<FavouriteProvider>(
-                                                                              context,
-                                                                              listen:
-                                                                                  false)
-                                                                          .liked[widget.index]
-                                                                              [
-                                                                              "category"]
-                                                                          .toString()[
-                                                                              0]
-                                                                          .toUpperCase() +
-                                                                      Provider.of<FavouriteProvider>(
-                                                                              context,
-                                                                              listen:
-                                                                                  false)
-                                                                          .liked[
-                                                                              widget.index]
-                                                                              [
-                                                                              "category"]
-                                                                          .toString()
-                                                                          .substring(
-                                                                              1),
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .headline4
-                                                                      .copyWith(
-                                                                        color: Colors
-                                                                            .white,
-                                                                      ),
-                                                                ),
-                                                                onPressed:
-                                                                    () {}),
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                          .fromLTRB(
-                                                                      0,
-                                                                      5,
-                                                                      0,
-                                                                      10),
-                                                              child: Text(
-                                                                Provider.of<FavouriteProvider>(
-                                                                        context,
-                                                                        listen:
-                                                                            false)
-                                                                    .liked[
-                                                                        widget
-                                                                            .index]
-                                                                        ["id"]
-                                                                    .toString()
-                                                                    .toUpperCase(),
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .headline5
-                                                                    .copyWith(
-                                                                        color: Theme.of(context)
-                                                                            .accentColor),
-                                                              ),
-                                                            ),
-                                                            Row(
-                                                              children: [
-                                                                const Icon(
-                                                                  JamIcons.eye,
-                                                                  size: 20,
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 10),
-                                                                Text(
-                                                                  "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["views"].toString()}",
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodyText2
-                                                                      .copyWith(
-                                                                          color:
-                                                                              Theme.of(context).accentColor),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            Row(
-                                                              children: [
-                                                                const Icon(
-                                                                  JamIcons
-                                                                      .set_square,
-                                                                  size: 20,
-                                                                  color: Colors
-                                                                      .white70,
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 10),
-                                                                Text(
+                                                                        0,
+                                                                        5,
+                                                                        0,
+                                                                        10),
+                                                                child: Text(
                                                                   Provider.of<FavouriteProvider>(
                                                                           context,
                                                                           listen:
@@ -1329,189 +1554,55 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       .liked[
                                                                           widget
                                                                               .index]
-                                                                          [
-                                                                          "resolution"]
-                                                                      .toString(),
+                                                                          ["id"]
+                                                                      .toString()
+                                                                      .toUpperCase(),
                                                                   style: Theme.of(
                                                                           context)
                                                                       .textTheme
-                                                                      .bodyText2
+                                                                      .headline5
                                                                       .copyWith(
                                                                           color:
                                                                               Theme.of(context).accentColor),
                                                                 ),
-                                                              ],
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      Align(
-                                                        alignment: Alignment
-                                                            .bottomRight,
-                                                        child: GestureDetector(
-                                                          onTap: () async {
-                                                            Navigator.pop(
-                                                                context);
-                                                          },
-                                                          child: Container(
-                                                            decoration: const BoxDecoration(
-                                                                color: Color(
-                                                                    0xFF2F2F2F),
-                                                                borderRadius: BorderRadius.only(
-                                                                    topLeft: Radius
-                                                                        .circular(
-                                                                            20),
-                                                                    bottomRight:
-                                                                        Radius.circular(
-                                                                            20))),
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(0),
-                                                            child: Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                          .fromLTRB(
-                                                                      10,
-                                                                      5,
-                                                                      10,
-                                                                      5),
-                                                              child: Icon(
-                                                                JamIcons.close,
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .accentColor,
                                                               ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      )
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                        : Provider.of<FavouriteProvider>(
-                                                            context,
-                                                            listen: false)
-                                                        .liked[widget.index]
-                                                    ["provider"] ==
-                                                "Prism"
-                                            ? Positioned(
-                                                top: widget.childOffset.dy +
-                                                    widget.childSize.height *
-                                                        2 /
-                                                        8,
-                                                left: widget.childOffset.dx,
-                                                child: TweenAnimationBuilder(
-                                                  duration: const Duration(
-                                                      milliseconds: 200),
-                                                  builder:
-                                                      (BuildContext context,
-                                                          double value,
-                                                          Widget child) {
-                                                    return Transform.scale(
-                                                      scale: value,
-                                                      alignment:
-                                                          Alignment.bottomRight,
-                                                      child: child,
-                                                    );
-                                                  },
-                                                  tween: Tween(
-                                                      begin: 0.0, end: 1.0),
-                                                  child: Container(
-                                                    width:
-                                                        widget.childSize.width,
-                                                    height: widget
-                                                            .childSize.height *
-                                                        6 /
-                                                        8,
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(context)
-                                                          .hintColor,
-                                                      borderRadius:
-                                                          const BorderRadius
-                                                                  .all(
-                                                              Radius.circular(
-                                                                  20.0)),
-                                                    ),
-                                                    child: ClipRRect(
-                                                      borderRadius:
-                                                          const BorderRadius
-                                                                  .all(
-                                                              Radius.circular(
-                                                                  20.0)),
-                                                      child: Stack(
-                                                        fit: StackFit.expand,
-                                                        children: <Widget>[
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                        .fromLTRB(
-                                                                    15,
-                                                                    7,
-                                                                    15,
-                                                                    15),
-                                                            child: Column(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .spaceEvenly,
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: <
-                                                                  Widget>[
-                                                                ActionChip(
-                                                                    pressElevation:
-                                                                        5,
-                                                                    padding:
-                                                                        const EdgeInsets.fromLTRB(
-                                                                            14,
-                                                                            11,
-                                                                            14,
-                                                                            11),
-                                                                    avatar:
-                                                                        const Icon(
-                                                                      JamIcons
-                                                                          .camera,
-                                                                      color: Colors
-                                                                          .white,
-                                                                      size: 20,
-                                                                    ),
-                                                                    backgroundColor:
-                                                                        Colors
-                                                                            .black,
-                                                                    label: Text(
-                                                                      Provider.of<FavouriteProvider>(context, listen: false)
-                                                                              .liked[widget.index][
-                                                                                  "photographer"]
-                                                                              .toString()[
-                                                                                  0]
-                                                                              .toUpperCase() +
-                                                                          Provider.of<FavouriteProvider>(context, listen: false)
-                                                                              .liked[widget.index]["photographer"]
-                                                                              .toString()
-                                                                              .substring(1),
-                                                                      style: Theme.of(
-                                                                              context)
-                                                                          .textTheme
-                                                                          .headline4
-                                                                          .copyWith(
-                                                                            color:
-                                                                                Colors.white,
-                                                                          ),
-                                                                    ),
-                                                                    onPressed:
-                                                                        () {}),
-                                                                Padding(
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                              .fromLTRB(
-                                                                          0,
-                                                                          5,
-                                                                          0,
+                                                              Row(
+                                                                children: [
+                                                                  const Icon(
+                                                                    JamIcons
+                                                                        .eye,
+                                                                    size: 20,
+                                                                    color: Colors
+                                                                        .white70,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                      width:
                                                                           10),
-                                                                  child: Text(
+                                                                  Text(
+                                                                    "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["views"].toString()}",
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyText2
+                                                                        .copyWith(
+                                                                            color:
+                                                                                Theme.of(context).accentColor),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Row(
+                                                                children: [
+                                                                  const Icon(
+                                                                    JamIcons
+                                                                        .set_square,
+                                                                    size: 20,
+                                                                    color: Colors
+                                                                        .white70,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          10),
+                                                                  Text(
                                                                     Provider.of<FavouriteProvider>(
                                                                             context,
                                                                             listen:
@@ -1519,838 +1610,1015 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                         .liked[
                                                                             widget.index]
                                                                             [
-                                                                            "id"]
-                                                                        .toString()
-                                                                        .toUpperCase(),
+                                                                            "resolution"]
+                                                                        .toString(),
                                                                     style: Theme.of(
                                                                             context)
                                                                         .textTheme
-                                                                        .headline5
+                                                                        .bodyText2
                                                                         .copyWith(
                                                                             color:
                                                                                 Theme.of(context).accentColor),
                                                                   ),
-                                                                ),
-                                                                Row(
-                                                                  children: [
-                                                                    const Icon(
-                                                                      JamIcons
-                                                                          .save,
-                                                                      size: 20,
-                                                                      color: Colors
-                                                                          .white70,
-                                                                    ),
-                                                                    const SizedBox(
-                                                                        width:
-                                                                            10),
-                                                                    Text(
-                                                                      Provider.of<FavouriteProvider>(
-                                                                              context,
-                                                                              listen:
-                                                                                  false)
-                                                                          .liked[
-                                                                              widget.index]
-                                                                              [
-                                                                              "size"]
-                                                                          .toString(),
-                                                                      style: Theme.of(
-                                                                              context)
-                                                                          .textTheme
-                                                                          .bodyText2
-                                                                          .copyWith(
-                                                                              color: Theme.of(context).accentColor),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                                Row(
-                                                                  children: [
-                                                                    const Icon(
-                                                                      JamIcons
-                                                                          .set_square,
-                                                                      size: 20,
-                                                                      color: Colors
-                                                                          .white70,
-                                                                    ),
-                                                                    const SizedBox(
-                                                                        width:
-                                                                            10),
-                                                                    Text(
-                                                                      Provider.of<FavouriteProvider>(
-                                                                              context,
-                                                                              listen:
-                                                                                  false)
-                                                                          .liked[
-                                                                              widget.index]
-                                                                              [
-                                                                              "resolution"]
-                                                                          .toString(),
-                                                                      style: Theme.of(
-                                                                              context)
-                                                                          .textTheme
-                                                                          .bodyText2
-                                                                          .copyWith(
-                                                                              color: Theme.of(context).accentColor),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ],
-                                                            ),
+                                                                ],
+                                                              ),
+                                                            ],
                                                           ),
-                                                          Align(
-                                                            alignment: Alignment
-                                                                .bottomRight,
-                                                            child:
-                                                                GestureDetector(
-                                                              onTap: () async {
-                                                                Navigator.pop(
-                                                                    context);
-                                                              },
-                                                              child: Container(
-                                                                decoration: const BoxDecoration(
-                                                                    color: Color(
-                                                                        0xFF2F2F2F),
-                                                                    borderRadius: BorderRadius.only(
-                                                                        topLeft:
-                                                                            Radius.circular(
-                                                                                20),
-                                                                        bottomRight:
-                                                                            Radius.circular(20))),
+                                                        ),
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .bottomRight,
+                                                          child:
+                                                              GestureDetector(
+                                                            onTap: () async {
+                                                              Navigator.pop(
+                                                                  context);
+                                                            },
+                                                            child: Container(
+                                                              decoration: const BoxDecoration(
+                                                                  color: Color(
+                                                                      0xFF2F2F2F),
+                                                                  borderRadius: BorderRadius.only(
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              20),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              20))),
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(0),
+                                                              child: Padding(
                                                                 padding:
                                                                     const EdgeInsets
-                                                                        .all(0),
-                                                                child: Padding(
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                              .fromLTRB(
-                                                                          10,
-                                                                          5,
-                                                                          10,
-                                                                          5),
-                                                                  child: Icon(
-                                                                    JamIcons
-                                                                        .close,
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .accentColor,
-                                                                  ),
+                                                                            .fromLTRB(
+                                                                        10,
+                                                                        5,
+                                                                        10,
+                                                                        5),
+                                                                child: Icon(
+                                                                  JamIcons
+                                                                      .close,
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .accentColor,
                                                                 ),
                                                               ),
                                                             ),
-                                                          )
-                                                        ],
-                                                      ),
+                                                          ),
+                                                        )
+                                                      ],
                                                     ),
                                                   ),
                                                 ),
-                                              )
-                                            : Provider.of<FavouriteProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .liked[widget.index]
-                                                        ["provider"] ==
-                                                    "Pexels"
-                                                ? Positioned(
-                                                    top: widget.childOffset.dy +
-                                                        widget.childSize
-                                                                .height *
-                                                            1 /
-                                                            2,
-                                                    left: widget.childOffset.dx,
-                                                    child:
-                                                        TweenAnimationBuilder(
-                                                      duration: const Duration(
-                                                          milliseconds: 200),
-                                                      builder:
-                                                          (BuildContext context,
-                                                              double value,
-                                                              Widget child) {
-                                                        return Transform.scale(
-                                                          scale: value,
-                                                          alignment: Alignment
-                                                              .bottomRight,
-                                                          child: child,
-                                                        );
-                                                      },
-                                                      tween: Tween(
-                                                          begin: 0.0, end: 1.0),
-                                                      child: Container(
-                                                        width: widget
-                                                            .childSize.width,
-                                                        height: widget.childSize
-                                                                .height *
-                                                            1 /
-                                                            2,
-                                                        decoration:
-                                                            const BoxDecoration(
-                                                          color:
-                                                              Color(0xFF2F2F2F),
-                                                          borderRadius:
-                                                              BorderRadius.all(
-                                                                  Radius
-                                                                      .circular(
-                                                                          20.0)),
-                                                        ),
-                                                        child: ClipRRect(
-                                                          borderRadius:
-                                                              const BorderRadius
-                                                                      .all(
-                                                                  Radius
-                                                                      .circular(
-                                                                          20.0)),
-                                                          child: Stack(
-                                                            fit:
-                                                                StackFit.expand,
-                                                            children: <Widget>[
-                                                              Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                            .fromLTRB(
-                                                                        15,
-                                                                        7,
-                                                                        15,
-                                                                        15),
-                                                                child: Column(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceEvenly,
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  children: <
-                                                                      Widget>[
-                                                                    ActionChip(
-                                                                        pressElevation:
+                                              ),
+                                            )
+                                          : Provider.of<FavouriteProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[widget.index]
+                                                      ["provider"] ==
+                                                  "Prism"
+                                              ? Positioned(
+                                                  top: widget.childOffset.dy +
+                                                      widget.childSize.height *
+                                                          2 /
+                                                          8,
+                                                  left: widget.childOffset.dx,
+                                                  child: TweenAnimationBuilder(
+                                                    duration: const Duration(
+                                                        milliseconds: 200),
+                                                    builder:
+                                                        (BuildContext context,
+                                                            double value,
+                                                            Widget child) {
+                                                      return Transform.scale(
+                                                        scale: value,
+                                                        alignment: Alignment
+                                                            .bottomRight,
+                                                        child: child,
+                                                      );
+                                                    },
+                                                    tween: Tween(
+                                                        begin: 0.0, end: 1.0),
+                                                    child: Container(
+                                                      width: widget
+                                                          .childSize.width,
+                                                      height: widget.childSize
+                                                              .height *
+                                                          6 /
+                                                          8,
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(context)
+                                                            .hintColor,
+                                                        borderRadius:
+                                                            const BorderRadius
+                                                                    .all(
+                                                                Radius.circular(
+                                                                    20.0)),
+                                                      ),
+                                                      child: ClipRRect(
+                                                        borderRadius:
+                                                            const BorderRadius
+                                                                    .all(
+                                                                Radius.circular(
+                                                                    20.0)),
+                                                        child: Stack(
+                                                          fit: StackFit.expand,
+                                                          children: <Widget>[
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                          .fromLTRB(
+                                                                      15,
+                                                                      7,
+                                                                      15,
+                                                                      15),
+                                                              child: Column(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceEvenly,
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                children: <
+                                                                    Widget>[
+                                                                  ActionChip(
+                                                                      pressElevation:
+                                                                          5,
+                                                                      padding: const EdgeInsets.fromLTRB(
+                                                                          14,
+                                                                          11,
+                                                                          14,
+                                                                          11),
+                                                                      avatar:
+                                                                          const Icon(
+                                                                        JamIcons
+                                                                            .camera,
+                                                                        color: Colors
+                                                                            .white,
+                                                                        size:
+                                                                            20,
+                                                                      ),
+                                                                      backgroundColor:
+                                                                          Colors
+                                                                              .black,
+                                                                      label:
+                                                                          Text(
+                                                                        Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["photographer"].toString()[0].toUpperCase() +
+                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["photographer"].toString().substring(1),
+                                                                        style: Theme.of(context)
+                                                                            .textTheme
+                                                                            .headline4
+                                                                            .copyWith(
+                                                                              color: Colors.white,
+                                                                            ),
+                                                                      ),
+                                                                      onPressed:
+                                                                          () {}),
+                                                                  Padding(
+                                                                    padding:
+                                                                        const EdgeInsets.fromLTRB(
+                                                                            0,
                                                                             5,
-                                                                        padding: const EdgeInsets.fromLTRB(
-                                                                            14,
-                                                                            11,
-                                                                            14,
-                                                                            11),
-                                                                        backgroundColor:
-                                                                            Colors
-                                                                                .black,
-                                                                        avatar: const Icon(
-                                                                            JamIcons
-                                                                                .camera,
-                                                                            color: Colors
-                                                                                .white,
+                                                                            0,
+                                                                            10),
+                                                                    child: Text(
+                                                                      Provider.of<FavouriteProvider>(
+                                                                              context,
+                                                                              listen:
+                                                                                  false)
+                                                                          .liked[
+                                                                              widget.index]
+                                                                              [
+                                                                              "id"]
+                                                                          .toString()
+                                                                          .toUpperCase(),
+                                                                      style: Theme.of(
+                                                                              context)
+                                                                          .textTheme
+                                                                          .headline5
+                                                                          .copyWith(
+                                                                              color: Theme.of(context).accentColor),
+                                                                    ),
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      const Icon(
+                                                                        JamIcons
+                                                                            .save,
+                                                                        size:
+                                                                            20,
+                                                                        color: Colors
+                                                                            .white70,
+                                                                      ),
+                                                                      const SizedBox(
+                                                                          width:
+                                                                              10),
+                                                                      Text(
+                                                                        Provider.of<FavouriteProvider>(context,
+                                                                                listen: false)
+                                                                            .liked[widget.index]["size"]
+                                                                            .toString(),
+                                                                        style: Theme.of(context)
+                                                                            .textTheme
+                                                                            .bodyText2
+                                                                            .copyWith(color: Theme.of(context).accentColor),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      const Icon(
+                                                                        JamIcons
+                                                                            .set_square,
+                                                                        size:
+                                                                            20,
+                                                                        color: Colors
+                                                                            .white70,
+                                                                      ),
+                                                                      const SizedBox(
+                                                                          width:
+                                                                              10),
+                                                                      Text(
+                                                                        Provider.of<FavouriteProvider>(context,
+                                                                                listen: false)
+                                                                            .liked[widget.index]["resolution"]
+                                                                            .toString(),
+                                                                        style: Theme.of(context)
+                                                                            .textTheme
+                                                                            .bodyText2
+                                                                            .copyWith(color: Theme.of(context).accentColor),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            Align(
+                                                              alignment: Alignment
+                                                                  .bottomRight,
+                                                              child:
+                                                                  GestureDetector(
+                                                                onTap:
+                                                                    () async {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                },
+                                                                child:
+                                                                    Container(
+                                                                  decoration: const BoxDecoration(
+                                                                      color: Color(
+                                                                          0xFF2F2F2F),
+                                                                      borderRadius: BorderRadius.only(
+                                                                          topLeft: Radius.circular(
+                                                                              20),
+                                                                          bottomRight:
+                                                                              Radius.circular(20))),
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .all(0),
+                                                                  child:
+                                                                      Padding(
+                                                                    padding:
+                                                                        const EdgeInsets.fromLTRB(
+                                                                            10,
+                                                                            5,
+                                                                            10,
+                                                                            5),
+                                                                    child: Icon(
+                                                                      JamIcons
+                                                                          .close,
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            )
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                              : Provider.of<FavouriteProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked[widget.index]
+                                                          ["provider"] ==
+                                                      "Pexels"
+                                                  ? Positioned(
+                                                      top: widget
+                                                              .childOffset.dy +
+                                                          widget.childSize
+                                                                  .height *
+                                                              1 /
+                                                              2,
+                                                      left:
+                                                          widget.childOffset.dx,
+                                                      child:
+                                                          TweenAnimationBuilder(
+                                                        duration:
+                                                            const Duration(
+                                                                milliseconds:
+                                                                    200),
+                                                        builder: (BuildContext
+                                                                context,
+                                                            double value,
+                                                            Widget child) {
+                                                          return Transform
+                                                              .scale(
+                                                            scale: value,
+                                                            alignment: Alignment
+                                                                .bottomRight,
+                                                            child: child,
+                                                          );
+                                                        },
+                                                        tween: Tween(
+                                                            begin: 0.0,
+                                                            end: 1.0),
+                                                        child: Container(
+                                                          width: widget
+                                                              .childSize.width,
+                                                          height: widget
+                                                                  .childSize
+                                                                  .height *
+                                                              1 /
+                                                              2,
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                            color: Color(
+                                                                0xFF2F2F2F),
+                                                            borderRadius:
+                                                                BorderRadius.all(
+                                                                    Radius.circular(
+                                                                        20.0)),
+                                                          ),
+                                                          child: ClipRRect(
+                                                            borderRadius:
+                                                                const BorderRadius
+                                                                        .all(
+                                                                    Radius.circular(
+                                                                        20.0)),
+                                                            child: Stack(
+                                                              fit: StackFit
+                                                                  .expand,
+                                                              children: <
+                                                                  Widget>[
+                                                                Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                              .fromLTRB(
+                                                                          15,
+                                                                          7,
+                                                                          15,
+                                                                          15),
+                                                                  child: Column(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .spaceEvenly,
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: <
+                                                                        Widget>[
+                                                                      ActionChip(
+                                                                          pressElevation:
+                                                                              5,
+                                                                          padding: const EdgeInsets.fromLTRB(
+                                                                              14,
+                                                                              11,
+                                                                              14,
+                                                                              11),
+                                                                          backgroundColor: Colors
+                                                                              .black,
+                                                                          avatar: const Icon(JamIcons.camera,
+                                                                              color: Colors
+                                                                                  .white,
+                                                                              size:
+                                                                                  20),
+                                                                          label:
+                                                                              Text(
+                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["photographer"].toString(),
+                                                                            style: Theme.of(context).textTheme.headline4.copyWith(
+                                                                                  color: Colors.white,
+                                                                                ),
+                                                                          ),
+                                                                          onPressed:
+                                                                              () {}),
+                                                                      Row(
+                                                                        children: [
+                                                                          Icon(
+                                                                            JamIcons.set_square,
+                                                                            color:
+                                                                                Theme.of(context).accentColor,
                                                                             size:
-                                                                                20),
-                                                                        label:
-                                                                            Text(
-                                                                          Provider.of<FavouriteProvider>(context, listen: false)
-                                                                              .liked[widget.index]["photographer"]
-                                                                              .toString(),
-                                                                          style: Theme.of(context)
-                                                                              .textTheme
-                                                                              .headline4
-                                                                              .copyWith(
-                                                                                color: Colors.white,
-                                                                              ),
-                                                                        ),
-                                                                        onPressed:
-                                                                            () {}),
-                                                                    Row(
-                                                                      children: [
-                                                                        Icon(
+                                                                                20,
+                                                                          ),
+                                                                          const SizedBox(
+                                                                              width: 5),
+                                                                          Text(
+                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["resolution"].toString(),
+                                                                            style:
+                                                                                Theme.of(context).textTheme.bodyText2.copyWith(color: Theme.of(context).accentColor),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                                Align(
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .bottomRight,
+                                                                  child:
+                                                                      GestureDetector(
+                                                                    onTap:
+                                                                        () async {
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                    child:
+                                                                        Container(
+                                                                      decoration: const BoxDecoration(
+                                                                          color: Color(
+                                                                              0xFF2F2F2F),
+                                                                          borderRadius: BorderRadius.only(
+                                                                              topLeft: Radius.circular(20),
+                                                                              bottomRight: Radius.circular(20))),
+                                                                      padding:
+                                                                          const EdgeInsets.all(
+                                                                              0),
+                                                                      child:
+                                                                          Padding(
+                                                                        padding: const EdgeInsets.fromLTRB(
+                                                                            10,
+                                                                            5,
+                                                                            10,
+                                                                            5),
+                                                                        child:
+                                                                            Icon(
                                                                           JamIcons
-                                                                              .set_square,
+                                                                              .close,
                                                                           color:
                                                                               Theme.of(context).accentColor,
-                                                                          size:
-                                                                              20,
                                                                         ),
-                                                                        const SizedBox(
-                                                                            width:
-                                                                                5),
-                                                                        Text(
-                                                                          Provider.of<FavouriteProvider>(context, listen: false)
-                                                                              .liked[widget.index]["resolution"]
-                                                                              .toString(),
-                                                                          style: Theme.of(context)
-                                                                              .textTheme
-                                                                              .bodyText2
-                                                                              .copyWith(color: Theme.of(context).accentColor),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              Align(
-                                                                alignment: Alignment
-                                                                    .bottomRight,
-                                                                child:
-                                                                    GestureDetector(
-                                                                  onTap:
-                                                                      () async {
-                                                                    Navigator.pop(
-                                                                        context);
-                                                                  },
-                                                                  child:
-                                                                      Container(
-                                                                    decoration: const BoxDecoration(
-                                                                        color: Color(
-                                                                            0xFF2F2F2F),
-                                                                        borderRadius: BorderRadius.only(
-                                                                            topLeft:
-                                                                                Radius.circular(20),
-                                                                            bottomRight: Radius.circular(20))),
-                                                                    padding:
-                                                                        const EdgeInsets
-                                                                            .all(0),
-                                                                    child:
-                                                                        Padding(
-                                                                      padding:
-                                                                          const EdgeInsets.fromLTRB(
-                                                                              10,
-                                                                              5,
-                                                                              10,
-                                                                              5),
-                                                                      child:
-                                                                          Icon(
-                                                                        JamIcons
-                                                                            .close,
-                                                                        color: Theme.of(context)
-                                                                            .accentColor,
                                                                       ),
                                                                     ),
                                                                   ),
-                                                                ),
-                                                              )
-                                                            ],
+                                                                )
+                                                              ],
+                                                            ),
                                                           ),
                                                         ),
                                                       ),
-                                                    ),
-                                                  )
-                                                : Positioned(
-                                                    top: widget.childOffset.dy +
-                                                        widget.childSize
-                                                                .height *
-                                                            1 /
-                                                            2,
-                                                    left: widget.childOffset.dx,
-                                                    child:
-                                                        TweenAnimationBuilder(
-                                                      duration: const Duration(
-                                                          milliseconds: 200),
-                                                      builder:
-                                                          (BuildContext context,
-                                                              double value,
-                                                              Widget child) {
-                                                        return Transform.scale(
-                                                          scale: value,
-                                                          alignment: Alignment
-                                                              .bottomRight,
-                                                          child: child,
-                                                        );
-                                                      },
-                                                      tween: Tween(
-                                                          begin: 0.0, end: 1.0),
-                                                      child: Container(
-                                                        width: widget
-                                                            .childSize.width,
-                                                        height: widget.childSize
-                                                                .height *
-                                                            1 /
-                                                            2,
-                                                        decoration:
-                                                            const BoxDecoration(
-                                                          color:
-                                                              Color(0xFF2F2F2F),
-                                                          borderRadius:
-                                                              BorderRadius.all(
-                                                                  Radius
-                                                                      .circular(
-                                                                          20.0)),
-                                                        ),
-                                                        child: ClipRRect(
-                                                          borderRadius:
-                                                              const BorderRadius
-                                                                      .all(
-                                                                  Radius
-                                                                      .circular(
-                                                                          20.0)),
-                                                          child: Stack(
-                                                            fit:
-                                                                StackFit.expand,
-                                                            children: <Widget>[
-                                                              Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                            .fromLTRB(
-                                                                        15,
-                                                                        7,
-                                                                        15,
-                                                                        15),
-                                                                child: Column(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceEvenly,
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  children: <
-                                                                      Widget>[
-                                                                    Row(
-                                                                      children: [
-                                                                        Icon(
-                                                                          JamIcons
-                                                                              .heart_f,
-                                                                          color:
-                                                                              Theme.of(context).accentColor,
-                                                                          size:
-                                                                              20,
-                                                                        ),
-                                                                        const SizedBox(
-                                                                            width:
-                                                                                5),
-                                                                        Text(
-                                                                          "Likes: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["fav"]}",
-                                                                          style: Theme.of(context)
-                                                                              .textTheme
-                                                                              .headline6
-                                                                              .copyWith(color: Theme.of(context).accentColor),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                    Row(
-                                                                      children: [
-                                                                        Icon(
-                                                                          JamIcons
-                                                                              .eye,
-                                                                          color:
-                                                                              Theme.of(context).accentColor,
-                                                                          size:
-                                                                              20,
-                                                                        ),
-                                                                        const SizedBox(
-                                                                            width:
-                                                                                5),
-                                                                        Text(
-                                                                          "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["views"]}",
-                                                                          style: Theme.of(context)
-                                                                              .textTheme
-                                                                              .headline6
-                                                                              .copyWith(color: Theme.of(context).accentColor),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                    Row(
-                                                                      children: [
-                                                                        Icon(
-                                                                          JamIcons
-                                                                              .set_square,
-                                                                          color:
-                                                                              Theme.of(context).accentColor,
-                                                                          size:
-                                                                              20,
-                                                                        ),
-                                                                        const SizedBox(
-                                                                            width:
-                                                                                5),
-                                                                        Text(
-                                                                          Provider.of<FavouriteProvider>(context, listen: false)
-                                                                              .liked[widget.index]["resolution"]
-                                                                              .toString(),
-                                                                          style: Theme.of(context)
-                                                                              .textTheme
-                                                                              .headline6
-                                                                              .copyWith(color: Theme.of(context).accentColor),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              Align(
-                                                                alignment: Alignment
-                                                                    .bottomRight,
-                                                                child:
-                                                                    GestureDetector(
-                                                                  onTap:
-                                                                      () async {
-                                                                    Navigator.pop(
-                                                                        context);
-                                                                  },
-                                                                  child:
-                                                                      Container(
-                                                                    decoration: const BoxDecoration(
-                                                                        color: Color(
-                                                                            0xFF2F2F2F),
-                                                                        borderRadius: BorderRadius.only(
-                                                                            topLeft:
-                                                                                Radius.circular(20),
-                                                                            bottomRight: Radius.circular(20))),
-                                                                    padding:
-                                                                        const EdgeInsets
-                                                                            .all(0),
-                                                                    child:
-                                                                        Padding(
-                                                                      padding:
-                                                                          const EdgeInsets.fromLTRB(
-                                                                              10,
-                                                                              5,
-                                                                              10,
-                                                                              5),
-                                                                      child:
+                                                    )
+                                                  : Positioned(
+                                                      top: widget
+                                                              .childOffset.dy +
+                                                          widget.childSize
+                                                                  .height *
+                                                              1 /
+                                                              2,
+                                                      left:
+                                                          widget.childOffset.dx,
+                                                      child:
+                                                          TweenAnimationBuilder(
+                                                        duration:
+                                                            const Duration(
+                                                                milliseconds:
+                                                                    200),
+                                                        builder: (BuildContext
+                                                                context,
+                                                            double value,
+                                                            Widget child) {
+                                                          return Transform
+                                                              .scale(
+                                                            scale: value,
+                                                            alignment: Alignment
+                                                                .bottomRight,
+                                                            child: child,
+                                                          );
+                                                        },
+                                                        tween: Tween(
+                                                            begin: 0.0,
+                                                            end: 1.0),
+                                                        child: Container(
+                                                          width: widget
+                                                              .childSize.width,
+                                                          height: widget
+                                                                  .childSize
+                                                                  .height *
+                                                              1 /
+                                                              2,
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                            color: Color(
+                                                                0xFF2F2F2F),
+                                                            borderRadius:
+                                                                BorderRadius.all(
+                                                                    Radius.circular(
+                                                                        20.0)),
+                                                          ),
+                                                          child: ClipRRect(
+                                                            borderRadius:
+                                                                const BorderRadius
+                                                                        .all(
+                                                                    Radius.circular(
+                                                                        20.0)),
+                                                            child: Stack(
+                                                              fit: StackFit
+                                                                  .expand,
+                                                              children: <
+                                                                  Widget>[
+                                                                Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                              .fromLTRB(
+                                                                          15,
+                                                                          7,
+                                                                          15,
+                                                                          15),
+                                                                  child: Column(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .spaceEvenly,
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: <
+                                                                        Widget>[
+                                                                      Row(
+                                                                        children: [
                                                                           Icon(
-                                                                        JamIcons
-                                                                            .close,
-                                                                        color: Theme.of(context)
-                                                                            .accentColor,
+                                                                            JamIcons.heart_f,
+                                                                            color:
+                                                                                Theme.of(context).accentColor,
+                                                                            size:
+                                                                                20,
+                                                                          ),
+                                                                          const SizedBox(
+                                                                              width: 5),
+                                                                          Text(
+                                                                            "Likes: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["fav"]}",
+                                                                            style:
+                                                                                Theme.of(context).textTheme.headline6.copyWith(color: Theme.of(context).accentColor),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      Row(
+                                                                        children: [
+                                                                          Icon(
+                                                                            JamIcons.eye,
+                                                                            color:
+                                                                                Theme.of(context).accentColor,
+                                                                            size:
+                                                                                20,
+                                                                          ),
+                                                                          const SizedBox(
+                                                                              width: 5),
+                                                                          Text(
+                                                                            "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["views"]}",
+                                                                            style:
+                                                                                Theme.of(context).textTheme.headline6.copyWith(color: Theme.of(context).accentColor),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      Row(
+                                                                        children: [
+                                                                          Icon(
+                                                                            JamIcons.set_square,
+                                                                            color:
+                                                                                Theme.of(context).accentColor,
+                                                                            size:
+                                                                                20,
+                                                                          ),
+                                                                          const SizedBox(
+                                                                              width: 5),
+                                                                          Text(
+                                                                            Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["resolution"].toString(),
+                                                                            style:
+                                                                                Theme.of(context).textTheme.headline6.copyWith(color: Theme.of(context).accentColor),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                                Align(
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .bottomRight,
+                                                                  child:
+                                                                      GestureDetector(
+                                                                    onTap:
+                                                                        () async {
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                    child:
+                                                                        Container(
+                                                                      decoration: const BoxDecoration(
+                                                                          color: Color(
+                                                                              0xFF2F2F2F),
+                                                                          borderRadius: BorderRadius.only(
+                                                                              topLeft: Radius.circular(20),
+                                                                              bottomRight: Radius.circular(20))),
+                                                                      padding:
+                                                                          const EdgeInsets.all(
+                                                                              0),
+                                                                      child:
+                                                                          Padding(
+                                                                        padding: const EdgeInsets.fromLTRB(
+                                                                            10,
+                                                                            5,
+                                                                            10,
+                                                                            5),
+                                                                        child:
+                                                                            Icon(
+                                                                          JamIcons
+                                                                              .close,
+                                                                          color:
+                                                                              Theme.of(context).accentColor,
+                                                                        ),
                                                                       ),
                                                                     ),
                                                                   ),
-                                                                ),
-                                                              )
-                                                            ],
+                                                                )
+                                                              ],
+                                                            ),
                                                           ),
                                                         ),
                                                       ),
-                                                    ),
-                                                  )
-                                    : Positioned(
-                                        top: widget.childOffset.dy +
-                                            widget.childSize.height * 2 / 8,
-                                        left: widget.childOffset.dx,
-                                        child: TweenAnimationBuilder(
-                                          duration:
-                                              const Duration(milliseconds: 200),
-                                          builder: (BuildContext context,
-                                              double value, Widget child) {
-                                            return Transform.scale(
-                                              scale: value,
-                                              alignment: Alignment.bottomRight,
-                                              child: child,
-                                            );
-                                          },
-                                          tween: Tween(begin: 0.0, end: 1.0),
-                                          child: Container(
-                                            width: widget.childSize.width,
-                                            height:
-                                                widget.childSize.height * 6 / 8,
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  Theme.of(context).hintColor,
-                                              borderRadius:
-                                                  const BorderRadius.all(
-                                                      Radius.circular(20.0)),
-                                            ),
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  const BorderRadius.all(
-                                                      Radius.circular(20.0)),
-                                              child: Stack(
-                                                fit: StackFit.expand,
-                                                children: <Widget>[
-                                                  Padding(
-                                                    padding: const EdgeInsets
-                                                            .fromLTRB(
-                                                        15, 7, 15, 15),
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceEvenly,
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: <Widget>[
-                                                        ActionChip(
-                                                            pressElevation: 5,
+                                                    )
+                                      : Positioned(
+                                          top: widget.childOffset.dy +
+                                              widget.childSize.height * 2 / 8,
+                                          left: widget.childOffset.dx,
+                                          child: TweenAnimationBuilder(
+                                            duration: const Duration(
+                                                milliseconds: 200),
+                                            builder: (BuildContext context,
+                                                double value, Widget child) {
+                                              return Transform.scale(
+                                                scale: value,
+                                                alignment:
+                                                    Alignment.bottomRight,
+                                                child: child,
+                                              );
+                                            },
+                                            tween: Tween(begin: 0.0, end: 1.0),
+                                            child: Container(
+                                              width: widget.childSize.width,
+                                              height: widget.childSize.height *
+                                                  6 /
+                                                  8,
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    Theme.of(context).hintColor,
+                                                borderRadius:
+                                                    const BorderRadius.all(
+                                                        Radius.circular(20.0)),
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    const BorderRadius.all(
+                                                        Radius.circular(20.0)),
+                                                child: Stack(
+                                                  fit: StackFit.expand,
+                                                  children: <Widget>[
+                                                    Padding(
+                                                      padding: const EdgeInsets
+                                                              .fromLTRB(
+                                                          15, 7, 15, 15),
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceEvenly,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: <Widget>[
+                                                          ActionChip(
+                                                              pressElevation: 5,
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                          .fromLTRB(
+                                                                      14,
+                                                                      11,
+                                                                      14,
+                                                                      11),
+                                                              backgroundColor:
+                                                                  Colors.black,
+                                                              avatar: const Icon(
+                                                                  JamIcons
+                                                                      .camera,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  size: 20),
+                                                              label: Text(
+                                                                PData
+                                                                    .wallsC[widget
+                                                                        .index]
+                                                                    .photographer
+                                                                    .toString(),
+                                                                style: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .headline4
+                                                                    .copyWith(
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                              ),
+                                                              onPressed: () {}),
+                                                          Padding(
                                                             padding:
                                                                 const EdgeInsets
                                                                         .fromLTRB(
-                                                                    14,
-                                                                    11,
-                                                                    14,
-                                                                    11),
-                                                            backgroundColor:
-                                                                Colors.black,
-                                                            avatar: const Icon(
-                                                                JamIcons.camera,
-                                                                color: Colors
-                                                                    .white,
-                                                                size: 20),
-                                                            label: Text(
-                                                              PData
-                                                                  .wallsC[widget
-                                                                      .index]
-                                                                  .photographer
-                                                                  .toString(),
+                                                                    0,
+                                                                    5,
+                                                                    0,
+                                                                    10),
+                                                            child: Text(
+                                                              PData.wallsC[widget.index].url
+                                                                          .toString()
+                                                                          .replaceAll(
+                                                                              "https://www.pexels.com/photo/", "")
+                                                                          .replaceAll(
+                                                                              "-", " ")
+                                                                          .replaceAll(
+                                                                              "/", "")
+                                                                          .length >
+                                                                      8
+                                                                  ? PData.wallsC[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
+                                                                      PData.wallsC[widget.index].url
+                                                                          .toString()
+                                                                          .replaceAll(
+                                                                              "https://www.pexels.com/photo/", "")
+                                                                          .replaceAll(
+                                                                              "-", " ")
+                                                                          .replaceAll(
+                                                                              "/",
+                                                                              "")
+                                                                          .substring(
+                                                                              1,
+                                                                              PData.wallsC[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
+                                                                                  7)
+                                                                  : PData.wallsC[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
+                                                                      PData
+                                                                          .wallsC[widget.index]
+                                                                          .url
+                                                                          .toString()
+                                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                                          .replaceAll("-", " ")
+                                                                          .replaceAll("/", "")
+                                                                          .substring(1),
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .headline4
-                                                                  .copyWith(
-                                                                    color: Colors
-                                                                        .white,
-                                                                  ),
-                                                            ),
-                                                            onPressed: () {}),
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                      .fromLTRB(
-                                                                  0, 5, 0, 10),
-                                                          child: Text(
-                                                            PData.wallsC[widget.index].url
-                                                                        .toString()
-                                                                        .replaceAll(
-                                                                            "https://www.pexels.com/photo/", "")
-                                                                        .replaceAll(
-                                                                            "-", " ")
-                                                                        .replaceAll(
-                                                                            "/", "")
-                                                                        .length >
-                                                                    8
-                                                                ? PData.wallsC[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
-                                                                    PData.wallsC[widget.index].url
-                                                                        .toString()
-                                                                        .replaceAll(
-                                                                            "https://www.pexels.com/photo/", "")
-                                                                        .replaceAll(
-                                                                            "-", " ")
-                                                                        .replaceAll(
-                                                                            "/", "")
-                                                                        .substring(
-                                                                            1,
-                                                                            PData.wallsC[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").length -
-                                                                                7)
-                                                                : PData.wallsC[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() +
-                                                                    PData
-                                                                        .wallsC[widget.index]
-                                                                        .url
-                                                                        .toString()
-                                                                        .replaceAll("https://www.pexels.com/photo/", "")
-                                                                        .replaceAll("-", " ")
-                                                                        .replaceAll("/", "")
-                                                                        .substring(1),
-                                                            style: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .headline5
-                                                                .copyWith(
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .accentColor),
-                                                          ),
-                                                        ),
-                                                        Row(
-                                                          children: [
-                                                            const Icon(
-                                                              JamIcons
-                                                                  .set_square,
-                                                              color: Colors
-                                                                  .white70,
-                                                              size: 20,
-                                                            ),
-                                                            const SizedBox(
-                                                                width: 5),
-                                                            Text(
-                                                              "${PData.wallsC[widget.index].width.toString()}x${PData.wallsC[widget.index].height.toString()}",
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .headline6
+                                                                  .headline5
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
                                                                           .accentColor),
                                                             ),
-                                                          ],
-                                                        ),
-                                                      ],
+                                                          ),
+                                                          Row(
+                                                            children: [
+                                                              const Icon(
+                                                                JamIcons
+                                                                    .set_square,
+                                                                color: Colors
+                                                                    .white70,
+                                                                size: 20,
+                                                              ),
+                                                              const SizedBox(
+                                                                  width: 5),
+                                                              Text(
+                                                                "${PData.wallsC[widget.index].width.toString()}x${PData.wallsC[widget.index].height.toString()}",
+                                                                style: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .headline6
+                                                                    .copyWith(
+                                                                        color: Theme.of(context)
+                                                                            .accentColor),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
-                                                  ),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.bottomRight,
-                                                    child: GestureDetector(
-                                                      onTap: () async {
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Container(
-                                                        decoration: const BoxDecoration(
-                                                            color: Color(
-                                                                0xFF2F2F2F),
-                                                            borderRadius: BorderRadius.only(
-                                                                topLeft: Radius
-                                                                    .circular(
-                                                                        20),
-                                                                bottomRight: Radius
-                                                                    .circular(
-                                                                        20))),
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(0),
-                                                        child: Padding(
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.bottomRight,
+                                                      child: GestureDetector(
+                                                        onTap: () async {
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
+                                                        child: Container(
+                                                          decoration: const BoxDecoration(
+                                                              color: Color(
+                                                                  0xFF2F2F2F),
+                                                              borderRadius: BorderRadius.only(
+                                                                  topLeft: Radius
+                                                                      .circular(
+                                                                          20),
+                                                                  bottomRight: Radius
+                                                                      .circular(
+                                                                          20))),
                                                           padding:
                                                               const EdgeInsets
-                                                                      .fromLTRB(
-                                                                  10, 5, 10, 5),
-                                                          child: Icon(
-                                                            JamIcons.close,
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor,
+                                                                  .all(0),
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                        .fromLTRB(
+                                                                    10,
+                                                                    5,
+                                                                    10,
+                                                                    5),
+                                                            child: Icon(
+                                                              JamIcons.close,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor,
+                                                            ),
                                                           ),
                                                         ),
                                                       ),
-                                                    ),
-                                                  )
-                                                ],
+                                                    )
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-            Positioned(
-              top: topOffset,
-              left: leftOffset,
-              child: SetWallpaperButton(
-                colorChanged: false,
-                url: widget.provider == "WallHaven"
-                    ? WData.walls[widget.index].path.toString()
-                    : widget.provider == "Prism"
-                        ? Data.subPrismWalls[widget.index]["wallpaper_url"]
-                            .toString()
-                        : widget.provider == "ProfileWall"
-                            ? Provider.of<ProfileWallProvider>(context,
-                                    listen: false)
-                                .profileWalls[widget.index]["wallpaper_url"]
-                                .toString()
-                            : widget.provider == "UserProfileWall"
-                                ? UserData.userProfileWalls[widget.index]
-                                        ["wallpaper_url"]
-                                    .toString()
-                                : widget.provider == "Pexels"
-                                    ? PData.wallsP[widget.index].src["original"]
-                                        .toString()
-                                    : widget.provider == "Liked"
-                                        ? Provider.of<FavouriteProvider>(
-                                                context,
-                                                listen: false)
-                                            .liked[widget.index]["url"]
-                                            .toString()
-                                        : PData.wallsC[widget.index]
-                                            .src["original"]
-                                            .toString(),
-              ),
-            ),
-            Positioned(
-              top: topOffset - fabHeartTopOffset,
-              left: leftOffset - fabHeartLeftOffset,
-              child: widget.provider == "WallHaven"
-                  ? FavouriteWallpaperButton(
-                      id: WData.walls[widget.index].id.toString(),
-                      provider: "WallHaven",
-                      wallhaven: WData.walls[widget.index],
-                      trash: false,
-                    )
+          Positioned(
+            top: topOffset,
+            left: leftOffset,
+            child: SetWallpaperButton(
+              colorChanged: false,
+              url: widget.provider == "WallHaven"
+                  ? WData.walls[widget.index].path.toString()
                   : widget.provider == "Prism"
-                      ? FavouriteWallpaperButton(
-                          id: Data.subPrismWalls[widget.index]["id"].toString(),
-                          provider: "Prism",
-                          prism: Data.subPrismWalls[widget.index] as Map,
-                          trash: false,
-                        )
-                      : widget.provider == "ProfileWall"
-                          ? FavouriteWallpaperButton(
-                              id: Provider.of<ProfileWallProvider>(context,
+                      ? Data.subPrismWalls[widget.index]["wallpaper_url"]
+                          .toString()
+                      : widget.provider == "Trending"
+                          ? Data.subSortedData[widget.index]["wallpaper_url"]
+                              .toString()
+                          : widget.provider == "ProfileWall"
+                              ? Provider.of<ProfileWallProvider>(context,
                                       listen: false)
-                                  .profileWalls[widget.index]["id"]
-                                  .toString(),
-                              provider: "Prism",
-                              prism: Provider.of<ProfileWallProvider>(context,
-                                      listen: false)
-                                  .profileWalls[widget.index] as Map,
-                              trash: false,
-                            )
-                          : widget.provider == "UserProfileWall"
-                              ? FavouriteWallpaperButton(
-                                  id: UserData.userProfileWalls[widget.index]
-                                          ["id"]
-                                      .toString(),
-                                  provider: "Prism",
-                                  prism: UserData.userProfileWalls[widget.index]
-                                      as Map,
-                                  trash: false,
-                                )
-                              : widget.provider == "Pexels"
-                                  ? FavouriteWallpaperButton(
-                                      id: PData.wallsP[widget.index].id
-                                          .toString(),
-                                      provider: "Pexels",
-                                      pexels: PData.wallsP[widget.index],
-                                      trash: false,
-                                    )
-                                  : widget.provider == "Liked"
-                                      ? FavouriteWallpaperButton(
-                                          id: Provider.of<FavouriteProvider>(
+                                  .profileWalls[widget.index]["wallpaper_url"]
+                                  .toString()
+                              : widget.provider == "UserProfileWall"
+                                  ? UserData.userProfileWalls[widget.index]
+                                          ["wallpaper_url"]
+                                      .toString()
+                                  : widget.provider == "Pexels"
+                                      ? PData
+                                          .wallsP[widget.index].src["original"]
+                                          .toString()
+                                      : widget.provider == "Liked"
+                                          ? Provider.of<FavouriteProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[widget.index]["id"]
+                                              .liked[widget.index]["url"]
+                                              .toString()
+                                          : PData.wallsC[widget.index]
+                                              .src["original"]
                                               .toString(),
-                                          provider:
-                                              Provider.of<FavouriteProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[widget.index]
-                                                      ["provider"]
-                                                  .toString(),
-                                          trash: true,
-                                        )
-                                      : FavouriteWallpaperButton(
-                                          id: PData.wallsC[widget.index].id
-                                              .toString(),
-                                          provider: "Pexels",
-                                          pexels: PData.wallsC[widget.index],
-                                          trash: false,
-                                        ),
             ),
-            Positioned(
-              top: topOffset + fabWallTopOffset,
-              left: leftOffset + fabWallLeftOffset,
-              child: DownloadButton(
-                colorChanged: false,
-                link: widget.provider == "WallHaven"
-                    ? WData.walls[widget.index].path.toString()
-                    : widget.provider == "Prism"
-                        ? Data.subPrismWalls[widget.index]["wallpaper_url"]
-                            .toString()
+          ),
+          Positioned(
+            top: topOffset - fabHeartTopOffset,
+            left: leftOffset - fabHeartLeftOffset,
+            child: widget.provider == "WallHaven"
+                ? FavouriteWallpaperButton(
+                    id: WData.walls[widget.index].id.toString(),
+                    provider: "WallHaven",
+                    wallhaven: WData.walls[widget.index],
+                    trash: false,
+                  )
+                : widget.provider == "Prism"
+                    ? FavouriteWallpaperButton(
+                        id: Data.subPrismWalls[widget.index]["id"].toString(),
+                        provider: "Prism",
+                        prism: Data.subPrismWalls[widget.index] as Map,
+                        trash: false,
+                      )
+                    : widget.provider == "Trending"
+                        ? FavouriteWallpaperButton(
+                            id: Data.subSortedData[widget.index]["id"]
+                                .toString(),
+                            provider: "Prism",
+                            prism: Data.subSortedData[widget.index] as Map,
+                            trash: false,
+                          )
                         : widget.provider == "ProfileWall"
-                            ? Provider.of<ProfileWallProvider>(context,
-                                    listen: false)
-                                .profileWalls[widget.index]["wallpaper_url"]
-                                .toString()
+                            ? FavouriteWallpaperButton(
+                                id: Provider.of<ProfileWallProvider>(context,
+                                        listen: false)
+                                    .profileWalls[widget.index]["id"]
+                                    .toString(),
+                                provider: "Prism",
+                                prism: Provider.of<ProfileWallProvider>(context,
+                                        listen: false)
+                                    .profileWalls[widget.index] as Map,
+                                trash: false,
+                              )
                             : widget.provider == "UserProfileWall"
-                                ? UserData.userProfileWalls[widget.index]
-                                        ["wallpaper_url"]
-                                    .toString()
+                                ? FavouriteWallpaperButton(
+                                    id: UserData.userProfileWalls[widget.index]
+                                            ["id"]
+                                        .toString(),
+                                    provider: "Prism",
+                                    prism: UserData
+                                        .userProfileWalls[widget.index] as Map,
+                                    trash: false,
+                                  )
                                 : widget.provider == "Pexels"
-                                    ? PData.wallsP[widget.index].src["original"]
-                                        .toString()
-                                    : widget.provider == "Liked"
-                                        ? Provider.of<FavouriteProvider>(
-                                                context,
-                                                listen: false)
-                                            .liked[widget.index]["url"]
-                                            .toString()
-                                        : PData.wallsC[widget.index]
-                                            .src["original"]
+                                    ? FavouriteWallpaperButton(
+                                        id: PData.wallsP[widget.index].id
                                             .toString(),
-              ),
+                                        provider: "Pexels",
+                                        pexels: PData.wallsP[widget.index],
+                                        trash: false,
+                                      )
+                                    : widget.provider == "Liked"
+                                        ? FavouriteWallpaperButton(
+                                            id: Provider.of<FavouriteProvider>(
+                                                    context,
+                                                    listen: false)
+                                                .liked[widget.index]["id"]
+                                                .toString(),
+                                            provider:
+                                                Provider.of<FavouriteProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .liked[widget.index]
+                                                        ["provider"]
+                                                    .toString(),
+                                            trash: true,
+                                          )
+                                        : FavouriteWallpaperButton(
+                                            id: PData.wallsC[widget.index].id
+                                                .toString(),
+                                            provider: "Pexels",
+                                            pexels: PData.wallsC[widget.index],
+                                            trash: false,
+                                          ),
+          ),
+          Positioned(
+            top: topOffset + fabWallTopOffset,
+            left: leftOffset + fabWallLeftOffset,
+            child: DownloadButton(
+              colorChanged: false,
+              link: widget.provider == "WallHaven"
+                  ? WData.walls[widget.index].path.toString()
+                  : widget.provider == "Prism"
+                      ? Data.subPrismWalls[widget.index]["wallpaper_url"]
+                          .toString()
+                      : widget.provider == "Trending"
+                          ? Data.subSortedData[widget.index]["wallpaper_url"]
+                              .toString()
+                          : widget.provider == "ProfileWall"
+                              ? Provider.of<ProfileWallProvider>(context,
+                                      listen: false)
+                                  .profileWalls[widget.index]["wallpaper_url"]
+                                  .toString()
+                              : widget.provider == "UserProfileWall"
+                                  ? UserData.userProfileWalls[widget.index]
+                                          ["wallpaper_url"]
+                                      .toString()
+                                  : widget.provider == "Pexels"
+                                      ? PData
+                                          .wallsP[widget.index].src["original"]
+                                          .toString()
+                                      : widget.provider == "Liked"
+                                          ? Provider.of<FavouriteProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[widget.index]["url"]
+                                              .toString()
+                                          : PData.wallsC[widget.index]
+                                              .src["original"]
+                                              .toString(),
             ),
-          ],
-        ),
-      );
-    } catch (e) {
-      debugPrint(e.toString());
-      Navigator.pop(context);
-      return Container();
-    }
+          ),
+        ],
+      ),
+    );
+    // } catch (e) {
+    //   debugPrint(e.toString());
+    //   Navigator.pop(context);
+    //   return Container();
+    // }
   }
 }
 
