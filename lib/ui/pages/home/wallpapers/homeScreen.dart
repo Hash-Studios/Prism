@@ -1,4 +1,5 @@
 import 'package:Prism/data/notifications/notifications.dart';
+import 'package:Prism/global/categoryMenu.dart';
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
@@ -31,6 +32,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List> _future;
 
   Future<bool> onWillPop() async {
+    final choice = choices[0];
+    if (Provider.of<CategorySupplier>(context, listen: false).selectedChoice !=
+        choice) {
+      Provider.of<CategorySupplier>(context, listen: false)
+          .changeSelectedChoice(choice as CategoryMenu);
+      Provider.of<CategorySupplier>(context, listen: false)
+          .changeWallpaperFuture(choice as CategoryMenu, "r");
+      return false;
+    }
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
     debugPrint("Bye! Have a good day!");
