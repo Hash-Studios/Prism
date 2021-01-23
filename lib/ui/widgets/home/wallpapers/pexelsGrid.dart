@@ -4,6 +4,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
+import 'package:Prism/ui/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/pexelsTile.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -246,37 +247,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                             ),
                           ),
                   ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [0, 1, 2, 3, 4].map((i) {
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOutCubic,
-                          width: _current == i ? 8.0 : 7.0,
-                          height: _current == i ? 8.0 : 7.0,
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 14.0, horizontal: 2.0),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _current == i
-                                ? config.Colors().mainAccentColor(1)
-                                : config.Colors()
-                                    .mainAccentColor(1)
-                                    .withOpacity(0),
-                            border: Border.all(
-                              color: _current == i
-                                  ? config.Colors()
-                                      .mainAccentColor(1)
-                                      .withOpacity(0)
-                                  : config.Colors().mainAccentColor(1),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
+                  CarouselDots(current: _current),
                 ],
               ),
             ),

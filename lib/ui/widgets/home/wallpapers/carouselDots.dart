@@ -26,8 +26,12 @@ class CarouselDots extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(500),
               color: _current == i
-                  ? config.Colors().mainAccentColor(1)
-                  : config.Colors().mainAccentColor(.38),
+                  ? config.Colors().mainAccentColor(1) == Colors.black
+                      ? Colors.white
+                      : config.Colors().mainAccentColor(1)
+                  : config.Colors().mainAccentColor(1) == Colors.black
+                      ? Colors.white38
+                      : config.Colors().mainAccentColor(.38),
             ),
           );
         }).toList(),
