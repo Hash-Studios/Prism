@@ -226,7 +226,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Home"
                             ? config.Colors().mainAccentColor(1) == Colors.black
-                                ? Colors.white
+                                ? Colors.white24
                                 : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
@@ -273,7 +273,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Search"
                             ? config.Colors().mainAccentColor(1) == Colors.black
-                                ? Colors.white
+                                ? Colors.white24
                                 : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
@@ -302,13 +302,15 @@ class _BottomNavBarState extends State<BottomNavBar>
                 decoration: BoxDecoration(
                     border: Border.all(
                       color: config.Colors().mainAccentColor(1) == Colors.black
-                          ? Colors.white
+                          ? Colors.black
                           : config.Colors().mainAccentColor(1),
                       width: config.Colors().mainAccentColor(1) == Colors.black
                           ? 1
                           : 0,
                     ),
-                    color: config.Colors().mainAccentColor(1),
+                    color: config.Colors().mainAccentColor(1) == Colors.black
+                        ? Colors.white10
+                        : config.Colors().mainAccentColor(1),
                     borderRadius: BorderRadius.circular(500)),
                 child: IconButton(
                   tooltip: 'Upload',
@@ -320,14 +322,18 @@ class _BottomNavBarState extends State<BottomNavBar>
                       Container(
                         height: navStack.last == "Add" ? 9 : 0,
                       ),
-                      Icon(JamIcons.plus, color: Theme.of(context).accentColor),
+                      Icon(JamIcons.plus,
+                          color:
+                              config.Colors().mainAccentColor(1) == Colors.black
+                                  ? Colors.white
+                                  : Theme.of(context).accentColor),
                       Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(500),
                           color: navStack.last == "Add"
                               ? config.Colors().mainAccentColor(1) ==
                                       Colors.black
-                                  ? Colors.white
+                                  ? Colors.white24
                                   : config.Colors().mainAccentColor(1)
                               : Theme.of(context).accentColor,
                         ),
@@ -372,7 +378,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Setups"
                             ? config.Colors().mainAccentColor(1) == Colors.black
-                                ? Colors.white
+                                ? Colors.white24
                                 : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),
@@ -424,7 +430,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Profile"
                             ? config.Colors().mainAccentColor(1) == Colors.black
-                                ? Colors.white
+                                ? Colors.white24
                                 : config.Colors().mainAccentColor(1)
                             : Theme.of(context).accentColor,
                       ),

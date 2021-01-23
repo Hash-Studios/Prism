@@ -147,7 +147,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                       Icons.brightness_1,
                       size: 9.0,
                       color: config.Colors().mainAccentColor(1) == Colors.black
-                          ? const Color(0xFFE57697)
+                          ? Colors.white24
                           : config.Colors().mainAccentColor(1),
                     ),
                   )
