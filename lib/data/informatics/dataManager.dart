@@ -17,6 +17,20 @@ Future<Map> getMapFromGitHub() async {
   return jsonMap;
 }
 
+Future<String> getViews(String id) async {
+  final Codec<String, String> stringToBase64 = utf8.fuse(base64);
+  final github = GitHub(auth: Authentication.withToken(token));
+  RepositoryContents repoContents;
+  Map jsonMap;
+  await github.repositories
+      .getContents(RepositorySlug(gitUserName, repoName3), jsonFile)
+      .then((value) => repoContents = value);
+  jsonMap = json.decode(
+          stringToBase64.decode(repoContents.file.content.replaceAll("\n", "")))
+      as Map;
+  return jsonMap["wallpapers"][id]["views"].toString();
+}
+
 Future<void> updateViews(String id) async {
   final Codec<String, String> stringToBase64 = utf8.fuse(base64);
   final github = GitHub(auth: Authentication.withToken(token));

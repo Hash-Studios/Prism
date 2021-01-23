@@ -6,6 +6,7 @@ import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
+import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -61,6 +62,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   PanelController panelController = PanelController();
   bool panelClosed = true;
   bool panelCollapsed = true;
+  Future<String> _futureView;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -122,6 +124,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
     isLoading = true;
     if (provider == "Prism") {
       updateViews(data.subPrismWalls[index]["id"].toString().toUpperCase());
+      _futureView = getViews(data.subPrismWalls[index]["id"].toString());
     }
     _updatePaletteGenerator();
   }
@@ -765,16 +768,104 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                               padding:
                                                   const EdgeInsets.fromLTRB(
                                                       0, 5, 0, 10),
-                                              child: Text(
-                                                data.subPrismWalls[index]["id"]
-                                                    .toString()
-                                                    .toUpperCase(),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyText1
-                                                    .copyWith(
-                                                        color: Theme.of(context)
-                                                            .accentColor),
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    data.subPrismWalls[index]
+                                                            ["id"]
+                                                        .toString()
+                                                        .toUpperCase(),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText1
+                                                        .copyWith(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                            fontSize: 16),
+                                                  ),
+                                                  Padding(
+                                                    padding: const EdgeInsets
+                                                            .symmetric(
+                                                        horizontal: 6.0),
+                                                    child: Container(
+                                                      height: 20,
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                      width: 2,
+                                                    ),
+                                                  ),
+                                                  FutureBuilder(
+                                                    future: _futureView,
+                                                    builder:
+                                                        (context, snapshot) {
+                                                      switch (snapshot
+                                                          .connectionState) {
+                                                        case ConnectionState
+                                                            .waiting:
+                                                          return Text(
+                                                            "",
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodyText1
+                                                                .copyWith(
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .accentColor,
+                                                                    fontSize:
+                                                                        16),
+                                                          );
+                                                        case ConnectionState
+                                                            .none:
+                                                          return Text(
+                                                            "",
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodyText1
+                                                                .copyWith(
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .accentColor,
+                                                                    fontSize:
+                                                                        16),
+                                                          );
+                                                        default:
+                                                          if (snapshot
+                                                              .hasError) {
+                                                            return Text(
+                                                              "",
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText1
+                                                                  .copyWith(
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
+                                                                      fontSize:
+                                                                          16),
+                                                            );
+                                                          } else {
+                                                            return Text(
+                                                              "${snapshot.data} views",
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText1
+                                                                  .copyWith(
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
+                                                                      fontSize:
+                                                                          16),
+                                                            );
+                                                          }
+                                                      }
+                                                    },
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                             const SizedBox(height: 5),
