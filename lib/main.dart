@@ -46,6 +46,7 @@ void main() {
       await Hive.openBox('wallpapers');
       await Hive.openBox('collections');
       await Hive.openBox('setups');
+      await Hive.openBox('localFav');
       Hive.registerAdapter(NotifDataAdapter());
       await Hive.openBox<List>('notifications');
       prefs = await Hive.openBox('prefs');

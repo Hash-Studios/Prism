@@ -8,6 +8,7 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
@@ -17,6 +18,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -50,6 +52,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
   AnimationController shakeController;
   bool panelCollapsed = true;
   Future<String> _futureView;
+  Box box;
 
   @override
   void initState() {
@@ -64,7 +67,9 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     _futureView = getViewsSetup(
         Provider.of<SetupProvider>(context, listen: false)
             .setups[index]["id"]
-            .toString().toUpperCase());
+            .toString()
+            .toUpperCase());
+    box = Hive.box('localFav');
     super.initState();
   }
 
@@ -1340,10 +1345,32 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                           children: <Widget>[
                             ModifiedDownloadButton(index: index),
                             ModifiedSetWallpaperButton(index: index),
-                            GestureDetector(
-                              onTap: () {
-                                if (main.prefs.get("isLoggedin") == false) {
-                                  googleSignInPopUp(context, () {
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.black.withOpacity(.25),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 4))
+                                ],
+                                borderRadius: BorderRadius.circular(500),
+                              ),
+                              padding: const EdgeInsets.all(17),
+                              child: FavoriteIcon(
+                                valueChanged: () {
+                                  if (main.prefs.get("isLoggedin") == false) {
+                                    googleSignInPopUp(context, () {
+                                      onFavSetup(
+                                          Provider.of<SetupProvider>(context,
+                                                  listen: false)
+                                              .setups[index]["id"]
+                                              .toString(),
+                                          Provider.of<SetupProvider>(context,
+                                                  listen: false)
+                                              .setups[index] as Map);
+                                    });
+                                  } else {
                                     onFavSetup(
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
@@ -1352,35 +1379,16 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
                                             .setups[index] as Map);
-                                  });
-                                } else {
-                                  onFavSetup(
-                                      Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups[index]["id"]
-                                          .toString(),
-                                      Provider.of<SetupProvider>(context,
-                                              listen: false)
-                                          .setups[index] as Map);
-                                }
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withOpacity(.25),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 4))
-                                  ],
-                                  borderRadius: BorderRadius.circular(500),
-                                ),
-                                padding: const EdgeInsets.all(17),
-                                child: Icon(
-                                  JamIcons.heart,
-                                  color: Theme.of(context).accentColor,
-                                  size: 20,
-                                ),
+                                  }
+                                },
+                                iconColor: Theme.of(context).accentColor,
+                                iconSize: 30,
+                                isFavorite: box.get(
+                                    Provider.of<SetupProvider>(context,
+                                            listen: false)
+                                        .setups[index]["id"]
+                                        .toString(),
+                                    defaultValue: false) as bool,
                               ),
                             ),
                             GestureDetector(
