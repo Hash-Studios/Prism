@@ -64,7 +64,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
     _futureView = getViewsSetup(
         Provider.of<SetupProvider>(context, listen: false)
             .setups[index]["id"]
-            .toString());
+            .toString().toUpperCase());
     super.initState();
   }
 
