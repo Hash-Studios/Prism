@@ -3,7 +3,7 @@ import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:hive/hive.dart';
 
 class FavouriteProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
@@ -118,14 +118,38 @@ class FavouriteProvider extends ChangeNotifier {
         if (index == null) {
           debugPrint("Fav");
           createDataByWall(provider, wallhaven, pexels, prism);
-          toasts.codeSend("Wallpaper added to favourites!");
+          localFavSave(provider, wallhaven, pexels, prism);
         } else {
-          toasts.error("Wallpaper removed from favourites!");
+          localFavDelete(id);
           deleteDataByID(id);
           return false;
         }
       },
     );
+  }
+
+  bool localFavSave(
+      String provider, WallPaper wallhaven, WallPaperP pexels, Map prism) {
+    if (provider == "WallHaven") {
+      final Box box = Hive.box('localFav');
+      box.put(wallhaven.id.toString(), true);
+      return true;
+    } else if (provider == "Pexels") {
+      final Box box = Hive.box('localFav');
+      box.put(pexels.id.toString(), true);
+      return true;
+    } else if (provider == "Prism") {
+      final Box box = Hive.box('localFav');
+      box.put(prism["id"].toString(), true);
+      return true;
+    }
+    return false;
+  }
+
+  bool localFavDelete(String id) {
+    final Box box = Hive.box('localFav');
+    box.delete(id);
+    return true;
   }
 
   Future<int> countFav() async {

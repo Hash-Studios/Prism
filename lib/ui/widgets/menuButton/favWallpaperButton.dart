@@ -2,10 +2,11 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/wallhaven/model/wallpaper.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
 class FavouriteWallpaperButton extends StatefulWidget {
@@ -32,30 +33,20 @@ class FavouriteWallpaperButton extends StatefulWidget {
 
 class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
   bool isLoading;
+  Box box;
 
   @override
   void initState() {
     isLoading = false;
+    box = Hive.box('localFav');
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        if (main.prefs.get("isLoggedin") == false) {
-          googleSignInPopUp(context, () {
-            onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels,
-                widget.prism);
-          });
-        } else {
-          onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels,
-              widget.prism);
-        }
-      },
-      child: Stack(
-        children: [
-          Container(
+    return Stack(
+      children: [
+        Container(
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
               boxShadow: [
@@ -67,21 +58,29 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
               borderRadius: BorderRadius.circular(500),
             ),
             padding: const EdgeInsets.all(17),
-            child: Icon(
-              widget.trash ? JamIcons.trash : JamIcons.heart,
-              color: Theme.of(context).accentColor,
-              size: 20,
-            ),
-          ),
-          Positioned(
-              top: 0,
-              left: 0,
-              height: 53,
-              width: 53,
-              child:
-                  isLoading ? const CircularProgressIndicator() : Container())
-        ],
-      ),
+            child: FavoriteIcon(
+              valueChanged: () {
+                if (main.prefs.get("isLoggedin") == false) {
+                  googleSignInPopUp(context, () {
+                    onFav(widget.id, widget.provider, widget.wallhaven,
+                        widget.pexels, widget.prism);
+                  });
+                } else {
+                  onFav(widget.id, widget.provider, widget.wallhaven,
+                      widget.pexels, widget.prism);
+                }
+              },
+              iconColor: Theme.of(context).accentColor,
+              iconSize: 30,
+              isFavorite: box.get(widget.id, defaultValue: false) as bool,
+            )),
+        Positioned(
+            top: 0,
+            left: 0,
+            height: 53,
+            width: 53,
+            child: isLoading ? const CircularProgressIndicator() : Container())
+      ],
     );
   }
 

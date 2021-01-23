@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:hive/hive.dart';
 
 class FavouriteSetupProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
@@ -85,14 +85,26 @@ class FavouriteSetupProvider extends ChangeNotifier {
         if (index == null) {
           debugPrint("Fav");
           createFavSetup(setup);
-          toasts.codeSend("Setup added to favourites!");
+          localFavSave(id);
         } else {
-          toasts.error("Setup removed from favourites!");
+          localFavDelete(id);
           deleteDataByID(id);
           return false;
         }
       },
     );
+  }
+
+  bool localFavSave(String id) {
+    final Box box = Hive.box('localFav');
+    box.put(id, true);
+    return true;
+  }
+
+  bool localFavDelete(String id) {
+    final Box box = Hive.box('localFav');
+    box.delete(id);
+    return true;
   }
 
   Future<int> countFavSetups() async {
