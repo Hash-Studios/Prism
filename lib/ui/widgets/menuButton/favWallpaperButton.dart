@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
+import 'package:Prism/routes/router.dart';
 
 class FavouriteWallpaperButton extends StatefulWidget {
   final String id;
@@ -68,6 +69,11 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
                 } else {
                   onFav(widget.id, widget.provider, widget.wallhaven,
                       widget.pexels, widget.prism);
+                }
+                if (widget.trash) {
+                  navStack.removeLast();
+                  debugPrint(navStack.toString());
+                  Navigator.pop(context);
                 }
               },
               iconColor: Theme.of(context).accentColor,

@@ -6,6 +6,7 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -24,6 +25,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:hive/hive.dart';
 
 class FavSetupViewScreen extends StatefulWidget {
   final List arguments;
@@ -49,6 +51,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
   AnimationController shakeController;
   bool panelCollapsed = true;
   Future<String> _futureView;
+  Box box;
 
   @override
   void initState() {
@@ -61,10 +64,11 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
         .toUpperCase());
     _futureView = getViewsSetup(
         Provider.of<FavouriteSetupProvider>(context, listen: false)
-        .liked[index]["id"]
-        .toString()
-        .toUpperCase());
+            .liked[index]["id"]
+            .toString()
+            .toUpperCase());
     isLoading = true;
+    box = Hive.box('localFav');
     super.initState();
   }
 
@@ -78,6 +82,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
     setState(() {
       isLoading = true;
     });
+    navStack.removeLast();
+    debugPrint(navStack.toString());
+    Navigator.pop(context);
     Provider.of<FavouriteSetupProvider>(context, listen: false)
         .favCheck(id, setupMap)
         .then((value) {
@@ -87,9 +94,6 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
       setState(() {
         isLoading = false;
       });
-      navStack.removeLast();
-      debugPrint(navStack.toString());
-      Navigator.pop(context);
     });
   }
 
@@ -298,10 +302,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       .textTheme
                                                       .bodyText1
                                                       .copyWith(
-                                                          color: Theme.of(context)
-                                                              .accentColor,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
                                                           fontSize: 16),
-                                                ),Padding(
+                                                ),
+                                                Padding(
                                                   padding: const EdgeInsets
                                                           .symmetric(
                                                       horizontal: 6.0),
@@ -606,14 +612,17 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                 .toString()[0] !=
                                             "[") {
                                           if (Provider.of<FavouriteSetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["wall_id"] ==
-                                              null || Provider.of<FavouriteSetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["wall_id"] ==
-                                              "") {
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                      ["wall_id"] ==
+                                                  null ||
+                                              Provider.of<FavouriteSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .liked[index]
+                                                      ["wall_id"] ==
+                                                  "") {
                                             debugPrint("Id Not Found!");
                                             launch(Provider.of<
                                                         FavouriteSetupProvider>(
@@ -779,16 +788,17 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                     .toString()[0] !=
                                                 "[") {
                                               if (Provider.of<FavouriteSetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .liked[index]
-                                                      ["wall_id"] ==
-                                                  null || Provider.of<FavouriteSetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .liked[index]
-                                                      ["wall_id"] ==
-                                                  "") {
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked[index]
+                                                          ["wall_id"] ==
+                                                      null ||
+                                                  Provider.of<FavouriteSetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .liked[index]
+                                                          ["wall_id"] ==
+                                                      "") {
                                                 debugPrint("Id Not Found!");
                                                 launch(Provider.of<
                                                             FavouriteSetupProvider>(
@@ -1025,16 +1035,17 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       .toString()[0] !=
                                                   "[") {
                                                 if (Provider.of<FavouriteSetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .liked[index]
-                                                        ["wall_id"] ==
-                                                    null || Provider.of<FavouriteSetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .liked[index]
-                                                        ["wall_id"] ==
-                                                    "") {
+                                                                    context,
+                                                                    listen: false)
+                                                                .liked[index]
+                                                            ["wall_id"] ==
+                                                        null ||
+                                                    Provider.of<FavouriteSetupProvider>(
+                                                                    context,
+                                                                    listen: false)
+                                                                .liked[index]
+                                                            ["wall_id"] ==
+                                                        "") {
                                                   debugPrint("Id Not Found!");
                                                   launch(Provider.of<
                                                               FavouriteSetupProvider>(
@@ -1127,45 +1138,50 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
-                                                onTap: () async {
-                                             if(Provider.of<
+                                            onTap: () async {
+                                              if (Provider.of<
+                                                          FavouriteSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["icon_url"]
+                                                  .toString()
+                                                  .contains(
+                                                      'play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps
+                                                    .isAppInstalled(Provider.of<
+                                                                FavouriteSetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .liked[index]
+                                                            ["icon_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(Provider
+                                                            .of<FavouriteSetupProvider>(
+                                                                context,
+                                                                listen: false)
+                                                        .liked[index]
+                                                            ["icon_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                    : launch(Provider.of<
+                                                                FavouriteSetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .liked[index]
+                                                            ["icon_url"]
+                                                        .toString());
+                                              } else {
+                                                launch(Provider.of<
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
                                                     .liked[index]["icon_url"]
-                                                    .toString()
-                                                    .contains('play.google.com/store/apps/details?id=')){ final isInstalled =
-                                                  await DeviceApps
-                                                      .isAppInstalled(Provider
-                                                              .of<FavouriteSetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                          .liked[index]
-                                                              ["icon_url"]
-                                                          .toString()
-                                                          .split(
-                                                              "details?id=")[1]
-                                                          .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(Provider
-                                                          .of<FavouriteSetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                      .liked[index]["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0])
-                                                  : launch(Provider.of<
-                                                          FavouriteSetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["icon_url"]
-                                                  .toString());}else{launch(Provider.of<
-                                                          FavouriteSetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["icon_url"]
-                                                  .toString());}
+                                                    .toString());
+                                              }
                                             },
                                             tileText: Provider.of<
                                                         FavouriteSetupProvider>(
@@ -1197,46 +1213,50 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
-                                                onTap: () async {
-                                              if(Provider.of<
+                                            onTap: () async {
+                                              if (Provider.of<
+                                                          FavouriteSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["widget_url"]
+                                                  .toString()
+                                                  .contains(
+                                                      'play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps
+                                                    .isAppInstalled(Provider.of<
+                                                                FavouriteSetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .liked[index]
+                                                            ["widget_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(Provider
+                                                            .of<FavouriteSetupProvider>(
+                                                                context,
+                                                                listen: false)
+                                                        .liked[index]
+                                                            ["widget_url"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                    : launch(Provider.of<
+                                                                FavouriteSetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .liked[index]
+                                                            ["widget_url"]
+                                                        .toString());
+                                              } else {
+                                                launch(Provider.of<
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
                                                     .liked[index]["widget_url"]
-                                                    .toString()
-                                                    .contains('play.google.com/store/apps/details?id=')){final isInstalled =
-                                                  await DeviceApps
-                                                      .isAppInstalled(Provider
-                                                              .of<FavouriteSetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                          .liked[index]
-                                                              ["widget_url"]
-                                                          .toString()
-                                                          .split(
-                                                              "details?id=")[1]
-                                                          .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(Provider
-                                                          .of<FavouriteSetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                      .liked[index]
-                                                          ["widget_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0])
-                                                  : launch(Provider.of<
-                                                          FavouriteSetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["widget_url"]
-                                                  .toString());}else{launch(Provider.of<
-                                                          FavouriteSetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["widget_url"]
-                                                  .toString());}
+                                                    .toString());
+                                              }
                                             },
                                             tileText: Provider.of<
                                                         FavouriteSetupProvider>(
@@ -1268,47 +1288,50 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
-                                                onTap: () async {
-                                             if( Provider.of<
+                                            onTap: () async {
+                                              if (Provider.of<
+                                                          FavouriteSetupProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .liked[index]["widget_url2"]
+                                                  .toString()
+                                                  .contains(
+                                                      'play.google.com/store/apps/details?id=')) {
+                                                final isInstalled = await DeviceApps
+                                                    .isAppInstalled(Provider.of<
+                                                                FavouriteSetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .liked[index]
+                                                            ["widget_url2"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0]);
+                                                isInstalled
+                                                    ? DeviceApps.openApp(Provider
+                                                            .of<FavouriteSetupProvider>(
+                                                                context,
+                                                                listen: false)
+                                                        .liked[index]
+                                                            ["widget_url2"]
+                                                        .toString()
+                                                        .split("details?id=")[1]
+                                                        .split("&")[0])
+                                                    : launch(Provider.of<
+                                                                FavouriteSetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .liked[index]
+                                                            ["widget_url2"]
+                                                        .toString());
+                                              } else {
+                                                launch(Provider.of<
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]
-                                                        ["widget_url2"]
-                                                    .toString()
-                                                    .contains('play.google.com/store/apps/details?id=')){ final isInstalled =
-                                                  await DeviceApps
-                                                      .isAppInstalled(Provider
-                                                              .of<FavouriteSetupProvider>(
-                                                                  context,
-                                                                  listen: false)
-                                                          .liked[index]
-                                                              ["widget_url2"]
-                                                          .toString()
-                                                          .split(
-                                                              "details?id=")[1]
-                                                          .split("&")[0]);
-                                              isInstalled
-                                                  ? DeviceApps.openApp(Provider
-                                                          .of<FavouriteSetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                      .liked[index]
-                                                          ["widget_url2"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0])
-                                                  : launch(Provider.of<
-                                                          FavouriteSetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["widget_url2"]
-                                                  .toString());}else{ launch(Provider.of<
-                                                          FavouriteSetupProvider>(
-                                                      context,
-                                                      listen: false)
-                                                  .liked[index]["widget_url2"]
-                                                  .toString());}
+                                                    .liked[index]["widget_url2"]
+                                                    .toString());
+                                              }
                                             },
                                             tileText: Provider.of<
                                                         FavouriteSetupProvider>(
@@ -1333,10 +1356,34 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                           children: <Widget>[
                             ModifiedDownloadButton(index: index),
                             ModifiedSetWallpaperButton(index: index),
-                            GestureDetector(
-                              onTap: () {
-                                if (main.prefs.get("isLoggedin") == false) {
-                                  googleSignInPopUp(context, () {
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.black.withOpacity(.25),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 4))
+                                ],
+                                borderRadius: BorderRadius.circular(500),
+                              ),
+                              padding: const EdgeInsets.all(17),
+                              child: FavoriteIcon(
+                                valueChanged: () {
+                                  if (main.prefs.get("isLoggedin") == false) {
+                                    googleSignInPopUp(context, () {
+                                      onFavSetup(
+                                          Provider.of<FavouriteSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index]["id"]
+                                              .toString(),
+                                          Provider.of<FavouriteSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .liked[index] as Map);
+                                    });
+                                  } else {
                                     onFavSetup(
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
@@ -1347,37 +1394,16 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                 context,
                                                 listen: false)
                                             .liked[index] as Map);
-                                  });
-                                } else {
-                                  onFavSetup(
-                                      Provider.of<FavouriteSetupProvider>(
-                                              context,
-                                              listen: false)
-                                          .liked[index]["id"]
-                                          .toString(),
-                                      Provider.of<FavouriteSetupProvider>(
-                                              context,
-                                              listen: false)
-                                          .liked[index] as Map);
-                                }
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withOpacity(.25),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 4))
-                                  ],
-                                  borderRadius: BorderRadius.circular(500),
-                                ),
-                                padding: const EdgeInsets.all(17),
-                                child: Icon(
-                                  JamIcons.trash,
-                                  color: Theme.of(context).accentColor,
-                                  size: 20,
-                                ),
+                                  }
+                                },
+                                iconColor: Theme.of(context).accentColor,
+                                iconSize: 30,
+                                isFavorite: box.get(
+                                    Provider.of<FavouriteSetupProvider>(context,
+                                            listen: false)
+                                        .liked[index]["id"]
+                                        .toString(),
+                                    defaultValue: false) as bool,
                               ),
                             ),
                             GestureDetector(
