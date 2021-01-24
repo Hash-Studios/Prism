@@ -528,6 +528,9 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen>
                                         listen: false)
                                     .profileWalls[index]["wallpaper_provider"]
                                     .toString(),
+                                prism: Provider.of<ProfileWallProvider>(context,
+                                        listen: false)
+                                    .profileWalls[index] as Map,
                                 trash: false,
                               ),
                               ShareButton(
