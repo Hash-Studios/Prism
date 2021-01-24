@@ -4,6 +4,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/trendingScreen.dart';
+import 'package:Prism/ui/pages/home/wallpapers/followingScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
@@ -19,7 +20,6 @@ import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 
-// PageController pageController = PageController();
 TabController tabController;
 
 class PageManager extends StatelessWidget {
@@ -84,9 +84,7 @@ class _PageManagerChildState extends State<PageManagerChild>
     } else {
       saveFavToLocal();
     }
-    tabController = TabController(length: 3, vsync: this);
-    // Provider.of<TabProvider>(context, listen: false)
-    //     .updateSelectedTab("Wallpapers");
+    tabController = TabController(length: 4, vsync: this);
     checkConnection();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await rateMyApp.init();
@@ -278,10 +276,6 @@ class _PageManagerChildState extends State<PageManagerChild>
               indicatorSize: TabBarIndicatorSize.label,
               tabs: [
                 Tab(
-                  // icon: Icon(
-                  //   JamIcons.picture,
-                  //   color: Theme.of(context).accentColor,
-                  // ),
                   child: Text(
                     "Wallpapers",
                     style: Theme.of(context)
@@ -290,17 +284,16 @@ class _PageManagerChildState extends State<PageManagerChild>
                         .copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
-                // Tab(
-                //   icon: Icon(
-                //     JamIcons.instant_picture,
-                //     color: Theme.of(context).accentColor,
-                //   ),
-                // ),
                 Tab(
-                  // icon: Icon(
-                  //   JamIcons.picture,
-                  //   color: Theme.of(context).accentColor,
-                  // ),
+                  child: Text(
+                    "Following",
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyText2
+                        .copyWith(color: Theme.of(context).accentColor),
+                  ),
+                ),
+                Tab(
                   child: Text(
                     "Trending",
                     style: Theme.of(context)
@@ -309,17 +302,7 @@ class _PageManagerChildState extends State<PageManagerChild>
                         .copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
-                // Tab(
-                //   icon: Icon(
-                //     JamIcons.instant_picture,
-                //     color: Theme.of(context).accentColor,
-                //   ),
-                // ),
                 Tab(
-                  // icon: Icon(
-                  //   JamIcons.pictures,
-                  //   color: Theme.of(context).accentColor,
-                  // ),
                   child: Text(
                     "Collections",
                     style: Theme.of(context)
@@ -334,8 +317,8 @@ class _PageManagerChildState extends State<PageManagerChild>
           children: <Widget>[
             TabBarView(controller: tabController, children: const [
               HomeScreen(),
+              FollowingScreen(),
               TrendingScreen(),
-              // const HomeSetupScreen(),
               CollectionScreen()
             ]),
             if (!result) ConnectivityWidget() else Container(),

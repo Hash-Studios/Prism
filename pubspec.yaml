@@ -39,6 +39,7 @@ dependencies:
   flare_splash_screen: ^3.0.1
   flutter_displaymode: ^0.1.1
   flutter_image_compress: ^0.7.0
+  flutter_staggered_grid_view: ^0.3.3
   flutter_svg: ^0.19.0
   fluttertoast: ^4.0.1
   gallery_saver: ^2.0.1
