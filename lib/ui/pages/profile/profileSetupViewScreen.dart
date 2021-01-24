@@ -7,6 +7,7 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -25,6 +26,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:hive/hive.dart';
 
 class ProfileSetupViewScreen extends StatefulWidget {
   final List arguments;
@@ -50,6 +52,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
   AnimationController shakeController;
   bool panelCollapsed = true;
   Future<String> _futureView;
+  Box box;
 
   @override
   void initState() {
@@ -66,6 +69,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
         .toString()
         .toUpperCase());
     isLoading = true;
+    box = Hive.box('localFav');
     super.initState();
   }
 
@@ -1382,8 +1386,20 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                           children: <Widget>[
                             ModifiedDownloadButton(index: index),
                             ModifiedSetWallpaperButton(index: index),
-                            GestureDetector(
-                              onTap: () {
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.black.withOpacity(.25),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 4))
+                                ],
+                                borderRadius: BorderRadius.circular(500),
+                              ),
+                              padding: const EdgeInsets.all(17),
+                              child: FavoriteIcon(
+                              valueChanged: () {
                                 if (main.prefs.get("isLoggedin") == false) {
                                   googleSignInPopUp(context, () {
                                     onFavSetup(
@@ -1408,24 +1424,15 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                           .profileSetups[index] as Map);
                                 }
                               },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withOpacity(.25),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 4))
-                                  ],
-                                  borderRadius: BorderRadius.circular(500),
-                                ),
-                                padding: const EdgeInsets.all(17),
-                                child: Icon(
-                                  JamIcons.heart,
-                                  color: Theme.of(context).accentColor,
-                                  size: 20,
-                                ),
-                              ),
+                              iconColor: Theme.of(context).accentColor,
+                              iconSize: 30,
+                              isFavorite: box.get(
+                                   Provider.of<ProfileSetupProvider>(context,
+                                              listen: false)
+                                          .profileSetups[index]["id"]
+                                      .toString(),
+                                  defaultValue: false) as bool,
+                            ),
                             ),
                             GestureDetector(
                               onTap: () {

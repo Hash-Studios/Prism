@@ -6,6 +6,7 @@ import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -25,6 +26,7 @@ import 'package:Prism/data/favourites/provider/favouriteSetupProvider.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:hive/hive.dart';
 
 class UserProfileSetupViewScreen extends StatefulWidget {
   final List arguments;
@@ -51,6 +53,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
   AnimationController shakeController;
   bool panelCollapsed = true;
   Future<String> _futureView;
+  Box box;
 
   @override
   void initState() {
@@ -62,6 +65,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
     _futureView = getViewsSetup(
         user_data.userProfileSetups[index]["id"].toString().toUpperCase());
     isLoading = true;
+    box = Hive.box('localFav');
     super.initState();
   }
 
@@ -277,7 +281,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                             child: Row(
                                               children: [
                                                 Text(
-                                                  user_data.userProfileSetups[index]
+                                                  user_data
+                                                      .userProfileSetups[index]
                                                           ["id"]
                                                       .toString()
                                                       .toUpperCase(),
@@ -286,10 +291,12 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                       .textTheme
                                                       .bodyText1
                                                       .copyWith(
-                                                          color: Theme.of(context)
-                                                              .accentColor,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
                                                           fontSize: 16),
-                                                ),Padding(
+                                                ),
+                                                Padding(
                                                   padding: const EdgeInsets
                                                           .symmetric(
                                                       horizontal: 6.0),
@@ -566,10 +573,11 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 .toString()[0] !=
                                             "[") {
                                           if (user_data.userProfileSetups[index]
-                                                  ["wall_id"] ==
-                                              null || user_data.userProfileSetups[index]
-                                                  ["wall_id"] ==
-                                              "") {
+                                                      ["wall_id"] ==
+                                                  null ||
+                                              user_data.userProfileSetups[index]
+                                                      ["wall_id"] ==
+                                                  "") {
                                             debugPrint("Id Not Found!");
                                             launch(user_data
                                                 .userProfileSetups[index]
@@ -702,10 +710,11 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                     .toString()[0] !=
                                                 "[") {
                                               if (user_data.userProfileSetups[
-                                                      index]["wall_id"] ==
-                                                  null || user_data.userProfileSetups[
-                                                      index]["wall_id"] ==
-                                                  "") {
+                                                          index]["wall_id"] ==
+                                                      null ||
+                                                  user_data.userProfileSetups[
+                                                          index]["wall_id"] ==
+                                                      "") {
                                                 debugPrint("Id Not Found!");
                                                 launch(user_data
                                                     .userProfileSetups[index]
@@ -899,10 +908,11 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                       .toString()[0] !=
                                                   "[") {
                                                 if (user_data.userProfileSetups[
-                                                        index]["wall_id"] ==
-                                                    null || user_data.userProfileSetups[
-                                                        index]["wall_id"] ==
-                                                    "") {
+                                                            index]["wall_id"] ==
+                                                        null ||
+                                                    user_data.userProfileSetups[
+                                                            index]["wall_id"] ==
+                                                        "") {
                                                   debugPrint("Id Not Found!");
                                                   launch(user_data
                                                       .userProfileSetups[index]
@@ -1154,41 +1164,43 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                           children: <Widget>[
                             ModifiedDownloadButton(index: index),
                             ModifiedSetWallpaperButton(index: index),
-                            GestureDetector(
-                              onTap: () {
-                                if (main.prefs.get("isLoggedin") == false) {
-                                  googleSignInPopUp(context, () {
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.black.withOpacity(.25),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 4))
+                                ],
+                                borderRadius: BorderRadius.circular(500),
+                              ),
+                              padding: const EdgeInsets.all(17),
+                              child: FavoriteIcon(
+                                valueChanged: () {
+                                  if (main.prefs.get("isLoggedin") == false) {
+                                    googleSignInPopUp(context, () {
+                                      onFavSetup(
+                                          user_data.userProfileSetups[index]
+                                                  ["id"]
+                                              .toString(),
+                                          user_data.userProfileSetups[index]
+                                              as Map);
+                                    });
+                                  } else {
                                     onFavSetup(
                                         user_data.userProfileSetups[index]["id"]
                                             .toString(),
                                         user_data.userProfileSetups[index]
                                             as Map);
-                                  });
-                                } else {
-                                  onFavSetup(
-                                      user_data.userProfileSetups[index]["id"]
-                                          .toString(),
-                                      user_data.userProfileSetups[index]
-                                          as Map);
-                                }
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.black.withOpacity(.25),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 4))
-                                  ],
-                                  borderRadius: BorderRadius.circular(500),
-                                ),
-                                padding: const EdgeInsets.all(17),
-                                child: Icon(
-                                  JamIcons.heart,
-                                  color: Theme.of(context).accentColor,
-                                  size: 20,
-                                ),
+                                  }
+                                },
+                                iconColor: Theme.of(context).accentColor,
+                                iconSize: 30,
+                                isFavorite: box.get(
+                                    user_data.userProfileSetups[index]["id"]
+                                        .toString(),
+                                    defaultValue: false) as bool,
                               ),
                             ),
                             GestureDetector(
