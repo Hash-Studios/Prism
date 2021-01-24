@@ -11,10 +11,13 @@ import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:hive/hive.dart';
+import 'package:provider/provider.dart';
 import 'package:rate_my_app/rate_my_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 
 // PageController pageController = PageController();
 TabController tabController;
@@ -38,6 +41,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   int page = 0;
   int linkOpened = 0;
   bool result = true;
+  final box = Hive.box('localFav');
 
   RateMyApp rateMyApp = RateMyApp(
     minDays: 0, //0
@@ -60,9 +64,26 @@ class _PageManagerChildState extends State<PageManagerChild>
     }
   }
 
+  Future<void> saveFavToLocal() async {
+    await Provider.of<FavouriteProvider>(context, listen: false)
+        .getDataBase()
+        .then(
+      (value) {
+        for (final element in value) {
+          box.put(element['id'].toString(), true);
+        }
+        box.put('dataSaved', true);
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
+    if (box.get('dataSaved', defaultValue: false) as bool) {
+    } else {
+      saveFavToLocal();
+    }
     tabController = TabController(length: 3, vsync: this);
     // Provider.of<TabProvider>(context, listen: false)
     //     .updateSelectedTab("Wallpapers");
