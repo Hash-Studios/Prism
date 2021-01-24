@@ -7,6 +7,7 @@ import 'package:Prism/data/setups/provider/setupProvider.dart' as sdata;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/ui/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/home/core/collapsedPanel.dart';
@@ -19,6 +20,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -56,6 +58,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
   bool panelCollapsed = true;
   bool viewCounted;
   Future<String> _futureView;
+  Box box;
 
   @override
   void initState() {
@@ -66,6 +69,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
     image = widget.arguments[1].toString();
     _future = sdata.getSetupFromName(name);
     isLoading = true;
+    box = Hive.box('localFav');
     super.initState();
   }
 
@@ -94,9 +98,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
       setState(() {
         isLoading = false;
       });
-      navStack.removeLast();
-      debugPrint(navStack.toString());
-      Navigator.pop(context);
+      // navStack.removeLast();
+      // debugPrint(navStack.toString());
+      // Navigator.pop(context);
     });
   }
 
@@ -1200,49 +1204,49 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                           children: <Widget>[
                                             ModifiedShareDownloadButton(),
                                             ModifiedShareSetWallpaperButton(),
-                                            GestureDetector(
-                                              onTap: () {
-                                                if (main.prefs
-                                                        .get("isLoggedin") ==
-                                                    false) {
-                                                  googleSignInPopUp(context,
-                                                      () {
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                      color: Colors.black
+                                                          .withOpacity(.25),
+                                                      blurRadius: 4,
+                                                      offset:
+                                                          const Offset(0, 4))
+                                                ],
+                                                borderRadius:
+                                                    BorderRadius.circular(500),
+                                              ),
+                                              padding: const EdgeInsets.all(17),
+                                              child: FavoriteIcon(
+                                                valueChanged: () {
+                                                  if (main.prefs
+                                                          .get("isLoggedin") ==
+                                                      false) {
+                                                    googleSignInPopUp(context,
+                                                        () {
+                                                      onFavSetup(
+                                                          sdata.setup["id"]
+                                                              .toString(),
+                                                          sdata.setup);
+                                                    });
+                                                  } else {
                                                     onFavSetup(
                                                         sdata.setup["id"]
                                                             .toString(),
                                                         sdata.setup);
-                                                  });
-                                                } else {
-                                                  onFavSetup(
-                                                      sdata.setup["id"]
-                                                          .toString(),
-                                                      sdata.setup);
-                                                }
-                                              },
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  color: Theme.of(context)
-                                                      .primaryColor,
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                        color: Colors.black
-                                                            .withOpacity(.25),
-                                                        blurRadius: 4,
-                                                        offset:
-                                                            const Offset(0, 4))
-                                                  ],
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          500),
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.all(17),
-                                                child: Icon(
-                                                  JamIcons.heart,
-                                                  color: Theme.of(context)
-                                                      .accentColor,
-                                                  size: 20,
-                                                ),
+                                                  }
+                                                },
+                                                iconColor: Theme.of(context)
+                                                    .accentColor,
+                                                iconSize: 30,
+                                                isFavorite: box.get(
+                                                        sdata.setup["id"]
+                                                            .toString(),
+                                                        defaultValue: false)
+                                                    as bool,
                                               ),
                                             ),
                                           ],
