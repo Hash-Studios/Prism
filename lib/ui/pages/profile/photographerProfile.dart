@@ -8,10 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userData;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserProfile extends StatefulWidget {
   final List arguments;
@@ -28,6 +30,7 @@ class _UserProfileState extends State<UserProfile> {
   String twitter;
   String instagram;
   final ScrollController scrollController = ScrollController();
+  final Firestore firestore = Firestore.instance;
   @override
   void initState() {
     name = widget.arguments[0].toString();
@@ -53,6 +56,7 @@ class _UserProfileState extends State<UserProfile> {
 
   @override
   Widget build(BuildContext context) {
+    CollectionReference users = firestore.collection('users');
     return WillPopScope(
         onWillPop: onWillPop,
         child: DefaultTabController(
@@ -134,91 +138,93 @@ class _UserProfileState extends State<UserProfile> {
                                     ),
                                     TableCell(
                                       verticalAlignment:
-                                          TableCellVerticalAlignment.bottom,
-                                      child: Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 20),
-                                        child: name == null
-                                            ? Container()
-                                            : premium == false
-                                                ? Text(
-                                                    name
-                                                        .toString()
-                                                        .toUpperCase(),
-                                                    textAlign: TextAlign.center,
-                                                    style: TextStyle(
-                                                        fontFamily:
-                                                            "Proxima Nova",
-                                                        color: Theme.of(context)
-                                                            .accentColor,
-                                                        fontSize: 20,
-                                                        fontWeight:
-                                                            FontWeight.w600),
-                                                  )
-                                                : Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: <Widget>[
-                                                      Text(
-                                                        name
-                                                            .toString()
-                                                            .toUpperCase(),
-                                                        style: TextStyle(
-                                                            fontFamily:
-                                                                "Proxima Nova",
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor,
-                                                            fontSize: 20,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600),
-                                                      ),
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                    .only(
-                                                                left: 6.0),
-                                                        child: Container(
+                                          TableCellVerticalAlignment.middle,
+                                      child: Column(
+                                        children: [
+                                          name == null
+                                              ? Container()
+                                              : premium == false
+                                                  ? Text(
+                                                      name
+                                                          .toString()
+                                                          .toUpperCase(),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              "Proxima Nova",
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.w600),
+                                                    )
+                                                  : Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: <Widget>[
+                                                        Text(
+                                                          name
+                                                              .toString()
+                                                              .toUpperCase(),
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  "Proxima Nova",
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor,
+                                                              fontSize: 20,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600),
+                                                        ),
+                                                        Padding(
                                                           padding:
                                                               const EdgeInsets
-                                                                      .symmetric(
-                                                                  vertical: 2,
-                                                                  horizontal:
-                                                                      4),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        50),
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .accentColor,
+                                                                      .only(
+                                                                  left: 6.0),
+                                                          child: Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                        .symmetric(
+                                                                    vertical: 2,
+                                                                    horizontal:
+                                                                        4),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          50),
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .accentColor,
+                                                            ),
+                                                            child: Text(
+                                                              "PRO",
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText2
+                                                                  .copyWith(
+                                                                    fontSize: 9,
+                                                                    color: Color(main
+                                                                            .prefs
+                                                                            .get("mainAccentColor")
+                                                                        as int),
+                                                                  ),
+                                                            ),
                                                           ),
-                                                          child: Text(
-                                                            "PRO",
-                                                            style: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .bodyText2
-                                                                .copyWith(
-                                                                  fontSize: 9,
-                                                                  color: Color(main
-                                                                          .prefs
-                                                                          .get(
-                                                                              "mainAccentColor")
-                                                                      as int),
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      )
-                                                    ],
-                                                  ),
+                                                        )
+                                                      ],
+                                                    ),
+                                          Text("Write bio here...")
+                                        ],
                                       ),
                                     ),
                                   ]),
@@ -352,6 +358,82 @@ class _UserProfileState extends State<UserProfile> {
                       debugPrint(navStack.toString());
                     },
                   ),
+                  actions: [
+                    main.prefs.get("isLoggedin") as bool == true
+                        ? StreamBuilder<QuerySnapshot>(
+                            stream: users
+                                .where("email",
+                                    isEqualTo: main.prefs.get('email'))
+                                .snapshots(),
+                            builder: (BuildContext context,
+                                AsyncSnapshot<QuerySnapshot> snapshot) {
+                              if (!snapshot.hasData) {
+                                return Container();
+                              } else {
+                                List following = snapshot.data.documents[0]
+                                        .data['following'] as List ??
+                                    [];
+                                if (following.contains(email)) {
+                                  return IconButton(
+                                    icon: const Icon(JamIcons.user_remove),
+                                    onPressed: () {
+                                      following
+                                          .removeAt(following.indexOf(email));
+                                      snapshot.data.documents[0].reference
+                                          .updateData({'following': following});
+                                      users
+                                          .where("email", isEqualTo: email)
+                                          .getDocuments()
+                                          .then((value) {
+                                        if (value.documents.isEmpty ||
+                                            value.documents == null) {
+                                        } else {
+                                          List followers = value.documents[0]
+                                                  .data['followers'] as List ??
+                                              [];
+                                          followers.removeAt(followers.indexOf(
+                                              main.prefs.get('email')));
+                                          value.documents[0].reference
+                                              .updateData(
+                                                  {'followers': followers});
+                                        }
+                                      });
+                                      toasts.error("Unfollowed $name!");
+                                    },
+                                  );
+                                } else {
+                                  return IconButton(
+                                    icon: const Icon(JamIcons.user_plus),
+                                    onPressed: () {
+                                      following.add(email);
+                                      snapshot.data.documents[0].reference
+                                          .updateData({'following': following});
+                                      users
+                                          .where("email", isEqualTo: email)
+                                          .getDocuments()
+                                          .then((value) {
+                                        if (value.documents.isEmpty ||
+                                            value.documents == null) {
+                                        } else {
+                                          List followers = value.documents[0]
+                                                  .data['followers'] as List ??
+                                              [];
+                                          followers
+                                              .add(main.prefs.get('email'));
+                                          value.documents[0].reference
+                                              .updateData(
+                                                  {'followers': followers});
+                                        }
+                                      });
+                                      toasts.codeSend("Followed $name!");
+                                    },
+                                  );
+                                }
+                              }
+                            },
+                          )
+                        : Container(),
+                  ],
                 ),
                 SliverAppBar(
                   backgroundColor: config.Colors().mainAccentColor(1),
