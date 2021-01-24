@@ -53,6 +53,7 @@ class GoogleAuth {
           'premium': false,
           'twitter': "",
           'instagram': "",
+          'userPhoto': user.photoUrl,
         });
         await prefs.put('id', user.uid);
         await prefs.put('name', user.displayName);
@@ -62,6 +63,9 @@ class GoogleAuth {
         await prefs.put('twitter', "");
         await prefs.put('instagram', "");
       } else {
+        Firestore.instance.collection('users').document(user.uid).updateData({
+          'userPhoto': user.photoUrl,
+        });
         await prefs.put('id', documents[0]['id']);
         await prefs.put('name', documents[0]['name']);
         await prefs.put('email', documents[0]['email']);

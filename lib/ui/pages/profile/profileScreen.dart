@@ -32,6 +32,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
 
@@ -67,6 +68,7 @@ class _ProfileChildState extends State<ProfileChild> {
   int profileCount = ((main.prefs.get('userPosts') as int) ?? 0) +
       ((main.prefs.get('userSetups') as int) ?? 0);
   final ScrollController scrollController = ScrollController();
+  final Firestore firestore = Firestore.instance;
   @override
   void initState() {
     checkFav();
@@ -116,6 +118,8 @@ class _ProfileChildState extends State<ProfileChild> {
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
+    CollectionReference users = firestore.collection('users');
+
     return WillPopScope(
         onWillPop: onWillPop,
         child: main.prefs.get("isLoggedin") as bool
@@ -653,7 +657,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             style: TextStyle(
                                                                 fontFamily:
                                                                     "Proxima Nova",
-                                                                fontSize: 24,
+                                                                fontSize: 22,
                                                                 color: Theme.of(
                                                                         context)
                                                                     .accentColor,
@@ -663,6 +667,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                           ),
                                                           Icon(
                                                             JamIcons.heart_f,
+                                                            size: 20,
                                                             color: Theme.of(
                                                                     context)
                                                                 .accentColor,
@@ -690,7 +695,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                     fontFamily:
                                                                         "Proxima Nova",
                                                                     fontSize:
-                                                                        24,
+                                                                        22,
                                                                     color: Theme.of(
                                                                             context)
                                                                         .accentColor,
@@ -701,12 +706,101 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             }),
                                                         Icon(
                                                           JamIcons.upload,
+                                                          size: 20,
                                                           color:
                                                               Theme.of(context)
                                                                   .accentColor,
                                                         ),
                                                       ],
                                                     ),
+                                                    StreamBuilder<
+                                                            QuerySnapshot>(
+                                                        stream: users
+                                                            .where("email",
+                                                                isEqualTo: main
+                                                                    .prefs
+                                                                    .get(
+                                                                        'email'))
+                                                            .snapshots(),
+                                                        builder: (BuildContext
+                                                                context,
+                                                            AsyncSnapshot<
+                                                                    QuerySnapshot>
+                                                                snapshot) {
+                                                          if (!snapshot
+                                                              .hasData) {
+                                                            return Row(
+                                                              children: [
+                                                                Text(
+                                                                  "0",
+                                                                  style: TextStyle(
+                                                                      fontFamily:
+                                                                          "Proxima Nova",
+                                                                      fontSize:
+                                                                          22,
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .normal),
+                                                                ),
+                                                                Icon(
+                                                                  JamIcons
+                                                                      .users,
+                                                                  size: 20,
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .accentColor,
+                                                                ),
+                                                              ],
+                                                            );
+                                                          } else {
+                                                            List followers = snapshot
+                                                                        .data
+                                                                        .documents[
+                                                                            0]
+                                                                        .data['followers']
+                                                                    as List ??
+                                                                [];
+                                                            return GestureDetector(
+                                                              onTap: () {
+                                                                Navigator.pushNamed(
+                                                                    context,
+                                                                    followersRoute,
+                                                                    arguments: [
+                                                                      followers
+                                                                    ]);
+                                                              },
+                                                              child: Row(
+                                                                children: [
+                                                                  Text(
+                                                                    followers
+                                                                        .length
+                                                                        .toString(),
+                                                                    style: TextStyle(
+                                                                        fontFamily:
+                                                                            "Proxima Nova",
+                                                                        fontSize:
+                                                                            22,
+                                                                        color: Theme.of(context)
+                                                                            .accentColor,
+                                                                        fontWeight:
+                                                                            FontWeight.normal),
+                                                                  ),
+                                                                  Icon(
+                                                                    JamIcons
+                                                                        .users,
+                                                                    size: 20,
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .accentColor,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          }
+                                                        }),
                                                   ],
                                                 ),
                                               ),

@@ -35,3 +35,4 @@ const String wallpaperFilterRoute = '/wallpaperfilter';
 const String profileSetupViewRoute = '/profilesetupsview';
 const String settingsRoute = '/settings';
 const String onboardingRoute = '/onboarding';
+const String followersRoute = '/followers';

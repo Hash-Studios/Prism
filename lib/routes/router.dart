@@ -23,6 +23,7 @@ import 'package:Prism/ui/pages/profile/profileWallViewScreen.dart';
 import 'package:Prism/ui/pages/profile/settings.dart';
 import 'package:Prism/ui/pages/profile/sharePrismScreen.dart';
 import 'package:Prism/ui/pages/profile/themeView.dart';
+import 'package:Prism/ui/pages/profile/followersScreen.dart';
 import 'package:Prism/ui/pages/profile/userProfileSetupViewScreen.dart';
 import 'package:Prism/ui/pages/profile/userProfileWallViewScreen.dart';
 import 'package:Prism/ui/pages/search/searchScreen.dart';
@@ -314,6 +315,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
         builder: (context) => OnboardingScreen(),
       );
+    case followersRoute:
+      navStack.add("Followers");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: followersRoute);
+      return CupertinoPageRoute(
+          builder: (context) => FollowersScreen(
+                arguments: settings.arguments as List,
+              ));
     default:
       navStack.add("undefined");
       debugPrint(navStack.toString());
