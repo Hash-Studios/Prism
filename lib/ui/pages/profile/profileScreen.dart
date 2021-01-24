@@ -756,13 +756,22 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               ],
                                                             );
                                                           } else {
-                                                            List followers = snapshot
-                                                                        .data
-                                                                        .documents[
-                                                                            0]
-                                                                        .data['followers']
-                                                                    as List ??
-                                                                [];
+                                                            List followers = [];
+                                                            if (snapshot.data
+                                                                        .documents !=
+                                                                    null &&
+                                                                snapshot
+                                                                    .data
+                                                                    .documents
+                                                                    .isNotEmpty) {
+                                                              followers = snapshot
+                                                                          .data
+                                                                          .documents[
+                                                                              0]
+                                                                          .data['followers']
+                                                                      as List ??
+                                                                  [];
+                                                            }
                                                             return GestureDetector(
                                                               onTap: () {
                                                                 Navigator.pushNamed(

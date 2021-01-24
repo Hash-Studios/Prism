@@ -284,7 +284,7 @@ class _UserProfileState extends State<UserProfile> {
                                                       style: TextStyle(
                                                           fontFamily:
                                                               "Proxima Nova",
-                                                          fontSize: 24,
+                                                          fontSize: 22,
                                                           color:
                                                               Theme.of(context)
                                                                   .accentColor,
@@ -294,6 +294,7 @@ class _UserProfileState extends State<UserProfile> {
                                                   }),
                                               Icon(
                                                 JamIcons.picture,
+                                                size: 20,
                                                 color: Theme.of(context)
                                                     .accentColor,
                                               ),
@@ -314,7 +315,7 @@ class _UserProfileState extends State<UserProfile> {
                                                       style: TextStyle(
                                                           fontFamily:
                                                               "Proxima Nova",
-                                                          fontSize: 24,
+                                                          fontSize: 22,
                                                           color:
                                                               Theme.of(context)
                                                                   .accentColor,
@@ -324,11 +325,88 @@ class _UserProfileState extends State<UserProfile> {
                                                   }),
                                               Icon(
                                                 JamIcons.instant_picture,
+                                                size: 20,
                                                 color: Theme.of(context)
                                                     .accentColor,
                                               ),
                                             ],
                                           ),
+                                          StreamBuilder<QuerySnapshot>(
+                                              stream: users
+                                                  .where("email",
+                                                      isEqualTo: email)
+                                                  .snapshots(),
+                                              builder: (BuildContext context,
+                                                  AsyncSnapshot<QuerySnapshot>
+                                                      snapshot) {
+                                                if (!snapshot.hasData) {
+                                                  return Row(
+                                                    children: [
+                                                      const SizedBox(width: 15),
+                                                      Text(
+                                                        "0",
+                                                        style: TextStyle(
+                                                            fontFamily:
+                                                                "Proxima Nova",
+                                                            fontSize: 22,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .normal),
+                                                      ),
+                                                      Icon(
+                                                        JamIcons.users,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor,
+                                                      ),
+                                                    ],
+                                                  );
+                                                } else if (snapshot
+                                                            .data.documents !=
+                                                        null &&
+                                                    snapshot.data.documents
+                                                        .isNotEmpty) {
+                                                  List followers = [];
+
+                                                  followers = snapshot
+                                                              .data
+                                                              .documents[0]
+                                                              .data['followers']
+                                                          as List ??
+                                                      [];
+
+                                                  return Row(
+                                                    children: [
+                                                      const SizedBox(width: 15),
+                                                      Text(
+                                                        followers.length
+                                                            .toString(),
+                                                        style: TextStyle(
+                                                            fontFamily:
+                                                                "Proxima Nova",
+                                                            fontSize: 22,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .normal),
+                                                      ),
+                                                      Icon(
+                                                        JamIcons.users,
+                                                        size: 20,
+                                                        color: Theme.of(context)
+                                                            .accentColor,
+                                                      ),
+                                                    ],
+                                                  );
+                                                } else {
+                                                  return Container();
+                                                }
+                                              }),
                                           const Spacer(flex: 2),
                                         ],
                                       ),
