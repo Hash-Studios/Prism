@@ -6,6 +6,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:timeago/timeago.dart' as timeago;
+import 'package:Prism/ui/widgets/menuButton/favIconButton.dart';
 
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({
@@ -75,30 +77,84 @@ class _FollowingScreenState extends State<FollowingScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: StaggeredGridView.builder(
-        gridDelegate: SliverStaggeredGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          staggeredTileCount: finalDocs != null ? finalDocs.length : 0,
-          staggeredTileBuilder: (index) {
-            return StaggeredTile.fit(1);
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+        child: StaggeredGridView.builder(
+          gridDelegate: SliverStaggeredGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 8,
+            staggeredTileCount: finalDocs != null ? finalDocs.length : 0,
+            staggeredTileBuilder: (index) {
+              return StaggeredTile.fit(1);
+            },
+          ),
+          itemBuilder: (context, index) {
+            return _makeElement(index);
           },
         ),
-        itemBuilder: (context, index) {
-          return _makeElement(index);
-        },
       ),
     );
   }
 
   Widget _makeElement(int index) {
+    final now = DateTime.now();
     if (index >= finalDocs.length) {
       return null;
     }
 
-    return Container(
-        padding: EdgeInsets.all(5.0),
-        child: CachedNetworkImage(
-          imageUrl: finalDocs[index]["wallpaper_thumb"] as String,
-        ));
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(25),
+            child: CachedNetworkImage(
+              imageUrl: finalDocs[index]["wallpaper_thumb"] as String,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
+            child: Row(
+              children: [
+                CircleAvatar(
+                    backgroundImage: CachedNetworkImageProvider(
+                        finalDocs[index]["userPhoto"] as String)),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 120,
+                      child: Text(
+                        finalDocs[index]["by"].toString(),
+                        overflow: TextOverflow.fade,
+                        maxLines: 1,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyText2
+                            .copyWith(color: Theme.of(context).accentColor),
+                      ),
+                    ),
+                    Text(
+                      timeago.format(now.subtract(now.difference(
+                          (finalDocs[index]["createdAt"] as Timestamp)
+                              .toDate()))),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyText2
+                          .copyWith(color: Theme.of(context).accentColor),
+                    ),
+                  ],
+                ),
+                FavIconButton(
+                  id: finalDocs[index]["id"] as String,
+                  prism: finalDocs[index].data,
+                )
+              ],
+            ),
+          )
+        ],
+      ),
+    );
   }
 }
