@@ -69,8 +69,10 @@ class _ProfileChildState extends State<ProfileChild> {
       ((main.prefs.get('userSetups') as int) ?? 0);
   final ScrollController scrollController = ScrollController();
   final Firestore firestore = Firestore.instance;
+  int count;
   @override
   void initState() {
+    count = 0;
     checkFav();
     _controllerBottomCenter =
         ConfettiController(duration: const Duration(seconds: 1));
@@ -205,6 +207,31 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               onTap: () {
                                                                 _controllerBottomCenter
                                                                     .play();
+                                                                setState(() {
+                                                                  count++;
+                                                                });
+                                                                if (count >
+                                                                    20) {
+                                                                  toasts.codeSend(
+                                                                      "Congratulations");
+                                                                  firestore
+                                                                      .collection(
+                                                                          "easter")
+                                                                      .add({
+                                                                    "name": main
+                                                                        .prefs
+                                                                        .get(
+                                                                            'name'),
+                                                                    "email": main
+                                                                        .prefs
+                                                                        .get(
+                                                                            'email'),
+                                                                    "userPhoto": main
+                                                                        .prefs
+                                                                        .get(
+                                                                            'googleimage'),
+                                                                  });
+                                                                }
                                                               },
                                                               child:
                                                                   CircleAvatar(
