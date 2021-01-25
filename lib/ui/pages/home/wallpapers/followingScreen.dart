@@ -6,8 +6,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/menuButton/favIconButton.dart';
+import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({
@@ -75,6 +80,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ScrollController controller =
+        InheritedDataProvider.of(context).scrollController;
     return WillPopScope(
       onWillPop: onWillPop,
       child: Padding(
@@ -88,12 +95,22 @@ class _FollowingScreenState extends State<FollowingScreen> {
               return StaggeredTile.fit(1);
             },
           ),
+          controller: controller,
           itemBuilder: (context, index) {
             return _makeElement(index);
           },
         ),
       ),
     );
+  }
+
+  void showGooglePopUp(BuildContext context, Function func) {
+    debugPrint(main.prefs.get("isLoggedin").toString());
+    if (main.prefs.get("isLoggedin") == false) {
+      googleSignInPopUp(context, func);
+    } else {
+      func();
+    }
   }
 
   Widget _makeElement(int index) {
@@ -106,50 +123,111 @@ class _FollowingScreenState extends State<FollowingScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Column(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(25),
-            child: CachedNetworkImage(
-              imageUrl: finalDocs[index]["wallpaper_thumb"] as String,
-            ),
-          ),
+          GestureDetector(
+              onTap: () {
+                globals.isPremiumWall(
+                                globals.premiumCollections,
+                                finalDocs[index]["collections"] as List ??
+                                    []) ==
+                            true &&
+                        main.prefs.get('premium') != true
+                    ? showGooglePopUp(context, () {
+                        Navigator.pushNamed(
+                          context,
+                          premiumRoute,
+                        );
+                      })
+                    : Navigator.pushNamed(context, shareRoute, arguments: [
+                        finalDocs[index]["id"],
+                        finalDocs[index]["wallpaper_provider"],
+                        finalDocs[index]["wallpaper_url"],
+                        finalDocs[index]["wallpaper_thumb"]
+                      ]);
+              },
+              child: PremiumBannerFollowingFeed(
+                comparator: !globals.isPremiumWall(globals.premiumCollections,
+                    finalDocs[index]["collections"] as List ?? []),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: CachedNetworkImage(
+                    imageUrl: finalDocs[index]["wallpaper_thumb"] as String,
+                  ),
+                ),
+              )),
           Padding(
-            padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             child: Row(
               children: [
-                CircleAvatar(
-                    backgroundImage: CachedNetworkImageProvider(
-                        finalDocs[index]["userPhoto"] as String)),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      child: Text(
-                        finalDocs[index]["by"].toString(),
-                        overflow: TextOverflow.fade,
-                        maxLines: 1,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyText2
-                            .copyWith(color: Theme.of(context).accentColor),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, photographerProfileRoute,
+                        arguments: [
+                          finalDocs[index]["by"],
+                          finalDocs[index]["email"],
+                          finalDocs[index]["userPhoto"],
+                          false,
+                          finalDocs[index]["twitter"] != null &&
+                                  finalDocs[index]["twitter"] != ""
+                              ? finalDocs[index]["twitter"]
+                                  .toString()
+                                  .split("https://www.twitter.com/")[1]
+                              : "",
+                          finalDocs[index]["instagram"] != null &&
+                                  finalDocs[index]["instagram"] != ""
+                              ? finalDocs[index]["instagram"]
+                                  .toString()
+                                  .split("https://www.instagram.com/")[1]
+                              : "",
+                        ]);
+                  },
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: CachedNetworkImageProvider(
+                            finalDocs[index]["userPhoto"] as String),
+                        radius: 16,
                       ),
-                    ),
-                    Text(
-                      timeago.format(now.subtract(now.difference(
-                          (finalDocs[index]["createdAt"] as Timestamp)
-                              .toDate()))),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyText2
-                          .copyWith(color: Theme.of(context).accentColor),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 110,
+                            child: Text(
+                              finalDocs[index]["by"].toString(),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2
+                                  .copyWith(
+                                      color: Theme.of(context).accentColor,
+                                      fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Text(
+                            timeago.format(now.subtract(now.difference(
+                                (finalDocs[index]["createdAt"] as Timestamp)
+                                    .toDate()))),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyText2
+                                .copyWith(
+                                    color: Theme.of(context)
+                                        .accentColor
+                                        .withOpacity(0.8)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+                Spacer(),
                 FavIconButton(
                   id: finalDocs[index]["id"] as String,
                   prism: finalDocs[index].data,
-                )
+                ),
               ],
             ),
           )
