@@ -437,7 +437,8 @@ class _UserProfileState extends State<UserProfile> {
                     },
                   ),
                   actions: [
-                    main.prefs.get("isLoggedin") as bool == true
+                    main.prefs.get("isLoggedin") as bool == true &&
+                            main.prefs.get('email') as String != email
                         ? StreamBuilder<QuerySnapshot>(
                             stream: users
                                 .where("email",
