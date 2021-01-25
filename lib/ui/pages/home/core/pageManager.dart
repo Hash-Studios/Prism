@@ -19,6 +19,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 
 TabController tabController;
 
@@ -276,40 +277,56 @@ class _PageManagerChildState extends State<PageManagerChild>
               indicatorSize: TabBarIndicatorSize.label,
               tabs: [
                 Tab(
-                  child: Text(
-                    "Wallpapers",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyText2
-                        .copyWith(color: Theme.of(context).accentColor),
+                  icon: Icon(
+                    JamIcons.picture,
+                    color: Theme.of(context).accentColor,
                   ),
+                  // child: Text(
+                  //   "Wallpapers",
+                  //   style: Theme.of(context)
+                  //       .textTheme
+                  //       .bodyText2
+                  //       .copyWith(color: Theme.of(context).accentColor),
+                  // ),
                 ),
                 Tab(
-                  child: Text(
-                    "Following",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyText2
-                        .copyWith(color: Theme.of(context).accentColor),
+                  icon: Icon(
+                    JamIcons.eye,
+                    color: Theme.of(context).accentColor,
                   ),
+                  // child: Text(
+                  //   "Trending",
+                  //   style: Theme.of(context)
+                  //       .textTheme
+                  //       .bodyText2
+                  //       .copyWith(color: Theme.of(context).accentColor),
+                  // ),
                 ),
                 Tab(
-                  child: Text(
-                    "Trending",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyText2
-                        .copyWith(color: Theme.of(context).accentColor),
+                  icon: Icon(
+                    JamIcons.user_square,
+                    color: Theme.of(context).accentColor,
                   ),
+                  // child: Text(
+                  //   "Following",
+                  //   style: Theme.of(context)
+                  //       .textTheme
+                  //       .bodyText2
+                  //       .copyWith(color: Theme.of(context).accentColor),
+                  // ),
                 ),
                 Tab(
-                  child: Text(
-                    "Collections",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyText2
-                        .copyWith(color: Theme.of(context).accentColor),
+                  icon: Icon(
+                    JamIcons.pictures,
+                    color: Theme.of(context).accentColor,
                   ),
+                  // child: Text(
+                  //   "Collections",
+                  //   style: Theme.of(context)
+                  //       .textTheme
+                  //       .bodyText2
+                  //       .copyWith(color: Theme.of(context).accentColor),
+                  // ),
                 )
               ]),
         ),
@@ -317,8 +334,8 @@ class _PageManagerChildState extends State<PageManagerChild>
           children: <Widget>[
             TabBarView(controller: tabController, children: const [
               HomeScreen(),
-              FollowingScreen(),
               TrendingScreen(),
+              FollowingScreen(),
               CollectionScreen()
             ]),
             if (!result) ConnectivityWidget() else Container(),
