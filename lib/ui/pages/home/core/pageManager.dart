@@ -20,6 +20,7 @@ import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/main.dart' as main;
 
 TabController tabController;
 
@@ -332,11 +333,22 @@ class _PageManagerChildState extends State<PageManagerChild>
         ),
         body: Stack(
           children: <Widget>[
-            TabBarView(controller: tabController, children: const [
-              HomeScreen(),
-              TrendingScreen(),
-              FollowingScreen(),
-              CollectionScreen()
+            TabBarView(controller: tabController, children: [
+              const HomeScreen(),
+              const TrendingScreen(),
+              main.prefs.get('isLoggedin') as bool == true
+                  ? const FollowingScreen()
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const <Widget>[
+                        Spacer(),
+                        Center(
+                            child:
+                                Text("Please login to view following feed!")),
+                        Spacer(),
+                      ],
+                    ),
+              const CollectionScreen()
             ]),
             if (!result) ConnectivityWidget() else Container(),
           ],

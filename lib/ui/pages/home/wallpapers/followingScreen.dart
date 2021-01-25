@@ -1,9 +1,10 @@
+import 'dart:async';
+
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:Prism/data/following/followingFeed.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class FollowingScreen extends StatefulWidget {
@@ -16,8 +17,11 @@ class FollowingScreen extends StatefulWidget {
 }
 
 class _FollowingScreenState extends State<FollowingScreen> {
-  Stream<List<DocumentSnapshot>> _stream;
-  Firestore firestore = Firestore.instance;
+  StreamController<QuerySnapshot> _streamController;
+  QuerySnapshot finalQuery;
+  List<DocumentSnapshot> finalDocs = [];
+  List following;
+  final Firestore databaseReference = Firestore.instance;
   CollectionReference walls;
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
@@ -29,55 +33,72 @@ class _FollowingScreenState extends State<FollowingScreen> {
   @override
   void initState() {
     super.initState();
-    walls = firestore.collection('walls');
-    _stream = getFollowingFeed();
+    _streamController = StreamController.broadcast();
+    _streamController.stream.listen((p) {
+      setState(() {
+        finalQuery = p;
+        finalDocs = [];
+        for (final doc in finalQuery.documents) {
+          if (following.contains(doc.data["email"])) {
+            finalDocs.add(doc);
+          }
+        }
+      });
+    });
+    load(_streamController);
+  }
+
+  load(StreamController<QuerySnapshot> sc) async {
+    await databaseReference
+        .collection("users")
+        .where("email", isEqualTo: main.prefs.get('email'))
+        .getDocuments()
+        .then((value) {
+      following = value.documents[0].data["following"] as List ?? [];
+    });
+    databaseReference
+        .collection("walls")
+        .where("review", isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .pipe(sc);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _streamController?.close();
+    _streamController = null;
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: StreamBuilder<List<DocumentSnapshot>>(
-        stream: _stream, // async work
-        builder: (BuildContext context,
-            AsyncSnapshot<List<DocumentSnapshot>> snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.waiting:
-              return Center(child: Loader());
-            case ConnectionState.none:
-              return Center(child: Loader());
-            default:
-              if (snapshot.hasError) {
-                debugPrint(snapshot.error.toString());
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const <Widget>[
-                    Spacer(),
-                    Center(child: Text("Can't connect to the Servers!")),
-                    Spacer(),
-                  ],
-                );
-              } else {
-                print(snapshot.data);
-                return StaggeredGridView.builder(
-                  gridDelegate:
-                      SliverStaggeredGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    staggeredTileCount: snapshot.data.length,
-                    staggeredTileBuilder: (index) {
-                      return StaggeredTile.fit(1);
-                    },
-                  ),
-                  itemBuilder: (context, index) {
-                    return CachedNetworkImage(
-                        imageUrl:
-                            snapshot.data[index]["wallpaper_url"].toString());
-                  },
-                );
-              }
-          }
+      child: StaggeredGridView.builder(
+        gridDelegate: SliverStaggeredGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          staggeredTileCount: finalDocs != null ? finalDocs.length : 0,
+          staggeredTileBuilder: (index) {
+            return StaggeredTile.fit(1);
+          },
+        ),
+        itemBuilder: (context, index) {
+          return _makeElement(index);
         },
       ),
     );
+  }
+
+  Widget _makeElement(int index) {
+    if (index >= finalDocs.length) {
+      return null;
+    }
+
+    return Container(
+        padding: EdgeInsets.all(5.0),
+        child: CachedNetworkImage(
+          imageUrl: finalDocs[index]["wallpaper_thumb"] as String,
+        ));
   }
 }
