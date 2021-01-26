@@ -13,7 +13,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/config.dart' as config;
 
 class PexelsGrid extends StatefulWidget {
   final String provider;
@@ -155,11 +154,15 @@ class _PexelsGridState extends State<PexelsGrid> {
                                 child: Center(
                                   child: Container(
                                     width: MediaQuery.of(context).size.width,
-                                    color: Colors.black.withOpacity(0.4),
+                                    color: globals.bannerTextOn == "true"
+                                        ? Colors.black.withOpacity(0.4)
+                                        : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Text(
-                                        globals.bannerText.toUpperCase(),
+                                        globals.bannerTextOn == "true"
+                                            ? globals.bannerText.toUpperCase()
+                                            : "",
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         style: Theme.of(context)
@@ -223,12 +226,11 @@ class _PexelsGridState extends State<PexelsGrid> {
                                         child: Container(
                                           width:
                                               MediaQuery.of(context).size.width,
-                                          color: Colors.black.withOpacity(0.4),
+                                          color: Colors.transparent,
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
                                             child: Text(
-                                              globals.topTitleText[i]
-                                                  .toString(),
+                                              "",
                                               textAlign: TextAlign.center,
                                               maxLines: 1,
                                               style: Theme.of(context)

@@ -22,6 +22,7 @@ class SplashWidget extends StatelessWidget {
       'topImageLink':
           'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4',
       'bannerText': "Join our Telegram",
+      'bannerTextOn': globals.bannerTextOn,
       'bannerURL': "https://t.me/PrismWallpapers",
       'latestCategories': categories.toString(),
       'currentVersion': globals.currentAppVersion.toString(),
@@ -40,6 +41,7 @@ class SplashWidget extends StatelessWidget {
     debugPrint("Fetched Values from rc");
     globals.topImageLink = remoteConfig.getString('topImageLink');
     globals.bannerText = remoteConfig.getString('bannerText');
+    globals.bannerTextOn = remoteConfig.getString('bannerTextOn');
     globals.bannerURL = remoteConfig.getString('bannerURL');
     globals.obsoleteAppVersion = remoteConfig.getString('obsoleteVersion');
     var verifiedU = remoteConfig.getString('verifiedUsers');
