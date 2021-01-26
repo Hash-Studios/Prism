@@ -204,20 +204,32 @@ class _FollowingScreenState extends State<FollowingScreen> {
                                   .bodyText2
                                   .copyWith(
                                       color: Theme.of(context).accentColor,
-                                      fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12),
                             ),
                           ),
-                          Text(
-                            timeago.format(now.subtract(now.difference(
-                                (finalDocs[index]["createdAt"] as Timestamp)
-                                    .toDate()))),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyText2
-                                .copyWith(
-                                    color: Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.8)),
+                          SizedBox(
+                            width: 110,
+                            child: Text(
+                              timeago.format(
+                                now.subtract(
+                                  now.difference(
+                                    (finalDocs[index]["createdAt"] as Timestamp)
+                                        .toDate(),
+                                  ),
+                                ),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyText2
+                                  .copyWith(
+                                      color: Theme.of(context)
+                                          .accentColor
+                                          .withOpacity(0.8),
+                                      fontSize: 10),
+                            ),
                           ),
                         ],
                       ),

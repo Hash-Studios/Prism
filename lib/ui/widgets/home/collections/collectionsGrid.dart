@@ -466,8 +466,8 @@ class PremiumBannerFollowingFeed extends StatelessWidget {
                   decoration: const BoxDecoration(
                       color: Color(0xFFFFB800),
                       borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20))),
+                          topLeft: Radius.circular(25),
+                          bottomRight: Radius.circular(25))),
                   padding: const EdgeInsets.all(0),
                   child: const Padding(
                     padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
