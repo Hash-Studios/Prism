@@ -1,3 +1,4 @@
+import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
@@ -94,7 +95,14 @@ class _WallpaperGridState extends State<WallpaperGrid> {
     await Future.delayed(const Duration(milliseconds: 500));
     Data.prismWalls = [];
     Data.subPrismWalls = [];
-    Data.getPrismWalls();
+    if (Provider.of<CategorySupplier>(context, listen: false)
+            .selectedChoice
+            .name ==
+        "Trending") {
+      Data.getTrendingWalls();
+    } else {
+      Data.getPrismWalls();
+    }
   }
 
   void showGooglePopUp(BuildContext context, Function func) {
