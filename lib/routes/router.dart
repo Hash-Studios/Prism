@@ -12,7 +12,6 @@ import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/wallpaperFilterScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/wallpaperScreen.dart';
-import 'package:Prism/ui/pages/home/wallpapers/trendingWallpaperScreen.dart';
 import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
 import 'package:Prism/ui/pages/profile/photographerProfile.dart';
@@ -127,14 +126,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               WallpaperScreen(arguments: settings.arguments as List),
-          fullscreenDialog: true);
-    case trendingWallpaperRoute:
-      navStack.add("Wallpaper");
-      debugPrint(navStack.toString());
-      analytics.setCurrentScreen(screenName: trendingWallpaperRoute);
-      return CupertinoPageRoute(
-          builder: (context) =>
-              TrendingWallpaperScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     case searchWallpaperRoute:
       navStack.add("Search Wallpaper");

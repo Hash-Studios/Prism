@@ -26,7 +26,9 @@ class CategorySupplier extends ChangeNotifier {
               ? pdata.getDataP("r")
               : categories[0]['name'] == 'Community'
                   ? data.getPrismWalls()
-                  : data.getPrismWalls()
+                  : categories[0]['name'] == 'Trending'
+                      ? data.getTrendingWalls()
+                      : data.getPrismWalls()
       : data.getPrismWalls();
 
   CategoryMenu selectedChoice = choices[0] as CategoryMenu;
@@ -56,6 +58,8 @@ class CategorySupplier extends ChangeNotifier {
         } else if (category['type'] == 'non-search') {
           if (category['name'] == 'Community') {
             wallpaperFutureRefresh = data.getPrismWalls();
+          } else if (category['name'] == 'Trending') {
+            wallpaperFutureRefresh = data.getTrendingWalls();
           } else if (category['name'] == 'Curated') {
             wallpaperFutureRefresh = pdata.getDataP(mode);
           } else if (category['name'] == 'Popular') {

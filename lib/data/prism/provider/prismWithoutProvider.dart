@@ -101,12 +101,14 @@ Future<Map> getDataByID(String id) async {
 }
 
 Future<List> getTrendingWalls() async {
+  prismWalls = [];
+  subPrismWalls = [];
   await getPrismWalls();
   final List walls = prismWalls;
   final Map viewData = await getMapFromGitHub();
   final Map wallsData = viewData["wallpapers"] as Map;
   wallsDataL = [];
-  sortedData = [];
+  prismWalls = [];
   wallsData.forEach((key, value) {
     wallsDataL.add({key: value["views"]});
   });
@@ -117,26 +119,26 @@ Future<List> getTrendingWalls() async {
   wallsDataL.forEach((wallData) {
     walls.forEach((element) {
       if (element["id"] == wallData.keys.toList()[0]) {
-        sortedData.add(element);
+        prismWalls.add(element);
       }
     });
   });
-  subSortedData = sortedData.sublist(0, 24);
-  return subSortedData;
+  subPrismWalls = prismWalls.sublist(0, 24);
+  return subPrismWalls;
 }
 
 List seeMoreTrending() {
-  final int len = sortedData.length;
+  final int len = prismWalls.length;
   final double pages = len / 24;
   debugPrint(len.toString());
   debugPrint(pages.toString());
   debugPrint(pageTrending.toString());
   if (pageTrending < pages.floor()) {
-    subSortedData.addAll(
-        sortedData.sublist(subSortedData.length, subSortedData.length + 24));
+    subPrismWalls.addAll(
+        prismWalls.sublist(subPrismWalls.length, subPrismWalls.length + 24));
     pageTrending += 1;
   } else {
-    subSortedData.addAll(sortedData.sublist(subSortedData.length));
+    subPrismWalls.addAll(prismWalls.sublist(subPrismWalls.length));
   }
-  return subSortedData;
+  return subPrismWalls;
 }

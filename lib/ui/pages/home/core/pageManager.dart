@@ -3,7 +3,6 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
-import 'package:Prism/ui/pages/home/wallpapers/trendingScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/followingScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
@@ -86,7 +85,7 @@ class _PageManagerChildState extends State<PageManagerChild>
     } else {
       saveFavToLocal();
     }
-    tabController = TabController(length: 4, vsync: this);
+    tabController = TabController(length: 3, vsync: this);
     checkConnection();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await rateMyApp.init();
@@ -292,19 +291,6 @@ class _PageManagerChildState extends State<PageManagerChild>
                 ),
                 Tab(
                   icon: Icon(
-                    JamIcons.eye,
-                    color: Theme.of(context).accentColor,
-                  ),
-                  // child: Text(
-                  //   "Trending",
-                  //   style: Theme.of(context)
-                  //       .textTheme
-                  //       .bodyText2
-                  //       .copyWith(color: Theme.of(context).accentColor),
-                  // ),
-                ),
-                Tab(
-                  icon: Icon(
                     JamIcons.user_square,
                     color: Theme.of(context).accentColor,
                   ),
@@ -335,7 +321,6 @@ class _PageManagerChildState extends State<PageManagerChild>
           children: <Widget>[
             TabBarView(controller: tabController, children: [
               const HomeScreen(),
-              const TrendingScreen(),
               main.prefs.get('isLoggedin') as bool == true
                   ? const FollowingScreen()
                   : Column(
