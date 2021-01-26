@@ -7,6 +7,7 @@ import 'package:Prism/ui/pages/home/wallpapers/followingScreen.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/core/categoriesBar.dart';
 import 'package:Prism/ui/widgets/home/core/offlineBanner.dart';
+import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
@@ -325,12 +326,44 @@ class _PageManagerChildState extends State<PageManagerChild>
                   ? const FollowingScreen()
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const <Widget>[
-                        Spacer(),
+                      children: <Widget>[
+                        const Spacer(),
                         Center(
-                            child:
-                                Text("Please login to view following feed!")),
-                        Spacer(),
+                            child: Container(
+                          width: MediaQuery.of(context).size.width * 0.7,
+                          child: const Text(
+                            "Please sign-in to view the latest walls from the artists you follow here.",
+                            textAlign: TextAlign.center,
+                          ),
+                        )),
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            googleSignInPopUp(context, () {
+                              main.RestartWidget.restartApp(context);
+                            });
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateColor.resolveWith(
+                                (states) => Colors.white),
+                          ),
+                          child: Container(
+                            width: 60,
+                            child: const Text(
+                              'SIGN-IN',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFFE57697),
+                                fontSize: 15,
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
                       ],
                     ),
               const CollectionScreen()
