@@ -46,7 +46,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         finalQuery = p;
         finalDocs = [];
         for (final doc in finalQuery.documents) {
-          if (following.contains(doc.data["email"])) {
+          if (following.contains(doc.data["email"]) && finalDocs.length <= 50) {
             finalDocs.add(doc);
           }
         }
@@ -67,6 +67,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         .collection("walls")
         .where("review", isEqualTo: true)
         .orderBy('createdAt', descending: true)
+        // .limit(200)
         .snapshots()
         .pipe(sc);
   }
