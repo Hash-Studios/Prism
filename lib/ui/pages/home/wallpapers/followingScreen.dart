@@ -98,11 +98,40 @@ class _FollowingScreenState extends State<FollowingScreen> {
           ),
           controller: controller,
           itemBuilder: (context, index) {
-            return _makeElement(index);
+            return FollowingTile(index, finalDocs);
           },
         ),
       ),
     );
+  }
+}
+
+class FollowingTile extends StatefulWidget {
+  final int index;
+  final List<DocumentSnapshot> finalDocs;
+  const FollowingTile(this.index, this.finalDocs);
+  @override
+  _FollowingTileState createState() => _FollowingTileState();
+}
+
+class _FollowingTileState extends State<FollowingTile> {
+  final now = DateTime.now();
+  final GlobalKey _globalKey = GlobalKey(debugLabel: "following_element");
+  double height;
+
+  @override
+  void initState() {
+    height = 0;
+    WidgetsBinding.instance.addPostFrameCallback(_afterLayout);
+    super.initState();
+  }
+
+  _afterLayout(_) {
+    if (mounted) {
+      setState(() {
+        height = _globalKey.currentContext.size.height;
+      });
+    }
   }
 
   void showGooglePopUp(BuildContext context, Function func) {
@@ -114,47 +143,72 @@ class _FollowingScreenState extends State<FollowingScreen> {
     }
   }
 
-  Widget _makeElement(int index) {
-    final now = DateTime.now();
-    if (index >= finalDocs.length) {
-      return null;
+  @override
+  Widget build(BuildContext context) {
+    if (widget.index >= widget.finalDocs.length) {
+      return Container();
     }
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Column(
         children: [
-          GestureDetector(
-              onTap: () {
-                globals.isPremiumWall(
-                                globals.premiumCollections,
-                                finalDocs[index]["collections"] as List ??
-                                    []) ==
-                            true &&
-                        main.prefs.get('premium') != true
-                    ? showGooglePopUp(context, () {
-                        Navigator.pushNamed(
-                          context,
-                          premiumRoute,
-                        );
-                      })
-                    : Navigator.pushNamed(context, shareRoute, arguments: [
-                        finalDocs[index]["id"],
-                        finalDocs[index]["wallpaper_provider"],
-                        finalDocs[index]["wallpaper_url"],
-                        finalDocs[index]["wallpaper_thumb"]
-                      ]);
-              },
-              child: PremiumBannerFollowingFeed(
-                comparator: !globals.isPremiumWall(globals.premiumCollections,
-                    finalDocs[index]["collections"] as List ?? []),
-                child: ClipRRect(
+          PremiumBannerFollowingFeed(
+            comparator: !globals.isPremiumWall(globals.premiumCollections,
+                widget.finalDocs[widget.index]["collections"] as List ?? []),
+            child: Stack(
+              children: [
+                ClipRRect(
                   borderRadius: BorderRadius.circular(25),
                   child: CachedNetworkImage(
-                    imageUrl: finalDocs[index]["wallpaper_thumb"] as String,
+                    key: _globalKey,
+                    imageUrl: widget.finalDocs[widget.index]["wallpaper_thumb"]
+                        as String,
                   ),
                 ),
-              )),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      splashColor:
+                          Theme.of(context).accentColor.withOpacity(0.3),
+                      highlightColor:
+                          Theme.of(context).accentColor.withOpacity(0.1),
+                      onTap: () {
+                        globals.isPremiumWall(
+                                        globals.premiumCollections,
+                                        widget.finalDocs[widget.index]
+                                                ["collections"] as List ??
+                                            []) ==
+                                    true &&
+                                main.prefs.get('premium') != true
+                            ? showGooglePopUp(context, () {
+                                Navigator.pushNamed(
+                                  context,
+                                  premiumRoute,
+                                );
+                              })
+                            : Navigator.pushNamed(context, shareRoute,
+                                arguments: [
+                                    widget.finalDocs[widget.index]["id"],
+                                    widget.finalDocs[widget.index]
+                                        ["wallpaper_provider"],
+                                    widget.finalDocs[widget.index]
+                                        ["wallpaper_url"],
+                                    widget.finalDocs[widget.index]
+                                        ["wallpaper_thumb"]
+                                  ]);
+                      },
+                      child: SizedBox(
+                        width: (MediaQuery.of(context).size.width - 18) * 0.5,
+                        height: height,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             child: Row(
@@ -163,19 +217,21 @@ class _FollowingScreenState extends State<FollowingScreen> {
                   onTap: () {
                     Navigator.pushNamed(context, photographerProfileRoute,
                         arguments: [
-                          finalDocs[index]["by"],
-                          finalDocs[index]["email"],
-                          finalDocs[index]["userPhoto"],
+                          widget.finalDocs[widget.index]["by"],
+                          widget.finalDocs[widget.index]["email"],
+                          widget.finalDocs[widget.index]["userPhoto"],
                           false,
-                          finalDocs[index]["twitter"] != null &&
-                                  finalDocs[index]["twitter"] != ""
-                              ? finalDocs[index]["twitter"]
+                          widget.finalDocs[widget.index]["twitter"] != null &&
+                                  widget.finalDocs[widget.index]["twitter"] !=
+                                      ""
+                              ? widget.finalDocs[widget.index]["twitter"]
                                   .toString()
                                   .split("https://www.twitter.com/")[1]
                               : "",
-                          finalDocs[index]["instagram"] != null &&
-                                  finalDocs[index]["instagram"] != ""
-                              ? finalDocs[index]["instagram"]
+                          widget.finalDocs[widget.index]["instagram"] != null &&
+                                  widget.finalDocs[widget.index]["instagram"] !=
+                                      ""
+                              ? widget.finalDocs[widget.index]["instagram"]
                                   .toString()
                                   .split("https://www.instagram.com/")[1]
                               : "",
@@ -184,8 +240,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundImage: CachedNetworkImageProvider(
-                            finalDocs[index]["userPhoto"] as String),
+                        backgroundImage: CachedNetworkImageProvider(widget
+                            .finalDocs[widget.index]["userPhoto"] as String),
                         radius: 16,
                       ),
                       const SizedBox(width: 8),
@@ -196,7 +252,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                           SizedBox(
                             width: 110,
                             child: Text(
-                              finalDocs[index]["by"].toString(),
+                              widget.finalDocs[widget.index]["by"].toString(),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: Theme.of(context)
@@ -214,7 +270,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
                               timeago.format(
                                 now.subtract(
                                   now.difference(
-                                    (finalDocs[index]["createdAt"] as Timestamp)
+                                    (widget.finalDocs[widget.index]["createdAt"]
+                                            as Timestamp)
                                         .toDate(),
                                   ),
                                 ),
@@ -238,8 +295,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
                 ),
                 Spacer(),
                 FavIconButton(
-                  id: finalDocs[index]["id"] as String,
-                  prism: finalDocs[index].data,
+                  id: widget.finalDocs[widget.index]["id"] as String,
+                  prism: widget.finalDocs[widget.index].data,
                 ),
               ],
             ),
