@@ -39,6 +39,8 @@ String bannerText = "Join our Telegram";
 
 String bannerURL = "https://t.me/PrismWallpapers";
 
+String bannerTextOn = "true";
+
 bool isPremiumWall(List premiumCollections, List wallCollections) {
   bool result = false;
   wallCollections.forEach((element) {
