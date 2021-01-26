@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:Prism/ui/pages/home/core/oldVersionScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
@@ -22,8 +23,9 @@ class SplashWidget extends StatelessWidget {
           'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4',
       'bannerText': "Join our Telegram",
       'bannerURL': "https://t.me/PrismWallpapers",
-      'newCategories': categories.toString(),
+      'latestCategories': categories.toString(),
       'currentVersion': globals.currentAppVersion.toString(),
+      'obsoleteVersion': globals.obsoleteAppVersion.toString(),
       'versionDesc':
           "Prism Premium is here, for the personalisaton lords!^*^Setups are here! Change the way of personalisation.^*^Favourites moved to profile.",
       'topTitleText':
@@ -39,6 +41,7 @@ class SplashWidget extends StatelessWidget {
     globals.topImageLink = remoteConfig.getString('topImageLink');
     globals.bannerText = remoteConfig.getString('bannerText');
     globals.bannerURL = remoteConfig.getString('bannerURL');
+    globals.obsoleteAppVersion = remoteConfig.getString('obsoleteVersion');
     var verifiedU = remoteConfig.getString('verifiedUsers');
     verifiedU = verifiedU.replaceAll('"', '');
     verifiedU = verifiedU.replaceAll("[", "");
@@ -57,7 +60,7 @@ class SplashWidget extends StatelessWidget {
     globals.topTitleText.shuffle();
     final cList = [];
     var tempVar = remoteConfig
-        .getString('newCategories')
+        .getString('latestCategories')
         .replaceAll('[', "")
         .replaceAll(']', "")
         .split("},");
@@ -89,6 +92,15 @@ class SplashWidget extends StatelessWidget {
       'assets/animations/Prism Splash.flr',
       (context) {
         debugPrint("splash done");
+        debugPrint(
+            "Current App Version: ${globals.currentAppVersion.replaceAll(".", "")}");
+        debugPrint(
+            "Obsolete App Version: ${globals.obsoleteAppVersion.replaceAll(".", "")}");
+        if ((int.parse(globals.currentAppVersion.replaceAll(".", "")) <
+                int.parse(globals.obsoleteAppVersion.replaceAll(".", ""))) ==
+            true) {
+          return OldVersion();
+        }
         return PageManager();
       },
       startAnimation:
