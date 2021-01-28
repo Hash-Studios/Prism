@@ -264,6 +264,17 @@ class ProfileDrawer extends StatelessWidget {
               context: context,
             ),
             const Divider(),
+            createDrawerBodyHeader(text: "REVIEWS", context: context),
+            createDrawerBodyItem(
+              icon: JamIcons.check,
+              text: 'Review Status',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, reviewRoute);
+              },
+              context: context,
+            ),
+            const Divider(),
             createDrawerBodyHeader(text: "CONNECTIONS", context: context),
             createDrawerBodyItem(
               icon: JamIcons.twitter,
