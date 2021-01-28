@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
 
 class GoogleAuth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -81,6 +82,7 @@ class GoogleAuth {
       value.put('googleemail', user.email);
       value.put('googleimage', user.photoUrl);
     });
+    home.f.subscribeToTopic(user.email);
     assert(!user.isAnonymous);
     assert(await user.getIdToken() != null);
     final FirebaseUser currentUser = await _auth.currentUser();

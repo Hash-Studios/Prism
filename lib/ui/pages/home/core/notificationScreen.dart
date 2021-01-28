@@ -80,8 +80,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                     content: Text(
                       main.prefs.get("Subscriber") == false
-                          ? 'Subscribe to recieve new notifications about giveaways, contests & upload review status.\n\nThis will also enable promotional notifications.'
-                          : "By unsubscribing you won't recieve new notifications about giveaways, contests & upload review status.\n\nThis will also disable promotional notifications.",
+                          ? 'Subscribe to recieve new notifications about followers, giveaways, contests & upload review status.\n\nThis will also enable promotional notifications.'
+                          : "By unsubscribing you won't recieve new notifications about followers, giveaways, contests & upload review status.\n\nThis will also disable promotional notifications.",
                       style: TextStyle(
                           fontFamily: "Proxima Nova",
                           fontWeight: FontWeight.normal,
@@ -100,11 +100,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           if (main.prefs.get("Subscriber") == false) {
                             main.prefs.delete("Subscriber");
                             home.f.subscribeToTopic('promotional');
+                            if (main.prefs.get('isLoggedin') as bool == true) {
+                              home.f.subscribeToTopic(
+                                  main.prefs.get('googleemail').toString());
+                            }
                             toasts.codeSend("Successfully Subscribed");
                             setState(() {});
                           } else {
                             main.prefs.put("Subscriber", false);
                             home.f.unsubscribeFromTopic('promotional');
+                            if (main.prefs.get('isLoggedin') as bool == true) {
+                              home.f.unsubscribeFromTopic(
+                                  main.prefs.get('googleemail').toString());
+                            }
                             toasts.codeSend("Successfully unsubscribed");
                             setState(() {});
                           }
