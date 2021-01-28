@@ -94,13 +94,31 @@ class _FollowingScreenState extends State<FollowingScreen> {
           gridDelegate: SliverStaggeredGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 8,
-            staggeredTileCount: finalDocs != null ? finalDocs.length : 0,
+            staggeredTileCount: finalDocs != null ? finalDocs.length + 1 : 0,
             staggeredTileBuilder: (index) {
-              return const StaggeredTile.fit(1);
+              return StaggeredTile.fit(index == finalDocs.length ? 2 : 1);
             },
           ),
           controller: controller,
           itemBuilder: (context, index) {
+            if (index == finalDocs.length) {
+              return Container(
+                width: MediaQuery.of(context).size.width * 0.7,
+                height: finalDocs.length == 0
+                    ? MediaQuery.of(context).size.height * 0.8
+                    : 100,
+                padding: EdgeInsets.symmetric(
+                    horizontal: finalDocs.length == 0 ? 20 : 0),
+                child: Center(
+                  child: Text(
+                    finalDocs.length == 0
+                        ? "Follow creators to see their latest posts here!"
+                        : "You have catched up to the recent posts, by the people you follow. Follow more people to see their posts.",
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
+            }
             return FollowingTile(index, finalDocs);
           },
         ),
