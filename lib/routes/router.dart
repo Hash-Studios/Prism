@@ -38,6 +38,7 @@ import 'package:Prism/ui/pages/upload/setupGuidelines.dart';
 import 'package:Prism/ui/pages/upload/tagSetupScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadSetupScreen.dart';
 import 'package:Prism/ui/pages/upload/uploadWallScreen.dart';
+import 'package:Prism/ui/pages/profile/reviewScreen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as imagelib;
@@ -80,6 +81,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: downloadRoute);
       return CupertinoPageRoute(builder: (context) => DownloadScreen());
+    case reviewRoute:
+      navStack.add("Review Screen");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: reviewRoute);
+      return CupertinoPageRoute(builder: (context) => ReviewScreen());
     case favWallRoute:
       navStack.add("Fav Walls");
       debugPrint(navStack.toString());
