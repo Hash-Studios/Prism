@@ -1680,12 +1680,43 @@ class ModifiedDownloadButton extends StatelessWidget {
                 .setups[index]["wallpaper_url"]
                 .toString()[0] !=
             "["
-        ? DownloadButton(
-            link: Provider.of<SetupProvider>(context, listen: false)
-                .setups[index]["wallpaper_url"]
-                .toString(),
-            colorChanged: false,
-          )
+        ? Provider.of<SetupProvider>(context, listen: false).setups[index]
+                        ["wall_id"] !=
+                    null &&
+                Provider.of<SetupProvider>(context, listen: false).setups[index]
+                        ["wall_id"] !=
+                    ""
+            ? DownloadButton(
+                link: Provider.of<SetupProvider>(context, listen: false)
+                    .setups[index]["wallpaper_url"]
+                    .toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(Provider.of<SetupProvider>(context, listen: false)
+                      .setups[index]["wallpaper_url"]
+                      .toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4))
+                    ],
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(
+                    JamIcons.download,
+                    color: Theme.of(context).accentColor,
+                    size: 20,
+                  ),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<SetupProvider>(context, listen: false)
@@ -1723,12 +1754,43 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 .setups[index]["wallpaper_url"]
                 .toString()[0] !=
             "["
-        ? SetWallpaperButton(
-            url: Provider.of<SetupProvider>(context, listen: false)
-                .setups[index]["wallpaper_url"]
-                .toString(),
-            colorChanged: false,
-          )
+        ? Provider.of<SetupProvider>(context, listen: false).setups[index]
+                        ["wall_id"] !=
+                    null &&
+                Provider.of<SetupProvider>(context, listen: false).setups[index]
+                        ["wall_id"] !=
+                    ""
+            ? SetWallpaperButton(
+                url: Provider.of<SetupProvider>(context, listen: false)
+                    .setups[index]["wallpaper_url"]
+                    .toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(Provider.of<SetupProvider>(context, listen: false)
+                      .setups[index]["wallpaper_url"]
+                      .toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4))
+                    ],
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(
+                    JamIcons.picture,
+                    color: Theme.of(context).accentColor,
+                    size: 20,
+                  ),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<SetupProvider>(context, listen: false)

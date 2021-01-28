@@ -1564,10 +1564,34 @@ class ModifiedShareDownloadButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return sdata.setup["wallpaper_url"].toString()[0] != "["
-        ? DownloadButton(
-            link: sdata.setup["wallpaper_url"].toString(),
-            colorChanged: false,
-          )
+        ? sdata.setup["wall_id"] != null && sdata.setup["wall_id"] != ""
+            ? DownloadButton(
+                link: sdata.setup["wallpaper_url"].toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(sdata.setup["wallpaper_url"].toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4))
+                    ],
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(
+                    JamIcons.download,
+                    color: Theme.of(context).accentColor,
+                    size: 20,
+                  ),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(sdata.setup["wallpaper_url"][1].toString());
@@ -1598,10 +1622,34 @@ class ModifiedShareSetWallpaperButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return sdata.setup["wallpaper_url"].toString()[0] != "["
-        ? SetWallpaperButton(
-            url: sdata.setup["wallpaper_url"].toString(),
-            colorChanged: false,
-          )
+        ? sdata.setup["wall_id"] != null && sdata.setup["wall_id"] != ""
+            ? SetWallpaperButton(
+                url: sdata.setup["wallpaper_url"].toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(sdata.setup["wallpaper_url"].toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4))
+                    ],
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(
+                    JamIcons.picture,
+                    color: Theme.of(context).accentColor,
+                    size: 20,
+                  ),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(sdata.setup["wallpaper_url"][1].toString());
