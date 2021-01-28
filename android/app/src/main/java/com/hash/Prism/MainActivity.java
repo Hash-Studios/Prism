@@ -121,6 +121,28 @@ public class MainActivity extends FlutterActivity {
         }
     };
 
+    Target saveSetupTarget = new Target() {
+        @Override
+        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+            try {
+                saveImageToPictures(bitmap, "Prism Setups/default_" + System.currentTimeMillis());
+            } catch (IOException e) {
+                e.printStackTrace();
+                res.success(false);
+            }
+        }
+
+        @Override
+        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+            res.success(false);
+            e.printStackTrace();
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+        }
+    };
+
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
@@ -174,6 +196,9 @@ public class MainActivity extends FlutterActivity {
                     } else if (call.method.equals("save_image_file")) {
                         String link = call.argument("link");
                         Picasso.get().load("file://" + link).into(saveImageTarget);
+                    } else if (call.method.equals("save_setup")) {
+                        String link = call.argument("link");
+                        Picasso.get().load(link).into(saveSetupTarget);
                     }
                 });
     }

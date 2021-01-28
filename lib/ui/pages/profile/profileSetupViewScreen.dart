@@ -26,6 +26,11 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import 'package:device_info/device_info.dart';
+import 'package:flutter/services.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:hive/hive.dart';
 
 class ProfileSetupViewScreen extends StatefulWidget {
@@ -54,6 +59,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
   Future<String> _futureView;
   Box box;
 
+  static const platform = MethodChannel('flutter.prism.set_wallpaper');
   @override
   void initState() {
     shakeController = AnimationController(
@@ -1568,32 +1574,77 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                   ),
                 ),
               ),
-              // Align(
-              //   alignment: Alignment.topRight,
-              //   child: Padding(
-              //     padding: const EdgeInsets.all(8.0),
-              //     child: IconButton(
-              //       onPressed: () {
-              //         createSetupDynamicLink(
-              //             index.toString(),
-              //             Provider.of<SetupProvider>(context, listen: false)
-              //                 .profileSetups[index]["name"]
-              //                 .toString(),
-              //             Provider.of<SetupProvider>(context, listen: false)
-              //                 .profileSetups[index]["image"]
-              //                 .toString());
-              //       },
-              //       color: isLoading
-              //           ? Theme.of(context).accentColor
-              //           : colors[0].computeLuminance() > 0.5
-              //               ? Colors.black
-              //               : Colors.white,
-              //       icon: const Icon(
-              //         JamIcons.share_alt,
-              //       ),
-              //     ),
-              //   ),
-              // ),
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding:
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                  child: IconButton(
+                    onPressed: () async {
+                      final status = await Permission.storage.status;
+                      if (!status.isGranted) {
+                        await Permission.storage.request();
+                      }
+                      final link = Provider.of<ProfileSetupProvider>(context,
+                              listen: false)
+                          .profileSetups[index]["image"]
+                          .toString();
+                      // setState(() {
+                      //   isLoading = true;
+                      // });
+                      debugPrint(link);
+
+                      final androidInfo = await DeviceInfoPlugin().androidInfo;
+                      final sdkInt = androidInfo.version.sdkInt;
+                      debugPrint('(SDK $sdkInt)');
+                      toasts.codeSend("Starting Download");
+
+                      if (sdkInt >= 30) {
+                        await platform.invokeMethod(
+                            'save_setup', {"link": link}).then((value) {
+                          if (value as bool) {
+                            analytics.logEvent(
+                                name: 'download_own_setup',
+                                parameters: {'link': link});
+                            toasts.codeSend(
+                                "Setup Downloaded in Pictures/Prism Setups!");
+                          } else {
+                            toasts.error("Couldn't download! Please Retry!");
+                          }
+                          setState(() {
+                            isLoading = false;
+                          });
+                        }).catchError((e) {
+                          debugPrint(e.toString());
+                          setState(() {
+                            isLoading = false;
+                          });
+                        });
+                      } else {
+                        GallerySaver.saveImage(link, albumName: "Prism Setups")
+                            .then((value) {
+                          analytics.logEvent(
+                              name: 'download_own_setup',
+                              parameters: {'link': link});
+                          toasts.codeSend(
+                              "Setup Downloaded in Internal Storage/Prism Setups!");
+                          setState(() {
+                            isLoading = false;
+                          });
+                        }).catchError((e) {
+                          setState(() {
+                            isLoading = false;
+                          });
+                        });
+                      }
+                    },
+                    color: Theme.of(context).accentColor,
+                    icon: const Icon(
+                      JamIcons.arrow_square_down,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
