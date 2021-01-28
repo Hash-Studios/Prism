@@ -21,6 +21,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:quick_actions/quick_actions.dart';
 
 TabController tabController;
 
@@ -44,6 +45,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   int linkOpened = 0;
   bool result = true;
   final box = Hive.box('localFav');
+  String shortcut = "No Action Set";
 
   RateMyApp rateMyApp = RateMyApp(
     minDays: 0, //0
@@ -82,6 +84,42 @@ class _PageManagerChildState extends State<PageManagerChild>
   @override
   void initState() {
     super.initState();
+    final QuickActions quickActions = QuickActions();
+    quickActions.initialize((String shortcutType) {
+      setState(() {
+        if (shortcutType != null) shortcut = shortcutType;
+      });
+      if (shortcutType == 'Follow_Feed') {
+        debugPrint('Follow_Feed');
+      } else if (shortcutType == 'Collections') {
+        debugPrint('Collections');
+      } else if (shortcutType == 'Setups') {
+        debugPrint('Setups');
+      } else if (shortcutType == 'Downloads') {
+        debugPrint('Downloads');
+      } else if (shortcutType == 'Refresh_Wall') {
+        debugPrint('Refresh_Wall');
+      }
+    });
+
+    quickActions.setShortcutItems(<ShortcutItem>[
+      // NOTE: This second action icon will only work on Android.
+      // In a real world project keep the same file name for both platforms.
+      const ShortcutItem(
+          type: 'Follow_Feed', localizedTitle: 'Feed', icon: 'ic_launcher'),
+      const ShortcutItem(
+          type: 'Collections',
+          localizedTitle: 'Collections',
+          icon: 'ic_launcher'),
+      const ShortcutItem(
+          type: 'Setups', localizedTitle: 'Setups', icon: 'ic_launcher'),
+      const ShortcutItem(
+          type: 'Downloads', localizedTitle: 'Downloads', icon: 'ic_launcher'),
+      const ShortcutItem(
+          type: 'Refresh_Wall',
+          localizedTitle: 'Refresh Wall',
+          icon: 'ic_launcher'),
+    ]);
     if (box.get('dataSaved', defaultValue: false) as bool) {
     } else {
       saveFavToLocal();
