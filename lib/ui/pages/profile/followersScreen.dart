@@ -57,11 +57,12 @@ class _FollowersScreenState extends State<FollowersScreen> {
                 return ListView.builder(
                     itemCount: followers.length,
                     itemBuilder: (BuildContext context, int index) {
-                      List<DocumentSnapshot> users = snapshot.data.documents
+                      final List<DocumentSnapshot> users = snapshot
+                          .data.documents
                           .where((element) =>
                               element.data['email'] == followers[index])
                           .toList();
-                      Map user = users[0].data;
+                      final Map user = users == null ? {} : users[0].data;
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundImage: CachedNetworkImageProvider(user[
