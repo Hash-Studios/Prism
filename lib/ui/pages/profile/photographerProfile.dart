@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:Prism/gitkey.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/profile/userProfileLoader.dart';
@@ -14,6 +16,7 @@ import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
 
 class UserProfile extends StatefulWidget {
   final List arguments;
@@ -504,6 +507,31 @@ class _UserProfileState extends State<UserProfile> {
                                                   {'followers': followers});
                                         }
                                       });
+                                      http.post(
+                                        'https://fcm.googleapis.com/fcm/send',
+                                        headers: <String, String>{
+                                          'Content-Type': 'application/json',
+                                          'Authorization':
+                                              'key=$fcmServerToken',
+                                        },
+                                        body: jsonEncode(
+                                          <String, dynamic>{
+                                            'notification': <String, dynamic>{
+                                              'body': 'New Follower!',
+                                              'title':
+                                                  '${main.prefs.get('googlename')} followed you.'
+                                            },
+                                            'priority': 'high',
+                                            'data': <String, dynamic>{
+                                              'click_action':
+                                                  'FLUTTER_NOTIFICATION_CLICK',
+                                              'id': '1',
+                                              'status': 'done'
+                                            },
+                                            'topic': email
+                                          },
+                                        ),
+                                      );
                                       toasts.codeSend("Followed $name!");
                                     },
                                   );
