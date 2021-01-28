@@ -858,6 +858,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.2.1"
+  quick_actions:
+    dependency: "direct main"
+    description:
+      name: quick_actions
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.4.0+10"
   quiver:
     dependency: transitive
     description:
