@@ -73,10 +73,41 @@ class _CategoriesBarState extends State<CategoriesBar> {
       automaticallyImplyLeading: false,
       elevation: 0,
       titleSpacing: 0,
+      centerTitle: true,
+      leading: IconButton(
+        icon: noNotification
+            ? Icon(
+                JamIcons.bell,
+                color: Theme.of(context).accentColor,
+              )
+            : Stack(children: <Widget>[
+                Icon(
+                  JamIcons.bell_f,
+                  color: Theme.of(context).accentColor,
+                ),
+                Positioned(
+                  top: 0.0,
+                  right: 0.0,
+                  child: Icon(
+                    Icons.brightness_1,
+                    size: 9.0,
+                    color: config.Colors().mainAccentColor(1) == Colors.black
+                        ? Colors.white24
+                        : config.Colors().mainAccentColor(1),
+                  ),
+                )
+              ]),
+        tooltip: 'Notifications',
+        onPressed: () {
+          setState(() {
+            noNotification = true;
+          });
+          Navigator.pushNamed(context, notificationsRoute);
+        },
+      ),
       title: Align(
-        alignment: Alignment.centerLeft,
         child: Container(
-          height: 26,
+          height: 24,
           width: Provider.of<CategorySupplier>(context).getCurrentChoice ==
                   "Community"
               ? 110
@@ -100,15 +131,16 @@ class _CategoriesBarState extends State<CategoriesBar> {
                             .selectedChoice);
                   },
                   child: Text(
-                    "   ${Provider.of<CategorySupplier>(context).getCurrentChoice}"
+                    Provider.of<CategorySupplier>(context)
+                        .getCurrentChoice
                         .toUpperCase(),
                     maxLines: 1,
-                    textAlign: TextAlign.left,
+                    textAlign: TextAlign.center,
                     overflow: TextOverflow.clip,
                     style: Theme.of(context).textTheme.headline3.copyWith(
                           fontFamily: "Proxima Nova",
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
                           color: Theme.of(context).accentColor,
                         ),
                   ),
@@ -116,50 +148,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            JamIcons.brush,
-            color: Theme.of(context).accentColor,
-          ),
-          tooltip: 'Search by color',
-          onPressed: () {
-            analytics.logEvent(
-              name: 'colorbrush_tapped',
-            );
-            showColors(context);
-          },
-        ),
-        IconButton(
-          icon: noNotification
-              ? Icon(
-                  JamIcons.bell,
-                  color: Theme.of(context).accentColor,
-                )
-              : Stack(children: <Widget>[
-                  Icon(
-                    JamIcons.bell_f,
-                    color: Theme.of(context).accentColor,
-                  ),
-                  Positioned(
-                    top: 0.0,
-                    right: 0.0,
-                    child: Icon(
-                      Icons.brightness_1,
-                      size: 9.0,
-                      color: config.Colors().mainAccentColor(1) == Colors.black
-                          ? Colors.white24
-                          : config.Colors().mainAccentColor(1),
-                    ),
-                  )
-                ]),
-          tooltip: 'Notifications',
-          onPressed: () {
-            setState(() {
-              noNotification = true;
-            });
-            Navigator.pushNamed(context, notificationsRoute);
-          },
-        ),
         IconButton(
           icon: Icon(
             JamIcons.grid,
