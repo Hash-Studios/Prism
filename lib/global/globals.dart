@@ -11,6 +11,7 @@ bool loadingAd = true;
 bool updateAlerted = false;
 bool hasNotch = false;
 double notchSize;
+bool tooltipShown = false;
 
 List topTitleText = [
   "TOP-RATED",

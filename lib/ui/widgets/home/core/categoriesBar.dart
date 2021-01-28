@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class CategoriesBar extends StatefulWidget {
   const CategoriesBar({
@@ -24,8 +25,12 @@ class CategoriesBar extends StatefulWidget {
 
 class _CategoriesBarState extends State<CategoriesBar> {
   bool noNotification = false;
+  final Box<List> box = Hive.box('notifications');
+  List notifications;
+  final key = GlobalKey();
   @override
   void initState() {
+    notifications = box.get('notifications');
     fetchNotifications();
     super.initState();
     checkForUpdate();
@@ -69,6 +74,24 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (!globals.tooltipShown) {
+      Future.delayed(const Duration(seconds: 2)).then((_) {
+        try {
+          final dynamic tooltip = key.currentState;
+          if (!noNotification) {
+            tooltip.ensureTooltipVisible();
+            globals.tooltipShown = true;
+          }
+          if (!noNotification) {
+            Future.delayed(const Duration(seconds: 5)).then((_) {
+              tooltip.deactivate();
+            });
+          }
+        } catch (e) {
+          debugPrint(e.toString());
+        }
+      });
+    }
     return AppBar(
       automaticallyImplyLeading: false,
       elevation: 0,
@@ -80,23 +103,29 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 JamIcons.bell,
                 color: Theme.of(context).accentColor,
               )
-            : Stack(children: <Widget>[
-                Icon(
-                  JamIcons.bell_f,
-                  color: Theme.of(context).accentColor,
-                ),
-                Positioned(
-                  top: 0.0,
-                  right: 0.0,
-                  child: Icon(
-                    Icons.brightness_1,
-                    size: 9.0,
-                    color: config.Colors().mainAccentColor(1) == Colors.black
-                        ? Colors.white24
-                        : config.Colors().mainAccentColor(1),
+            : Tooltip(
+                key: key,
+                message: notifications.length != 1
+                    ? "${notifications.length} new notifications!"
+                    : "${notifications.length} new notification!",
+                child: Stack(children: <Widget>[
+                  Icon(
+                    JamIcons.bell_f,
+                    color: Theme.of(context).accentColor,
                   ),
-                )
-              ]),
+                  Positioned(
+                    top: 0.0,
+                    right: 0.0,
+                    child: Icon(
+                      Icons.brightness_1,
+                      size: 9.0,
+                      color: config.Colors().mainAccentColor(1) == Colors.black
+                          ? Colors.white24
+                          : config.Colors().mainAccentColor(1),
+                    ),
+                  )
+                ]),
+              ),
         tooltip: 'Notifications',
         onPressed: () {
           setState(() {
