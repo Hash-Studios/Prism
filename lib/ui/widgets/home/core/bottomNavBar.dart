@@ -146,6 +146,7 @@ class _BottomNavBarState extends State<BottomNavBar>
   AnimationController _controller2;
   Animation<double> _paddingAnimation;
   bool isLoggedin = false;
+  bool imageNotFound = false;
   @override
   void initState() {
     checkSignIn();
@@ -209,7 +210,7 @@ class _BottomNavBarState extends State<BottomNavBar>
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
+              padding: const EdgeInsets.fromLTRB(18, 10, 0, 10),
               child: IconButton(
                 tooltip: 'Home',
                 padding: const EdgeInsets.all(0),
@@ -298,65 +299,77 @@ class _BottomNavBarState extends State<BottomNavBar>
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
-              child: Container(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: config.Colors().mainAccentColor(1) == Colors.black
-                          ? Colors.black
-                          : config.Colors().mainAccentColor(1),
-                      width: config.Colors().mainAccentColor(1) == Colors.black
-                          ? 1
-                          : 0,
-                    ),
-                    color: config.Colors().mainAccentColor(1) == Colors.black
-                        ? Colors.white10
-                        : config.Colors().mainAccentColor(1),
-                    borderRadius: BorderRadius.circular(500)),
-                child: IconButton(
-                  tooltip: 'Upload',
-                  padding: const EdgeInsets.all(0),
-                  icon: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Container(
-                        height: navStack.last == "Add" ? 9 : 0,
-                      ),
-                      Icon(JamIcons.plus,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    height: 45,
+                    width: 45,
+                    decoration: BoxDecoration(
+                        border: Border.all(
+                          color:
+                              config.Colors().mainAccentColor(1) == Colors.black
+                                  ? Colors.black
+                                  : config.Colors().mainAccentColor(1),
+                          width:
+                              config.Colors().mainAccentColor(1) == Colors.black
+                                  ? 1
+                                  : 0,
+                        ),
+                        color:
+                            config.Colors().mainAccentColor(1) == Colors.black
+                                ? Colors.white24
+                                : config.Colors().mainAccentColor(1),
+                        borderRadius: BorderRadius.circular(500)),
+                  ),
+                  IconButton(
+                    tooltip: 'Upload',
+                    padding: const EdgeInsets.all(0),
+                    icon: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Container(
+                          height: navStack.last == "Add" ? 9 : 0,
+                        ),
+                        Icon(
+                          JamIcons.plus,
                           color:
                               config.Colors().mainAccentColor(1) == Colors.black
                                   ? Colors.white
-                                  : Theme.of(context).accentColor),
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(500),
-                          color: navStack.last == "Add"
-                              ? config.Colors().mainAccentColor(1) ==
-                                      Colors.black
-                                  ? Colors.white24
-                                  : config.Colors().mainAccentColor(1)
-                              : Theme.of(context).accentColor,
+                                  : Theme.of(context).accentColor,
                         ),
-                        margin: navStack.last == "Add"
-                            ? const EdgeInsets.all(3)
-                            : const EdgeInsets.all(0),
-                        width: navStack.last == "Add"
-                            ? _paddingAnimation.value
-                            : 0,
-                        height: navStack.last == "Add" ? 3 : 0,
-                      )
-                    ],
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(500),
+                            color: navStack.last == "Add"
+                                ? config.Colors().mainAccentColor(1) ==
+                                        Colors.black
+                                    ? Colors.white24
+                                    : config.Colors().mainAccentColor(1)
+                                : Theme.of(context).accentColor,
+                          ),
+                          margin: navStack.last == "Add"
+                              ? const EdgeInsets.all(3)
+                              : const EdgeInsets.all(0),
+                          width: navStack.last == "Add"
+                              ? _paddingAnimation.value
+                              : 0,
+                          height: navStack.last == "Add" ? 3 : 0,
+                        )
+                      ],
+                    ),
+                    onPressed: () {
+                      showGooglePopUp(() {
+                        showModalBottomSheet(
+                          isScrollControlled: true,
+                          context: context,
+                          builder: (context) => const UploadBottomPanel(),
+                        );
+                      });
+                    },
                   ),
-                  onPressed: () {
-                    showGooglePopUp(() {
-                      showModalBottomSheet(
-                        isScrollControlled: true,
-                        context: context,
-                        builder: (context) => const UploadBottomPanel(),
-                      );
-                    });
-                  },
-                ),
+                ],
               ),
             ),
             Padding(
@@ -404,7 +417,7 @@ class _BottomNavBarState extends State<BottomNavBar>
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(0, 12, 20, 12),
+              padding: const EdgeInsets.fromLTRB(0, 10, 18, 10),
               child: IconButton(
                 tooltip: 'Settings',
                 padding: const EdgeInsets.all(0),
@@ -416,15 +429,34 @@ class _BottomNavBarState extends State<BottomNavBar>
                       height: navStack.last == "Profile" ? 9 : 0,
                     ),
                     main.prefs.get("isLoggedin") == true
-                        ? Container(
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).accentColor),
-                            child: Icon(JamIcons.user_circle,
-                                color: Theme.of(context).primaryColor),
-                          )
-                        : Icon(JamIcons.cog_f,
-                            color: Theme.of(context).accentColor),
+                        ? imageNotFound
+                            ? Icon(
+                                JamIcons.user_circle,
+                                color: Theme.of(context).primaryColor,
+                              )
+                            : Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(500),
+                                    color: Theme.of(context).accentColor),
+                                child: CircleAvatar(
+                                  backgroundColor:
+                                      Theme.of(context).accentColor,
+                                  radius: 11,
+                                  backgroundImage: NetworkImage(
+                                    main.prefs.get('googleimage').toString(),
+                                  ),
+                                  onBackgroundImageError: (_, st) {
+                                    setState(() {
+                                      imageNotFound = true;
+                                    });
+                                  },
+                                ),
+                              )
+                        : Icon(
+                            JamIcons.cog_f,
+                            color: Theme.of(context).accentColor,
+                          ),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
