@@ -72,7 +72,7 @@ class _ProfileChildState extends State<ProfileChild> {
   int count;
   @override
   void initState() {
-    count = 0;
+    count = main.prefs.get('easterCount', defaultValue: 0) as int;
     checkFav();
     _controllerBottomCenter =
         ConfettiController(duration: const Duration(seconds: 1));
@@ -207,10 +207,14 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               onTap: () {
                                                                 _controllerBottomCenter
                                                                     .play();
-                                                                setState(() {
-                                                                  count++;
-                                                                });
-                                                                if (count >
+                                                                count++;
+                                                                main.prefs.put(
+                                                                    'easterCount',
+                                                                    count);
+                                                                if (main.prefs.get(
+                                                                        'easterCount',
+                                                                        defaultValue:
+                                                                            0) as int >
                                                                     20) {
                                                                   toasts.codeSend(
                                                                       "Congratulations");
