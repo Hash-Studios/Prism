@@ -104,14 +104,14 @@ class _FollowingScreenState extends State<FollowingScreen> {
             if (index == finalDocs.length) {
               return Container(
                 width: MediaQuery.of(context).size.width * 0.7,
-                height: finalDocs.length == 0
+                height: finalDocs.isEmpty
                     ? MediaQuery.of(context).size.height * 0.8
                     : 100,
                 padding: EdgeInsets.symmetric(
-                    horizontal: finalDocs.length == 0 ? 20 : 0),
+                    horizontal: finalDocs.isEmpty ? 20 : 0),
                 child: Center(
                   child: Text(
-                    finalDocs.length == 0
+                    finalDocs.isEmpty
                         ? "Follow creators to see their latest posts here!"
                         : "You have catched up to the recent posts, by the people you follow. Follow more people to see their posts.",
                     textAlign: TextAlign.center,
@@ -302,7 +302,7 @@ class _FollowingTileState extends State<FollowingTile> {
                               ? Container(
                                   width: 15,
                                   height: 15,
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: Colors.white,
                                   ),
@@ -370,7 +370,7 @@ class _FollowingTileState extends State<FollowingTile> {
                     ],
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 FavIconButton(
                   id: widget.finalDocs[widget.index]["id"] as String,
                   prism: widget.finalDocs[widget.index].data,
