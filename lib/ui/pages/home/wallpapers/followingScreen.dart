@@ -12,6 +12,9 @@ import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dar
 import 'package:Prism/ui/widgets/menuButton/favIconButton.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 
 class FollowingScreen extends StatefulWidget {
@@ -46,7 +49,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         finalQuery = p;
         finalDocs = [];
         for (final doc in finalQuery.documents) {
-          if (following.contains(doc.data["email"]) && finalDocs.length <= 50) {
+          if (following.contains(doc.data["email"]) && finalDocs.length <= 30) {
             finalDocs.add(doc);
           }
         }
@@ -93,7 +96,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
             crossAxisSpacing: 8,
             staggeredTileCount: finalDocs != null ? finalDocs.length : 0,
             staggeredTileBuilder: (index) {
-              return StaggeredTile.fit(1);
+              return const StaggeredTile.fit(1);
             },
           ),
           controller: controller,
@@ -116,23 +119,23 @@ class FollowingTile extends StatefulWidget {
 
 class _FollowingTileState extends State<FollowingTile> {
   final now = DateTime.now();
-  final GlobalKey _globalKey = GlobalKey(debugLabel: "following_element");
+  // final GlobalKey _globalKey = GlobalKey(debugLabel: "following_element");
   double height;
 
   @override
   void initState() {
     height = 0;
-    WidgetsBinding.instance.addPostFrameCallback(_afterLayout);
+    // WidgetsBinding.instance.addPostFrameCallback(_afterLayout);
     super.initState();
   }
 
-  _afterLayout(_) {
-    if (mounted) {
-      setState(() {
-        height = _globalKey.currentContext.size.height;
-      });
-    }
-  }
+  // _afterLayout(_) {
+  //   if (mounted) {
+  //     setState(() {
+  //       height = _globalKey.currentContext.size.height;
+  //     });
+  //   }
+  // }
 
   void showGooglePopUp(BuildContext context, Function func) {
     debugPrint(main.prefs.get("isLoggedin").toString());
@@ -157,55 +160,79 @@ class _FollowingTileState extends State<FollowingTile> {
                 widget.finalDocs[widget.index]["collections"] as List ?? []),
             child: Stack(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
-                  child: CachedNetworkImage(
-                    key: _globalKey,
-                    imageUrl: widget.finalDocs[widget.index]["wallpaper_thumb"]
-                        as String,
-                  ),
-                ),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      splashColor:
-                          Theme.of(context).accentColor.withOpacity(0.3),
-                      highlightColor:
-                          Theme.of(context).accentColor.withOpacity(0.1),
-                      onTap: () {
-                        globals.isPremiumWall(
-                                        globals.premiumCollections,
-                                        widget.finalDocs[widget.index]
-                                                ["collections"] as List ??
-                                            []) ==
-                                    true &&
-                                main.prefs.get('premium') != true
-                            ? showGooglePopUp(context, () {
-                                Navigator.pushNamed(
-                                  context,
-                                  premiumRoute,
-                                );
-                              })
-                            : Navigator.pushNamed(context, shareRoute,
-                                arguments: [
-                                    widget.finalDocs[widget.index]["id"],
+                GestureDetector(
+                  onTap: () {
+                    globals.isPremiumWall(
+                                    globals.premiumCollections,
                                     widget.finalDocs[widget.index]
-                                        ["wallpaper_provider"],
-                                    widget.finalDocs[widget.index]
-                                        ["wallpaper_url"],
-                                    widget.finalDocs[widget.index]
-                                        ["wallpaper_thumb"]
-                                  ]);
-                      },
-                      child: SizedBox(
-                        width: (MediaQuery.of(context).size.width - 18) * 0.5,
-                        height: height,
-                      ),
+                                            ["collections"] as List ??
+                                        []) ==
+                                true &&
+                            main.prefs.get('premium') != true
+                        ? showGooglePopUp(context, () {
+                            Navigator.pushNamed(
+                              context,
+                              premiumRoute,
+                            );
+                          })
+                        : Navigator.pushNamed(context, shareRoute, arguments: [
+                            widget.finalDocs[widget.index]["id"],
+                            widget.finalDocs[widget.index]
+                                ["wallpaper_provider"],
+                            widget.finalDocs[widget.index]["wallpaper_url"],
+                            widget.finalDocs[widget.index]["wallpaper_thumb"]
+                          ]);
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
+                    child: CachedNetworkImage(
+                      // key: _globalKey,
+                      imageUrl: widget.finalDocs[widget.index]
+                          ["wallpaper_thumb"] as String,
                     ),
                   ),
                 ),
+                // ClipRRect(
+                //   borderRadius: BorderRadius.circular(25),
+                //   child: Material(
+                //     color: Colors.transparent,
+                //     child: InkWell(
+                //       splashColor:
+                //           Theme.of(context).accentColor.withOpacity(0.3),
+                //       highlightColor:
+                //           Theme.of(context).accentColor.withOpacity(0.1),
+                //       onTap: () {
+                //         globals.isPremiumWall(
+                //                         globals.premiumCollections,
+                //                         widget.finalDocs[widget.index]
+                //                                 ["collections"] as List ??
+                //                             []) ==
+                //                     true &&
+                //                 main.prefs.get('premium') != true
+                //             ? showGooglePopUp(context, () {
+                //                 Navigator.pushNamed(
+                //                   context,
+                //                   premiumRoute,
+                //                 );
+                //               })
+                //             : Navigator.pushNamed(context, shareRoute,
+                //                 arguments: [
+                //                     widget.finalDocs[widget.index]["id"],
+                //                     widget.finalDocs[widget.index]
+                //                         ["wallpaper_provider"],
+                //                     widget.finalDocs[widget.index]
+                //                         ["wallpaper_url"],
+                //                     widget.finalDocs[widget.index]
+                //                         ["wallpaper_thumb"]
+                //                   ]);
+                //       },
+                //       child: SizedBox(
+                //         width: (MediaQuery.of(context).size.width - 18) * 0.5,
+                //         height: height,
+                //       ),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -239,12 +266,44 @@ class _FollowingTileState extends State<FollowingTile> {
                   },
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        backgroundImage: CachedNetworkImageProvider(widget
-                            .finalDocs[widget.index]["userPhoto"] as String),
-                        radius: 16,
+                      Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(0, 0, 4, 0),
+                            child: CircleAvatar(
+                              backgroundImage: CachedNetworkImageProvider(
+                                  widget.finalDocs[widget.index]["userPhoto"]
+                                      as String),
+                              radius: 16,
+                            ),
+                          ),
+                          globals.verifiedUsers.contains(widget
+                                  .finalDocs[widget.index]["email"]
+                                  .toString())
+                              ? Container(
+                                  width: 15,
+                                  height: 15,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                  ),
+                                  child: SvgPicture.string(
+                                      verifiedIcon.replaceAll(
+                                          "E57697",
+                                          config.Colors().mainAccentColor(1) ==
+                                                  Colors.black
+                                              ? "E57697"
+                                              : main.prefs
+                                                  .get("mainAccentColor")
+                                                  .toRadixString(16)
+                                                  .toString()
+                                                  .substring(2))),
+                                )
+                              : Container(),
+                        ],
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.start,
