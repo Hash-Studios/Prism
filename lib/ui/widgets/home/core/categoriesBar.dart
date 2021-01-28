@@ -3,7 +3,6 @@ import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/widgets/popup/categoryPopUp.dart';
-import 'package:Prism/ui/widgets/popup/colorsPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
@@ -13,6 +12,7 @@ import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/main.dart' as main;
 
 class CategoriesBar extends StatefulWidget {
   const CategoriesBar({
@@ -26,20 +26,25 @@ class CategoriesBar extends StatefulWidget {
 class _CategoriesBarState extends State<CategoriesBar> {
   bool noNotification = false;
   final Box<List> box = Hive.box('notifications');
-  List notifications;
+  List notifications = [];
   final key = GlobalKey();
   @override
   void initState() {
-    notifications = box.get('notifications');
-    fetchNotifications();
+    if (main.prefs.get("Subscriber", defaultValue: true) as bool) {
+      fetchNotifications();
+    } else {
+      noNotification = true;
+    }
     super.initState();
     checkForUpdate();
-    noNotification = checkNewNotification();
   }
 
   Future<void> fetchNotifications() async {
     await getNotifications();
-    setState(() {});
+    setState(() {
+      notifications = box.get('notifications');
+      noNotification = checkNewNotification();
+    });
   }
 
   bool checkNewNotification() {
