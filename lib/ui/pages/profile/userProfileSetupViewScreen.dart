@@ -1485,11 +1485,37 @@ class ModifiedDownloadButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return user_data.userProfileSetups[index]["wallpaper_url"].toString()[0] !=
             "["
-        ? DownloadButton(
-            link:
-                user_data.userProfileSetups[index]["wallpaper_url"].toString(),
-            colorChanged: false,
-          )
+        ? user_data.userProfileSetups[index]["wall_id"] != null &&
+                user_data.userProfileSetups[index]["wall_id"] != ""
+            ? DownloadButton(
+                link: user_data.userProfileSetups[index]["wallpaper_url"]
+                    .toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(user_data.userProfileSetups[index]["wallpaper_url"]
+                      .toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4))
+                    ],
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(
+                    JamIcons.download,
+                    color: Theme.of(context).accentColor,
+                    size: 20,
+                  ),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(user_data.userProfileSetups[index]["wallpaper_url"][1]
@@ -1524,10 +1550,37 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return user_data.userProfileSetups[index]["wallpaper_url"].toString()[0] !=
             "["
-        ? SetWallpaperButton(
-            url: user_data.userProfileSetups[index]["wallpaper_url"].toString(),
-            colorChanged: false,
-          )
+        ? user_data.userProfileSetups[index]["wall_id"] != null &&
+                user_data.userProfileSetups[index]["wall_id"] != ""
+            ? SetWallpaperButton(
+                url: user_data.userProfileSetups[index]["wallpaper_url"]
+                    .toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(user_data.userProfileSetups[index]["wallpaper_url"]
+                      .toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4))
+                    ],
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(
+                    JamIcons.picture,
+                    color: Theme.of(context).accentColor,
+                    size: 20,
+                  ),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(user_data.userProfileSetups[index]["wallpaper_url"][1]

@@ -64,10 +64,10 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
         .toString()
         .toUpperCase());
     _futureView = getViewsSetup(
-       Provider.of<ProfileSetupProvider>(context, listen: false)
-        .profileSetups[index]["id"]
-        .toString()
-        .toUpperCase());
+        Provider.of<ProfileSetupProvider>(context, listen: false)
+            .profileSetups[index]["id"]
+            .toString()
+            .toUpperCase());
     isLoading = true;
     box = Hive.box('localFav');
     super.initState();
@@ -292,7 +292,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                   Provider.of<ProfileSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .profileSetups[index]["id"]
+                                                      .profileSetups[index]
+                                                          ["id"]
                                                       .toString()
                                                       .toUpperCase(),
                                                   overflow: TextOverflow.fade,
@@ -300,10 +301,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       .textTheme
                                                       .bodyText1
                                                       .copyWith(
-                                                          color: Theme.of(context)
-                                                              .accentColor,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
                                                           fontSize: 16),
-                                                ),Padding(
+                                                ),
+                                                Padding(
                                                   padding: const EdgeInsets
                                                           .symmetric(
                                                       horizontal: 6.0),
@@ -612,16 +615,17 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                 .toString()[0] !=
                                             "[") {
                                           if (Provider.of<ProfileSetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .profileSetups[index]
-                                                  ["wall_id"] ==
-                                              null || Provider.of<ProfileSetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .profileSetups[index]
-                                                  ["wall_id"] ==
-                                              "") {
+                                                              context,
+                                                              listen: false)
+                                                          .profileSetups[index]
+                                                      ["wall_id"] ==
+                                                  null ||
+                                              Provider.of<ProfileSetupProvider>(
+                                                              context,
+                                                              listen: false)
+                                                          .profileSetups[index]
+                                                      ["wall_id"] ==
+                                                  "") {
                                             debugPrint("Id Not Found!");
                                             launch(Provider.of<
                                                         ProfileSetupProvider>(
@@ -795,16 +799,17 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                     .toString()[0] !=
                                                 "[") {
                                               if (Provider.of<ProfileSetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .profileSetups[index]
-                                                      ["wall_id"] ==
-                                                  null || Provider.of<ProfileSetupProvider>(
-                                                              context,
-                                                              listen: false)
-                                                          .profileSetups[index]
-                                                      ["wall_id"] ==
-                                                  "") {
+                                                                  context,
+                                                                  listen: false)
+                                                              .profileSetups[
+                                                          index]["wall_id"] ==
+                                                      null ||
+                                                  Provider.of<ProfileSetupProvider>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .profileSetups[
+                                                          index]["wall_id"] ==
+                                                      "") {
                                                 debugPrint("Id Not Found!");
                                                 launch(Provider.of<
                                                             ProfileSetupProvider>(
@@ -1053,16 +1058,17 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                       .toString()[0] !=
                                                   "[") {
                                                 if (Provider.of<ProfileSetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .profileSetups[
-                                                        index]["wall_id"] ==
-                                                    null || Provider.of<ProfileSetupProvider>(
-                                                                context,
-                                                                listen: false)
-                                                            .profileSetups[
-                                                        index]["wall_id"] ==
-                                                    "") {
+                                                                    context,
+                                                                    listen: false)
+                                                                .profileSetups[
+                                                            index]["wall_id"] ==
+                                                        null ||
+                                                    Provider.of<ProfileSetupProvider>(
+                                                                    context,
+                                                                    listen: false)
+                                                                .profileSetups[
+                                                            index]["wall_id"] ==
+                                                        "") {
                                                   debugPrint("Id Not Found!");
                                                   launch(Provider.of<
                                                               ProfileSetupProvider>(
@@ -1399,9 +1405,21 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                               ),
                               padding: const EdgeInsets.all(17),
                               child: FavoriteIcon(
-                              valueChanged: () {
-                                if (main.prefs.get("isLoggedin") == false) {
-                                  googleSignInPopUp(context, () {
+                                valueChanged: () {
+                                  if (main.prefs.get("isLoggedin") == false) {
+                                    googleSignInPopUp(context, () {
+                                      onFavSetup(
+                                          Provider.of<ProfileSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .profileSetups[index]["id"]
+                                              .toString(),
+                                          Provider.of<ProfileSetupProvider>(
+                                                  context,
+                                                  listen: false)
+                                              .profileSetups[index] as Map);
+                                    });
+                                  } else {
                                     onFavSetup(
                                         Provider.of<ProfileSetupProvider>(
                                                 context,
@@ -1412,27 +1430,17 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                 context,
                                                 listen: false)
                                             .profileSetups[index] as Map);
-                                  });
-                                } else {
-                                  onFavSetup(
-                                      Provider.of<ProfileSetupProvider>(context,
-                                              listen: false)
-                                          .profileSetups[index]["id"]
-                                          .toString(),
-                                      Provider.of<ProfileSetupProvider>(context,
-                                              listen: false)
-                                          .profileSetups[index] as Map);
-                                }
-                              },
-                              iconColor: Theme.of(context).accentColor,
-                              iconSize: 30,
-                              isFavorite: box.get(
-                                   Provider.of<ProfileSetupProvider>(context,
-                                              listen: false)
-                                          .profileSetups[index]["id"]
-                                      .toString(),
-                                  defaultValue: false) as bool,
-                            ),
+                                  }
+                                },
+                                iconColor: Theme.of(context).accentColor,
+                                iconSize: 30,
+                                isFavorite: box.get(
+                                    Provider.of<ProfileSetupProvider>(context,
+                                            listen: false)
+                                        .profileSetups[index]["id"]
+                                        .toString(),
+                                    defaultValue: false) as bool,
+                              ),
                             ),
                             GestureDetector(
                               onTap: () {
@@ -1723,12 +1731,44 @@ class ModifiedDownloadButton extends StatelessWidget {
                 .profileSetups[index]["wallpaper_url"]
                 .toString()[0] !=
             "["
-        ? DownloadButton(
-            link: Provider.of<ProfileSetupProvider>(context, listen: false)
-                .profileSetups[index]["wallpaper_url"]
-                .toString(),
-            colorChanged: false,
-          )
+        ? Provider.of<ProfileSetupProvider>(context, listen: false)
+                        .profileSetups[index]["wall_id"] !=
+                    null &&
+                Provider.of<ProfileSetupProvider>(context, listen: false)
+                        .profileSetups[index]["wall_id"] !=
+                    ""
+            ? DownloadButton(
+                link: Provider.of<ProfileSetupProvider>(context, listen: false)
+                    .profileSetups[index]["wallpaper_url"]
+                    .toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(
+                      Provider.of<ProfileSetupProvider>(context, listen: false)
+                          .profileSetups[index]["wallpaper_url"]
+                          .toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4))
+                    ],
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(
+                    JamIcons.download,
+                    color: Theme.of(context).accentColor,
+                    size: 20,
+                  ),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<ProfileSetupProvider>(context, listen: false)
@@ -1766,12 +1806,44 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 .profileSetups[index]["wallpaper_url"]
                 .toString()[0] !=
             "["
-        ? SetWallpaperButton(
-            url: Provider.of<ProfileSetupProvider>(context, listen: false)
-                .profileSetups[index]["wallpaper_url"]
-                .toString(),
-            colorChanged: false,
-          )
+        ? Provider.of<ProfileSetupProvider>(context, listen: false)
+                        .profileSetups[index]["wall_id"] !=
+                    null &&
+                Provider.of<ProfileSetupProvider>(context, listen: false)
+                        .profileSetups[index]["wall_id"] !=
+                    ""
+            ? SetWallpaperButton(
+                url: Provider.of<ProfileSetupProvider>(context, listen: false)
+                    .profileSetups[index]["wallpaper_url"]
+                    .toString(),
+                colorChanged: false,
+              )
+            : GestureDetector(
+                onTap: () async {
+                  launch(
+                      Provider.of<ProfileSetupProvider>(context, listen: false)
+                          .profileSetups[index]["wallpaper_url"]
+                          .toString());
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 4))
+                    ],
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                  padding: const EdgeInsets.all(17),
+                  child: Icon(
+                    JamIcons.picture,
+                    color: Theme.of(context).accentColor,
+                    size: 20,
+                  ),
+                ),
+              )
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<ProfileSetupProvider>(context, listen: false)
