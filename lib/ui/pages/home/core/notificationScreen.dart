@@ -59,6 +59,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
           actions: <Widget>[
             IconButton(
+                tooltip: main.prefs.get("Subscriber") == false
+                    ? "Subscribe"
+                    : "Unsubscribe",
                 icon: main.prefs.get("Subscriber") == false
                     ? const Icon(JamIcons.bell)
                     : const Icon(JamIcons.bell_off),
@@ -75,6 +78,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           fontSize: 16,
                           color: Theme.of(context).accentColor),
                     ),
+                    content: Text(
+                      main.prefs.get("Subscriber") == false
+                          ? 'Subscribe to recieve new notifications about giveaways, contests & upload review status.\n\nThis will also enable promotional notifications.'
+                          : "By unsubscribing you won't recieve new notifications about giveaways, contests & upload review status.\n\nThis will also disable promotional notifications.",
+                      style: TextStyle(
+                          fontFamily: "Proxima Nova",
+                          fontWeight: FontWeight.normal,
+                          fontSize: 14,
+                          color: Theme.of(context).accentColor),
+                    ),
                     actions: [
                       FlatButton(
                         shape: RoundedRectangleBorder(
@@ -86,12 +99,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Navigator.of(context).pop();
                           if (main.prefs.get("Subscriber") == false) {
                             main.prefs.delete("Subscriber");
-                            home.f.unsubscribeFromTopic('NoNotificationSquad');
-                            toasts.codeSend("Succesfully Subscribed!");
+                            home.f.subscribeToTopic('promotional');
+                            toasts.codeSend("Successfully Subscribed");
+                            setState(() {});
                           } else {
                             main.prefs.put("Subscriber", false);
-                            home.f.subscribeToTopic('NoNotificationSquad');
-                            toasts.codeSend("Succesfully unsubscribed!");
+                            home.f.unsubscribeFromTopic('promotional');
+                            toasts.codeSend("Successfully unsubscribed");
+                            setState(() {});
                           }
                         },
                         child: const Text(
@@ -181,6 +196,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         floatingActionButton: notifications.isNotEmpty
             ? FloatingActionButton(
                 mini: true,
+                tooltip: "Clear Notifications",
                 onPressed: () {
                   final AlertDialog deleteNotificationsPopUp = AlertDialog(
                     shape: RoundedRectangleBorder(
