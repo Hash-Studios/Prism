@@ -1,6 +1,7 @@
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
@@ -210,8 +211,12 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                                 0.62,
                                         decoration: BoxDecoration(
                                           boxShadow: pageNumber == index
-                                              ? Provider.of<ThemeModel>(context)
-                                                          .returnThemeType() ==
+                                              ? Provider.of<ThemeModeExtended>(
+                                                              context)
+                                                          .getCurrentModeStyle(
+                                                              MediaQuery.of(
+                                                                      context)
+                                                                  .platformBrightness) ==
                                                       "Light"
                                                   ? [
                                                       BoxShadow(

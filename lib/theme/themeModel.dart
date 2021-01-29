@@ -4,21 +4,13 @@ import 'package:Prism/main.dart' as main;
 
 Map<String, ThemeData> themes = {
   "kLFrost White": kLightTheme,
-  "kDMaterial Dark": kDarkTheme,
-  "kDAMOLED": kDarkTheme2,
   "kLCoffee": kLightTheme2,
   "kLRose": kLightTheme3,
   "kLCotton Blue": kLightTheme4,
-  "kDOlive": kDarkTheme3,
-  "kDDeep Ocean": kDarkTheme4,
-  "kDJungle": kDarkTheme5,
-  "kDPepper": kDarkTheme6,
-  "kDSky": kDarkTheme7,
-  "kDSteel": kDarkTheme8,
 };
 
 class ThemeModel extends ChangeNotifier {
-  ThemeData currentTheme = kDarkTheme;
+  ThemeData currentTheme = kLightTheme;
 
   ThemeModel(
     this.currentTheme,
@@ -61,7 +53,7 @@ class ThemeModel extends ChangeNotifier {
   String returnThemeType() {
     final String themeNow = themes.keys.firstWhere(
       (element) => themes[element] == currentTheme,
-      orElse: () => "kDMaterial Dark",
+      orElse: () => "kLFrost White",
     );
     if (themeNow[1] == "L") {
       return "Light";

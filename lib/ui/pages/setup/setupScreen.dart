@@ -1,8 +1,10 @@
 import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
@@ -233,8 +235,12 @@ class _SetupPageState extends State<SetupPage> {
                                               0.7,
                                       decoration: BoxDecoration(
                                         boxShadow: pageNumber == index
-                                            ? Provider.of<ThemeModel>(context)
-                                                        .returnThemeType() ==
+                                            ? Provider.of<ThemeModeExtended>(
+                                                            context)
+                                                        .getCurrentModeStyle(
+                                                            MediaQuery.of(
+                                                                    context)
+                                                                .platformBrightness) ==
                                                     "Light"
                                                 ? [
                                                     BoxShadow(
@@ -306,9 +312,17 @@ class _SetupPageState extends State<SetupPage> {
                                       child: Center(
                                         child: CircularProgressIndicator(
                                             valueColor: AlwaysStoppedAnimation(
-                                              Provider.of<ThemeModel>(context)
-                                                          .currentTheme ==
-                                                      kDarkTheme2
+                                              Provider.of<ThemeModeExtended>(
+                                                                  context)
+                                                              .getCurrentModeStyle(
+                                                                  MediaQuery.of(
+                                                                          context)
+                                                                      .platformBrightness) ==
+                                                          "Dark" &&
+                                                      Provider.of<DarkThemeModel>(
+                                                                  context)
+                                                              .currentTheme ==
+                                                          kDarkTheme2
                                                   ? config.Colors()
                                                               .mainAccentColor(
                                                                   1) ==
@@ -353,8 +367,12 @@ class _SetupPageState extends State<SetupPage> {
                   },
                   child: Icon(
                     JamIcons.chevron_left,
-                    color: Provider.of<ThemeModel>(context).currentTheme ==
-                            kDarkTheme2
+                    color: Provider.of<ThemeModeExtended>(context)
+                                    .getCurrentModeStyle(MediaQuery.of(context)
+                                        .platformBrightness) ==
+                                "Dark" &&
+                            Provider.of<DarkThemeModel>(context).currentTheme ==
+                                kDarkTheme2
                         ? config.Colors().mainAccentColor(1) == Colors.black
                             ? Theme.of(context).accentColor
                             : config.Colors().mainAccentColor(1)
@@ -380,8 +398,12 @@ class _SetupPageState extends State<SetupPage> {
                   },
                   child: Icon(
                     JamIcons.chevron_right,
-                    color: Provider.of<ThemeModel>(context).currentTheme ==
-                            kDarkTheme2
+                    color: Provider.of<ThemeModeExtended>(context)
+                                    .getCurrentModeStyle(MediaQuery.of(context)
+                                        .platformBrightness) ==
+                                "Dark" &&
+                            Provider.of<DarkThemeModel>(context).currentTheme ==
+                                kDarkTheme2
                         ? config.Colors().mainAccentColor(1) == Colors.black
                             ? Theme.of(context).accentColor
                             : config.Colors().mainAccentColor(1)

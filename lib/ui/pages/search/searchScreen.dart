@@ -5,6 +5,7 @@ import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
@@ -276,8 +277,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
-                        child: Provider.of<ThemeModel>(context, listen: false)
-                                    .returnThemeType() ==
+                        child: Provider.of<ThemeModeExtended>(context)
+                                    .getCurrentModeStyle(MediaQuery.of(context)
+                                        .platformBrightness) ==
                                 "Dark"
                             ? SvgPicture.string(
                                 loaderDark

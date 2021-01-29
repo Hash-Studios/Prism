@@ -1,6 +1,8 @@
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 class LoadingCardsCollection extends StatefulWidget {
@@ -24,8 +26,9 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false)
-                .returnThemeType() ==
+    animation = Provider.of<ThemeModeExtended>(context, listen: false)
+                .getCurrentModeStyle(
+                    SchedulerBinding.instance.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color>(
             [

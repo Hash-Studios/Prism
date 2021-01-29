@@ -1,6 +1,7 @@
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userdata;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
@@ -38,8 +40,9 @@ class _UserProfileGridState extends State<UserProfileGrid>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false)
-                .returnThemeType() ==
+    animation = Provider.of<ThemeModeExtended>(context, listen: false)
+                .getCurrentModeStyle(
+                    SchedulerBinding.instance.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color>(
             [
@@ -108,8 +111,9 @@ class _UserProfileGridState extends State<UserProfileGrid>
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
-                        child: Provider.of<ThemeModel>(context, listen: false)
-                                    .returnThemeType() ==
+                        child: Provider.of<ThemeModeExtended>(context)
+                                    .getCurrentModeStyle(MediaQuery.of(context)
+                                        .platformBrightness) ==
                                 "Dark"
                             ? SvgPicture.string(
                                 postsDark

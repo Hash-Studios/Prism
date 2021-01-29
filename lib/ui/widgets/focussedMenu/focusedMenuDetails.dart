@@ -9,6 +9,7 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
@@ -138,9 +139,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 Navigator.pop(context);
               },
               child: Container(
-                color: Provider.of<ThemeModel>(context, listen: false)
-                            .returnThemeType() ==
-                        "Dark"
+                color: Provider.of<ThemeModeExtended>(context,listen: false)
+                              .getCurrentModeStyle(
+                                  MediaQuery.of(context).platformBrightness) ==
+                          "Dark"
                     ? Colors.black.withOpacity(0.75)
                     : Colors.white.withOpacity(0.75),
               )),

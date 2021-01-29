@@ -3,7 +3,9 @@ import 'package:Prism/gitkey.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:flutter/material.dart';
@@ -209,7 +211,12 @@ class _UpsellScreenState extends State<UpsellScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomCenter,
                     colors: [
-                      config.Colors().mainAccentColor(1),
+                      Provider.of<ThemeModeExtended>(context)
+                                  .getCurrentModeStyle(MediaQuery.of(context)
+                                      .platformBrightness) ==
+                              "Dark"
+                          ? config.Colors().mainDarkAccentColor(1)
+                          : config.Colors().mainAccentColor(1),
                       Theme.of(context).primaryColor
                     ],
                     stops: const [
@@ -311,19 +318,26 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       MediaQuery.of(context).size.width * 0.8,
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: Provider.of<ThemeModel>(
-                                                          context)
-                                                      .currentTheme ==
-                                                  kDarkTheme2
+                                          color: Provider.of<ThemeModeExtended>(
+                                                              context)
+                                                          .getCurrentModeStyle(
+                                                              MediaQuery.of(
+                                                                      context)
+                                                                  .platformBrightness) ==
+                                                      "Dark" &&
+                                                  Provider.of<DarkThemeModel>(
+                                                              context)
+                                                          .currentTheme ==
+                                                      kDarkTheme2
                                               ? config.Colors()
-                                                          .mainAccentColor(1) ==
+                                                          .mainDarkAccentColor(
+                                                              1) ==
                                                       Colors.black
                                                   ? Theme.of(context)
                                                       .accentColor
                                                   : config.Colors()
-                                                      .mainAccentColor(1)
-                                              : config.Colors()
-                                                  .mainAccentColor(1),
+                                                      .mainDarkAccentColor(1)
+                                              : config.Colors().mainAccentColor(1),
                                           width: 4),
                                       color: const Color(0x15ffffff),
                                       borderRadius: BorderRadius.circular(10)),
@@ -551,12 +565,16 @@ class _PurchaseButtonState extends State<PurchaseButton> {
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
           decoration: BoxDecoration(
-              color:
-                  Provider.of<ThemeModel>(context).currentTheme == kDarkTheme2
-                      ? config.Colors().mainAccentColor(1) == Colors.black
-                          ? Theme.of(context).accentColor
-                          : config.Colors().mainAccentColor(1)
-                      : config.Colors().mainAccentColor(1),
+              color: Provider.of<ThemeModeExtended>(context)
+                              .getCurrentModeStyle(
+                                  MediaQuery.of(context).platformBrightness) ==
+                          "Dark" &&
+                      Provider.of<DarkThemeModel>(context).currentTheme ==
+                          kDarkTheme2
+                  ? config.Colors().mainAccentColor(1) == Colors.black
+                      ? Theme.of(context).accentColor
+                      : config.Colors().mainAccentColor(1)
+                  : config.Colors().mainAccentColor(1),
               borderRadius: BorderRadius.circular(500)),
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Text(

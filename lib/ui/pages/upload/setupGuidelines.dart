@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -75,8 +76,9 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
               const Spacer(),
               SizedBox(
                 width: MediaQuery.of(context).size.width,
-                child: Provider.of<ThemeModel>(context, listen: false)
-                            .returnThemeType() ==
+                child: Provider.of<ThemeModeExtended>(context)
+                            .getCurrentModeStyle(
+                                MediaQuery.of(context).platformBrightness) ==
                         "Dark"
                     ? SvgPicture.string(
                         setupDark

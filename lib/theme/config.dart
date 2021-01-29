@@ -45,6 +45,8 @@ class Colors {
   static const Color _accentDarkColor = Color(0xFFF0F0F0);
   final Color _mainAccentColor =
       Color(main.prefs.get("mainAccentColor") as int);
+  final Color _mainDarkAccentColor =
+      Color(main.prefs.get("mainDarkAccentColor") as int);
 
   Color mainColor(double opacity) {
     return _mainColor.withOpacity(opacity);
@@ -72,5 +74,9 @@ class Colors {
 
   Color mainAccentColor(double opacity) {
     return _mainAccentColor.withOpacity(opacity);
+  }
+
+  Color mainDarkAccentColor(double opacity) {
+    return _mainDarkAccentColor.withOpacity(opacity);
   }
 }

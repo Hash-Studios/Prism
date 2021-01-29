@@ -1,5 +1,6 @@
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
@@ -7,6 +8,7 @@ import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dar
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -35,8 +37,9 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false)
-                .returnThemeType() ==
+    animation = Provider.of<ThemeModeExtended>(context, listen: false)
+                .getCurrentModeStyle(
+                    SchedulerBinding.instance.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color>(
             [
@@ -139,8 +142,9 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
           itemBuilder: (context, index) {
             if (index == PData.wallsC.length - 1) {
               return FlatButton(
-                  color: Provider.of<ThemeModel>(context, listen: false)
-                              .returnThemeType() ==
+                  color: Provider.of<ThemeModeExtended>(context)
+                              .getCurrentModeStyle(
+                                  MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),

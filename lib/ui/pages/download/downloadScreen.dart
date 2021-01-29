@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:flutter/material.dart';
@@ -172,8 +173,9 @@ class _DownloadScreenState extends State<DownloadScreen> {
                     children: <Widget>[
                       SizedBox(
                         width: MediaQuery.of(context).size.width,
-                        child: Provider.of<ThemeModel>(context, listen: false)
-                                    .returnThemeType() ==
+                        child: Provider.of<ThemeModeExtended>(context)
+                                    .getCurrentModeStyle(MediaQuery.of(context)
+                                        .platformBrightness) ==
                                 "Dark"
                             ? SvgPicture.string(
                                 downloadsDark

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/oldVersionScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
@@ -109,14 +110,18 @@ class SplashWidget extends StatelessWidget {
         }
         return PageManager();
       },
-      startAnimation:
-          Provider.of<ThemeModel>(context).currentTheme == kLightTheme
-              ? 'Main'
-              : 'Dark',
-      backgroundColor:
-          Provider.of<ThemeModel>(context).currentTheme == kLightTheme
-              ? config.Colors().mainColor(1)
-              : config.Colors().mainDarkColor(1),
+      startAnimation: Provider.of<ThemeModeExtended>(context)
+                  .getCurrentModeStyle(
+                      MediaQuery.of(context).platformBrightness) ==
+              "Light"
+          ? 'Main'
+          : 'Dark',
+      backgroundColor: Provider.of<ThemeModeExtended>(context)
+                  .getCurrentModeStyle(
+                      MediaQuery.of(context).platformBrightness) ==
+              "Light"
+          ? config.Colors().mainColor(1)
+          : config.Colors().mainDarkColor(1),
       until: rcInit,
     );
   }

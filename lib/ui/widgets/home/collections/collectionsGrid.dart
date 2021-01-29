@@ -2,11 +2,13 @@ import 'dart:math';
 
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
@@ -35,8 +37,9 @@ class _CollectionsGridState extends State<CollectionsGrid>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false)
-                .returnThemeType() ==
+    animation = Provider.of<ThemeModeExtended>(context, listen: false)
+                .getCurrentModeStyle(
+                    SchedulerBinding.instance.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color>(
             [
@@ -203,8 +206,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
-                                    color: Provider.of<ThemeModel>(context)
-                                                .returnThemeType() ==
+                                    color: Provider.of<ThemeModeExtended>(
+                                                    context)
+                                                .getCurrentModeStyle(
+                                                    MediaQuery.of(context)
+                                                        .platformBrightness) ==
                                             "Light"
                                         ? Colors.black12
                                         : Colors.black54)
@@ -245,8 +251,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   .headline2
                                   .copyWith(
                                       fontSize: 16,
-                                      color: Provider.of<ThemeModel>(context)
-                                                  .returnThemeType() ==
+                                      color: Provider.of<ThemeModeExtended>(
+                                                      context)
+                                                  .getCurrentModeStyle(
+                                                      MediaQuery.of(context)
+                                                          .platformBrightness) ==
                                               "Light"
                                           ? Colors.black
                                           : Colors.white,
@@ -265,8 +274,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
-                                    color: Provider.of<ThemeModel>(context)
-                                                .returnThemeType() ==
+                                    color: Provider.of<ThemeModeExtended>(
+                                                    context)
+                                                .getCurrentModeStyle(
+                                                    MediaQuery.of(context)
+                                                        .platformBrightness) ==
                                             "Light"
                                         ? Colors.black26
                                         : Colors.black54)
@@ -331,8 +343,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                 BoxShadow(
                                     blurRadius: 20,
                                     offset: const Offset(5, 5),
-                                    color: Provider.of<ThemeModel>(context)
-                                                .returnThemeType() ==
+                                    color: Provider.of<ThemeModeExtended>(
+                                                    context)
+                                                .getCurrentModeStyle(
+                                                    MediaQuery.of(context)
+                                                        .platformBrightness) ==
                                             "Light"
                                         ? Colors.black26
                                         : Colors.black54)
