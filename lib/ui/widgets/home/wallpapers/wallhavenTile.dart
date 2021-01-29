@@ -1,4 +1,5 @@
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallhavenGrid.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -24,16 +25,18 @@ class WallhavenTile extends StatelessWidget {
         Container(
           decoration: wData.walls.isEmpty
               ? BoxDecoration(
-                  color: Provider.of<ThemeModel>(context, listen: false)
-                              .returnThemeType() ==
+                  color: Provider.of<ThemeModeExtended>(context)
+                              .getCurrentModeStyle(
+                                  MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),
                   borderRadius: BorderRadius.circular(20),
                 )
               : BoxDecoration(
-                  color: Provider.of<ThemeModel>(context, listen: false)
-                              .returnThemeType() ==
+                  color: Provider.of<ThemeModeExtended>(context)
+                              .getCurrentModeStyle(
+                                  MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.white10
                       : Colors.black.withOpacity(.1),

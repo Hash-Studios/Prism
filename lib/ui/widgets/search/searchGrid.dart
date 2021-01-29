@@ -2,6 +2,7 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wData;
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pData;
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/searchFocusedMenu.dart';
@@ -9,6 +10,7 @@ import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dar
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
@@ -39,8 +41,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    animation = Provider.of<ThemeModel>(context, listen: false)
-                .returnThemeType() ==
+    animation = Provider.of<ThemeModeExtended>(context, listen: false)
+                .getCurrentModeStyle(
+                    SchedulerBinding.instance.window.platformBrightness) ==
             "Dark"
         ? TweenSequence<Color>(
             [
@@ -165,8 +168,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
             if (widget.selectedProvider == "WallHaven") {
               if (index == wData.wallsS.length - 1 && index >= 23) {
                 return FlatButton(
-                    color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnThemeType() ==
+                    color: Provider.of<ThemeModeExtended>(context)
+                                .getCurrentModeStyle(MediaQuery.of(context)
+                                    .platformBrightness) ==
                             "Dark"
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),
@@ -190,8 +194,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
             } else if (widget.selectedProvider == "Pexels") {
               if (index == pData.wallsPS.length - 1 && index >= 23) {
                 return FlatButton(
-                    color: Provider.of<ThemeModel>(context, listen: false)
-                                .returnThemeType() ==
+                    color: Provider.of<ThemeModeExtended>(context)
+                                .getCurrentModeStyle(MediaQuery.of(context)
+                                    .platformBrightness) ==
                             "Dark"
                         ? Colors.white10
                         : Colors.black.withOpacity(.1),

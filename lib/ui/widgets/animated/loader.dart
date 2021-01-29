@@ -1,4 +1,6 @@
+import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/config.dart' as config;
@@ -70,7 +72,11 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Provider.of<ThemeModel>(context).currentTheme == kDarkTheme2
+            color: Provider.of<ThemeModeExtended>(context).getCurrentModeStyle(
+                            MediaQuery.of(context).platformBrightness) ==
+                        "Dark" &&
+                    Provider.of<DarkThemeModel>(context).currentTheme ==
+                        kDarkTheme2
                 ? config.Colors().mainAccentColor(1) == Colors.black
                     ? Theme.of(context).accentColor
                     : config.Colors().mainAccentColor(1)

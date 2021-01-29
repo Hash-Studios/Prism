@@ -3,6 +3,7 @@ import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
@@ -97,8 +98,9 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                   Navigator.pop(context);
                 },
                 child: Container(
-                  color: Provider.of<ThemeModel>(context, listen: false)
-                              .returnThemeType() ==
+                  color: Provider.of<ThemeModeExtended>(context)
+                              .getCurrentModeStyle(
+                                  MediaQuery.of(context).platformBrightness) ==
                           "Dark"
                       ? Colors.black.withOpacity(0.75)
                       : Colors.white.withOpacity(0.75),

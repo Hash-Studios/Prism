@@ -1,5 +1,6 @@
 import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
@@ -158,9 +159,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                    color: Provider.of<ThemeModel>(context,
-                                                    listen: false)
-                                                .returnThemeType() ==
+                                    color: Provider.of<ThemeModeExtended>(
+                                                    context)
+                                                .getCurrentModeStyle(
+                                                    MediaQuery.of(context)
+                                                        .platformBrightness) ==
                                             "Dark"
                                         ? Colors.white10
                                         : Colors.black.withOpacity(.1),
@@ -231,9 +234,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                               child: Data.subPrismWalls.isEmpty
                                   ? Container(
                                       decoration: BoxDecoration(
-                                        color: Provider.of<ThemeModel>(context,
-                                                        listen: false)
-                                                    .returnThemeType() ==
+                                        color: Provider.of<ThemeModeExtended>(
+                                                        context)
+                                                    .getCurrentModeStyle(
+                                                        MediaQuery.of(context)
+                                                            .platformBrightness) ==
                                                 "Dark"
                                             ? Colors.white10
                                             : Colors.black.withOpacity(.1),
@@ -248,10 +253,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                               []),
                                       child: Container(
                                         decoration: BoxDecoration(
-                                            color: Provider.of<ThemeModel>(
-                                                            context,
-                                                            listen: false)
-                                                        .returnThemeType() ==
+                                            color: Provider.of<ThemeModeExtended>(
+                                                            context)
+                                                        .getCurrentModeStyle(
+                                                            MediaQuery.of(context)
+                                                                .platformBrightness) ==
                                                     "Dark"
                                                 ? Colors.white10
                                                 : Colors.black.withOpacity(.1),

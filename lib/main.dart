@@ -9,6 +9,8 @@ import 'package:Prism/global/categoryProvider.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/data/setups/provider/setupProvider.dart';
+import 'package:Prism/theme/darkThemeModel.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
@@ -30,6 +32,8 @@ import 'package:Prism/theme/config.dart' as config;
 Box prefs;
 Directory dir;
 String currentThemeID;
+String currentDarkThemeID;
+String currentMode;
 bool hqThumbs;
 bool optimisedWallpapers;
 int categories;
@@ -54,8 +58,16 @@ void main() {
       if (prefs.get("mainAccentColor") == null) {
         prefs.put("mainAccentColor", 0xFFE57697);
       }
-      currentThemeID = prefs.get('themeID')?.toString() ?? "kDMaterial Dark";
+      if (prefs.get("mainDarkAccentColor") == null) {
+        prefs.put("mainDarkAccentColor", 0xFFE57697);
+      }
+      currentThemeID = prefs.get('themeID')?.toString() ?? "kLFrost White";
       prefs.put("themeID", currentThemeID);
+      currentDarkThemeID =
+          prefs.get('darkThemeID')?.toString() ?? "kDMaterial Dark";
+      prefs.put("darkThemeID", currentDarkThemeID);
+      currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
+      prefs.put("themeMode", currentMode);
       optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? false;
       if (optimisedWallpapers) {
         prefs.put('optimisedWallpapers', true);
@@ -75,7 +87,11 @@ void main() {
         prefs.put('WHpurity', 110);
       }
       SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        systemNavigationBarColor: config.Colors().mainAccentColor(1),
+        systemNavigationBarColor: currentMode == "Light"
+            ? config.Colors().mainAccentColor(1)
+            : currentMode == "Dark"
+                ? config.Colors().mainDarkAccentColor(1)
+                : config.Colors().mainAccentColor(1),
       ));
       SystemChrome.setSystemUIOverlayStyle(
           const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
@@ -107,6 +123,14 @@ void main() {
                     ),
                     ChangeNotifierProvider<ThemeModel>(
                       create: (context) => ThemeModel(themes[currentThemeID]),
+                    ),
+                    ChangeNotifierProvider<DarkThemeModel>(
+                      create: (context) =>
+                          DarkThemeModel(darkThemes[currentDarkThemeID]),
+                    ),
+                    ChangeNotifierProvider<ThemeModeExtended>(
+                      create: (context) =>
+                          ThemeModeExtended(modes[currentMode]),
                     ),
                   ],
                   child: MyApp(),
@@ -216,6 +240,8 @@ class _MyAppState extends State<MyApp> {
                 name: settings.name,
               )),
       theme: Provider.of<ThemeModel>(context).currentTheme,
+      darkTheme: Provider.of<DarkThemeModel>(context).currentTheme,
+      themeMode: Provider.of<ThemeModeExtended>(context).currentMode,
       // debugShowCheckedModeBanner: false,
       home: ((prefs.get('onboarded_new') as bool) ?? false)
           ? SplashWidget()
@@ -230,7 +256,11 @@ class RestartWidget extends StatefulWidget {
   static void restartApp(BuildContext context) {
     router.navStack = ["Home"];
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Color(prefs.get("mainAccentColor") as int),
+      systemNavigationBarColor: currentMode == "Light"
+          ? Color(prefs.get("mainAccentColor") as int)
+          : currentMode == "Dark"
+              ? Color(prefs.get("mainDarkAccentColor") as int)
+              : Color(prefs.get("mainAccentColor") as int),
     ));
     observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>().restartApp();
@@ -248,8 +278,13 @@ class _RestartWidgetState extends State<RestartWidget> {
       key = UniqueKey();
     });
     Hive.openBox('prefs').then((prefs) {
-      currentThemeID = prefs.get('themeID')?.toString() ?? "kDMaterial Dark";
+      currentThemeID = prefs.get('themeID')?.toString() ?? "kLFrost White";
       prefs.put("themeID", currentThemeID);
+      currentDarkThemeID =
+          prefs.get('darkThemeID')?.toString() ?? "kDMaterial Dark";
+      prefs.put("darkThemeID", currentDarkThemeID);
+      currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
+      prefs.put("themeMode", currentMode);
     });
   }
 
