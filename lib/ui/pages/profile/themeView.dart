@@ -2,6 +2,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModel.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -117,6 +118,25 @@ class _ThemeViewState extends State<ThemeView> {
         body: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
+            ListTile(
+              onTap: () {
+                showCupertinoModalPopup(
+                    context: context,
+                    builder: (BuildContext context) => ActionModal());
+              },
+              leading: const Icon(JamIcons.brightness),
+              title: Text(
+                "Theme Mode",
+                style: TextStyle(
+                    color: Theme.of(context).accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
+              ),
+              subtitle: const Text(
+                "Light theme",
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
             Center(
               child: Container(
                 decoration: BoxDecoration(
@@ -349,6 +369,47 @@ class _ThemeViewState extends State<ThemeView> {
             )
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ActionModal extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoActionSheet(
+      title: Text("Theme Mode"),
+      message: Text("Select your preferred theme mode."),
+      actions: [
+        CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text("System"),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: false,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text("Light"),
+        ),
+        CupertinoActionSheetAction(
+          isDefaultAction: false,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text("Dark"),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        isDefaultAction: false,
+        isDestructiveAction: true,
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        child: Text("Cancel"),
       ),
     );
   }

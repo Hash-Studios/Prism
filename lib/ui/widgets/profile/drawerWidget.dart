@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/routing_constants.dart';
+import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
@@ -497,12 +498,8 @@ class ProfileDrawer extends StatelessWidget {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, themeViewRoute, arguments: [
                   Provider.of<ThemeModel>(context, listen: false).currentTheme,
-                  Color(main.prefs.get("mainAccentColor") as int),
-                  Provider.of<ThemeModel>(context, listen: false)
-                      .returnThemeIndex(
-                    Provider.of<ThemeModel>(context, listen: false)
-                        .currentTheme,
-                  )
+                  Provider.of<DarkThemeModel>(context, listen: false)
+                      .currentTheme,
                 ]);
               },
               context: context,
