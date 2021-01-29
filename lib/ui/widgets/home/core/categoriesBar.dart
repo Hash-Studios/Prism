@@ -83,11 +83,11 @@ class _CategoriesBarState extends State<CategoriesBar> {
       Future.delayed(const Duration(seconds: 2)).then((_) {
         try {
           final dynamic tooltip = key.currentState;
-          if (!noNotification) {
+          if (!noNotification && notifications.isNotEmpty) {
             tooltip.ensureTooltipVisible();
             globals.tooltipShown = true;
           }
-          if (!noNotification) {
+          if (!noNotification && notifications.isNotEmpty) {
             Future.delayed(const Duration(seconds: 5)).then((_) {
               tooltip.deactivate();
             });
