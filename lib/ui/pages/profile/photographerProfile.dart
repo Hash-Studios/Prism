@@ -517,9 +517,9 @@ class _UserProfileState extends State<UserProfile> {
                                         body: jsonEncode(
                                           <String, dynamic>{
                                             'notification': <String, dynamic>{
-                                              'body': 'New Follower!',
-                                              'title':
-                                                  '${main.prefs.get('googlename')} followed you.'
+                                              'title': '🎉 New Follower!',
+                                              'body':
+                                                  '${main.prefs.get('googlename')} is now following you.'
                                             },
                                             'priority': 'high',
                                             'data': <String, dynamic>{
@@ -528,7 +528,8 @@ class _UserProfileState extends State<UserProfile> {
                                               'id': '1',
                                               'status': 'done'
                                             },
-                                            'topic': email
+                                            'to':
+                                                "/topics/${email.split("@")[0]}"
                                           },
                                         ),
                                       );
