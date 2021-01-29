@@ -49,11 +49,40 @@ class _ReviewScreenState extends State<ReviewScreen>
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          flexibleSpace: const PreferredSize(
-            preferredSize: Size(double.infinity, 55),
-            child: HeadingChipBar(
-              current: "Review Status",
+          flexibleSpace: AppBar(
+            title: Row(
+              children: [
+                Text(
+                  "Review Status",
+                  style: Theme.of(context).textTheme.headline3,
+                ),
+                Container(
+                  margin: const EdgeInsets.only(left: 3, bottom: 5),
+                  decoration: BoxDecoration(
+                      color: config.Colors().mainAccentColor(1),
+                      borderRadius: BorderRadius.circular(500)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 1.0, horizontal: 4),
+                    child: Text(
+                      "BETA",
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: Theme.of(context).accentColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
+            leading: IconButton(
+                icon: const Icon(JamIcons.chevron_left),
+                onPressed: () {
+                  navStack.removeLast();
+                  debugPrint(navStack.toString());
+                  Navigator.pop(context);
+                }),
+            backgroundColor: Theme.of(context).primaryColor,
           ),
           bottom: TabBar(
               controller: tabController,
