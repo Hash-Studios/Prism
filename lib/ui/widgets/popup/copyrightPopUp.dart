@@ -42,7 +42,9 @@ class CopyrightPopUp extends StatelessWidget {
           },
           child: Text("REPORT",
               style: TextStyle(
-                color: config.Colors().mainAccentColor(1),
+                color: config.Colors().mainAccentColor(1) == Colors.black
+                    ? Colors.white
+                    : config.Colors().mainAccentColor(1),
               )),
         ),
         FlatButton(
