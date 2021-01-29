@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/routes/routing_constants.dart';
