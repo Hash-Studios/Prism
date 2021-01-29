@@ -90,7 +90,7 @@ class _GeneralListState extends State<GeneralList> {
               toasts.codeSend("Cleared cache!");
             }),
         SwitchListTile(
-            activeColor: config.Colors().mainAccentColor(1),
+            activeColor: Theme.of(context).errorColor,
             secondary: const Icon(
               JamIcons.dashboard,
             ),
@@ -118,7 +118,7 @@ class _GeneralListState extends State<GeneralList> {
               main.prefs.put('optimisedWallpapers', value);
             }),
         SwitchListTile(
-            activeColor: config.Colors().mainAccentColor(1),
+            activeColor: Theme.of(context).errorColor,
             secondary: const Icon(
               JamIcons.picture,
             ),
@@ -153,7 +153,7 @@ class _GeneralListState extends State<GeneralList> {
               }
             }),
         SwitchListTile(
-            activeColor: config.Colors().mainAccentColor(1),
+            activeColor: Theme.of(context).errorColor,
             secondary: const Icon(
               JamIcons.stop_sign,
             ),

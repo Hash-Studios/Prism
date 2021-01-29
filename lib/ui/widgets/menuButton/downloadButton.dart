@@ -314,7 +314,7 @@ class _DownloadDialogContentState extends State<DownloadDialogContent> {
             children: <Widget>[
               FlatButton(
                 shape: const StadiumBorder(),
-                color: config.Colors().mainAccentColor(1),
+                color: Theme.of(context).errorColor,
                 onPressed: () {
                   if (main.prefs.get("isLoggedin") == false) {
                     googleSignInPopUp(context, () {

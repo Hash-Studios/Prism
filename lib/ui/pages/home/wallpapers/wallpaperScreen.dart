@@ -545,7 +545,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                   Center(
                                     child: CircularProgressIndicator(
                                         valueColor: AlwaysStoppedAnimation(
-                                          config.Colors().mainAccentColor(1),
+                                          Theme.of(context).errorColor,
                                         ),
                                         value: downloadProgress.progress),
                                   ),
@@ -1029,20 +1029,20 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                               height: 20,
                                                               child: SvgPicture.string(verifiedIcon.replaceAll(
                                                                   "E57697",
-                                                                  config.Colors().mainAccentColor(
-                                                                              1) ==
+                                                                  Theme.of(context).errorColor ==
                                                                           Colors
                                                                               .black
                                                                       ? "E57697"
-                                                                      : main
-                                                                          .prefs
-                                                                          .get(
-                                                                              "mainAccentColor")
-                                                                          .toRadixString(
-                                                                              16)
+                                                                      : Theme.of(
+                                                                              context)
+                                                                          .errorColor
                                                                           .toString()
-                                                                          .substring(
-                                                                              2))),
+                                                                          .replaceAll(
+                                                                              "Color(0xFF",
+                                                                              "")
+                                                                          .replaceAll(
+                                                                              ")",
+                                                                              ""))),
                                                             ),
                                                           )
                                                         : Container(),
@@ -1237,8 +1237,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                       Center(
                                         child: CircularProgressIndicator(
                                             valueColor: AlwaysStoppedAnimation(
-                                              config.Colors()
-                                                  .mainAccentColor(1),
+                                              Theme.of(context).errorColor,
                                             ),
                                             value: downloadProgress.progress),
                                       ),
@@ -1780,8 +1779,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             child: CircularProgressIndicator(
                                                 valueColor:
                                                     AlwaysStoppedAnimation(
-                                                  config.Colors()
-                                                      .mainAccentColor(1),
+                                                  Theme.of(context).errorColor
                                                 ),
                                                 value:
                                                     downloadProgress.progress),
@@ -2360,9 +2358,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         CircularProgressIndicator(
                                                             valueColor:
                                                                 AlwaysStoppedAnimation(
-                                                              Color(main.prefs.get(
-                                                                      "mainAccentColor")
-                                                                  as int),
+                                                              Theme.of(context).errorColor,
                                                             ),
                                                             value:
                                                                 downloadProgress
@@ -2931,9 +2927,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     CircularProgressIndicator(
                                                         valueColor:
                                                             AlwaysStoppedAnimation(
-                                                          config.Colors()
-                                                              .mainAccentColor(
-                                                                  1),
+                                                          Theme.of(context).errorColor,
                                                         ),
                                                         value: downloadProgress
                                                             .progress),

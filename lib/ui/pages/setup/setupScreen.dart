@@ -113,7 +113,7 @@ class _SetupPageState extends State<SetupPage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  config.Colors().mainAccentColor(1),
+                  Theme.of(context).errorColor,
                   Theme.of(context).primaryColor
                 ],
                 begin: Alignment.topCenter,
@@ -323,16 +323,15 @@ class _SetupPageState extends State<SetupPage> {
                                                                   context)
                                                               .currentTheme ==
                                                           kDarkTheme2
-                                                  ? config.Colors()
-                                                              .mainAccentColor(
-                                                                  1) ==
+                                                  ? Theme.of(context)
+                                                              .errorColor ==
                                                           Colors.black
                                                       ? Theme.of(context)
                                                           .accentColor
-                                                      : config.Colors()
-                                                          .mainAccentColor(1)
-                                                  : config.Colors()
-                                                      .mainAccentColor(1),
+                                                      : Theme.of(context)
+                                                          .errorColor
+                                                  : Theme.of(context)
+                                                      .errorColor,
                                             ),
                                             value: downloadProgress.progress),
                                       ),
@@ -373,10 +372,10 @@ class _SetupPageState extends State<SetupPage> {
                                 "Dark" &&
                             Provider.of<DarkThemeModel>(context).currentTheme ==
                                 kDarkTheme2
-                        ? config.Colors().mainAccentColor(1) == Colors.black
+                        ? Theme.of(context).errorColor == Colors.black
                             ? Theme.of(context).accentColor
-                            : config.Colors().mainAccentColor(1)
-                        : config.Colors().mainAccentColor(1),
+                            : Theme.of(context).errorColor
+                        : Theme.of(context).errorColor,
                   ),
                 ),
               ),
@@ -404,10 +403,10 @@ class _SetupPageState extends State<SetupPage> {
                                 "Dark" &&
                             Provider.of<DarkThemeModel>(context).currentTheme ==
                                 kDarkTheme2
-                        ? config.Colors().mainAccentColor(1) == Colors.black
+                        ? Theme.of(context).errorColor == Colors.black
                             ? Theme.of(context).accentColor
-                            : config.Colors().mainAccentColor(1)
-                        : config.Colors().mainAccentColor(1),
+                            : Theme.of(context).errorColor
+                        : Theme.of(context).errorColor,
                   ),
                 ),
               ),

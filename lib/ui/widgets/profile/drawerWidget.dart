@@ -243,7 +243,7 @@ class ProfileDrawer extends StatelessWidget {
                         child: FlatButton(
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5)),
-                          color: config.Colors().mainAccentColor(1),
+                          color: Theme.of(context).errorColor,
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
@@ -306,7 +306,7 @@ class ProfileDrawer extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(500),
                                   color: Theme.of(context).hintColor),
                               child: TextField(
-                                cursorColor: config.Colors().mainAccentColor(1),
+                                cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline5
@@ -349,7 +349,7 @@ class ProfileDrawer extends StatelessWidget {
                           'CANCEL',
                           style: TextStyle(
                             fontSize: 16.0,
-                            color: config.Colors().mainAccentColor(1),
+                            color: Theme.of(context).errorColor,
                           ),
                         ),
                       ),
@@ -358,7 +358,7 @@ class ProfileDrawer extends StatelessWidget {
                         child: FlatButton(
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5)),
-                          color: config.Colors().mainAccentColor(1),
+                          color: Theme.of(context).errorColor,
                           onPressed: () async {
                             Navigator.of(context).pop();
                             await setUserTwitter(
@@ -412,7 +412,7 @@ class ProfileDrawer extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(500),
                                   color: Theme.of(context).hintColor),
                               child: TextField(
-                                cursorColor: config.Colors().mainAccentColor(1),
+                                cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headline5
@@ -455,7 +455,7 @@ class ProfileDrawer extends StatelessWidget {
                           'CANCEL',
                           style: TextStyle(
                             fontSize: 16.0,
-                            color: config.Colors().mainAccentColor(1),
+                            color: Theme.of(context).errorColor,
                           ),
                         ),
                       ),
@@ -464,7 +464,7 @@ class ProfileDrawer extends StatelessWidget {
                         child: FlatButton(
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5)),
-                          color: config.Colors().mainAccentColor(1),
+                          color: Theme.of(context).errorColor,
                           onPressed: () async {
                             Navigator.of(context).pop();
                             await setUserIG(

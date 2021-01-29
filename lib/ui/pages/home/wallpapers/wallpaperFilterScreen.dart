@@ -319,7 +319,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               Container(
                 margin: const EdgeInsets.only(left: 3, bottom: 5),
                 decoration: BoxDecoration(
-                    color: config.Colors().mainAccentColor(1),
+                    color: Theme.of(context).errorColor,
                     borderRadius: BorderRadius.circular(500)),
                 child: Padding(
                   padding:
@@ -577,11 +577,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                           Provider.of<DarkThemeModel>(context)
                                                   .currentTheme ==
                                               kDarkTheme2
-                                      ? config.Colors().mainAccentColor(1) ==
+                                      ? Theme.of(context).errorColor ==
                                               Colors.black
                                           ? Theme.of(context).accentColor
-                                          : config.Colors().mainAccentColor(1)
-                                      : config.Colors().mainAccentColor(1),
+                                          : Theme.of(context).errorColor
+                                      : Theme.of(context).errorColor,
                                 ),
                               ),
                             ),
@@ -625,11 +625,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                           Provider.of<DarkThemeModel>(context)
                                                   .currentTheme ==
                                               kDarkTheme2
-                                      ? config.Colors().mainAccentColor(1) ==
+                                      ? Theme.of(context).errorColor ==
                                               Colors.black
                                           ? Theme.of(context).accentColor
-                                          : config.Colors().mainAccentColor(1)
-                                      : config.Colors().mainAccentColor(1),
+                                          : Theme.of(context).errorColor
+                                      : Theme.of(context).errorColor,
                                 ),
                               ),
                             ),

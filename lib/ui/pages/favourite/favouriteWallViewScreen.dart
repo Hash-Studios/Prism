@@ -1061,7 +1061,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   Center(
                                     child: CircularProgressIndicator(
                                         valueColor: AlwaysStoppedAnimation(
-                                          config.Colors().mainAccentColor(1),
+                                          Theme.of(context).errorColor,
                                         ),
                                         value: downloadProgress.progress),
                                   ),
@@ -1669,7 +1669,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   Center(
                                     child: CircularProgressIndicator(
                                         valueColor: AlwaysStoppedAnimation(
-                                          config.Colors().mainAccentColor(1),
+                                          Theme.of(context).errorColor,
                                         ),
                                         value: downloadProgress.progress),
                                   ),
@@ -1709,7 +1709,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     (context, url, downloadProgress) => Center(
                                   child: CircularProgressIndicator(
                                       valueColor: AlwaysStoppedAnimation(
-                                        config.Colors().mainAccentColor(1),
+                                        Theme.of(context).errorColor,
                                       ),
                                       value: downloadProgress.progress),
                                 ),

@@ -6,7 +6,6 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/ui/widgets/search/searchGrid.dart';
@@ -102,7 +101,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 borderRadius: BorderRadius.circular(500),
                                 color: Theme.of(context).hintColor),
                             child: TextField(
-                              cursorColor: config.Colors().mainAccentColor(1),
+                              cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
                                   .textTheme
                                   .headline5
@@ -293,11 +292,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                             .substring(2))
                                     .replaceAll(
                                         "E57697",
-                                        main.prefs
-                                            .get("mainAccentColor")
-                                            .toRadixString(16)
+                                        Theme.of(context)
+                                            .errorColor
                                             .toString()
-                                            .substring(2))
+                                            .replaceAll("Color(0xff", "")
+                                            .replaceAll(")", ""))
                                     .replaceAll(
                                         "F0F0F0",
                                         Theme.of(context)
@@ -343,11 +342,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                             .substring(2))
                                     .replaceAll(
                                         "E57697",
-                                        main.prefs
-                                            .get("mainAccentColor")
-                                            .toRadixString(16)
+                                        Theme.of(context)
+                                            .errorColor
                                             .toString()
-                                            .substring(2))
+                                            .replaceAll("Color(0xff", "")
+                                            .replaceAll(")", ""))
                                     .replaceAll(
                                         "F0F0F0",
                                         Theme.of(context)

@@ -42,14 +42,14 @@ class CopyrightPopUp extends StatelessWidget {
           },
           child: Text("REPORT",
               style: TextStyle(
-                color: config.Colors().mainAccentColor(1) == Colors.black
+                color: Theme.of(context).errorColor == Colors.black
                     ? Colors.white
-                    : config.Colors().mainAccentColor(1),
+                    : Theme.of(context).errorColor,
               )),
         ),
         FlatButton(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          color: config.Colors().mainAccentColor(1),
+          color: Theme.of(context).errorColor,
           onPressed: () {
             Navigator.pop(context);
           },

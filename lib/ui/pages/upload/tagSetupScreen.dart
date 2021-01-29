@@ -99,7 +99,7 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
                                 borderRadius: BorderRadius.circular(500),
                                 color: Theme.of(context).hintColor),
                             child: TextField(
-                              cursorColor: config.Colors().mainAccentColor(1),
+                              cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
                                   .textTheme
                                   .headline5
@@ -205,7 +205,7 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
               child: scale == null
                   ? CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(
-                          config.Colors().mainAccentColor(1)),
+                          Theme.of(context).errorColor),
                     )
                   : Padding(
                       padding: const EdgeInsets.all(16.0),

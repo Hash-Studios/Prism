@@ -55,11 +55,8 @@ void main() {
       await Hive.openBox<List>('notifications');
       prefs = await Hive.openBox('prefs');
       debugPrint("Box Opened");
-      if (prefs.get("mainAccentColor") == null) {
-        prefs.put("mainAccentColor", 0xFFE57697);
-      }
-      if (prefs.get("mainDarkAccentColor") == null) {
-        prefs.put("mainDarkAccentColor", 0xFFE57697);
+      if (prefs.get("systemOverlayColor") == null) {
+        prefs.put("systemOverlayColor", 0xFFE57697);
       }
       currentThemeID = prefs.get('themeID')?.toString() ?? "kLFrost White";
       prefs.put("themeID", currentThemeID);
@@ -87,11 +84,7 @@ void main() {
         prefs.put('WHpurity', 110);
       }
       SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        systemNavigationBarColor: currentMode == "Light"
-            ? config.Colors().mainAccentColor(1)
-            : currentMode == "Dark"
-                ? config.Colors().mainDarkAccentColor(1)
-                : config.Colors().mainAccentColor(1),
+        systemNavigationBarColor: Color(prefs.get('systemOverlayColor') as int),
       ));
       SystemChrome.setSystemUIOverlayStyle(
           const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
@@ -256,11 +249,7 @@ class RestartWidget extends StatefulWidget {
   static void restartApp(BuildContext context) {
     router.navStack = ["Home"];
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: currentMode == "Light"
-          ? Color(prefs.get("mainAccentColor") as int)
-          : currentMode == "Dark"
-              ? Color(prefs.get("mainDarkAccentColor") as int)
-              : Color(prefs.get("mainAccentColor") as int),
+      systemNavigationBarColor: Color(prefs.get('systemOverlayColor') as int),
     ));
     observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>().restartApp();

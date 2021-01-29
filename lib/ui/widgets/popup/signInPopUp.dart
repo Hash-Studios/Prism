@@ -71,9 +71,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.heart,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1) == Colors.black
+                  color: Theme.of(context).errorColor == Colors.black
                       ? Colors.white
-                      : config.Colors().mainAccentColor(1),
+                      : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -101,9 +101,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.upload,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1) == Colors.black
+                  color: Theme.of(context).errorColor == Colors.black
                       ? Colors.white
-                      : config.Colors().mainAccentColor(1),
+                      : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -131,9 +131,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.instant_picture,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1) == Colors.black
+                  color: Theme.of(context).errorColor == Colors.black
                       ? Colors.white
-                      : config.Colors().mainAccentColor(1),
+                      : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -161,9 +161,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.coin,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1) == Colors.black
+                  color: Theme.of(context).errorColor == Colors.black
                       ? Colors.white
-                      : config.Colors().mainAccentColor(1),
+                      : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -191,9 +191,9 @@ void googleSignInPopUp(BuildContext context, Function func) {
                 Icon(
                   JamIcons.cloud,
                   size: 22,
-                  color: config.Colors().mainAccentColor(1) == Colors.black
+                  color: Theme.of(context).errorColor == Colors.black
                       ? Colors.white
-                      : config.Colors().mainAccentColor(1),
+                      : Theme.of(context).errorColor,
                 ),
                 const SizedBox(
                   width: 20,
@@ -231,7 +231,7 @@ void googleSignInPopUp(BuildContext context, Function func) {
       ),
       FlatButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: config.Colors().mainAccentColor(1),
+        color: Theme.of(context).errorColor,
         onPressed: () {
           Navigator.of(context).pop();
           showDialog(

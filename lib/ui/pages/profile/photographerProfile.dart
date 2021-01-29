@@ -85,7 +85,7 @@ class _UserProfileState extends State<UserProfile> {
             body: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
                 SliverAppBar(
-                  backgroundColor: config.Colors().mainAccentColor(1),
+                  backgroundColor: Theme.of(context).errorColor,
                   automaticallyImplyLeading: false,
                   expandedHeight: 200.0,
                   flexibleSpace: FlexibleSpaceBar(
@@ -93,7 +93,7 @@ class _UserProfileState extends State<UserProfile> {
                       fit: StackFit.expand,
                       children: [
                         Container(
-                          color: config.Colors().mainAccentColor(1),
+                          color: Theme.of(context).errorColor,
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 25, 16, 0),
@@ -232,10 +232,9 @@ class _UserProfileState extends State<UserProfile> {
                                                                   .bodyText2
                                                                   .copyWith(
                                                                     fontSize: 9,
-                                                                    color: Color(main
-                                                                            .prefs
-                                                                            .get("mainAccentColor")
-                                                                        as int),
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .errorColor,
                                                                   ),
                                                             ),
                                                           ),
@@ -575,7 +574,7 @@ class _UserProfileState extends State<UserProfile> {
                   ],
                 ),
                 SliverAppBar(
-                  backgroundColor: config.Colors().mainAccentColor(1),
+                  backgroundColor: Theme.of(context).errorColor,
                   automaticallyImplyLeading: false,
                   pinned: true,
                   titleSpacing: 0,
@@ -584,7 +583,7 @@ class _UserProfileState extends State<UserProfile> {
                     width: MediaQuery.of(context).size.width,
                     height: 57,
                     child: Container(
-                      color: config.Colors().mainAccentColor(1),
+                      color: Theme.of(context).errorColor,
                       child: SizedBox.expand(
                         child: TabBar(
                             indicatorColor: Theme.of(context).accentColor,

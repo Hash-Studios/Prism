@@ -63,9 +63,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: config.Colors().mainAccentColor(1) == Colors.black
+                      color: Theme.of(context).errorColor == Colors.black
                           ? Colors.grey
-                          : config.Colors().mainAccentColor(1),
+                          : Theme.of(context).errorColor,
                     ),
                   ),
                 ),
@@ -113,9 +113,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: config.Colors().mainAccentColor(1) == Colors.black
+                    color: Theme.of(context).errorColor == Colors.black
                         ? Colors.grey
-                        : config.Colors().mainAccentColor(1),
+                        : Theme.of(context).errorColor,
                   ),
                 ),
               ),
@@ -172,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   toasts.codeSend("Cleared cache!");
                 }),
             SwitchListTile(
-                activeColor: config.Colors().mainAccentColor(1),
+                activeColor: Theme.of(context).errorColor,
                 secondary: const Icon(
                   JamIcons.dashboard,
                 ),
@@ -200,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   main.prefs.put('optimisedWallpapers', value);
                 }),
             SwitchListTile(
-                activeColor: config.Colors().mainAccentColor(1),
+                activeColor: Theme.of(context).errorColor,
                 secondary: const Icon(
                   JamIcons.picture,
                 ),
@@ -235,7 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 }),
             SwitchListTile(
-                activeColor: config.Colors().mainAccentColor(1),
+                activeColor: Theme.of(context).errorColor,
                 secondary: const Icon(
                   JamIcons.stop_sign,
                 ),
@@ -295,9 +295,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: config.Colors().mainAccentColor(1) == Colors.black
+                    color: Theme.of(context).errorColor == Colors.black
                         ? Colors.grey
-                        : config.Colors().mainAccentColor(1),
+                        : Theme.of(context).errorColor,
                   ),
                 ),
               ),
@@ -413,8 +413,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         'YES',
                                         style: TextStyle(
                                           fontSize: 16.0,
-                                          color: config.Colors()
-                                              .mainAccentColor(1),
+                                          color: Theme.of(context).errorColor,
                                         ),
                                       ),
                                     ),
@@ -425,8 +424,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(5)),
-                                        color:
-                                            config.Colors().mainAccentColor(1),
+                                        color: Theme.of(context).errorColor,
                                         onPressed: () {
                                           Navigator.of(context).pop();
                                         },
@@ -501,8 +499,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         'YES',
                                         style: TextStyle(
                                           fontSize: 16.0,
-                                          color: config.Colors()
-                                              .mainAccentColor(1),
+                                          color: Theme.of(context).errorColor,
                                         ),
                                       ),
                                     ),
@@ -513,8 +510,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(5)),
-                                        color:
-                                            config.Colors().mainAccentColor(1),
+                                        color: Theme.of(context).errorColor,
                                         onPressed: () {
                                           Navigator.of(context).pop();
                                         },
@@ -580,8 +576,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                 color: Theme.of(context)
                                                     .hintColor),
                                             child: TextField(
-                                              cursorColor: config.Colors()
-                                                  .mainAccentColor(1),
+                                              cursorColor:
+                                                  Theme.of(context).errorColor,
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .headline5
@@ -631,8 +627,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         'CANCEL',
                                         style: TextStyle(
                                           fontSize: 16.0,
-                                          color: config.Colors()
-                                              .mainAccentColor(1),
+                                          color: Theme.of(context).errorColor,
                                         ),
                                       ),
                                     ),
@@ -643,8 +638,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(5)),
-                                        color:
-                                            config.Colors().mainAccentColor(1),
+                                        color: Theme.of(context).errorColor,
                                         onPressed: () async {
                                           Navigator.of(context).pop();
                                           await setUserTwitter(
@@ -715,8 +709,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                 color: Theme.of(context)
                                                     .hintColor),
                                             child: TextField(
-                                              cursorColor: config.Colors()
-                                                  .mainAccentColor(1),
+                                              cursorColor:
+                                                  Theme.of(context).errorColor,
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .headline5
@@ -766,8 +760,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         'CANCEL',
                                         style: TextStyle(
                                           fontSize: 16.0,
-                                          color: config.Colors()
-                                              .mainAccentColor(1),
+                                          color: Theme.of(context).errorColor,
                                         ),
                                       ),
                                     ),
@@ -778,8 +771,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(5)),
-                                        color:
-                                            config.Colors().mainAccentColor(1),
+                                        color: Theme.of(context).errorColor,
                                         onPressed: () async {
                                           Navigator.of(context).pop();
                                           await setUserIG(
@@ -838,9 +830,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: config.Colors().mainAccentColor(1) == Colors.black
+                    color: Theme.of(context).errorColor == Colors.black
                         ? Colors.grey
-                        : config.Colors().mainAccentColor(1),
+                        : Theme.of(context).errorColor,
                   ),
                 ),
               ),

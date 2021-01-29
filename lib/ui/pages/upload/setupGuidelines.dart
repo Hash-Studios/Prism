@@ -64,7 +64,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                       child: Text(
                         "Continue",
                         style: TextStyle(
-                          color: config.Colors().mainAccentColor(1),
+                          color: Theme.of(context).errorColor,
                           fontWeight: FontWeight.normal,
                         ),
                       ),
@@ -92,11 +92,11 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                                     .substring(2))
                             .replaceAll(
                                 "E57697",
-                                main.prefs
-                                    .get("mainAccentColor")
-                                    .toRadixString(16)
+                                Theme.of(context)
+                                    .errorColor
                                     .toString()
-                                    .substring(2))
+                                    .replaceAll("Color(0xff", "")
+                                    .replaceAll(")", ""))
                             .replaceAll(
                                 "F0F0F0",
                                 Theme.of(context)
@@ -142,11 +142,11 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
                                     .substring(2))
                             .replaceAll(
                                 "E57697",
-                                main.prefs
-                                    .get("mainAccentColor")
-                                    .toRadixString(16)
+                                Theme.of(context)
+                                    .errorColor
                                     .toString()
-                                    .substring(2))
+                                    .replaceAll("Color(0xff", "")
+                                    .replaceAll(")", ""))
                             .replaceAll(
                                 "F0F0F0",
                                 Theme.of(context)
@@ -218,7 +218,7 @@ Guidelines for uploading setups -""",
               ? Padding(
                   padding: const EdgeInsets.only(bottom: 50.0),
                   child: FloatingActionButton.extended(
-                    backgroundColor: config.Colors().mainAccentColor(1),
+                    backgroundColor: Theme.of(context).errorColor,
                     onPressed: () async => getSetup(),
                     label: Text(
                       "Continue",

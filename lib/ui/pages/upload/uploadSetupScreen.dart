@@ -264,9 +264,9 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                 "Post",
                 style: TextStyle(
                   color: !isProcessing && !isUploading
-                      ? config.Colors().mainAccentColor(1) == Colors.black
+                      ? Theme.of(context).errorColor == Colors.black
                           ? Colors.white
-                          : config.Colors().mainAccentColor(1)
+                          : Theme.of(context).errorColor
                       : Theme.of(context).hintColor,
                   fontWeight: FontWeight.normal,
                 ),
@@ -280,7 +280,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: CircleAvatar(
-                  backgroundColor: config.Colors().mainAccentColor(1),
+                  backgroundColor: Theme.of(context).errorColor,
                   radius: 20,
                   child: main.prefs.get("googleimage") == null
                       ? Container()
@@ -379,7 +379,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                         child: Center(
                           child: CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                config.Colors().mainAccentColor(1)),
+                                Theme.of(context).errorColor),
                           ),
                         ),
                       )
@@ -429,7 +429,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                 borderRadius: BorderRadius.circular(500),
                                 color: Theme.of(context).hintColor),
                             child: TextField(
-                              cursorColor: config.Colors().mainAccentColor(1),
+                              cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
                                   .textTheme
                                   .headline5
@@ -470,7 +470,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                 borderRadius: BorderRadius.circular(500),
                                 color: Theme.of(context).hintColor),
                             child: TextField(
-                              cursorColor: config.Colors().mainAccentColor(1),
+                              cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
                                   .textTheme
                                   .headline5
@@ -512,8 +512,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                       borderRadius: BorderRadius.circular(500),
                                       color: Theme.of(context).hintColor),
                                   child: TextField(
-                                    cursorColor:
-                                        config.Colors().mainAccentColor(1),
+                                    cursorColor: Theme.of(context).errorColor,
                                     style: Theme.of(context)
                                         .textTheme
                                         .headline5
@@ -566,8 +565,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                       borderRadius: BorderRadius.circular(500),
                                       color: Theme.of(context).hintColor),
                                   child: TextField(
-                                    cursorColor:
-                                        config.Colors().mainAccentColor(1),
+                                    cursorColor: Theme.of(context).errorColor,
                                     style: Theme.of(context)
                                         .textTheme
                                         .headline5
@@ -615,7 +613,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                 borderRadius: BorderRadius.circular(500),
                                 color: Theme.of(context).hintColor),
                             child: TextField(
-                              cursorColor: config.Colors().mainAccentColor(1),
+                              cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
                                   .textTheme
                                   .headline5
@@ -656,7 +654,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                 borderRadius: BorderRadius.circular(500),
                                 color: Theme.of(context).hintColor),
                             child: TextField(
-                              cursorColor: config.Colors().mainAccentColor(1),
+                              cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
                                   .textTheme
                                   .headline5
@@ -731,7 +729,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             borderRadius: BorderRadius.circular(500),
                             color: Theme.of(context).hintColor),
                         child: TextField(
-                          cursorColor: config.Colors().mainAccentColor(1),
+                          cursorColor: Theme.of(context).errorColor,
                           style: Theme.of(context)
                               .textTheme
                               .headline5
@@ -769,7 +767,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           child: FloatingActionButton.extended(
                             backgroundColor: wallpaperUploaded == true
                                 ? Theme.of(context).hintColor
-                                : config.Colors().mainAccentColor(1),
+                                : Theme.of(context).errorColor,
                             onPressed: wallpaperUploaded == true
                                 ? null
                                 : () async {
@@ -820,8 +818,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     borderRadius: BorderRadius.circular(500),
                                     color: Theme.of(context).hintColor),
                                 child: TextField(
-                                  cursorColor:
-                                      config.Colors().mainAccentColor(1),
+                                  cursorColor: Theme.of(context).errorColor,
                                   style: Theme.of(context)
                                       .textTheme
                                       .headline5
@@ -863,8 +860,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     borderRadius: BorderRadius.circular(500),
                                     color: Theme.of(context).hintColor),
                                 child: TextField(
-                                  cursorColor:
-                                      config.Colors().mainAccentColor(1),
+                                  cursorColor: Theme.of(context).errorColor,
                                   style: Theme.of(context)
                                       .textTheme
                                       .headline5
@@ -906,8 +902,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                     borderRadius: BorderRadius.circular(500),
                                     color: Theme.of(context).hintColor),
                                 child: TextField(
-                                  cursorColor:
-                                      config.Colors().mainAccentColor(1),
+                                  cursorColor: Theme.of(context).errorColor,
                                   style: Theme.of(context)
                                       .textTheme
                                       .headline5

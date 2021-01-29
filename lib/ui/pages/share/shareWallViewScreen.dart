@@ -135,7 +135,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
     } else if (provider == "Prism") {
       futureM = Data.getDataByID(id);
       updateViews(id.toString().toUpperCase());
-    _futureView = getViews(id.toString().toUpperCase());
+      _futureView = getViews(id.toString().toUpperCase());
     }
     _updatePaletteGenerator();
     super.initState();
@@ -604,7 +604,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                   Center(
                                     child: CircularProgressIndicator(
                                         valueColor: AlwaysStoppedAnimation(
-                                          config.Colors().mainAccentColor(1),
+                                          Theme.of(context).errorColor,
                                         ),
                                         value: downloadProgress.progress),
                                   ),
@@ -849,94 +849,89 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                             id
                                                                 .toString()
                                                                 .toUpperCase(),
-                                                            style: Theme.of(context)
+                                                            style: Theme.of(
+                                                                    context)
                                                                 .textTheme
                                                                 .bodyText1
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
                                                                         .accentColor),
-                                                          ),Padding(
-                                                    padding: const EdgeInsets
-                                                            .symmetric(
-                                                        horizontal: 6.0),
-                                                    child: Container(
-                                                      height: 20,
-                                                      color: Theme.of(context)
-                                                          .accentColor,
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                  FutureBuilder(
-                                                    future: _futureView,
-                                                    builder:
-                                                        (context, snapshot) {
-                                                      switch (snapshot
-                                                          .connectionState) {
-                                                        case ConnectionState
-                                                            .waiting:
-                                                          return Text(
-                                                            "",
-                                                            style: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .bodyText1
-                                                                .copyWith(
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .accentColor,
-                                                                    fontSize:
-                                                                        16),
-                                                          );
-                                                        case ConnectionState
-                                                            .none:
-                                                          return Text(
-                                                            "",
-                                                            style: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .bodyText1
-                                                                .copyWith(
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .accentColor,
-                                                                    fontSize:
-                                                                        16),
-                                                          );
-                                                        default:
-                                                          if (snapshot
-                                                              .hasError) {
-                                                            return Text(
-                                                              "",
-                                                              style: Theme.of(
+                                                          ),
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                        .symmetric(
+                                                                    horizontal:
+                                                                        6.0),
+                                                            child: Container(
+                                                              height: 20,
+                                                              color: Theme.of(
                                                                       context)
-                                                                  .textTheme
-                                                                  .bodyText1
-                                                                  .copyWith(
-                                                                      color: Theme.of(
+                                                                  .accentColor,
+                                                              width: 2,
+                                                            ),
+                                                          ),
+                                                          FutureBuilder(
+                                                            future: _futureView,
+                                                            builder: (context,
+                                                                snapshot) {
+                                                              switch (snapshot
+                                                                  .connectionState) {
+                                                                case ConnectionState
+                                                                    .waiting:
+                                                                  return Text(
+                                                                    "",
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyText1
+                                                                        .copyWith(
+                                                                            color:
+                                                                                Theme.of(context).accentColor,
+                                                                            fontSize: 16),
+                                                                  );
+                                                                case ConnectionState
+                                                                    .none:
+                                                                  return Text(
+                                                                    "",
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodyText1
+                                                                        .copyWith(
+                                                                            color:
+                                                                                Theme.of(context).accentColor,
+                                                                            fontSize: 16),
+                                                                  );
+                                                                default:
+                                                                  if (snapshot
+                                                                      .hasError) {
+                                                                    return Text(
+                                                                      "",
+                                                                      style: Theme.of(
                                                                               context)
-                                                                          .accentColor,
-                                                                      fontSize:
-                                                                          16),
-                                                            );
-                                                          } else {
-                                                            return Text(
-                                                              "${snapshot.data} views",
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .bodyText1
-                                                                  .copyWith(
-                                                                      color: Theme.of(
+                                                                          .textTheme
+                                                                          .bodyText1
+                                                                          .copyWith(
+                                                                              color: Theme.of(context).accentColor,
+                                                                              fontSize: 16),
+                                                                    );
+                                                                  } else {
+                                                                    return Text(
+                                                                      "${snapshot.data} views",
+                                                                      style: Theme.of(
                                                                               context)
-                                                                          .accentColor,
-                                                                      fontSize:
-                                                                          16),
-                                                            );
-                                                          }
-                                                      }
-                                                    },
-                                                  ),
+                                                                          .textTheme
+                                                                          .bodyText1
+                                                                          .copyWith(
+                                                                              color: Theme.of(context).accentColor,
+                                                                              fontSize: 16),
+                                                                    );
+                                                                  }
+                                                              }
+                                                            },
+                                                          ),
                                                         ],
                                                       ),
                                                     ),
@@ -1086,9 +1081,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                                           20,
                                                                       child: SvgPicture.string(verifiedIcon.replaceAll(
                                                                           "E57697",
-                                                                          config.Colors().mainAccentColor(1) == Colors.black
+                                                                          Theme.of(context).errorColor == Colors.black
                                                                               ? "E57697"
-                                                                              : main.prefs.get("mainAccentColor").toRadixString(16).toString().substring(2))),
+                                                                              : Theme.of(context).errorColor.toString().replaceAll("Color(0xff", "").replaceAll(")", ""))),
                                                                     ),
                                                                   )
                                                                 : Container(),
@@ -1291,8 +1286,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                       Center(
                                         child: CircularProgressIndicator(
                                             valueColor: AlwaysStoppedAnimation(
-                                              config.Colors()
-                                                  .mainAccentColor(1),
+                                              Theme.of(context).errorColor,
                                             ),
                                             value: downloadProgress.progress),
                                       ),
@@ -1857,8 +1851,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                             child: CircularProgressIndicator(
                                                 valueColor:
                                                     AlwaysStoppedAnimation(
-                                                  config.Colors()
-                                                      .mainAccentColor(1),
+                                                  Theme.of(context).errorColor,
                                                 ),
                                                 value:
                                                     downloadProgress.progress),

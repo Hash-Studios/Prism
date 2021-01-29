@@ -77,10 +77,10 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
                         "Dark" &&
                     Provider.of<DarkThemeModel>(context).currentTheme ==
                         kDarkTheme2
-                ? config.Colors().mainAccentColor(1) == Colors.black
+                ? Theme.of(context).errorColor == Colors.black
                     ? Theme.of(context).accentColor
-                    : config.Colors().mainAccentColor(1)
-                : config.Colors().mainAccentColor(1),
+                    : Theme.of(context).errorColor
+                : Theme.of(context).errorColor,
           ),
           child: const SizedBox(
             width: 45,

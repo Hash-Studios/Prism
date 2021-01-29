@@ -211,12 +211,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Provider.of<ThemeModeExtended>(context)
-                                  .getCurrentModeStyle(MediaQuery.of(context)
-                                      .platformBrightness) ==
-                              "Dark"
-                          ? config.Colors().mainDarkAccentColor(1)
-                          : config.Colors().mainAccentColor(1),
+                      Theme.of(context).errorColor,
                       Theme.of(context).primaryColor
                     ],
                     stops: const [
@@ -318,26 +313,10 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       MediaQuery.of(context).size.width * 0.8,
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: Provider.of<ThemeModeExtended>(
-                                                              context)
-                                                          .getCurrentModeStyle(
-                                                              MediaQuery.of(
-                                                                      context)
-                                                                  .platformBrightness) ==
-                                                      "Dark" &&
-                                                  Provider.of<DarkThemeModel>(
-                                                              context)
-                                                          .currentTheme ==
-                                                      kDarkTheme2
-                                              ? config.Colors()
-                                                          .mainDarkAccentColor(
-                                                              1) ==
-                                                      Colors.black
-                                                  ? Theme.of(context)
-                                                      .accentColor
-                                                  : config.Colors()
-                                                      .mainDarkAccentColor(1)
-                                              : config.Colors().mainAccentColor(1),
+                                          color: Theme.of(context).errorColor ==
+                                                  Colors.black
+                                              ? Theme.of(context).accentColor
+                                              : Theme.of(context).errorColor,
                                           width: 4),
                                       color: const Color(0x15ffffff),
                                       borderRadius: BorderRadius.circular(10)),
@@ -445,8 +424,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                       width: MediaQuery.of(context).size.width *
                                           0.8,
                                       decoration: BoxDecoration(
-                                          color: config.Colors()
-                                                      .mainAccentColor(1) ==
+                                          color: Theme.of(context).errorColor ==
                                                   Colors.black
                                               ? Colors.white10
                                               : Colors.white,
@@ -461,9 +439,8 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                             .headline3
                                             .copyWith(
                                                 fontWeight: FontWeight.bold,
-                                                color: config.Colors()
-                                                            .mainAccentColor(
-                                                                1) ==
+                                                color: Theme.of(context)
+                                                            .errorColor ==
                                                         Colors.black
                                                     ? Colors.white
                                                     : Theme.of(context)
@@ -565,16 +542,9 @@ class _PurchaseButtonState extends State<PurchaseButton> {
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
           decoration: BoxDecoration(
-              color: Provider.of<ThemeModeExtended>(context)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
-                          "Dark" &&
-                      Provider.of<DarkThemeModel>(context).currentTheme ==
-                          kDarkTheme2
-                  ? config.Colors().mainAccentColor(1) == Colors.black
-                      ? Theme.of(context).accentColor
-                      : config.Colors().mainAccentColor(1)
-                  : config.Colors().mainAccentColor(1),
+              color: Theme.of(context).errorColor == Colors.black
+                  ? Theme.of(context).accentColor
+                  : Theme.of(context).errorColor,
               borderRadius: BorderRadius.circular(500)),
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Text(
@@ -605,7 +575,7 @@ class ProScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(18.0),
                   child: Icon(
                     Icons.star,
-                    color: config.Colors().mainAccentColor(1),
+                    color: Theme.of(context).errorColor,
                     size: 44.0,
                   ),
                 ),

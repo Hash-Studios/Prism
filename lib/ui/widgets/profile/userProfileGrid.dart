@@ -127,11 +127,11 @@ class _UserProfileGridState extends State<UserProfileGrid>
                                             .substring(2))
                                     .replaceAll(
                                         "E57697",
-                                        main.prefs
-                                            .get("mainAccentColor")
-                                            .toRadixString(16)
+                                        Theme.of(context)
+                                            .errorColor
                                             .toString()
-                                            .substring(2))
+                                            .replaceAll("Color(0xff", "")
+                                            .replaceAll(")", ""))
                                     .replaceAll(
                                         "F0F0F0",
                                         Theme.of(context)
@@ -177,11 +177,11 @@ class _UserProfileGridState extends State<UserProfileGrid>
                                             .substring(2))
                                     .replaceAll(
                                         "E57697",
-                                        main.prefs
-                                            .get("mainAccentColor")
-                                            .toRadixString(16)
+                                        Theme.of(context)
+                                            .errorColor
                                             .toString()
-                                            .substring(2))
+                                            .replaceAll("Color(0xff", "")
+                                            .replaceAll(")", ""))
                                     .replaceAll(
                                         "F0F0F0",
                                         Theme.of(context)

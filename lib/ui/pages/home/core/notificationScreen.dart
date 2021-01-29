@@ -93,7 +93,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5)),
                         color: main.prefs.get("Subscriber") == false
-                            ? config.Colors().mainAccentColor(1)
+                            ? Theme.of(context).errorColor
                             : Theme.of(context).hintColor,
                         onPressed: () {
                           Navigator.of(context).pop();
@@ -130,7 +130,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             borderRadius: BorderRadius.circular(5)),
                         color: main.prefs.get("Subscriber") == false
                             ? Theme.of(context).hintColor
-                            : config.Colors().mainAccentColor(1),
+                            : Theme.of(context).errorColor,
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
@@ -240,7 +240,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       FlatButton(
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5)),
-                        color: config.Colors().mainAccentColor(1),
+                        color: Theme.of(context).errorColor,
                         onPressed: () {
                           Navigator.of(context).pop();
                         },

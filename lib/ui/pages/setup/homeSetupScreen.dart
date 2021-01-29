@@ -94,7 +94,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  config.Colors().mainAccentColor(1),
+                  Theme.of(context).errorColor,
                   Theme.of(context).primaryColor
                 ],
                 begin: Alignment.bottomCenter,
@@ -271,8 +271,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                           child: CircularProgressIndicator(
                                               valueColor:
                                                   AlwaysStoppedAnimation(
-                                                config.Colors()
-                                                    .mainAccentColor(1),
+                                                Theme.of(context).errorColor,
                                               ),
                                               value: downloadProgress.progress),
                                         ),
