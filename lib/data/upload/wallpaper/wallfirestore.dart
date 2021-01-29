@@ -98,3 +98,46 @@ Future<void> createSetup(
   });
   toasts.codeSend("Your setup is submitted, and is under review.");
 }
+
+Future<void> updateSetup(
+    String setupDocId,
+    String id,
+    String imageURL,
+    String wallpaperProvider,
+    String wallpaperThumb,
+    dynamic wallpaperUrl,
+    String iconName,
+    String iconURL,
+    String widgetName,
+    String widgetURL,
+    String widgetName2,
+    String widgetURL2,
+    String setupName,
+    String setupDesc,
+    String wallId,
+    bool review) async {
+  await firestore.collection("setups").document(setupDocId).updateData({
+    'by': main.prefs.get('name'),
+    'email': main.prefs.get('email'),
+    'userPhoto': main.prefs.get('googleimage'),
+    'id': id,
+    'image': imageURL,
+    'wallpaper_provider': wallpaperProvider,
+    'wallpaper_thumb': wallpaperThumb,
+    'wallpaper_url': wallpaperUrl,
+    'icon': iconName,
+    'icon_url': iconURL,
+    'widget': widgetName,
+    'widget_url': widgetURL,
+    'widget2': widgetName2,
+    'widget_url2': widgetURL2,
+    'name': setupName,
+    'desc': setupDesc,
+    'review': review,
+    'created_at': DateTime.now(),
+    'twitter': main.prefs.get('twitter') ?? "",
+    'instagram': main.prefs.get('instagram') ?? "",
+    'wall_id': wallId
+  });
+  toasts.codeSend("Your setup is edited, and is under review.");
+}

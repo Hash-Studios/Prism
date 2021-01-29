@@ -14,6 +14,7 @@ import 'package:Prism/ui/pages/home/wallpapers/wallpaperFilterScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/wallpaperScreen.dart';
 import 'package:Prism/ui/pages/onboarding/onboardingScreen.dart';
 import 'package:Prism/ui/pages/profile/aboutScreen.dart';
+import 'package:Prism/ui/pages/profile/editSetupDetails.dart';
 import 'package:Prism/ui/pages/profile/photographerProfile.dart';
 import 'package:Prism/ui/pages/categories/colorScreen.dart';
 import 'package:Prism/ui/pages/profile/profileScreen.dart';
@@ -251,6 +252,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return CupertinoPageRoute(
           builder: (context) =>
               UploadSetupScreen(arguments: settings.arguments as List),
+          fullscreenDialog: true);
+    case editSetupDetailsRoute:
+      navStack.add("Edit Setup Details");
+      debugPrint(navStack.toString());
+      analytics.setCurrentScreen(screenName: editSetupDetailsRoute);
+      return CupertinoPageRoute(
+          builder: (context) =>
+              EditSetupReviewScreen(arguments: settings.arguments as List),
           fullscreenDialog: true);
     case setupGuidelinesRoute:
       navStack.add("Setup Guidelines");
