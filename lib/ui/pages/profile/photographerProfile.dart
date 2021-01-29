@@ -34,6 +34,7 @@ class _UserProfileState extends State<UserProfile> {
   String instagram;
   final ScrollController scrollController = ScrollController();
   final Firestore firestore = Firestore.instance;
+  final key = GlobalKey();
   @override
   void initState() {
     name = widget.arguments[0].toString();
@@ -59,6 +60,21 @@ class _UserProfileState extends State<UserProfile> {
 
   @override
   Widget build(BuildContext context) {
+    if (main.prefs.get('followTooltipShow', defaultValue: false) as bool) {
+    } else {
+      Future.delayed(const Duration(milliseconds: 500)).then((_) {
+        try {
+          final dynamic tooltip = key.currentState;
+          tooltip.ensureTooltipVisible();
+          main.prefs.put('followTooltipShow', true);
+          Future.delayed(const Duration(seconds: 5)).then((_) {
+            tooltip.deactivate();
+          });
+        } catch (e) {
+          debugPrint(e.toString());
+        }
+      });
+    }
     CollectionReference users = firestore.collection('users');
     return WillPopScope(
         onWillPop: onWillPop,
@@ -484,57 +500,72 @@ class _UserProfileState extends State<UserProfile> {
                                     },
                                   );
                                 } else {
-                                  return IconButton(
-                                    icon: const Icon(JamIcons.user_plus),
-                                    onPressed: () {
-                                      following.add(email);
-                                      snapshot.data.documents[0].reference
-                                          .updateData({'following': following});
-                                      users
-                                          .where("email", isEqualTo: email)
-                                          .getDocuments()
-                                          .then((value) {
-                                        if (value.documents.isEmpty ||
-                                            value.documents == null) {
-                                        } else {
-                                          List followers = value.documents[0]
-                                                  .data['followers'] as List ??
-                                              [];
-                                          followers
-                                              .add(main.prefs.get('email'));
-                                          value.documents[0].reference
-                                              .updateData(
-                                                  {'followers': followers});
-                                        }
-                                      });
-                                      http.post(
-                                        'https://fcm.googleapis.com/fcm/send',
-                                        headers: <String, String>{
-                                          'Content-Type': 'application/json',
-                                          'Authorization':
-                                              'key=$fcmServerToken',
-                                        },
-                                        body: jsonEncode(
-                                          <String, dynamic>{
-                                            'notification': <String, dynamic>{
-                                              'title': '🎉 New Follower!',
-                                              'body':
-                                                  '${main.prefs.get('googlename')} is now following you.'
-                                            },
-                                            'priority': 'high',
-                                            'data': <String, dynamic>{
-                                              'click_action':
-                                                  'FLUTTER_NOTIFICATION_CLICK',
-                                              'id': '1',
-                                              'status': 'done'
-                                            },
-                                            'to':
-                                                "/topics/${email.split("@")[0]}"
+                                  return Tooltip(
+                                    margin: EdgeInsets.fromLTRB(
+                                        MediaQuery.of(context).size.width * 0.4,
+                                        0,
+                                        16,
+                                        0),
+                                    showDuration: const Duration(seconds: 4),
+                                    key: key,
+                                    padding:
+                                        const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                    message:
+                                        "Follow $name to get notified for new posts!",
+                                    child: IconButton(
+                                      icon: const Icon(JamIcons.user_plus),
+                                      onPressed: () {
+                                        following.add(email);
+                                        snapshot.data.documents[0].reference
+                                            .updateData(
+                                                {'following': following});
+                                        users
+                                            .where("email", isEqualTo: email)
+                                            .getDocuments()
+                                            .then((value) {
+                                          if (value.documents.isEmpty ||
+                                              value.documents == null) {
+                                          } else {
+                                            List followers = value.documents[0]
+                                                        .data['followers']
+                                                    as List ??
+                                                [];
+                                            followers
+                                                .add(main.prefs.get('email'));
+                                            value.documents[0].reference
+                                                .updateData(
+                                                    {'followers': followers});
+                                          }
+                                        });
+                                        http.post(
+                                          'https://fcm.googleapis.com/fcm/send',
+                                          headers: <String, String>{
+                                            'Content-Type': 'application/json',
+                                            'Authorization':
+                                                'key=$fcmServerToken',
                                           },
-                                        ),
-                                      );
-                                      toasts.codeSend("Followed $name!");
-                                    },
+                                          body: jsonEncode(
+                                            <String, dynamic>{
+                                              'notification': <String, dynamic>{
+                                                'title': '🎉 New Follower!',
+                                                'body':
+                                                    '${main.prefs.get('googlename')} is now following you.'
+                                              },
+                                              'priority': 'high',
+                                              'data': <String, dynamic>{
+                                                'click_action':
+                                                    'FLUTTER_NOTIFICATION_CLICK',
+                                                'id': '1',
+                                                'status': 'done'
+                                              },
+                                              'to':
+                                                  "/topics/${email.split("@")[0]}"
+                                            },
+                                          ),
+                                        );
+                                        toasts.codeSend("Followed $name!");
+                                      },
+                                    ),
                                   );
                                 }
                               }

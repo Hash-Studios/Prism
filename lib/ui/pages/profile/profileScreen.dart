@@ -50,7 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: ProfileChild(),
         ),
         endDrawer: Container(
-            width: MediaQuery.of(context).size.width * 0.66,
+            width: MediaQuery.of(context).size.width * 0.68,
             child: ProfileDrawer()));
   }
 }
