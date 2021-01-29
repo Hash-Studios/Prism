@@ -82,7 +82,7 @@ class GoogleAuth {
       value.put('googleemail', user.email);
       value.put('googleimage', user.photoUrl);
     });
-    home.f.subscribeToTopic(user.email);
+    home.f.subscribeToTopic(user.email.split("@")[0]);
     assert(!user.isAnonymous);
     assert(await user.getIdToken() != null);
     final FirebaseUser currentUser = await _auth.currentUser();
