@@ -1,8 +1,10 @@
+import 'dart:ui';
+
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/routes/router.dart';
 import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/ui/widgets/animated/loader.dart';
@@ -16,9 +18,9 @@ import 'package:gallery_saver/gallery_saver.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:animations/animations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ReviewScreen extends StatefulWidget {
   @override
@@ -100,8 +102,9 @@ class _WallReviewState extends State<WallReview> {
   Firestore firestore = Firestore.instance;
   @override
   Widget build(BuildContext context) {
-    CollectionReference walls = firestore.collection('walls');
-    CollectionReference rejectedWalls = firestore.collection('rejectedWalls');
+    final CollectionReference walls = firestore.collection('walls');
+    final CollectionReference rejectedWalls =
+        firestore.collection('rejectedWalls');
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -113,9 +116,7 @@ class _WallReviewState extends State<WallReview> {
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (!snapshot.hasData) {
-                  return Center(
-                    child: Loader(),
-                  );
+                  return Container();
                 } else {
                   return Column(
                     children: List.generate(
@@ -158,7 +159,7 @@ class WallTile extends StatelessWidget {
   WallTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static const platform = MethodChannel('flutter.prism.set_wallpaper');
-  Firestore firestore = Firestore.instance;
+  final Firestore firestore = Firestore.instance;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -183,11 +184,14 @@ class WallTile extends StatelessWidget {
                         JamIcons.clock,
                         color: Theme.of(context).accentColor,
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 8,
                       ),
                       Text(
-                        "${formatter.format((wallpaper.data["createdAt"] as Timestamp).toDate().toLocal())}",
+                        formatter.format(
+                            (wallpaper.data["createdAt"] as Timestamp)
+                                .toDate()
+                                .toLocal()),
                         style: Theme.of(context)
                             .textTheme
                             .bodyText2
@@ -228,7 +232,7 @@ class WallTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 32,
                         ),
                         Column(
@@ -240,7 +244,7 @@ class WallTile extends StatelessWidget {
                                   JamIcons.id_card,
                                   color: Theme.of(context).accentColor,
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 8,
                                 ),
                                 Text(
@@ -253,7 +257,7 @@ class WallTile extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
                             Row(
@@ -262,7 +266,7 @@ class WallTile extends StatelessWidget {
                                   JamIcons.save,
                                   color: Theme.of(context).accentColor,
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 8,
                                 ),
                                 Text(
@@ -275,7 +279,7 @@ class WallTile extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
                             Row(
@@ -284,7 +288,7 @@ class WallTile extends StatelessWidget {
                                   JamIcons.set_square,
                                   color: Theme.of(context).accentColor,
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 8,
                                 ),
                                 Text(
@@ -297,12 +301,12 @@ class WallTile extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
                             ActionChip(
                               backgroundColor: Colors.amber,
-                              avatar: Icon(
+                              avatar: const Icon(
                                 JamIcons.clock,
                                 color: Colors.black,
                               ),
@@ -315,7 +319,7 @@ class WallTile extends StatelessWidget {
                                     .copyWith(color: Colors.black),
                               ),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
                             Row(
@@ -376,11 +380,11 @@ class WallTile extends StatelessWidget {
                                     },
                                   ),
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 16,
                                 ),
                                 Container(
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     color: Colors.red,
                                     shape: BoxShape.circle,
                                   ),
@@ -472,13 +476,6 @@ class WallTile extends StatelessWidget {
                             ),
                           ],
                         )
-                        // Text(
-                        //   "${formatter.format((wallpaper.data["createdAt"] as Timestamp).toDate().toLocal())}",
-                        //   style: Theme.of(context)
-                        //       .textTheme
-                        //       .bodyText2
-                        //       .copyWith(color: Theme.of(context).accentColor),
-                        // ),
                       ],
                     ),
                   ),
@@ -497,7 +494,7 @@ class RejectedWallTile extends StatelessWidget {
   RejectedWallTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static const platform = MethodChannel('flutter.prism.set_wallpaper');
-  Firestore firestore = Firestore.instance;
+  final Firestore firestore = Firestore.instance;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -522,11 +519,14 @@ class RejectedWallTile extends StatelessWidget {
                         JamIcons.clock,
                         color: Theme.of(context).accentColor,
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 8,
                       ),
                       Text(
-                        "${formatter.format((wallpaper.data["createdAt"] as Timestamp).toDate().toLocal())}",
+                        formatter.format(
+                            (wallpaper.data["createdAt"] as Timestamp)
+                                .toDate()
+                                .toLocal()),
                         style: Theme.of(context)
                             .textTheme
                             .bodyText2
@@ -567,7 +567,7 @@ class RejectedWallTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 32,
                         ),
                         Column(
@@ -579,7 +579,7 @@ class RejectedWallTile extends StatelessWidget {
                                   JamIcons.id_card,
                                   color: Theme.of(context).accentColor,
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 8,
                                 ),
                                 Text(
@@ -592,7 +592,7 @@ class RejectedWallTile extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
                             Row(
@@ -601,7 +601,7 @@ class RejectedWallTile extends StatelessWidget {
                                   JamIcons.save,
                                   color: Theme.of(context).accentColor,
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 8,
                                 ),
                                 Text(
@@ -614,7 +614,7 @@ class RejectedWallTile extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
                             Row(
@@ -623,7 +623,7 @@ class RejectedWallTile extends StatelessWidget {
                                   JamIcons.set_square,
                                   color: Theme.of(context).accentColor,
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 8,
                                 ),
                                 Text(
@@ -636,12 +636,12 @@ class RejectedWallTile extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
                             ActionChip(
                               backgroundColor: Colors.red,
-                              avatar: Icon(
+                              avatar: const Icon(
                                 JamIcons.close,
                                 color: Colors.white,
                               ),
@@ -654,7 +654,7 @@ class RejectedWallTile extends StatelessWidget {
                                     .copyWith(color: Colors.white),
                               ),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
                             Row(
@@ -715,11 +715,11 @@ class RejectedWallTile extends StatelessWidget {
                                     },
                                   ),
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 16,
                                 ),
                                 Container(
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     color: Colors.red,
                                     shape: BoxShape.circle,
                                   ),
@@ -811,13 +811,6 @@ class RejectedWallTile extends StatelessWidget {
                             ),
                           ],
                         )
-                        // Text(
-                        //   "${formatter.format((wallpaper.data["createdAt"] as Timestamp).toDate().toLocal())}",
-                        //   style: Theme.of(context)
-                        //       .textTheme
-                        //       .bodyText2
-                        //       .copyWith(color: Theme.of(context).accentColor),
-                        // ),
                       ],
                     ),
                   ),
@@ -827,7 +820,7 @@ class RejectedWallTile extends StatelessWidget {
                         JamIcons.close,
                         color: Theme.of(context).accentColor,
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 8,
                       ),
                       SizedBox(
@@ -861,22 +854,21 @@ class _SetupReviewState extends State<SetupReview> {
   Firestore firestore = Firestore.instance;
   @override
   Widget build(BuildContext context) {
-    CollectionReference setups = firestore.collection('setups');
-    CollectionReference rejectedSetups = firestore.collection('rejectedSetups');
+    final CollectionReference setups = firestore.collection('setups');
+    final CollectionReference rejectedSetups =
+        firestore.collection('rejectedSetups');
     return SingleChildScrollView(
       child: Column(
         children: [
           StreamBuilder<QuerySnapshot>(
               stream: rejectedSetups
                   .where("email", isEqualTo: main.prefs.get('email').toString())
-                  .orderBy('createdAt', descending: true)
+                  .orderBy('created_at', descending: true)
                   .snapshots(),
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (!snapshot.hasData) {
-                  return Center(
-                    child: Loader(),
-                  );
+                  return Container();
                 } else {
                   return Column(
                     children: List.generate(
@@ -891,7 +883,7 @@ class _SetupReviewState extends State<SetupReview> {
               stream: setups
                   .where("email", isEqualTo: main.prefs.get('email').toString())
                   .where("review", isEqualTo: false)
-                  .orderBy('createdAt', descending: true)
+                  .orderBy('created_at', descending: true)
                   .snapshots(),
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -919,12 +911,15 @@ class SetupTile extends StatelessWidget {
   SetupTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static const platform = MethodChannel('flutter.prism.set_wallpaper');
-  Firestore firestore = Firestore.instance;
+  final Firestore firestore = Firestore.instance;
   @override
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: 340,
+      height: "${wallpaper.data["widget2"]}" != "" &&
+              "${wallpaper.data["widget2"]}" != null
+          ? 420
+          : 390,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -944,11 +939,14 @@ class SetupTile extends StatelessWidget {
                         JamIcons.clock,
                         color: Theme.of(context).accentColor,
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 8,
                       ),
                       Text(
-                        "${formatter.format((wallpaper.data["created_at"] as Timestamp).toDate().toLocal())}",
+                        formatter.format(
+                            (wallpaper.data["created_at"] as Timestamp)
+                                .toDate()
+                                .toLocal()),
                         style: Theme.of(context)
                             .textTheme
                             .bodyText2
@@ -957,37 +955,82 @@ class SetupTile extends StatelessWidget {
                     ],
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                CupertinoPageRoute(
-                                    builder: (context) => PhotoView(
-                                          onTapUp:
-                                              (context, details, controller) {
-                                            Navigator.pop(context);
-                                          },
-                                          imageProvider:
-                                              CachedNetworkImageProvider(
-                                            wallpaper.data["image"] as String,
-                                          ),
-                                        ),
-                                    fullscreenDialog: true));
-                          },
-                          child: SizedBox(
-                            height: 240,
-                            width: 120,
-                            child: CachedNetworkImage(
-                              imageUrl: wallpaper.data["image"] as String,
-                              fit: BoxFit.contain,
+                        Column(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    CupertinoPageRoute(
+                                        builder: (context) => PhotoView(
+                                              onTapUp: (context, details,
+                                                  controller) {
+                                                Navigator.pop(context);
+                                              },
+                                              imageProvider:
+                                                  CachedNetworkImageProvider(
+                                                wallpaper.data["image"]
+                                                    as String,
+                                              ),
+                                            ),
+                                        fullscreenDialog: true));
+                              },
+                              child: SizedBox(
+                                height: 240,
+                                width: 120,
+                                child: CachedNetworkImage(
+                                  imageUrl: wallpaper.data["image"] as String,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(
+                              height: 8,
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                toasts.codeSend(
+                                    "${wallpaper.data["name"]} - ${wallpaper.data["desc"]}");
+                              },
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.3,
+                                child: RichText(
+                                  text: TextSpan(
+                                      text: "${wallpaper.data["name"]}",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              color: Theme.of(context)
+                                                  .accentColor),
+                                      children: [
+                                        TextSpan(
+                                          text: " - ${wallpaper.data["desc"]}",
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyText2
+                                              .copyWith(
+                                                  decoration:
+                                                      TextDecoration.underline,
+                                                  color: Theme.of(context)
+                                                      .accentColor),
+                                        )
+                                      ]),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 32,
                         ),
                         Column(
@@ -999,69 +1042,225 @@ class SetupTile extends StatelessWidget {
                                   JamIcons.id_card,
                                   color: Theme.of(context).accentColor,
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   width: 8,
                                 ),
-                                Text(
-                                  "${wallpaper.data["id"]}",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyText2
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
+                                Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.3,
+                                  child: Text(
+                                    "${wallpaper.data["id"]}",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyText2
+                                        .copyWith(
+                                            color:
+                                                Theme.of(context).accentColor),
+                                  ),
                                 ),
                               ],
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
-                            Row(
-                              children: [
-                                Icon(
-                                  JamIcons.google_play,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                                SizedBox(
-                                  width: 8,
-                                ),
-                                Text(
-                                  "${wallpaper.data["icon"]}",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyText2
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
-                                ),
-                              ],
+                            GestureDetector(
+                              onTap: () {
+                                if ("${wallpaper.data["wallpaper_url"]}"[0] !=
+                                    "[") {
+                                  if ("${wallpaper.data["wall_id"]}" != "" &&
+                                      "${wallpaper.data["wall_id"]}" != null) {
+                                    Navigator.push(
+                                        context,
+                                        CupertinoPageRoute(
+                                            builder: (context) => PhotoView(
+                                                  onTapUp: (context, details,
+                                                      controller) {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  imageProvider:
+                                                      CachedNetworkImageProvider(
+                                                    wallpaper.data[
+                                                            "wallpaper_url"]
+                                                        as String,
+                                                  ),
+                                                ),
+                                            fullscreenDialog: true));
+                                  } else {
+                                    launch("${wallpaper.data["wallpaper_url"]}")
+                                        .catchError((e) {
+                                      toasts.error("Error in link!");
+                                    });
+                                  }
+                                } else {
+                                  launch("${wallpaper.data["wallpaper_url"][1]}")
+                                      .catchError((e) {
+                                    toasts.error("Error in link!");
+                                  });
+                                }
+                              },
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    JamIcons.picture,
+                                    color: Theme.of(context).accentColor,
+                                  ),
+                                  const SizedBox(
+                                    width: 8,
+                                  ),
+                                  Container(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.3,
+                                    child: Text(
+                                      "${wallpaper.data["wallpaper_url"]}"[0] !=
+                                              "["
+                                          ? "Wallpaper"
+                                          : "${wallpaper.data["wallpaper_url"][0]} - ${wallpaper.data["wallpaper_url"][2]}",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              color: Theme.of(context)
+                                                  .accentColor),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
-                            Row(
-                              children: [
-                                Icon(
-                                  JamIcons.google_play,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                                SizedBox(
-                                  width: 8,
-                                ),
-                                Text(
-                                  "${wallpaper.data["widget"]}",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyText2
-                                      .copyWith(
-                                          color: Theme.of(context).accentColor),
-                                ),
-                              ],
+                            GestureDetector(
+                              onTap: () {
+                                launch("${wallpaper.data["icon_url"]}")
+                                    .catchError((e) {
+                                  toasts.error("Error in link!");
+                                });
+                              },
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    JamIcons.google_play,
+                                    color: Theme.of(context).accentColor,
+                                  ),
+                                  const SizedBox(
+                                    width: 8,
+                                  ),
+                                  Container(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.3,
+                                    child: Text(
+                                      "${wallpaper.data["icon"]}",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyText2
+                                          .copyWith(
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              color: Theme.of(context)
+                                                  .accentColor),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            SizedBox(
+                            "${wallpaper.data["widget"]}" != "" &&
+                                    "${wallpaper.data["widget"]}" != null
+                                ? SizedBox(
+                                    height: 16,
+                                  )
+                                : Container(),
+                            "${wallpaper.data["widget"]}" != "" &&
+                                    "${wallpaper.data["widget"]}" != null
+                                ? GestureDetector(
+                                    onTap: () {
+                                      launch("${wallpaper.data["widget_url"]}")
+                                          .catchError((e) {
+                                        toasts.error("Error in link!");
+                                      });
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          JamIcons.google_play,
+                                          color: Theme.of(context).accentColor,
+                                        ),
+                                        const SizedBox(
+                                          width: 8,
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.3,
+                                          child: Text(
+                                            "${wallpaper.data["widget"]}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2
+                                                .copyWith(
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : Container(),
+                            "${wallpaper.data["widget2"]}" != "" &&
+                                    "${wallpaper.data["widget2"]}" != null
+                                ? SizedBox(
+                                    height: 16,
+                                  )
+                                : Container(),
+                            "${wallpaper.data["widget2"]}" != "" &&
+                                    "${wallpaper.data["widget2"]}" != null
+                                ? GestureDetector(
+                                    onTap: () {
+                                      launch("${wallpaper.data["widget_url2"]}")
+                                          .catchError((e) {
+                                        toasts.error("Error in link!");
+                                      });
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          JamIcons.google_play,
+                                          color: Theme.of(context).accentColor,
+                                        ),
+                                        const SizedBox(
+                                          width: 8,
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.3,
+                                          child: Text(
+                                            "${wallpaper.data["widget2"]}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyText2
+                                                .copyWith(
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : Container(),
+                            const SizedBox(
                               height: 16,
                             ),
                             ActionChip(
                               backgroundColor: Colors.amber,
-                              avatar: Icon(
+                              avatar: const Icon(
                                 JamIcons.clock,
                                 color: Colors.black,
                               ),
@@ -1074,11 +1273,29 @@ class SetupTile extends StatelessWidget {
                                     .copyWith(color: Colors.black),
                               ),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                             ),
                             Row(
                               children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).accentColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: Icon(JamIcons.pen,
+                                        color: Theme.of(context).primaryColor),
+                                    onPressed: () {
+                                      Navigator.pushNamed(
+                                          context, editSetupDetailsRoute,
+                                          arguments: [wallpaper]);
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 8,
+                                ),
                                 Container(
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).accentColor,
@@ -1134,8 +1351,8 @@ class SetupTile extends StatelessWidget {
                                     },
                                   ),
                                 ),
-                                SizedBox(
-                                  width: 16,
+                                const SizedBox(
+                                  width: 8,
                                 ),
                                 Container(
                                   decoration: BoxDecoration(
