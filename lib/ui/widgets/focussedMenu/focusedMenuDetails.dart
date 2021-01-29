@@ -139,10 +139,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 Navigator.pop(context);
               },
               child: Container(
-                color: Provider.of<ThemeModeExtended>(context,listen: false)
-                              .getCurrentModeStyle(
-                                  MediaQuery.of(context).platformBrightness) ==
-                          "Dark"
+                color: Provider.of<ThemeModeExtended>(context, listen: false)
+                            .getCurrentModeStyle(
+                                MediaQuery.of(context).platformBrightness) ==
+                        "Dark"
                     ? Colors.black.withOpacity(0.75)
                     : Colors.white.withOpacity(0.75),
               )),
@@ -478,19 +478,20 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     child: SvgPicture.string(
                                                         verifiedIcon.replaceAll(
                                                             "E57697",
-                                                            config.Colors()
-                                                                        .mainAccentColor(
-                                                                            1) ==
+                                                            Theme.of(context)
+                                                                        .errorColor ==
                                                                     Colors.black
                                                                 ? "E57697"
-                                                                : main.prefs
-                                                                    .get(
-                                                                        "mainAccentColor")
-                                                                    .toRadixString(
-                                                                        16)
+                                                                : Theme.of(
+                                                                        context)
+                                                                    .errorColor
                                                                     .toString()
-                                                                    .substring(
-                                                                        2))),
+                                                                    .replaceAll(
+                                                                        "Color(0xFF",
+                                                                        "")
+                                                                    .replaceAll(
+                                                                        ")",
+                                                                        ""))),
                                                   )
                                                 : Container(),
                                           ]),

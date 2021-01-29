@@ -238,13 +238,14 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                 duration: const Duration(),
                                 opacity: panelCollapsed ? 0.0 : 1.0,
                                 child: GestureDetector(
-                            onTap: (){
-                              panelController.close();
-                            },
-                                                      child: Icon(
-                              JamIcons.chevron_down,
-                              color: Theme.of(context).accentColor,
-                            ),),
+                                  onTap: () {
+                                    panelController.close();
+                                  },
+                                  child: Icon(
+                                    JamIcons.chevron_down,
+                                    color: Theme.of(context).accentColor,
+                                  ),
+                                ),
                               ),
                             )),
                             ColorBar(colors: colors),
@@ -535,7 +536,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   Center(
                                     child: CircularProgressIndicator(
                                         valueColor: AlwaysStoppedAnimation(
-                                          config.Colors().mainAccentColor(1),
+                                          Theme.of(context).errorColor,
                                         ),
                                         value: downloadProgress.progress),
                                   ),
@@ -720,14 +721,15 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                               child: AnimatedOpacity(
                                 duration: const Duration(),
                                 opacity: panelCollapsed ? 0.0 : 1.0,
-                                child:GestureDetector(
-                            onTap: (){
-                              panelController.close();
-                            },
-                                                      child: Icon(
-                              JamIcons.chevron_down,
-                              color: Theme.of(context).accentColor,
-                            ),),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    panelController.close();
+                                  },
+                                  child: Icon(
+                                    JamIcons.chevron_down,
+                                    color: Theme.of(context).accentColor,
+                                  ),
+                                ),
                               ),
                             )),
                             ColorBar(colors: colors),
@@ -1032,7 +1034,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen>
                                   Center(
                                     child: CircularProgressIndicator(
                                         valueColor: AlwaysStoppedAnimation(
-                                          config.Colors().mainAccentColor(1),
+                                          Theme.of(context).errorColor,
                                         ),
                                         value: downloadProgress.progress),
                                   ),

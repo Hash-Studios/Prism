@@ -141,7 +141,7 @@ class _PageManagerChildState extends State<PageManagerChild>
                 child: FlatButton(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(5)),
-                  color: config.Colors().mainAccentColor(1),
+                  color: Theme.of(context).errorColor,
                   onPressed: () async {
                     debugPrint(
                         'Thanks for the ${stars == null ? '0' : stars.round().toString()} star(s) !');
@@ -198,8 +198,8 @@ class _PageManagerChildState extends State<PageManagerChild>
           ignoreNativeDialog: Platform.isAndroid,
           starRatingOptions: StarRatingOptions(
               initialRating: 5,
-              starsFillColor: config.Colors().mainAccentColor(1),
-              starsBorderColor: config.Colors().mainAccentColor(1)),
+              starsFillColor: Theme.of(context).errorColor,
+              starsBorderColor: Theme.of(context).errorColor),
           onDismissed: () =>
               rateMyApp.callEvent(RateMyAppEventType.laterButtonPressed),
         );

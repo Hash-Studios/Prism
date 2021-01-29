@@ -124,9 +124,9 @@ class _CategoriesBarState extends State<CategoriesBar> {
                     child: Icon(
                       Icons.brightness_1,
                       size: 9.0,
-                      color: config.Colors().mainAccentColor(1) == Colors.black
+                      color: Theme.of(context).errorColor == Colors.black
                           ? Colors.white24
-                          : config.Colors().mainAccentColor(1),
+                          : Theme.of(context).errorColor,
                     ),
                   )
                 ]),

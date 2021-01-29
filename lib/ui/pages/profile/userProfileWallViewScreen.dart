@@ -589,7 +589,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                               Center(
                                 child: CircularProgressIndicator(
                                     valueColor: AlwaysStoppedAnimation(
-                                      config.Colors().mainAccentColor(1),
+                                      Theme.of(context).errorColor,
                                     ),
                                     value: downloadProgress.progress),
                               ),

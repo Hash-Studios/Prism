@@ -51,7 +51,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                       height: 100,
                       width: MediaQuery.of(context).size.width * .7,
                       decoration: BoxDecoration(
-                        color: config.Colors().mainAccentColor(1),
+                        color: Theme.of(context).errorColor,
                         borderRadius: BorderRadius.circular(10),
                         image: DecorationImage(
                           image: CachedNetworkImageProvider(
@@ -125,7 +125,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
     actions: [
       FlatButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: config.Colors().mainAccentColor(1),
+        color: Theme.of(context).errorColor,
         onPressed: () {
           Navigator.of(context).pop();
           debugPrint('You have not chossed anything');

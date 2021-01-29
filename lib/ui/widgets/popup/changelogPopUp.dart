@@ -461,7 +461,7 @@ void showChangelog(BuildContext context, Function func) {
     actions: [
       FlatButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: config.Colors().mainAccentColor(1),
+        color: Theme.of(context).errorColor,
         onPressed: () {
           Navigator.of(context).pop();
           func();
@@ -540,10 +540,10 @@ class Change extends StatelessWidget {
                           "Dark" &&
                       Provider.of<DarkThemeModel>(context).currentTheme ==
                           kDarkTheme2
-                  ? config.Colors().mainAccentColor(1) == Colors.black
+                  ? Theme.of(context).errorColor == Colors.black
                       ? Theme.of(context).accentColor
-                      : config.Colors().mainAccentColor(1)
-                  : config.Colors().mainAccentColor(1),
+                      : Theme.of(context).errorColor
+                  : Theme.of(context).errorColor,
             ),
             const SizedBox(
               width: 20,

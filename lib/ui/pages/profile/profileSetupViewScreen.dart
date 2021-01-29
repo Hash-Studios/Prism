@@ -567,19 +567,20 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                             height: 20,
                                                             child: SvgPicture.string(verifiedIcon.replaceAll(
                                                                 "E57697",
-                                                                config.Colors().mainAccentColor(
-                                                                            1) ==
+                                                                Theme.of(context).errorColor ==
                                                                         Colors
                                                                             .black
                                                                     ? "E57697"
-                                                                    : main.prefs
-                                                                        .get(
-                                                                            "mainAccentColor")
-                                                                        .toRadixString(
-                                                                            16)
+                                                                    : Theme.of(
+                                                                            context)
+                                                                        .errorColor
                                                                         .toString()
-                                                                        .substring(
-                                                                            2))),
+                                                                        .replaceAll(
+                                                                            "Color(0xFF",
+                                                                            "")
+                                                                        .replaceAll(
+                                                                            ")",
+                                                                            ""))),
                                                           ),
                                                         )
                                                       : Container(),
@@ -1541,7 +1542,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                             Center(
                               child: CircularProgressIndicator(
                                   valueColor: AlwaysStoppedAnimation(
-                                    config.Colors().mainAccentColor(1),
+                                    Theme.of(context).errorColor,
                                   ),
                                   value: downloadProgress.progress),
                             ),

@@ -309,14 +309,14 @@ class _FollowingTileState extends State<FollowingTile> {
                                   child: SvgPicture.string(
                                       verifiedIcon.replaceAll(
                                           "E57697",
-                                          config.Colors().mainAccentColor(1) ==
+                                          Theme.of(context).errorColor ==
                                                   Colors.black
                                               ? "E57697"
-                                              : main.prefs
-                                                  .get("mainAccentColor")
-                                                  .toRadixString(16)
+                                              : Theme.of(context)
+                                                  .errorColor
                                                   .toString()
-                                                  .substring(2))),
+                                                  .replaceAll("Color(0xff", "")
+                                                  .replaceAll(")", ""))),
                                 )
                               : Container(),
                         ],

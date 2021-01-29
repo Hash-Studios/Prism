@@ -558,19 +558,15 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             height: 20,
                                                             child: SvgPicture.string(verifiedIcon.replaceAll(
                                                                 "E57697",
-                                                                config.Colors().mainAccentColor(
-                                                                            1) ==
+                                                                Theme.of(context).errorColor==
                                                                         Colors
                                                                             .black
                                                                     ? "E57697"
-                                                                    : main.prefs
-                                                                        .get(
-                                                                            "mainAccentColor")
-                                                                        .toRadixString(
-                                                                            16)
-                                                                        .toString()
-                                                                        .substring(
-                                                                            2))),
+                                                                    : Theme.of(context)
+                                            .errorColor
+                                            .toString()
+                                            .replaceAll("Color(0xff", "")
+                                            .replaceAll(")", ""))),
                                                           ),
                                                         )
                                                       : Container(),
@@ -1499,7 +1495,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                             Center(
                               child: CircularProgressIndicator(
                                   valueColor: AlwaysStoppedAnimation(
-                                    config.Colors().mainAccentColor(1),
+                                    Theme.of(context).errorColor
                                   ),
                                   value: downloadProgress.progress),
                             ),

@@ -151,7 +151,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                           }),
                                     )
                                   ],
-                            backgroundColor: config.Colors().mainAccentColor(1),
+                            backgroundColor: Theme.of(context).errorColor,
                             automaticallyImplyLeading: false,
                             expandedHeight: 200.0,
                             flexibleSpace: FlexibleSpaceBar(
@@ -159,7 +159,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                 fit: StackFit.expand,
                                 children: [
                                   Container(
-                                    color: config.Colors().mainAccentColor(1),
+                                    color: Theme.of(context).errorColor,
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.fromLTRB(
@@ -364,7 +364,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                             fontSize:
                                                                                 9,
                                                                             color:
-                                                                                Color(main.prefs.get("mainAccentColor") as int),
+                                                                                Theme.of(context).errorColor,
                                                                           ),
                                                                     ),
                                                                   ),
@@ -444,7 +444,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                             Container(
                                                                               decoration: BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                                                                               child: TextField(
-                                                                                cursorColor: config.Colors().mainAccentColor(1),
+                                                                                cursorColor: Theme.of(context).errorColor,
                                                                                 style: Theme.of(context).textTheme.headline5.copyWith(color: Theme.of(context).accentColor),
                                                                                 controller: _twitterController,
                                                                                 decoration: InputDecoration(
@@ -485,7 +485,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                             fontSize:
                                                                                 16.0,
                                                                             color:
-                                                                                config.Colors().mainAccentColor(1),
+                                                                                Theme.of(context).errorColor,
                                                                           ),
                                                                         ),
                                                                       ),
@@ -497,7 +497,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                           shape:
                                                                               RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                                                           color:
-                                                                              config.Colors().mainAccentColor(1),
+                                                                              Theme.of(context).errorColor,
                                                                           onPressed:
                                                                               () async {
                                                                             Navigator.of(context).pop();
@@ -584,7 +584,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                             Container(
                                                                               decoration: BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                                                                               child: TextField(
-                                                                                cursorColor: config.Colors().mainAccentColor(1),
+                                                                                cursorColor: Theme.of(context).errorColor,
                                                                                 style: Theme.of(context).textTheme.headline5.copyWith(color: Theme.of(context).accentColor),
                                                                                 controller: _igController,
                                                                                 decoration: InputDecoration(
@@ -625,7 +625,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                             fontSize:
                                                                                 16.0,
                                                                             color:
-                                                                                config.Colors().mainAccentColor(1),
+                                                                                Theme.of(context).errorColor,
                                                                           ),
                                                                         ),
                                                                       ),
@@ -637,7 +637,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                           shape:
                                                                               RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                                                           color:
-                                                                              config.Colors().mainAccentColor(1),
+                                                                              Theme.of(context).errorColor,
                                                                           onPressed:
                                                                               () async {
                                                                             Navigator.of(context).pop();
@@ -856,7 +856,7 @@ class _ProfileChildState extends State<ProfileChild> {
                             ),
                           ),
                           SliverAppBar(
-                            backgroundColor: config.Colors().mainAccentColor(1),
+                            backgroundColor: Theme.of(context).errorColor,
                             automaticallyImplyLeading: false,
                             pinned: true,
                             titleSpacing: 0,
@@ -866,7 +866,7 @@ class _ProfileChildState extends State<ProfileChild> {
                               width: MediaQuery.of(context).size.width,
                               height: 57,
                               child: Container(
-                                color: config.Colors().mainAccentColor(1),
+                                color: Theme.of(context).errorColor,
                                 child: SizedBox.expand(
                                   child: TabBar(
                                       indicatorColor:
@@ -983,7 +983,7 @@ class _ProfileChildState extends State<ProfileChild> {
                 body:
                     CustomScrollView(controller: controller, slivers: <Widget>[
                   SliverAppBar(
-                    backgroundColor: config.Colors().mainAccentColor(1),
+                    backgroundColor: Theme.of(context).errorColor,
                     automaticallyImplyLeading: false,
                     expandedHeight: 280.0,
                     flexibleSpace: FlexibleSpaceBar(
@@ -993,7 +993,7 @@ class _ProfileChildState extends State<ProfileChild> {
                           Stack(
                             children: <Widget>[
                               Container(
-                                color: config.Colors().mainAccentColor(1),
+                                color: Theme.of(context).errorColor,
                               ),
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),

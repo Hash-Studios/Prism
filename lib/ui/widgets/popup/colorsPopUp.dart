@@ -144,7 +144,7 @@ Color showColors(BuildContext context) {
     actions: [
       FlatButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: config.Colors().mainAccentColor(1),
+        color: Theme.of(context).errorColor,
         onPressed: () {
           Navigator.of(context).pop();
         },

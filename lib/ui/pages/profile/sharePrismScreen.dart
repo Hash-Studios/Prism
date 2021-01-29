@@ -119,7 +119,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   shape: const StadiumBorder(),
                   color: link == ""
                       ? Theme.of(context).accentColor.withOpacity(0.5)
-                      : config.Colors().mainAccentColor(1),
+                      : Theme.of(context).errorColor,
                   onPressed: link == ""
                       ? () {
                           toasts.error(

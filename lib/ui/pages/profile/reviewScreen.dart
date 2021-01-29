@@ -59,7 +59,7 @@ class _ReviewScreenState extends State<ReviewScreen>
                 Container(
                   margin: const EdgeInsets.only(left: 3, bottom: 5),
                   decoration: BoxDecoration(
-                      color: config.Colors().mainAccentColor(1),
+                      color: Theme.of(context).errorColor,
                       borderRadius: BorderRadius.circular(500)),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -471,8 +471,7 @@ class WallTile extends StatelessWidget {
                                             shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(5)),
-                                            color: config.Colors()
-                                                .mainAccentColor(1),
+                                            color: Theme.of(context).errorColor,
                                             onPressed: () {
                                               Navigator.of(context).pop();
                                             },
@@ -806,8 +805,7 @@ class RejectedWallTile extends StatelessWidget {
                                             shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(5)),
-                                            color: config.Colors()
-                                                .mainAccentColor(1),
+                                            color: Theme.of(context).errorColor,
                                             onPressed: () {
                                               Navigator.of(context).pop();
                                             },
@@ -1442,8 +1440,7 @@ class SetupTile extends StatelessWidget {
                                             shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(5)),
-                                            color: config.Colors()
-                                                .mainAccentColor(1),
+                                            color: Theme.of(context).errorColor,
                                             onPressed: () {
                                               Navigator.of(context).pop();
                                             },
@@ -1978,8 +1975,7 @@ class RejectedSetupTile extends StatelessWidget {
                                             shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(5)),
-                                            color: config.Colors()
-                                                .mainAccentColor(1),
+                                            color: Theme.of(context).errorColor,
                                             onPressed: () {
                                               Navigator.of(context).pop();
                                             },

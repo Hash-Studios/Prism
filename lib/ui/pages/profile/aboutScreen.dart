@@ -331,10 +331,10 @@ class ActionButton extends StatelessWidget {
                         "Dark" &&
                     Provider.of<DarkThemeModel>(context).currentTheme ==
                         kDarkTheme2
-                ? config.Colors().mainAccentColor(1) == Colors.black
+                ? Theme.of(context).errorColor == Colors.black
                     ? Theme.of(context).accentColor
-                    : config.Colors().mainAccentColor(1)
-                : config.Colors().mainAccentColor(1),
+                    : Theme.of(context).errorColor
+                : Theme.of(context).errorColor,
           ),
           label: Text(
             text,

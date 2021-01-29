@@ -250,7 +250,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       child: LinearProgressIndicator(
                         backgroundColor: Theme.of(context).hintColor,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                            config.Colors().mainAccentColor(1)),
+                            Theme.of(context).errorColor),
                       )))
             else
               Container(),
@@ -294,7 +294,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           backgroundColor: !isProcessing && !isUploading
-              ? config.Colors().mainAccentColor(1)
+              ? Theme.of(context).errorColor
               : Theme.of(context).hintColor,
           disabledElevation: 0,
           onPressed: !isProcessing && !isUploading

@@ -226,9 +226,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Home"
-                            ? config.Colors().mainAccentColor(1) == Colors.black
+                            ? Theme.of(context).errorColor == Colors.black
                                 ? Colors.white24
-                                : config.Colors().mainAccentColor(1)
+                                : Theme.of(context).errorColor
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Home"
@@ -273,9 +273,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Search"
-                            ? config.Colors().mainAccentColor(1) == Colors.black
+                            ? Theme.of(context).errorColor == Colors.black
                                 ? Colors.white24
-                                : config.Colors().mainAccentColor(1)
+                                : Theme.of(context).errorColor
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Search"
@@ -307,19 +307,16 @@ class _BottomNavBarState extends State<BottomNavBar>
                     width: 45,
                     decoration: BoxDecoration(
                         border: Border.all(
-                          color:
-                              config.Colors().mainAccentColor(1) == Colors.black
-                                  ? Colors.black
-                                  : config.Colors().mainAccentColor(1),
-                          width:
-                              config.Colors().mainAccentColor(1) == Colors.black
-                                  ? 1
-                                  : 0,
+                          color: Theme.of(context).errorColor == Colors.black
+                              ? Colors.black
+                              : Theme.of(context).errorColor,
+                          width: Theme.of(context).errorColor == Colors.black
+                              ? 1
+                              : 0,
                         ),
-                        color:
-                            config.Colors().mainAccentColor(1) == Colors.black
-                                ? Colors.white24
-                                : config.Colors().mainAccentColor(1),
+                        color: Theme.of(context).errorColor == Colors.black
+                            ? Colors.white24
+                            : Theme.of(context).errorColor,
                         borderRadius: BorderRadius.circular(500)),
                   ),
                   IconButton(
@@ -334,19 +331,17 @@ class _BottomNavBarState extends State<BottomNavBar>
                         ),
                         Icon(
                           JamIcons.plus,
-                          color:
-                              config.Colors().mainAccentColor(1) == Colors.black
-                                  ? Colors.white
-                                  : Theme.of(context).accentColor,
+                          color: Theme.of(context).errorColor == Colors.black
+                              ? Colors.white
+                              : Theme.of(context).accentColor,
                         ),
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(500),
                             color: navStack.last == "Add"
-                                ? config.Colors().mainAccentColor(1) ==
-                                        Colors.black
+                                ? Theme.of(context).errorColor == Colors.black
                                     ? Colors.white24
-                                    : config.Colors().mainAccentColor(1)
+                                    : Theme.of(context).errorColor
                                 : Theme.of(context).accentColor,
                           ),
                           margin: navStack.last == "Add"
@@ -390,9 +385,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Setups"
-                            ? config.Colors().mainAccentColor(1) == Colors.black
+                            ? Theme.of(context).errorColor == Colors.black
                                 ? Colors.white24
-                                : config.Colors().mainAccentColor(1)
+                                : Theme.of(context).errorColor
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Setups"
@@ -461,9 +456,9 @@ class _BottomNavBarState extends State<BottomNavBar>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(500),
                         color: navStack.last == "Profile"
-                            ? config.Colors().mainAccentColor(1) == Colors.black
+                            ? Theme.of(context).errorColor == Colors.black
                                 ? Colors.white24
-                                : config.Colors().mainAccentColor(1)
+                                : Theme.of(context).errorColor
                             : Theme.of(context).accentColor,
                       ),
                       margin: navStack.last == "Profile"
@@ -599,11 +594,11 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: config.Colors()
-                                    .mainAccentColor(1)
+                                color: Theme.of(context)
+                                    .errorColor
                                     .withOpacity(0.2),
                                 border: Border.all(
-                                    color: config.Colors().mainAccentColor(1),
+                                    color: Theme.of(context).errorColor,
                                     width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
@@ -624,18 +619,17 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                        color:
-                                            config.Colors().mainAccentColor(1),
+                                        color: Theme.of(context).errorColor,
                                       ),
-                                      color: config.Colors()
-                                          .mainAccentColor(1)
+                                      color: Theme.of(context)
+                                          .errorColor
                                           .withOpacity(0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Icon(
                                       JamIcons.plus,
-                                      color: config.Colors().mainAccentColor(1),
+                                      color: Theme.of(context).errorColor,
                                       size: 40,
                                     ),
                                   ),
@@ -678,11 +672,11 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                               width: width / 2 - 14,
                               height: width / 2 / 0.6625,
                               decoration: BoxDecoration(
-                                color: config.Colors()
-                                    .mainAccentColor(1)
+                                color: Theme.of(context)
+                                    .errorColor
                                     .withOpacity(0.2),
                                 border: Border.all(
-                                    color: config.Colors().mainAccentColor(1),
+                                    color: Theme.of(context).errorColor,
                                     width: 3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
@@ -703,18 +697,17 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       border: Border.all(
-                                        color:
-                                            config.Colors().mainAccentColor(1),
+                                        color: Theme.of(context).errorColor,
                                       ),
-                                      color: config.Colors()
-                                          .mainAccentColor(1)
+                                      color: Theme.of(context)
+                                          .errorColor
                                           .withOpacity(0.2),
                                       shape: BoxShape.circle),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Icon(
                                       JamIcons.plus,
-                                      color: config.Colors().mainAccentColor(1),
+                                      color: Theme.of(context).errorColor,
                                       size: 40,
                                     ),
                                   ),
