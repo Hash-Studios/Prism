@@ -18,25 +18,35 @@ class DarkThemeModel extends ChangeNotifier {
 
   DarkThemeModel(
     this.currentTheme,
-  );
+    Color accentColor,
+  ) {
+    changeAccent(accentColor);
+  }
 
-  void changeAccentColor(int accentColor) {
-    debugPrint(accentColor.toString());
-    currentTheme = currentTheme.copyWith(errorColor: Color(accentColor));
+  void changeAccent(Color accentColor) {
+    ThemeData newTheme = currentTheme;
+    newTheme = newTheme.copyWith(errorColor: accentColor);
+    currentTheme = newTheme;
+    main.prefs.put(
+        "darkAccent",
+        int.parse(accentColor
+            .toString()
+            .replaceAll("Color(", "")
+            .replaceAll(")", "")));
     return notifyListeners();
   }
 
   void changeThemeByID(String themeID) {
     debugPrint(themeID);
     currentTheme = darkThemes[themeID];
-    main.prefs.put("themeID", themeID);
+    main.prefs.put("darkThemeID", themeID);
     return notifyListeners();
   }
 
   void changeThemeByThemeData(ThemeData themeData) {
     debugPrint(returnTheme(themeData));
     currentTheme = themeData;
-    main.prefs.put("themeID", returnTheme(themeData));
+    main.prefs.put("darkThemeID", returnTheme(themeData));
     return notifyListeners();
   }
 
@@ -52,19 +62,5 @@ class DarkThemeModel extends ChangeNotifier {
           (element) => darkThemes[element] == themeData,
           orElse: () => null,
         ));
-  }
-
-  String returnThemeType() {
-    final String themeNow = darkThemes.keys.firstWhere(
-      (element) => darkThemes[element] == currentTheme,
-      orElse: () => "kDMaterial Dark",
-    );
-    if (themeNow[1] == "L") {
-      return "Light";
-    } else if (themeNow[1] == "D") {
-      return "Dark";
-    } else {
-      return "Dark";
-    }
   }
 }

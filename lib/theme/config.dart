@@ -44,7 +44,7 @@ class Colors {
   static const Color _secondDarkColor = Color(0xFF2F2F2F);
   static const Color _accentDarkColor = Color(0xFFF0F0F0);
   final Color _mainAccentColor =
-      Color(main.prefs.get("mainAccentColor") as int);
+      Color(main.prefs.get("systemOverlayColor") as int);
 
   Color mainColor(double opacity) {
     return _mainColor.withOpacity(opacity);
