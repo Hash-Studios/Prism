@@ -555,6 +555,8 @@ class _UserProfileState extends State<UserProfile> {
                                                 'color': "#e57697",
                                                 'image':
                                                     "${main.prefs.get('googleimage')}",
+                                                'android_channel_id':
+                                                    "followers",
                                               },
                                               'priority': 'high',
                                               'data': <String, dynamic>{
