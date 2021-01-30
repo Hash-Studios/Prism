@@ -38,8 +38,6 @@ List<Color> accentColors = [
 ];
 
 class ThemeView extends StatefulWidget {
-  final List arguments;
-  const ThemeView({@required this.arguments});
   @override
   _ThemeViewState createState() => _ThemeViewState();
 }
@@ -73,12 +71,6 @@ class _ThemeViewState extends State<ThemeView> {
             .replaceAll("MaterialColor(primary value: Color(0xff", "")
             .replaceAll("Color(", "")
             .replaceAll(")", "")));
-    selectedTheme = Provider.of<ThemeModel>(context, listen: false)
-        .returnThemeIndex(
-            Provider.of<ThemeModel>(context, listen: false).currentTheme);
-    selectedDarkTheme = Provider.of<DarkThemeModel>(context, listen: false)
-        .returnThemeIndex(
-            Provider.of<DarkThemeModel>(context, listen: false).currentTheme);
     changingLight = Provider.of<ThemeModeExtended>(context, listen: false)
             .getCurrentModeStyle(
                 SchedulerBinding.instance.window.platformBrightness) ==

@@ -40,27 +40,12 @@ class DarkThemeModel extends ChangeNotifier {
     debugPrint(themeID);
     currentTheme = darkThemes[themeID];
     main.prefs.put("darkThemeID", themeID);
+    main.prefs.put(
+        "darkAccent",
+        int.parse(currentTheme.errorColor
+            .toString()
+            .replaceAll("Color(", "")
+            .replaceAll(")", "")));
     return notifyListeners();
-  }
-
-  void changeThemeByThemeData(ThemeData themeData) {
-    debugPrint(returnTheme(themeData));
-    currentTheme = themeData;
-    main.prefs.put("darkThemeID", returnTheme(themeData));
-    return notifyListeners();
-  }
-
-  String returnTheme(ThemeData themeData) {
-    return darkThemes.keys.firstWhere(
-      (element) => darkThemes[element] == themeData,
-      orElse: () => null,
-    );
-  }
-
-  int returnThemeIndex(ThemeData themeData) {
-    return darkThemes.keys.toList().indexOf(darkThemes.keys.firstWhere(
-          (element) => darkThemes[element] == themeData,
-          orElse: () => null,
-        ));
   }
 }
