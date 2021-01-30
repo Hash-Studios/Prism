@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/routes/router.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/ui/pages/home/collections/collectionScreen.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart';
@@ -83,6 +84,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   @override
   void initState() {
     super.initState();
+    tabController = TabController(length: 3, vsync: this);
     final QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       setState(() {
@@ -90,14 +92,20 @@ class _PageManagerChildState extends State<PageManagerChild>
       });
       if (shortcutType == 'Follow_Feed') {
         debugPrint('Follow_Feed');
+        tabController.animateTo(1);
       } else if (shortcutType == 'Collections') {
         debugPrint('Collections');
+        tabController.animateTo(2);
       } else if (shortcutType == 'Setups') {
         debugPrint('Setups');
+        navStack.last == "Setups"
+            ? debugPrint("Currently on Setups")
+            : navStack.last == "Home"
+                ? Navigator.of(context).pushNamed(setupRoute)
+                : Navigator.of(context).pushNamed(setupRoute);
       } else if (shortcutType == 'Downloads') {
         debugPrint('Downloads');
-      } else if (shortcutType == 'Refresh_Wall') {
-        debugPrint('Refresh_Wall');
+        Navigator.pushNamed(context, downloadRoute);
       }
     });
 
@@ -114,16 +122,11 @@ class _PageManagerChildState extends State<PageManagerChild>
           type: 'Setups', localizedTitle: 'Setups', icon: 'ic_launcher'),
       const ShortcutItem(
           type: 'Downloads', localizedTitle: 'Downloads', icon: 'ic_launcher'),
-      const ShortcutItem(
-          type: 'Refresh_Wall',
-          localizedTitle: 'Refresh Wall',
-          icon: 'ic_launcher'),
     ]);
     if (box.get('dataSaved', defaultValue: false) as bool) {
     } else {
       saveFavToLocal();
     }
-    tabController = TabController(length: 3, vsync: this);
     checkConnection();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await rateMyApp.init();

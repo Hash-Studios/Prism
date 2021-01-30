@@ -107,7 +107,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                     ? MediaQuery.of(context).size.height * 0.8
                     : 100,
                 padding: EdgeInsets.symmetric(
-                    horizontal: finalDocs.isEmpty ? 20 : 0),
+                    horizontal: finalDocs.isEmpty ? 0 : 20),
                 child: Center(
                   child: Text(
                     finalDocs.isEmpty
