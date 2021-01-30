@@ -31,12 +31,22 @@ class ThemeModeExtended extends ChangeNotifier {
     } else if (currentMode == ThemeMode.dark) {
       return "Dark";
     } else if (currentMode == ThemeMode.system) {
-      if (brightness == Brightness.dark) {
+      if (brightness == Brightness.light) {
         return "Light";
       } else {
         return "Dark";
       }
       // MediaQuery.of(context).platformBrightness
+    }
+  }
+
+  String getCurrentModeAbs() {
+    if (currentMode == ThemeMode.light) {
+      return "Light";
+    } else if (currentMode == ThemeMode.dark) {
+      return "Dark";
+    } else if (currentMode == ThemeMode.system) {
+      return "System (Light/Dark)";
     }
   }
 }

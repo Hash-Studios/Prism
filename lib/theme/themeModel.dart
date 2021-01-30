@@ -14,11 +14,21 @@ class ThemeModel extends ChangeNotifier {
 
   ThemeModel(
     this.currentTheme,
-  );
+    Color accentColor,
+  ) {
+    changeAccent(accentColor);
+  }
 
-  void changeAccentColor(int accentColor) {
-    debugPrint(accentColor.toString());
-    currentTheme = currentTheme.copyWith(errorColor: Color(accentColor));
+  void changeAccent(Color accentColor) {
+    ThemeData newTheme = currentTheme;
+    newTheme = newTheme.copyWith(errorColor: accentColor);
+    currentTheme = newTheme;
+    main.prefs.put(
+        "lightAccent",
+        int.parse(accentColor
+            .toString()
+            .replaceAll("Color(", "")
+            .replaceAll(")", "")));
     return notifyListeners();
   }
 
@@ -48,19 +58,5 @@ class ThemeModel extends ChangeNotifier {
           (element) => themes[element] == themeData,
           orElse: () => null,
         ));
-  }
-
-  String returnThemeType() {
-    final String themeNow = themes.keys.firstWhere(
-      (element) => themes[element] == currentTheme,
-      orElse: () => "kLFrost White",
-    );
-    if (themeNow[1] == "L") {
-      return "Light";
-    } else if (themeNow[1] == "D") {
-      return "Dark";
-    } else {
-      return "Dark";
-    }
   }
 }

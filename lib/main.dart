@@ -34,6 +34,8 @@ Directory dir;
 String currentThemeID;
 String currentDarkThemeID;
 String currentMode;
+Color lightAccent;
+Color darkAccent;
 bool hqThumbs;
 bool optimisedWallpapers;
 int categories;
@@ -65,6 +67,22 @@ void main() {
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);
+      lightAccent = Color(
+          int.parse(prefs.get('lightAccent')?.toString() ?? "0xffe57697"));
+      prefs.put(
+          "lightAccent",
+          int.parse(lightAccent
+              .toString()
+              .replaceAll("Color(", "")
+              .replaceAll(")", "")));
+      darkAccent =
+          Color(int.parse(prefs.get('darkAccent')?.toString() ?? "0xffe57697"));
+      prefs.put(
+          "darkAccent",
+          int.parse(darkAccent
+              .toString()
+              .replaceAll("Color(", "")
+              .replaceAll(")", "")));
       optimisedWallpapers = prefs.get('optimisedWallpapers') == true ?? false;
       if (optimisedWallpapers) {
         prefs.put('optimisedWallpapers', true);
@@ -115,11 +133,12 @@ void main() {
                       create: (context) => ProfileSetupProvider(),
                     ),
                     ChangeNotifierProvider<ThemeModel>(
-                      create: (context) => ThemeModel(themes[currentThemeID]),
+                      create: (context) =>
+                          ThemeModel(themes[currentThemeID], lightAccent),
                     ),
                     ChangeNotifierProvider<DarkThemeModel>(
-                      create: (context) =>
-                          DarkThemeModel(darkThemes[currentDarkThemeID]),
+                      create: (context) => DarkThemeModel(
+                          darkThemes[currentDarkThemeID], darkAccent),
                     ),
                     ChangeNotifierProvider<ThemeModeExtended>(
                       create: (context) =>
@@ -274,6 +293,22 @@ class _RestartWidgetState extends State<RestartWidget> {
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);
+      lightAccent = Color(
+          int.parse(prefs.get('lightAccent')?.toString() ?? "0xffe57697"));
+      prefs.put(
+          "lightAccent",
+          int.parse(lightAccent
+              .toString()
+              .replaceAll("Color(", "")
+              .replaceAll(")", "")));
+      darkAccent =
+          Color(int.parse(prefs.get('darkAccent')?.toString() ?? "0xffe57697"));
+      prefs.put(
+          "darkAccent",
+          int.parse(darkAccent
+              .toString()
+              .replaceAll("Color(", "")
+              .replaceAll(")", "")));
     });
   }
 
