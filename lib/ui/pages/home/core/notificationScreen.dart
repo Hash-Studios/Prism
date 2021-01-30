@@ -100,8 +100,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             main.prefs.delete("Subscriber");
                             home.f.subscribeToTopic('promotional');
                             if (main.prefs.get('isLoggedin') as bool == true) {
-                              home.f.subscribeToTopic(
-                                  main.prefs.get('googleemail').toString());
+                              home.f.subscribeToTopic(main.prefs
+                                  .get('googleemail')
+                                  .split("@")[0]
+                                  .toString());
                             }
                             toasts.codeSend("Successfully Subscribed");
                             setState(() {});
@@ -109,8 +111,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             main.prefs.put("Subscriber", false);
                             home.f.unsubscribeFromTopic('promotional');
                             if (main.prefs.get('isLoggedin') as bool == true) {
-                              home.f.unsubscribeFromTopic(
-                                  main.prefs.get('googleemail').toString());
+                              home.f.unsubscribeFromTopic(main.prefs
+                                  .get('googleemail')
+                                  .split("@")[0]
+                                  .toString());
                             }
                             toasts.codeSend("Successfully unsubscribed");
                             setState(() {});
