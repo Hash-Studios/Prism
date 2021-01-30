@@ -12,7 +12,6 @@ import 'package:Prism/ui/widgets/search/searchGrid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
 
 class SearchScreen extends StatefulWidget {

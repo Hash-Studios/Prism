@@ -27,7 +27,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:Prism/theme/config.dart' as config;
 
 Box prefs;
 Directory dir;

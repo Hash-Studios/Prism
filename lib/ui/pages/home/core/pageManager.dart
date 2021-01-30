@@ -16,7 +16,6 @@ import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:rate_my_app/rate_my_app.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';

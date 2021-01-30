@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:Prism/theme/config.dart' as config;
 
 void googleSignInPopUp(BuildContext context, Function func) {
   final Dialog loaderDialog = Dialog(

@@ -8,7 +8,6 @@ import 'package:Prism/ui/widgets/profile/userProfileSetupLoader.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart' as userData;
-import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:url_launcher/url_launcher.dart';
@@ -241,7 +240,7 @@ class _UserProfileState extends State<UserProfile> {
                                                         )
                                                       ],
                                                     ),
-                                          Text("Write bio here...")
+                                          const Text("Write bio here...")
                                         ],
                                       ),
                                     ),
@@ -467,7 +466,9 @@ class _UserProfileState extends State<UserProfile> {
                               if (!snapshot.hasData) {
                                 return Container();
                               } else {
-                                List following = snapshot.data.documents[0]
+                                final List following = snapshot
+                                        .data
+                                        .documents[0]
                                         .data['following'] as List ??
                                     [];
                                 if (following.contains(email)) {
@@ -485,7 +486,8 @@ class _UserProfileState extends State<UserProfile> {
                                         if (value.documents.isEmpty ||
                                             value.documents == null) {
                                         } else {
-                                          List followers = value.documents[0]
+                                          final List followers = value
+                                                  .documents[0]
                                                   .data['followers'] as List ??
                                               [];
                                           followers.removeAt(followers.indexOf(
@@ -525,7 +527,8 @@ class _UserProfileState extends State<UserProfile> {
                                           if (value.documents.isEmpty ||
                                               value.documents == null) {
                                           } else {
-                                            List followers = value.documents[0]
+                                            final List followers = value
+                                                        .documents[0]
                                                         .data['followers']
                                                     as List ??
                                                 [];

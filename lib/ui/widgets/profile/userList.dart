@@ -8,7 +8,6 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:provider/provider.dart';
-import 'package:Prism/theme/config.dart' as config;
 
 class UserList extends StatelessWidget {
   final TextEditingController _twitterController = TextEditingController();

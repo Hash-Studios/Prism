@@ -13,7 +13,6 @@ import 'package:Prism/main.dart' as main;
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/config.dart' as config;
 
 class DownloadButton extends StatefulWidget {
   final String link;

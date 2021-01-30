@@ -2,7 +2,6 @@ import 'package:Prism/data/setups/provider/setupProvider.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
@@ -12,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/config.dart' as config;
 
 class HomeSetupScreen extends StatefulWidget {
   const HomeSetupScreen({

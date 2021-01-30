@@ -48,18 +48,14 @@ class _FollowersScreenState extends State<FollowersScreen> {
             stream: _stream,
             builder:
                 (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-              print('building 0');
-
               if (!snapshot.hasData) {
                 return Center(
                   child: Loader(),
                 );
               } else {
-                print('building 1');
                 return ListView.builder(
                     itemCount: followers.length,
                     itemBuilder: (BuildContext context, int index) {
-                      print('building ${2 + index}');
                       return FutureBuilder(
                         future: compute(processingFollowers, <String, dynamic>{
                           "documents": snapshot.data.documents,

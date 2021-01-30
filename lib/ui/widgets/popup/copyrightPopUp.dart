@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:url_launcher/url_launcher.dart';
 
 class CopyrightPopUp extends StatelessWidget {

@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/oldVersionScreen.dart';
 import 'package:Prism/ui/pages/home/core/pageManager.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flare_splash_screen/flare_splash_screen.dart';
-import 'package:Prism/theme/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/config.dart' as config;

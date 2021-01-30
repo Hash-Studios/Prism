@@ -12,7 +12,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/ui/pages/home/wallpapers/homeScreen.dart' as home;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/config.dart' as config;
 import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatefulWidget {

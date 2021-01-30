@@ -3,7 +3,6 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pData;
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/focussedMenu/searchFocusedMenu.dart';
 import 'package:Prism/ui/widgets/home/core/inheritedScrollControllerProvider.dart';

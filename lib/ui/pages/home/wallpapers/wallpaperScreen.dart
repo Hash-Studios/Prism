@@ -26,7 +26,6 @@ import 'package:screenshot/screenshot.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -1779,8 +1778,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                             child: CircularProgressIndicator(
                                                 valueColor:
                                                     AlwaysStoppedAnimation(
-                                                  Theme.of(context).errorColor
-                                                ),
+                                                        Theme.of(context)
+                                                            .errorColor),
                                                 value:
                                                     downloadProgress.progress),
                                           ),
@@ -2358,7 +2357,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                         CircularProgressIndicator(
                                                             valueColor:
                                                                 AlwaysStoppedAnimation(
-                                                              Theme.of(context).errorColor,
+                                                              Theme.of(context)
+                                                                  .errorColor,
                                                             ),
                                                             value:
                                                                 downloadProgress
@@ -2927,7 +2927,8 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                     CircularProgressIndicator(
                                                         valueColor:
                                                             AlwaysStoppedAnimation(
-                                                          Theme.of(context).errorColor,
+                                                          Theme.of(context)
+                                                              .errorColor,
                                                         ),
                                                         value: downloadProgress
                                                             .progress),

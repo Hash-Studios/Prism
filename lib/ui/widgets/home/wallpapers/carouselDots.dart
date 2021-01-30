@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/config.dart' as config;
 
 class CarouselDots extends StatelessWidget {
   const CarouselDots({

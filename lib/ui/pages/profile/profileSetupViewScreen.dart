@@ -18,7 +18,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -29,7 +28,6 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:device_info/device_info.dart';
-import 'package:flutter/services.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:hive/hive.dart';
 
