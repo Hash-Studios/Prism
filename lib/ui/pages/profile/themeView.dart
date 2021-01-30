@@ -117,7 +117,9 @@ class _ThemeViewState extends State<ThemeView> {
                   main.prefs.put("systemOverlayColor", accentColor);
                   analytics.logEvent(
                       name: "accent_changed", parameters: {'color': hexString});
-                  main.RestartWidget.restartApp(context);
+                  navStack.removeLast();
+                  debugPrint(navStack.toString());
+                  Navigator.pop(context);
                 })
           ],
           elevation: 0,
