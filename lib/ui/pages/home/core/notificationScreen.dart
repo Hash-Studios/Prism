@@ -219,8 +219,9 @@ class NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ExpansionTile(
       initiallyExpanded: true,
-      leading: const CircleAvatar(
-        backgroundImage: AssetImage("assets/images/prism.png"),
+      leading: CircleAvatar(
+        backgroundImage: const AssetImage("assets/images/prism.png"),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       backgroundColor: Theme.of(context).primaryColor,
       title: Text(
