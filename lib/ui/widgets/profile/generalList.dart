@@ -42,13 +42,10 @@ class _GeneralListState extends State<GeneralList> {
       children: [
         ListTile(
           onTap: () {
-            Navigator.pushNamed(context, themeViewRoute, arguments: [
-              Provider.of<ThemeModel>(context, listen: false).currentTheme,
-              Color(main.prefs.get("mainAccentColor") as int),
-              Provider.of<ThemeModel>(context, listen: false).returnThemeIndex(
-                Provider.of<ThemeModel>(context, listen: false).currentTheme,
-              )
-            ]);
+            Navigator.pushNamed(
+              context,
+              themeViewRoute,
+            );
           },
           leading: const Icon(JamIcons.wrench),
           title: Text(

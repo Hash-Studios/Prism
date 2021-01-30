@@ -36,27 +36,12 @@ class ThemeModel extends ChangeNotifier {
     debugPrint(themeID);
     currentTheme = themes[themeID];
     main.prefs.put("themeID", themeID);
+    main.prefs.put(
+        "lightAccent",
+        int.parse(currentTheme.errorColor
+            .toString()
+            .replaceAll("Color(", "")
+            .replaceAll(")", "")));
     return notifyListeners();
-  }
-
-  void changeThemeByThemeData(ThemeData themeData) {
-    debugPrint(returnTheme(themeData));
-    currentTheme = themeData;
-    main.prefs.put("themeID", returnTheme(themeData));
-    return notifyListeners();
-  }
-
-  String returnTheme(ThemeData themeData) {
-    return themes.keys.firstWhere(
-      (element) => themes[element] == themeData,
-      orElse: () => null,
-    );
-  }
-
-  int returnThemeIndex(ThemeData themeData) {
-    return themes.keys.toList().indexOf(themes.keys.firstWhere(
-          (element) => themes[element] == themeData,
-          orElse: () => null,
-        ));
   }
 }

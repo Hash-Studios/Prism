@@ -496,11 +496,10 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Themes',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, themeViewRoute, arguments: [
-                  Provider.of<ThemeModel>(context, listen: false).currentTheme,
-                  Provider.of<DarkThemeModel>(context, listen: false)
-                      .currentTheme,
-                ]);
+                Navigator.pushNamed(
+                  context,
+                  themeViewRoute,
+                );
               },
               context: context,
             ),

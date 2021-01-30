@@ -234,9 +234,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       navStack.add("Themes");
       debugPrint(navStack.toString());
       analytics.setCurrentScreen(screenName: themeViewRoute);
-      return CupertinoPageRoute(
-          builder: (context) =>
-              ThemeView(arguments: settings.arguments as List));
+      return CupertinoPageRoute(builder: (context) => ThemeView());
     case editWallRoute:
       navStack.add("Edit Wallpaper");
       debugPrint(navStack.toString());
