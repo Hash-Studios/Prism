@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/twitterigPopUp.dart';
@@ -42,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.initState();
     isLoading = false;
     isSignedIn = main.prefs.get('isLoggedin') as bool ?? false;
-    selectedTheme = 1;
+    selectedTheme = 2;
     selectedAccentColor = const Color(0xFFE57697);
     _currentPage = 0;
     onboardingCarouselController.addListener(() {
@@ -160,11 +161,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             child: Container(
                               width: MediaQuery.of(context).size.width * 0.935,
                               height: MediaQuery.of(context).size.height * 0.07,
-                              child: ListView.builder(
+                              child: ListView(
                                 scrollDirection: Axis.horizontal,
-                                itemCount: themes.length,
-                                itemBuilder: (context, index) {
-                                  return Padding(
+                                children: [
+                                  Padding(
                                     padding:
                                         const EdgeInsets.fromLTRB(8, 4, 8, 4),
                                     child: ClipRRect(
@@ -173,45 +173,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         color: Theme.of(context).hintColor,
                                         padding: EdgeInsets.zero,
                                         onPressed: () {
-                                          Provider.of<ThemeModel>(context,
+                                          Provider.of<ThemeModeExtended>(
+                                                  context,
                                                   listen: false)
-                                              .changeThemeByID(
-                                                  themes.keys.toList()[index]);
+                                              .changeThemeMode("Light");
+
                                           setState(() {
-                                            selectedTheme = index;
-                                            selectedAccentColor = Color(int
-                                                .parse(Provider.of<ThemeModel>(
-                                                        context,
-                                                        listen: false)
-                                                    .currentTheme
-                                                    .errorColor
-                                                    .toString()
-                                                    .replaceAll(
-                                                        "MaterialColor(primary value: Color(0xff",
-                                                        "")
-                                                    .replaceAll("Color(", "")
-                                                    .replaceAll(")", "")));
+                                            selectedTheme = 1;
                                           });
-                                          final accentColor = int.parse(
-                                              selectedAccentColor
-                                                  .toString()
-                                                  .replaceAll(
-                                                      "MaterialColor(primary value: Color(0xff",
-                                                      "")
-                                                  .replaceAll("Color(", "")
-                                                  .replaceAll(")", ""));
-                                          final hexString = selectedAccentColor
-                                              .toString()
-                                              .replaceAll(
-                                                  "MaterialColor(primary value: Color(0xff",
-                                                  "")
-                                              .replaceAll("Color(0xff", "")
-                                              .replaceAll(")", "");
-                                          main.prefs.put(
-                                              "mainAccentColor", accentColor);
-                                          analytics.logEvent(
-                                              name: "accent_changed",
-                                              parameters: {'color': hexString});
                                         },
                                         child: Stack(
                                           children: [
@@ -229,9 +198,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                     color: Colors.black12),
                                                 borderRadius:
                                                     BorderRadius.circular(5),
-                                                color: themes[themes.keys
-                                                        .toList()[index]]
-                                                    .hintColor,
+                                                color: Colors.white,
                                               ),
                                               child: Column(
                                                 mainAxisAlignment:
@@ -242,24 +209,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                         const EdgeInsets.all(
                                                             4.0),
                                                     child: Text(
-                                                      themes.keys
-                                                          .toList()[index]
-                                                          .substring(2),
+                                                      "Light",
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .subtitle2
                                                           .copyWith(
-                                                              color: themes[themes
-                                                                          .keys
-                                                                          .toList()[
-                                                                      index]]
-                                                                  .accentColor),
+                                                              color:
+                                                                  Colors.black),
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                            index == selectedTheme
+                                            selectedTheme == 1
                                                 ? Container(
                                                     width:
                                                         MediaQuery.of(context)
@@ -272,8 +234,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                                 .height *
                                                             0.06,
                                                     decoration: BoxDecoration(
-                                                        color: Theme.of(context)
-                                                            .accentColor
+                                                        color: Colors.black
                                                             .withOpacity(0.5),
                                                         border: Border.all(
                                                             color:
@@ -288,9 +249,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       children: [
                                                         Icon(
                                                           JamIcons.check,
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .primaryColor,
+                                                          color: Colors.white,
                                                         ),
                                                       ],
                                                     ),
@@ -300,8 +259,221 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         ),
                                       ),
                                     ),
-                                  );
-                                },
+                                  ),
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(5),
+                                      child: MaterialButton(
+                                        color: Theme.of(context).hintColor,
+                                        padding: EdgeInsets.zero,
+                                        onPressed: () {
+                                          Provider.of<ThemeModeExtended>(
+                                                  context,
+                                                  listen: false)
+                                              .changeThemeMode("Dark");
+                                          setState(() {
+                                            selectedTheme = 2;
+                                          });
+                                        },
+                                        child: Stack(
+                                          children: [
+                                            Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.27,
+                                              height: MediaQuery.of(context)
+                                                      .size
+                                                      .height *
+                                                  0.06,
+                                              decoration: BoxDecoration(
+                                                  border: Border.all(
+                                                      color: Colors.black12),
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                  color: Colors.black),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            4.0),
+                                                    child: Text(
+                                                      "Dark",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .subtitle2
+                                                          .copyWith(
+                                                              color:
+                                                                  Colors.white),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            selectedTheme == 2
+                                                ? Container(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.27,
+                                                    height:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.06,
+                                                    decoration: BoxDecoration(
+                                                        color: Colors.white
+                                                            .withOpacity(0.5),
+                                                        border: Border.all(
+                                                            color:
+                                                                Colors.black45),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5)),
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(
+                                                          JamIcons.check,
+                                                          color: Colors.black,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )
+                                                : Container(),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(5),
+                                      child: MaterialButton(
+                                        color: Theme.of(context).hintColor,
+                                        padding: EdgeInsets.zero,
+                                        onPressed: () {
+                                          Provider.of<ThemeModeExtended>(
+                                                  context,
+                                                  listen: false)
+                                              .changeThemeMode("System");
+                                          setState(() {
+                                            selectedTheme = 3;
+                                          });
+                                        },
+                                        child: Stack(
+                                          children: [
+                                            Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.27,
+                                              height: MediaQuery.of(context)
+                                                      .size
+                                                      .height *
+                                                  0.06,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.black12),
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: MediaQuery.of(context)
+                                                            .platformBrightness ==
+                                                        Brightness.dark
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                              ),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            4.0),
+                                                    child: Text(
+                                                      "System",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .subtitle2
+                                                          .copyWith(
+                                                              color: MediaQuery.of(
+                                                                              context)
+                                                                          .platformBrightness ==
+                                                                      Brightness
+                                                                          .dark
+                                                                  ? Colors.white
+                                                                  : Colors
+                                                                      .black),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            selectedTheme == 3
+                                                ? Container(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.27,
+                                                    height:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.06,
+                                                    decoration: BoxDecoration(
+                                                        color: MediaQuery.of(
+                                                                        context)
+                                                                    .platformBrightness ==
+                                                                Brightness.dark
+                                                            ? Colors.white
+                                                                .withOpacity(
+                                                                    0.5)
+                                                            : Colors.black
+                                                                .withOpacity(
+                                                                    0.5),
+                                                        border: Border.all(
+                                                            color:
+                                                                Colors.black45),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5)),
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(
+                                                          JamIcons.check,
+                                                          color: MediaQuery.of(
+                                                                          context)
+                                                                      .platformBrightness ==
+                                                                  Brightness
+                                                                      .dark
+                                                              ? Colors.black
+                                                              : Colors.white,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )
+                                                : Container(),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                ],
                               ),
                             ),
                           ),
@@ -450,7 +622,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           Future.delayed(const Duration(
                                                   milliseconds: 500))
                                               .then((value) {
-                                            main.prefs.put('onboarded_new', true);
+                                            main.prefs
+                                                .put('onboarded_new', true);
                                             Navigator.pushReplacement(
                                                 context,
                                                 MaterialPageRoute(
