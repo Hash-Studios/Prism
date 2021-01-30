@@ -551,7 +551,10 @@ class _UserProfileState extends State<UserProfile> {
                                               'notification': <String, dynamic>{
                                                 'title': '🎉 New Follower!',
                                                 'body':
-                                                    '${main.prefs.get('googlename')} is now following you.'
+                                                    '${main.prefs.get('googlename')} is now following you.',
+                                                'color': "#e57697",
+                                                'image':
+                                                    "${main.prefs.get('googleimage')}",
                                               },
                                               'priority': 'high',
                                               'data': <String, dynamic>{
