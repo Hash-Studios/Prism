@@ -98,7 +98,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Navigator.of(context).pop();
                           if (main.prefs.get("Subscriber") == false) {
                             main.prefs.delete("Subscriber");
-                            home.f.subscribeToTopic('promotional');
+                            home.f.subscribeToTopic('recommendations');
                             if (main.prefs.get('isLoggedin') as bool == true) {
                               home.f.subscribeToTopic(main.prefs
                                   .get('googleemail')
@@ -109,7 +109,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             setState(() {});
                           } else {
                             main.prefs.put("Subscriber", false);
-                            home.f.unsubscribeFromTopic('promotional');
+                            home.f.unsubscribeFromTopic('recommendations');
                             if (main.prefs.get('isLoggedin') as bool == true) {
                               home.f.unsubscribeFromTopic(main.prefs
                                   .get('googleemail')
