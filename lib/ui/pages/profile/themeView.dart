@@ -99,9 +99,10 @@ class _ThemeViewState extends State<ThemeView> {
           automaticallyImplyLeading: false,
           actions: <Widget>[
             IconButton(
-                icon: const Icon(
+                icon: Icon(
                   JamIcons.check,
                   size: 30,
+                  color: Theme.of(context).accentColor,
                 ),
                 onPressed: () {
                   final accentColor = int.parse(selectedAccentColor
@@ -125,7 +126,10 @@ class _ThemeViewState extends State<ThemeView> {
           elevation: 0,
           title: Text(
             "Pick a Theme",
-            style: Theme.of(context).textTheme.headline3,
+            style: Theme.of(context)
+                .textTheme
+                .headline3
+                .copyWith(color: Theme.of(context).accentColor),
           ),
         ),
         backgroundColor: Theme.of(context).primaryColor,
@@ -134,14 +138,27 @@ class _ThemeViewState extends State<ThemeView> {
           children: <Widget>[
             ListTile(
               onTap: () {
-                showCupertinoModalPopup(
-                    context: context,
-                    builder: (BuildContext context) =>
-                        ActionModal((bool value) {
-                          setState(() {
-                            changingLight = value;
-                          });
-                        }));
+                showModalBottomSheet(
+                  isScrollControlled: true,
+                  context: context,
+                  builder: (context) => PreferencePanel(
+                    selectedValue: Provider.of<ThemeModeExtended>(context,
+                                    listen: false)
+                                .currentMode ==
+                            ThemeMode.light
+                        ? 1
+                        : Provider.of<ThemeModeExtended>(context, listen: false)
+                                    .currentMode ==
+                                ThemeMode.dark
+                            ? 2
+                            : 0,
+                    func: (bool value) {
+                      setState(() {
+                        changingLight = value;
+                      });
+                    },
+                  ),
+                );
               },
               leading: const Icon(JamIcons.brightness),
               title: Text(
@@ -672,55 +689,215 @@ class _ThemeViewState extends State<ThemeView> {
   }
 }
 
-class ActionModal extends StatelessWidget {
+class PreferencePanel extends StatefulWidget {
+  int selectedValue;
   final Function(bool value) func;
-  const ActionModal(this.func);
+  PreferencePanel({
+    Key key,
+    this.selectedValue,
+    this.func,
+  }) : super(key: key);
+
+  @override
+  _PreferencePanelState createState() => _PreferencePanelState();
+}
+
+class _PreferencePanelState extends State<PreferencePanel> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return CupertinoActionSheet(
-      title: const Text("Theme Preference"),
-      message: const Text(
-          "Select your preferred theme mode. System mode automatically switches between light and dark depending on your device mode."),
-      actions: [
-        CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () {
-            Navigator.pop(context);
-            Provider.of<ThemeModeExtended>(context, listen: false)
-                .changeThemeMode("System");
-            func(Provider.of<ThemeModeExtended>(context, listen: false)
-                    .getCurrentModeStyle(
-                        SchedulerBinding.instance.window.platformBrightness) ==
-                "Light");
-          },
-          child: const Text("System"),
+    final width = MediaQuery.of(context).size.width * 0.85;
+    return Container(
+      height: MediaQuery.of(context).size.height / 2 > 400
+          ? MediaQuery.of(context).size.height / 2
+          : 400,
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
-        CupertinoActionSheetAction(
-          onPressed: () {
-            Navigator.pop(context);
-            Provider.of<ThemeModeExtended>(context, listen: false)
-                .changeThemeMode("Light");
-            func(true);
-          },
-          child: const Text("Light"),
-        ),
-        CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () {
-            Navigator.pop(context);
-            Provider.of<ThemeModeExtended>(context, listen: false)
-                .changeThemeMode("Dark");
-            func(false);
-          },
-          child: const Text("Dark"),
-        ),
-      ],
-      cancelButton: CupertinoActionSheetAction(
-        isDestructiveAction: true,
-        onPressed: () {
-          Navigator.pop(context);
-        },
-        child: const Text("Cancel"),
+      ),
+      child: Column(
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Container(
+                  height: 5,
+                  width: 30,
+                  decoration: BoxDecoration(
+                      color: Theme.of(context).hintColor,
+                      borderRadius: BorderRadius.circular(500)),
+                ),
+              )
+            ],
+          ),
+          const Spacer(),
+          Text(
+            "Theme Preference",
+            style: Theme.of(context).textTheme.headline2,
+          ),
+          const Spacer(flex: 2),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      widget.selectedValue = 0;
+                    });
+                    Navigator.pop(context);
+                    Provider.of<ThemeModeExtended>(context, listen: false)
+                        .changeThemeMode("System");
+                    widget.func(
+                        Provider.of<ThemeModeExtended>(context, listen: false)
+                                .getCurrentModeStyle(SchedulerBinding
+                                    .instance.window.platformBrightness) ==
+                            "Light");
+                  },
+                  child: Container(
+                    width: width - 20,
+                    height: 60,
+                    child: Container(
+                      width: width - 14,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: widget.selectedValue != 0
+                            ? Theme.of(context).accentColor.withOpacity(0.2)
+                            : Theme.of(context).errorColor.withOpacity(0.2),
+                        border: Border.all(
+                            color: widget.selectedValue != 0
+                                ? Theme.of(context).accentColor
+                                : Theme.of(context).errorColor,
+                            width: 3),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "System",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).accentColor,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      widget.selectedValue = 1;
+                    });
+                    Navigator.pop(context);
+                    Provider.of<ThemeModeExtended>(context, listen: false)
+                        .changeThemeMode("Light");
+                    widget.func(true);
+                  },
+                  child: Container(
+                    width: width - 20,
+                    height: 60,
+                    child: Container(
+                      width: width - 14,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: widget.selectedValue != 1
+                            ? Theme.of(context).accentColor.withOpacity(0.2)
+                            : Theme.of(context).errorColor.withOpacity(0.2),
+                        border: Border.all(
+                            color: widget.selectedValue != 1
+                                ? Theme.of(context).accentColor
+                                : Theme.of(context).errorColor,
+                            width: 3),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Light",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).accentColor,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      widget.selectedValue = 2;
+                    });
+                    Navigator.pop(context);
+                    Provider.of<ThemeModeExtended>(context, listen: false)
+                        .changeThemeMode("Dark");
+                    widget.func(false);
+                  },
+                  child: Container(
+                    width: width - 20,
+                    height: 60,
+                    child: Container(
+                      width: width - 14,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: widget.selectedValue != 2
+                            ? Theme.of(context).accentColor.withOpacity(0.2)
+                            : Theme.of(context).errorColor.withOpacity(0.2),
+                        border: Border.all(
+                            color: widget.selectedValue != 2
+                                ? Theme.of(context).accentColor
+                                : Theme.of(context).errorColor,
+                            width: 3),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Dark",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).accentColor,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(flex: 2),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              child: Text(
+                "Select your preferred theme mode. System mode automatically switches between light and dark depending on your device mode.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).accentColor,
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+        ],
       ),
     );
   }
