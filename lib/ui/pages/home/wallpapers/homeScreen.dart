@@ -51,11 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    if (main.prefs.get('subscribedToPromotional', defaultValue: false)
+    if (main.prefs.get('subscribedToRecommendations', defaultValue: false)
         as bool) {
     } else {
-      f.subscribeToTopic('promotional');
-      main.prefs.put('subscribedToPromotional', true);
+      f.subscribeToTopic('recommendations');
+      main.prefs.put('subscribedToRecommendations', true);
     }
     isNew = true;
     _updateToken();
