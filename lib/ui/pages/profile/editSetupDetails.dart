@@ -793,8 +793,10 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                     .then((value) async {
                                   final argumentsFromWall =
                                       await Navigator.pushNamed(
-                                          context, uploadWallRoute,
-                                          arguments: [File(pickedFile.path)]);
+                                          context, uploadWallRoute, arguments: [
+                                    File(pickedFile.path),
+                                    true
+                                  ]);
                                   if (argumentsFromWall != null) {
                                     final List argsC =
                                         argumentsFromWall as List;

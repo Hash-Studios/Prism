@@ -27,6 +27,7 @@ class UploadWallScreen extends StatefulWidget {
 class _UploadWallScreenState extends State<UploadWallScreen> {
   bool isUploading;
   bool isProcessing;
+  bool fromSetupRoute;
   File image;
   String id;
   String tempid;
@@ -48,6 +49,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   void initState() {
     super.initState();
     image = widget.arguments[0] as File;
+    fromSetupRoute = widget.arguments[1] as bool;
     isUploading = false;
     isProcessing = true;
     randomId();
@@ -313,7 +315,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       wallpaperSize,
                       wallpaperCategory,
                       wallpaperDesc,
-                      review);
+                      fromSetupRoute ? "setup" : review);
                 }
               : null,
           child: const Icon(

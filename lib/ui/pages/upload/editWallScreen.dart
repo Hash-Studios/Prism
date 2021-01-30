@@ -429,7 +429,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     debugPrint(navStack.toString());
     Future.delayed(const Duration()).then((value) =>
         Navigator.pushReplacementNamed(context, uploadWallRoute,
-            arguments: [image]));
+            arguments: [image, false]));
   }
 
   void flip() {
