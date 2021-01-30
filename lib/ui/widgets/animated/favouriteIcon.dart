@@ -61,7 +61,7 @@ class _FavoriteIconState extends State<FavoriteIcon>
     _curve = CurvedAnimation(curve: Curves.slowMiddle, parent: _controller);
     final Animation<Color> _selectedColorAnimation = ColorTween(
       begin: widget._iconColor,
-      end: Colors.grey[400],
+      end: widget._iconColor,
     ).animate(_curve);
 
     final Animation<Color> _deSelectedColorAnimation = ColorTween(
