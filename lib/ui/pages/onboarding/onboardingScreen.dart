@@ -1,7 +1,5 @@
-import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/pages/onboarding/twitterigPopUp.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
@@ -83,8 +81,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: image1),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          const ShowUpTransition(
+                        children: const [
+                          ShowUpTransition(
                             forward: true,
                             slideSide: SlideFromSlide.bottom,
                             delay: Duration(milliseconds: 150),
@@ -99,10 +97,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(
+                          SizedBox(
                             height: 17,
                           ),
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.symmetric(horizontal: 24.0),
                             child: ShowUpTransition(
                               forward: true,
@@ -120,7 +118,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(
+                          SizedBox(
                             height: 179,
                           ),
                         ],
@@ -246,7 +244,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       mainAxisAlignment:
                                                           MainAxisAlignment
                                                               .center,
-                                                      children: [
+                                                      children: const [
                                                         Icon(
                                                           JamIcons.check,
                                                           color: Colors.white,
@@ -340,7 +338,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       mainAxisAlignment:
                                                           MainAxisAlignment
                                                               .center,
-                                                      children: [
+                                                      children: const [
                                                         Icon(
                                                           JamIcons.check,
                                                           color: Colors.black,
@@ -513,8 +511,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: image3),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          const ShowUpTransition(
+                        children: const [
+                          ShowUpTransition(
                             forward: true,
                             slideSide: SlideFromSlide.bottom,
                             delay: Duration(milliseconds: 150),
@@ -529,10 +527,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(
+                          SizedBox(
                             height: 17,
                           ),
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.symmetric(horizontal: 24.0),
                             child: ShowUpTransition(
                               forward: true,
@@ -550,7 +548,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(
+                          SizedBox(
                             height: 179,
                           ),
                         ],

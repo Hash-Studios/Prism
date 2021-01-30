@@ -10,7 +10,6 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
@@ -19,9 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/config.dart' as config;
 
 class FocusedMenuDetails extends StatefulWidget {
   final String provider;

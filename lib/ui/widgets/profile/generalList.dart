@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/themeModel.dart';
 import 'package:hive/hive.dart';
-import 'package:provider/provider.dart';
-import 'package:Prism/theme/config.dart' as config;
 
 class GeneralList extends StatefulWidget {
   final bool expanded;

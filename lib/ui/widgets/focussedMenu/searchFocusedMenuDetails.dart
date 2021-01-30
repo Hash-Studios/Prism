@@ -4,7 +4,6 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart'
     as wdata;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/menuButton/downloadButton.dart';
 import 'package:Prism/ui/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';

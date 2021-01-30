@@ -2,11 +2,9 @@ import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:animations/animations.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:provider/provider.dart';
 
 void showChangelog(BuildContext context, Function func) {

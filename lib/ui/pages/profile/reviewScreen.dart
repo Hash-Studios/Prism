@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/routes/router.dart';
-import 'package:Prism/ui/widgets/home/core/headingChipBar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
@@ -18,7 +17,6 @@ import 'package:gallery_saver/gallery_saver.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/services.dart';
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:animations/animations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -1194,7 +1192,7 @@ class SetupTile extends StatelessWidget {
                             ),
                             "${wallpaper.data["widget"]}" != "" &&
                                     "${wallpaper.data["widget"]}" != null
-                                ? SizedBox(
+                                ? const SizedBox(
                                     height: 16,
                                   )
                                 : Container(),
@@ -1239,7 +1237,7 @@ class SetupTile extends StatelessWidget {
                                 : Container(),
                             "${wallpaper.data["widget2"]}" != "" &&
                                     "${wallpaper.data["widget2"]}" != null
-                                ? SizedBox(
+                                ? const SizedBox(
                                     height: 16,
                                   )
                                 : Container(),
@@ -1382,7 +1380,7 @@ class SetupTile extends StatelessWidget {
                                   width: 8,
                                 ),
                                 Container(
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     color: Colors.red,
                                     shape: BoxShape.circle,
                                   ),
@@ -1491,7 +1489,7 @@ class RejectedSetupTile extends StatelessWidget {
   RejectedSetupTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static const platform = MethodChannel('flutter.prism.set_wallpaper');
-  Firestore firestore = Firestore.instance;
+  final Firestore firestore = Firestore.instance;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1747,7 +1745,7 @@ class RejectedSetupTile extends StatelessWidget {
                             ),
                             "${wallpaper.data["widget"]}" != "" &&
                                     "${wallpaper.data["widget"]}" != null
-                                ? SizedBox(
+                                ? const SizedBox(
                                     height: 16,
                                   )
                                 : Container(),
@@ -1792,7 +1790,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 : Container(),
                             "${wallpaper.data["widget2"]}" != "" &&
                                     "${wallpaper.data["widget2"]}" != null
-                                ? SizedBox(
+                                ? const SizedBox(
                                     height: 16,
                                   )
                                 : Container(),

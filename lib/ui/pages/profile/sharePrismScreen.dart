@@ -3,7 +3,6 @@ import 'package:Prism/routes/router.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/config.dart' as config;
 import 'package:share/share.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 

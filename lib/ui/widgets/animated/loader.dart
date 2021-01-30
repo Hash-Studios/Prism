@@ -1,9 +1,7 @@
 import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:provider/provider.dart';
 
 class Loader extends StatefulWidget {

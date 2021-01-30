@@ -26,7 +26,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:provider/provider.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/global/globals.dart' as globals;
@@ -120,7 +119,7 @@ class _ProfileChildState extends State<ProfileChild> {
   Widget build(BuildContext context) {
     final ScrollController controller =
         InheritedDataProvider.of(context).scrollController;
-    CollectionReference users = firestore.collection('users');
+    final CollectionReference users = firestore.collection('users');
 
     return WillPopScope(
         onWillPop: onWillPop,

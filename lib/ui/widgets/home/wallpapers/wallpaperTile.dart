@@ -1,6 +1,5 @@
 import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/home/wallpapers/wallpaperGrid.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:cached_network_image/cached_network_image.dart';

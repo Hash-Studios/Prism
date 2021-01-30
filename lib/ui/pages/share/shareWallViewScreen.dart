@@ -28,7 +28,6 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';

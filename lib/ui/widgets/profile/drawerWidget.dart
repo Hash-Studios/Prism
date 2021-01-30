@@ -3,12 +3,9 @@ import 'dart:io';
 import 'package:Prism/data/profile/wallpaper/getUserProfile.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/routes/routing_constants.dart';
-import 'package:Prism/theme/darkThemeModel.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -16,7 +13,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
 
 class ProfileDrawer extends StatelessWidget {
   final TextEditingController _twitterController = TextEditingController();

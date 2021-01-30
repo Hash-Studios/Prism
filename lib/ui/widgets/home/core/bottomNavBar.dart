@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:image_picker/image_picker.dart';
-import 'package:Prism/theme/config.dart' as config;
 
 class BottomBar extends StatefulWidget {
   final Widget child;

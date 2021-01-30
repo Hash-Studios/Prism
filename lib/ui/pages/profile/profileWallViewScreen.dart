@@ -20,7 +20,6 @@ import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/global/globals.dart' as globals;
 
 class ProfileWallViewScreen extends StatefulWidget {

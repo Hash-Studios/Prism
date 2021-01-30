@@ -16,7 +16,6 @@ import 'package:flutter/material.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/config.dart' as config;
 
 class EditSetupReviewScreen extends StatefulWidget {
   final List arguments;

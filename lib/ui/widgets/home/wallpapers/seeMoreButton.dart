@@ -1,5 +1,4 @@
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

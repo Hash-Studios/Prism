@@ -21,7 +21,6 @@ import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
-import 'package:Prism/theme/config.dart' as config;
 
 class FavWallpaperViewScreen extends StatefulWidget {
   final List arguments;

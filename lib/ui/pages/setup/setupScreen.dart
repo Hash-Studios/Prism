@@ -5,7 +5,6 @@ import 'package:Prism/theme/darkThemeModel.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
-import 'package:Prism/theme/themeModel.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
 import 'package:Prism/ui/widgets/home/collections/collectionsGrid.dart';
 import 'package:Prism/ui/widgets/home/core/bottomNavBar.dart';
@@ -16,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/config.dart' as config;
 import 'package:Prism/global/globals.dart' as globals;
 
 class SetupScreen extends StatefulWidget {
