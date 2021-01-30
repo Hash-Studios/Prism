@@ -58,102 +58,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
           actions: <Widget>[
             IconButton(
-                tooltip: main.prefs.get("Subscriber") == false
-                    ? "Subscribe"
-                    : "Unsubscribe",
-                icon: main.prefs.get("Subscriber") == false
-                    ? const Icon(JamIcons.bell)
-                    : const Icon(JamIcons.bell_off),
+                tooltip: "Notification Settings",
+                icon: const Icon(JamIcons.settings_alt),
                 onPressed: () {
-                  final AlertDialog notificationsPopUp = AlertDialog(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    title: Text(
-                      main.prefs.get("Subscriber") == false
-                          ? 'Subscribe to notifications?'
-                          : 'Unsubscribe to notifications?',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: Theme.of(context).accentColor),
-                    ),
-                    content: Text(
-                      main.prefs.get("Subscriber") == false
-                          ? 'Subscribe to recieve new notifications about followers, giveaways, contests & upload review status.\n\nThis will also enable promotional notifications.'
-                          : "By unsubscribing you won't recieve new notifications about followers, giveaways, contests & upload review status.\n\nThis will also disable promotional notifications.",
-                      style: TextStyle(
-                          fontFamily: "Proxima Nova",
-                          fontWeight: FontWeight.normal,
-                          fontSize: 14,
-                          color: Theme.of(context).accentColor),
-                    ),
-                    actions: [
-                      FlatButton(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5)),
-                        color: main.prefs.get("Subscriber") == false
-                            ? Theme.of(context).errorColor
-                            : Theme.of(context).hintColor,
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          if (main.prefs.get("Subscriber") == false) {
-                            main.prefs.delete("Subscriber");
-                            home.f.subscribeToTopic('recommendations');
-                            if (main.prefs.get('isLoggedin') as bool == true) {
-                              home.f.subscribeToTopic(main.prefs
-                                  .get('googleemail')
-                                  .split("@")[0]
-                                  .toString());
-                            }
-                            toasts.codeSend("Successfully Subscribed");
-                            setState(() {});
-                          } else {
-                            main.prefs.put("Subscriber", false);
-                            home.f.unsubscribeFromTopic('recommendations');
-                            if (main.prefs.get('isLoggedin') as bool == true) {
-                              home.f.unsubscribeFromTopic(main.prefs
-                                  .get('googleemail')
-                                  .split("@")[0]
-                                  .toString());
-                            }
-                            toasts.codeSend("Successfully unsubscribed");
-                            setState(() {});
-                          }
-                        },
-                        child: const Text(
-                          'YES',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      FlatButton(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5)),
-                        color: main.prefs.get("Subscriber") == false
-                            ? Theme.of(context).hintColor
-                            : Theme.of(context).errorColor,
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text(
-                          'NO',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                    backgroundColor: Theme.of(context).primaryColor,
-                    actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                  );
-
-                  showModal(
+                  showModalBottomSheet(
+                      isScrollControlled: true,
                       context: context,
-                      configuration: const FadeScaleTransitionConfiguration(),
-                      builder: (BuildContext context) => notificationsPopUp);
+                      builder: (context) => NotificationSettingsSheet());
                 })
           ],
         ),
@@ -382,6 +293,174 @@ class NotificationCard extends StatelessWidget {
           ),
         )
       ],
+    );
+  }
+}
+
+class NotificationSettingsSheet extends StatefulWidget {
+  @override
+  _NotificationSettingsSheetState createState() =>
+      _NotificationSettingsSheetState();
+}
+
+class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
+  bool followersSubscriber;
+  bool inappSubscriber;
+  bool recommendationsSubscriber;
+  @override
+  void initState() {
+    super.initState();
+    followersSubscriber =
+        main.prefs.get("followersSubscriber", defaultValue: true) as bool;
+    inappSubscriber =
+        main.prefs.get("inappSubscriber", defaultValue: true) as bool;
+    recommendationsSubscriber =
+        main.prefs.get("recommendationsSubscriber", defaultValue: true) as bool;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(20),
+        topRight: Radius.circular(20),
+      ),
+      child: Container(
+        height: MediaQuery.of(context).size.height / 2.8 > 300
+            ? MediaQuery.of(context).size.height / 2.8
+            : 300,
+        decoration: BoxDecoration(
+          color: Theme.of(context).primaryColor,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Container(
+                    height: 5,
+                    width: 30,
+                    decoration: BoxDecoration(
+                        color: Theme.of(context).hintColor,
+                        borderRadius: BorderRadius.circular(500)),
+                  ),
+                )
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Notification Settings',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).errorColor == Colors.black
+                        ? Colors.grey
+                        : Theme.of(context).errorColor,
+                  ),
+                ),
+              ),
+            ),
+            SwitchListTile(
+              activeColor: Theme.of(context).errorColor,
+              secondary: const Icon(
+                JamIcons.user_plus,
+              ),
+              value: followersSubscriber,
+              title: Text(
+                "Followers & Updates",
+                style: TextStyle(
+                    color: Theme.of(context).accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
+              ),
+              subtitle: const Text(
+                "Get notifications for new followers and posts.",
+                style: TextStyle(fontSize: 12),
+              ),
+              onChanged: (bool value) async {
+                main.prefs.put("followersSubscriber", value);
+                setState(() {
+                  followersSubscriber = value;
+                });
+                if (main.prefs.get('isLoggedin') as bool == true) {
+                  if (value) {
+                    home.f.subscribeToTopic(
+                        main.prefs.get('googleemail').split("@")[0].toString());
+                  } else {
+                    home.f.unsubscribeFromTopic(
+                        main.prefs.get('googleemail').split("@")[0].toString());
+                  }
+                }
+              },
+            ),
+            SwitchListTile(
+              activeColor: Theme.of(context).errorColor,
+              secondary: const Icon(
+                JamIcons.picture,
+              ),
+              value: inappSubscriber,
+              title: Text(
+                "In-App",
+                style: TextStyle(
+                    color: Theme.of(context).accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
+              ),
+              subtitle: const Text(
+                "Get in app notifications for giveaways, contests and reviews.",
+                style: TextStyle(fontSize: 12),
+              ),
+              onChanged: (bool value) async {
+                main.prefs.put("inappSubscriber", value);
+                setState(() {
+                  inappSubscriber = value;
+                });
+              },
+            ),
+            SwitchListTile(
+              activeColor: Theme.of(context).errorColor,
+              secondary: const Icon(JamIcons.lightbulb),
+              value: recommendationsSubscriber,
+              title: Text(
+                "Recommendations",
+                style: TextStyle(
+                    color: Theme.of(context).accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
+              ),
+              subtitle: const Text(
+                "Get recommendations from Prism.",
+                style: TextStyle(fontSize: 12),
+              ),
+              onChanged: (bool value) async {
+                main.prefs.put("recommendationsSubscriber", value);
+                setState(() {
+                  recommendationsSubscriber = value;
+                });
+                if (value) {
+                  home.f.subscribeToTopic('recommendations');
+                } else {
+                  home.f.unsubscribeFromTopic('recommendations');
+                }
+              },
+            ),
+            const SizedBox(
+              height: 24,
+            )
+          ],
+        ),
+      ),
     );
   }
 }
