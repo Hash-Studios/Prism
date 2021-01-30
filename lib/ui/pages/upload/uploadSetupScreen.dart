@@ -779,7 +779,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                             await Navigator.pushNamed(
                                                 context, uploadWallRoute,
                                                 arguments: [
-                                              File(pickedFile.path)
+                                              File(pickedFile.path),
+                                              true
                                             ]);
                                         if (argumentsFromWall != null) {
                                           final List argsC =

@@ -13,7 +13,7 @@ Future<void> createRecord(
     String wallpaperSize,
     String wallpaperCategory,
     String wallpaperDesc,
-    bool review) async {
+    dynamic review) async {
   await firestore.collection("walls").add({
     'by': main.prefs.get('name'),
     'email': main.prefs.get('email'),
