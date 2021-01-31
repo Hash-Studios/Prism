@@ -206,6 +206,12 @@ class _FollowingTileState extends State<FollowingTile> {
                       // key: _globalKey,
                       imageUrl: widget.finalDocs[widget.index]
                           ["wallpaper_thumb"] as String,
+                      placeholder: (context, url) {
+                        return Container(
+                          height: 400,
+                          color: Theme.of(context).hintColor,
+                        );
+                      },
                     ),
                   ),
                 ),
