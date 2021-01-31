@@ -256,6 +256,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           wallpaperId,
                           review,
                         );
+                        Navigator.pushNamed(context, reviewRoute);
                       }
                     }
                   : null,

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/routes/routing_constants.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/foundation.dart';
@@ -316,6 +317,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       wallpaperCategory,
                       wallpaperDesc,
                       fromSetupRoute ? "setup" : review);
+                  Navigator.pushNamed(context, reviewRoute);
                 }
               : null,
           child: const Icon(
