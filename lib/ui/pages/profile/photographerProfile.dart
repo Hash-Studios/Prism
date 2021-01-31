@@ -561,6 +561,7 @@ class _UserProfileState extends State<UserProfile> {
                                                     "followers",
                                                 'tag':
                                                     '${main.prefs.get('googlename')} Follow',
+                                                'icon': 'ic_follow'
                                               },
                                               'priority': 'high',
                                               'data': <String, dynamic>{
