@@ -623,27 +623,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             main.prefs
                                                 .put('onboarded_new', true);
                                             Navigator.pushReplacement(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        OptionalInfo(
-                                                          img: Image.asset(
-                                                            'assets/images/fourth.png',
-                                                            height: MediaQuery.of(
-                                                                        context)
-                                                                    .size
-                                                                    .height *
-                                                                2 /
-                                                                5,
-                                                          ),
-                                                          heading:
-                                                              'Interact with community',
-                                                          subheading:
-                                                              'Add your twitter or instagram handles below',
-                                                          showSkip: true,
-                                                          skipText: "Skip",
-                                                          doneText: "DONE",
-                                                        )));
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const OptionalInfo3(
+                                                  heading:
+                                                      'Follow top creators',
+                                                  subheading:
+                                                      'Never miss the latest and greatest',
+                                                  showSkip: false,
+                                                  skipText: "Skip",
+                                                  doneText: "DONE",
+                                                ),
+                                              ),
+                                            );
                                           });
                                         }).catchError((e) {
                                           debugPrint(e.toString());
