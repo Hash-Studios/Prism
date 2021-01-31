@@ -1,7 +1,11 @@
+import 'dart:convert';
+
+import 'package:Prism/gitkey.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 
 Firestore firestore = Firestore.instance;
 Future<void> createRecord(
@@ -53,6 +57,61 @@ Future<void> createRecord(
   if (main.prefs.get('premium') == true) {
     toasts.codeSend("Succesfully uploaded");
   } else {
+    if (main.prefs.get("isLoggedin") == true &&
+        main.prefs.get("premium") == true) {
+      http.post(
+        'https://fcm.googleapis.com/fcm/send',
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$fcmServerToken',
+        },
+        body: jsonEncode(
+          <String, dynamic>{
+            'notification': <String, dynamic>{
+              'title': '🎉 New Premium Wall for review!',
+              'body':
+                  'New Post by ${main.prefs.get('googlename')} is up for review.',
+              'color': "#e57697",
+              'image': wallpaperThumb,
+              'android_channel_id': "posts",
+            },
+            'priority': 'high',
+            'data': <String, dynamic>{
+              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+              'id': '1',
+              'status': 'done'
+            },
+            'to': "/topics/${"maurya.abhay30".split("@")[0]}"
+          },
+        ),
+      );
+      http.post(
+        'https://fcm.googleapis.com/fcm/send',
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$fcmServerToken',
+        },
+        body: jsonEncode(
+          <String, dynamic>{
+            'notification': <String, dynamic>{
+              'title': '🎉 New Premium Wall for review!',
+              'body':
+                  'New Post by ${main.prefs.get('googlename')} is up for review.',
+              'color': "#e57697",
+              'image': wallpaperThumb,
+              'android_channel_id': "posts",
+            },
+            'priority': 'high',
+            'data': <String, dynamic>{
+              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+              'id': '1',
+              'status': 'done'
+            },
+            'to': "/topics/${"akshaymaurya3006".split("@")[0]}"
+          },
+        ),
+      );
+    }
     toasts.codeSend("Your wall is submitted, and is under review.");
   }
 }
@@ -96,6 +155,61 @@ Future<void> createSetup(
     'instagram': main.prefs.get('instagram') ?? "",
     'wall_id': wallId
   });
+  if (main.prefs.get("isLoggedin") == true &&
+      main.prefs.get("premium") == true) {
+    http.post(
+      'https://fcm.googleapis.com/fcm/send',
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=$fcmServerToken',
+      },
+      body: jsonEncode(
+        <String, dynamic>{
+          'notification': <String, dynamic>{
+            'title': '🎉 New Premium Setup for review!',
+            'body':
+                'New Post by ${main.prefs.get('googlename')} is up for review.',
+            'color': "#e57697",
+            'image': imageURL,
+            'android_channel_id': "posts",
+          },
+          'priority': 'high',
+          'data': <String, dynamic>{
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+            'id': '1',
+            'status': 'done'
+          },
+          'to': "/topics/${"maurya.abhay30".split("@")[0]}"
+        },
+      ),
+    );
+    http.post(
+      'https://fcm.googleapis.com/fcm/send',
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=$fcmServerToken',
+      },
+      body: jsonEncode(
+        <String, dynamic>{
+          'notification': <String, dynamic>{
+            'title': '🎉 New Premium Setup for review!',
+            'body':
+                'New Post by ${main.prefs.get('googlename')} is up for review.',
+            'color': "#e57697",
+            'image': imageURL,
+            'android_channel_id': "posts",
+          },
+          'priority': 'high',
+          'data': <String, dynamic>{
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+            'id': '1',
+            'status': 'done'
+          },
+          'to': "/topics/${"akshaymaurya3006".split("@")[0]}"
+        },
+      ),
+    );
+  }
   toasts.codeSend("Your setup is submitted, and is under review.");
 }
 
