@@ -69,23 +69,28 @@ void main() {
         if (prefs.get("systemOverlayColor") == null) {
           prefs.put("systemOverlayColor", 0xFFE57697);
         }
-        currentThemeID = prefs.get('themeID')?.toString() ?? "kLFrost White";
-        prefs.put("themeID", currentThemeID);
-        currentDarkThemeID =
-            prefs.get('darkThemeID')?.toString() ?? "kDMaterial Dark";
+        currentThemeID = prefs
+            .get('lightThemeID', defaultValue: "kLFrost White")
+            ?.toString();
+        prefs.put("lightThemeID", currentThemeID);
+        currentDarkThemeID = prefs
+            .get('darkThemeID', defaultValue: "kDMaterial Dark")
+            ?.toString();
         prefs.put("darkThemeID", currentDarkThemeID);
         currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
         prefs.put("themeMode", currentMode);
-        lightAccent = Color(
-            int.parse(prefs.get('lightAccent')?.toString() ?? "0xffe57697"));
+        lightAccent = Color(int.parse(
+                prefs.get('lightAccent')?.toString() ?? "0xffe57697")) ??
+            const Color(0xffe57697);
         prefs.put(
             "lightAccent",
             int.parse(lightAccent
                 .toString()
                 .replaceAll("Color(", "")
                 .replaceAll(")", "")));
-        darkAccent = Color(
-            int.parse(prefs.get('darkAccent')?.toString() ?? "0xffe57697"));
+        darkAccent = Color(int.parse(
+                prefs.get('darkAccent')?.toString() ?? "0xffe57697")) ??
+            const Color(0xffe57697);
         prefs.put(
             "darkAccent",
             int.parse(darkAccent
@@ -143,12 +148,18 @@ void main() {
                         create: (context) => ProfileSetupProvider(),
                       ),
                       ChangeNotifierProvider<ThemeModel>(
-                        create: (context) =>
-                            ThemeModel(themes[currentThemeID], lightAccent),
+                        create: (context) => ThemeModel(
+                            themes[currentThemeID]
+                            // ?? kLightTheme
+                            ,
+                            lightAccent),
                       ),
                       ChangeNotifierProvider<DarkThemeModel>(
                         create: (context) => DarkThemeModel(
-                            darkThemes[currentDarkThemeID], darkAccent),
+                            darkThemes[currentDarkThemeID]
+                            // ?? kDarkTheme
+                            ,
+                            darkAccent),
                       ),
                       ChangeNotifierProvider<ThemeModeExtended>(
                         create: (context) =>
@@ -327,23 +338,26 @@ class _RestartWidgetState extends State<RestartWidget> {
       key = UniqueKey();
     });
     Hive.openBox('prefs').then((prefs) {
-      currentThemeID = prefs.get('themeID')?.toString() ?? "kLFrost White";
-      prefs.put("themeID", currentThemeID);
+      currentThemeID =
+          prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+      prefs.put("lightThemeID", currentThemeID);
       currentDarkThemeID =
-          prefs.get('darkThemeID')?.toString() ?? "kDMaterial Dark";
+          prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
       prefs.put("darkThemeID", currentDarkThemeID);
       currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
       prefs.put("themeMode", currentMode);
-      lightAccent = Color(
-          int.parse(prefs.get('lightAccent')?.toString() ?? "0xffe57697"));
+      lightAccent = Color(int.parse(
+              prefs.get('lightAccent')?.toString() ?? "0xffe57697")) ??
+          const Color(0xffe57697);
       prefs.put(
           "lightAccent",
           int.parse(lightAccent
               .toString()
               .replaceAll("Color(", "")
               .replaceAll(")", "")));
-      darkAccent =
-          Color(int.parse(prefs.get('darkAccent')?.toString() ?? "0xffe57697"));
+      darkAccent = Color(
+              int.parse(prefs.get('darkAccent')?.toString() ?? "0xffe57697")) ??
+          const Color(0xffe57697);
       prefs.put(
           "darkAccent",
           int.parse(darkAccent

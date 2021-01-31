@@ -3,11 +3,16 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/ui/pages/home/core/splashScreen.dart';
 import 'package:Prism/ui/widgets/animated/showUp.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:Prism/gitkey.dart';
 
 class OptionalInfo extends StatefulWidget {
   final Image img;
@@ -598,6 +603,468 @@ class ApplyButton extends StatelessWidget {
                 const Spacer(flex: 4),
               ],
             )),
+      ),
+    );
+  }
+}
+
+class OptionalInfo3 extends StatefulWidget {
+  final String heading;
+  final String subheading;
+  final bool showSkip;
+  final String skipText;
+  final String doneText;
+  const OptionalInfo3({
+    @required this.heading,
+    @required this.subheading,
+    @required this.showSkip,
+    this.skipText,
+    @required this.doneText,
+  });
+  @override
+  _OptionalInfo3State createState() => _OptionalInfo3State();
+}
+
+class _OptionalInfo3State extends State<OptionalInfo3> {
+  Image image1;
+  final TextEditingController _twitterController = TextEditingController();
+  final TextEditingController _igController = TextEditingController();
+  Future<bool> onWillPop(BuildContext ctx) async {
+    Navigator.pushReplacement(
+        ctx, MaterialPageRoute(builder: (context) => SplashWidget()));
+    return false;
+  }
+
+  bool isFollow1;
+  bool isFollow2;
+  bool isFollow3;
+
+  @override
+  void initState() {
+    isFollow1 = false;
+    isFollow2 = false;
+    isFollow3 = false;
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () {
+        onWillPop(context);
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFE57697),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 90, 0, 8),
+                  child: Column(
+                    children: [
+                      ShowUpTransition(
+                        forward: true,
+                        slideSide: SlideFromSlide.bottom,
+                        delay: const Duration(milliseconds: 150),
+                        child: Text(
+                          widget.heading,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontFamily: "Roboto",
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 7,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: ShowUpTransition(
+                          forward: true,
+                          slideSide: SlideFromSlide.bottom,
+                          delay: const Duration(milliseconds: 200),
+                          child: Text(
+                            widget.subheading,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 15,
+                              fontFamily: "Roboto",
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 17,
+                      ),
+                      FollowHeaderCard(
+                        email: "maurya.abhay30@gmail.com",
+                        url:
+                            "https://lh3.googleusercontent.com/a-/AOh14GgTe5pUi3k-cdvxoCoJ2kKWafu0RXDN3sUVTp3Z58c=s96-c",
+                        name: "Abhay Maurya",
+                        img1: user1Image1,
+                        img2: user1Image2,
+                        img3: user1Image3,
+                      ),
+                      FollowHeaderCard(
+                        email: "akshaymaurya3006@gmail.com",
+                        url:
+                            "https://lh3.googleusercontent.com/a-/AOh14Gh7a-JaBRpAI9SPmSBJQmOeggj6ic2mub3DKala_g=s96-c",
+                        name: "Akshay Maurya",
+                        img1: user2Image1,
+                        img2: user2Image2,
+                        img3: user2Image3,
+                      ),
+                      FollowHeaderCard(
+                        email: "hk3ToN_Prism@gmail.com",
+                        url:
+                            "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
+                        name: "Hk3ToN",
+                        img1: user3Image1,
+                        img2: user3Image2,
+                        img3: user3Image3,
+                      ),
+                    ],
+                  )),
+              widget.showSkip == true
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SplashWidget()));
+                          },
+                          style: ButtonStyle(
+                              overlayColor: MaterialStateColor.resolveWith(
+                                  (states) => Colors.white10)),
+                          child: Container(
+                            width: 75,
+                            child: Text(
+                              widget.skipText ?? "Skip",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SplashWidget()));
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateColor.resolveWith(
+                                (states) => Colors.white),
+                          ),
+                          child: Container(
+                            width: 60,
+                            child: Text(
+                              widget.doneText ?? 'DONE',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Color(0xFFE57697),
+                                fontSize: 15,
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SplashWidget()));
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateColor.resolveWith(
+                                (states) => Colors.white),
+                          ),
+                          child: Container(
+                            width: 60,
+                            child: const Text(
+                              'DONE',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFFE57697),
+                                fontSize: 15,
+                                fontFamily: "Roboto",
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+              const SizedBox(
+                height: 24,
+              ),
+            ],
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.miniEndTop,
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.transparent,
+          focusElevation: 0,
+          highlightElevation: 0,
+          elevation: 0,
+          mini: true,
+          onPressed: () {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => SplashWidget()));
+          },
+          child: const Icon(
+            JamIcons.close,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FollowHeaderCard extends StatelessWidget {
+  FollowHeaderCard({
+    Key key,
+    @required this.url,
+    @required this.email,
+    @required this.name,
+    @required this.img1,
+    @required this.img2,
+    @required this.img3,
+  }) : super(key: key);
+
+  final String url;
+  final String email;
+  final String name;
+  final String img1;
+  final String img2;
+  final String img3;
+  final Firestore firestore = Firestore.instance;
+
+  @override
+  Widget build(BuildContext context) {
+    final CollectionReference users = firestore.collection('users');
+    return ShowUpTransition(
+      forward: true,
+      slideSide: SlideFromSlide.bottom,
+      delay: const Duration(milliseconds: 200),
+      child: Column(
+        children: [
+          Card(
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(10),
+                topRight: Radius.circular(10),
+              ),
+            ),
+            color: Colors.white,
+            elevation: 4,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: 60,
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CircleAvatar(
+                      backgroundImage: CachedNetworkImageProvider(url),
+                    ),
+                  ),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Color(0xFFE57697),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: users
+                        .where("email", isEqualTo: main.prefs.get('email'))
+                        .snapshots(),
+                    builder: (BuildContext context,
+                        AsyncSnapshot<QuerySnapshot> snapshot) {
+                      if (!snapshot.hasData) {
+                        return Container();
+                      } else {
+                        final List following = snapshot
+                                .data.documents[0].data['following'] as List ??
+                            [];
+                        if (following.contains(email)) {
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ElevatedButton(
+                              onPressed: () {},
+                              style: ButtonStyle(
+                                shape: MaterialStateProperty.resolveWith(
+                                    (states) => RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10))),
+                                backgroundColor: MaterialStateColor.resolveWith(
+                                    (states) => Colors.white),
+                              ),
+                              child: Container(
+                                width: 65,
+                                child: const Icon(
+                                  JamIcons.check,
+                                  color: Color(0xFFE57697),
+                                ),
+                              ),
+                            ),
+                          );
+                        } else {
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                following.add(email);
+                                snapshot.data.documents[0].reference
+                                    .updateData({'following': following});
+                                users
+                                    .where("email", isEqualTo: email)
+                                    .getDocuments()
+                                    .then((value) {
+                                  if (value.documents.isEmpty ||
+                                      value.documents == null) {
+                                  } else {
+                                    final List followers = value.documents[0]
+                                            .data['followers'] as List ??
+                                        [];
+                                    followers.add(main.prefs.get('email'));
+                                    value.documents[0].reference
+                                        .updateData({'followers': followers});
+                                  }
+                                });
+                                http.post(
+                                  'https://fcm.googleapis.com/fcm/send',
+                                  headers: <String, String>{
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'key=$fcmServerToken',
+                                  },
+                                  body: jsonEncode(
+                                    <String, dynamic>{
+                                      'notification': <String, dynamic>{
+                                        'title': '🎉 New Follower!',
+                                        'body':
+                                            '${main.prefs.get('googlename')} is now following you.'
+                                      },
+                                      'priority': 'high',
+                                      'data': <String, dynamic>{
+                                        'click_action':
+                                            'FLUTTER_NOTIFICATION_CLICK',
+                                        'id': '1',
+                                        'status': 'done'
+                                      },
+                                      'to': "/topics/${email.split("@")[0]}"
+                                    },
+                                  ),
+                                );
+                                toasts.codeSend("Followed $name!");
+                              },
+                              style: ButtonStyle(
+                                shape: MaterialStateProperty.resolveWith(
+                                    (states) => RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10))),
+                                backgroundColor: MaterialStateColor.resolveWith(
+                                    (states) => const Color(0xFFE57697)),
+                              ),
+                              child: Container(
+                                width: 65,
+                                child: const Text(
+                                  'FOLLOW',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontFamily: "Roboto",
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Card(
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(10),
+                bottomRight: Radius.circular(10),
+              ),
+            ),
+            color: Colors.white,
+            elevation: 4,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.width * 0.8 / 3,
+              child: Row(
+                children: [
+                  FollowImage(img1: img1),
+                  FollowImage(img1: img2),
+                  FollowImage(img1: img3),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 17,
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class FollowImage extends StatelessWidget {
+  const FollowImage({
+    Key key,
+    @required this.img1,
+  }) : super(key: key);
+
+  final String img1;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
+          width: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
+          child: CachedNetworkImage(
+            imageUrl: img1,
+            fit: BoxFit.cover,
+          ),
+        ),
       ),
     );
   }
