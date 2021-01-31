@@ -1,9 +1,9 @@
 import 'package:Prism/auth/google_auth.dart';
 
 GoogleAuth gAuth = GoogleAuth();
-String currentAppVersion = '2.6.2';
+String currentAppVersion = '2.6.3';
 String obsoleteAppVersion = '2.6.0';
-String currentAppVersionCode = '59';
+String currentAppVersionCode = '61';
 bool updateChecked = false;
 bool updateAvailable = false;
 Map versionInfo = {};
