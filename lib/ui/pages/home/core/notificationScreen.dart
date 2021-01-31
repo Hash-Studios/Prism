@@ -306,6 +306,7 @@ class NotificationSettingsSheet extends StatefulWidget {
 
 class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   bool followersSubscriber;
+  bool postsSubscriber;
   bool inappSubscriber;
   bool recommendationsSubscriber;
   @override
@@ -313,6 +314,8 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
     super.initState();
     followersSubscriber =
         main.prefs.get("followersSubscriber", defaultValue: true) as bool;
+    postsSubscriber =
+        main.prefs.get("postsSubscriber", defaultValue: true) as bool;
     inappSubscriber =
         main.prefs.get("inappSubscriber", defaultValue: true) as bool;
     recommendationsSubscriber =
@@ -327,9 +330,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
         topRight: Radius.circular(20),
       ),
       child: Container(
-        height: MediaQuery.of(context).size.height / 2.8 > 300
-            ? MediaQuery.of(context).size.height / 2.8
-            : 300,
+        height: MediaQuery.of(context).size.height / 2.3 > 380
+            ? MediaQuery.of(context).size.height / 2.3
+            : 380,
         decoration: BoxDecoration(
           color: Theme.of(context).primaryColor,
           borderRadius: const BorderRadius.only(
@@ -379,14 +382,14 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               ),
               value: followersSubscriber,
               title: Text(
-                "Followers & Updates",
+                "Followers",
                 style: TextStyle(
                     color: Theme.of(context).accentColor,
                     fontWeight: FontWeight.w500,
                     fontFamily: "Proxima Nova"),
               ),
               subtitle: const Text(
-                "Get notifications for new followers and posts.",
+                "Get notifications for new followers.",
                 style: TextStyle(fontSize: 12),
               ),
               onChanged: (bool value) async {
@@ -401,11 +404,51 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   } else {
                     home.f.unsubscribeFromTopic(
                         main.prefs.get('googleemail').split("@")[0].toString());
+                    main.prefs.put("postsSubscriber", value);
+                    setState(() {
+                      postsSubscriber = value;
+                    });
+                    home.f.unsubscribeFromTopic('posts');
                   }
                 } else {
                   toasts.error("Please login to change this setting.");
                 }
               },
+            ),
+            SwitchListTile(
+              activeColor: Theme.of(context).errorColor,
+              secondary: const Icon(
+                JamIcons.pictures,
+              ),
+              value: postsSubscriber,
+              title: Text(
+                "Posts",
+                style: TextStyle(
+                    color: Theme.of(context).accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova"),
+              ),
+              subtitle: const Text(
+                "Get notifications for posts from the artists you follow.",
+                style: TextStyle(fontSize: 12),
+              ),
+              onChanged: followersSubscriber
+                  ? (bool value) async {
+                      if (main.prefs.get('isLoggedin') as bool == true) {
+                        main.prefs.put("postsSubscriber", value);
+                        setState(() {
+                          postsSubscriber = value;
+                        });
+                        if (value) {
+                          home.f.subscribeToTopic('posts');
+                        } else {
+                          home.f.unsubscribeFromTopic('posts');
+                        }
+                      } else {
+                        toasts.error("Please login to change this setting.");
+                      }
+                    }
+                  : null,
             ),
             SwitchListTile(
               activeColor: Theme.of(context).errorColor,
