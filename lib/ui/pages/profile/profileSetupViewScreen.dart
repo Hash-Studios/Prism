@@ -574,7 +574,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                                                         .errorColor
                                                                         .toString()
                                                                         .replaceAll(
-                                                                            "Color(0xFF",
+                                                                            "Color(0xff",
                                                                             "")
                                                                         .replaceAll(
                                                                             ")",
