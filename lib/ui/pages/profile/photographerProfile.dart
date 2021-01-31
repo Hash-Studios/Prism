@@ -240,7 +240,7 @@ class _UserProfileState extends State<UserProfile> {
                                                         )
                                                       ],
                                                     ),
-                                          const Text("Write bio here...")
+                                          // const Text("Write bio here...")
                                         ],
                                       ),
                                     ),
