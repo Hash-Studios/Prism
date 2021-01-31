@@ -1,5 +1,25 @@
 ## Changelog
 
+### v2.6.3
+- Added follow functionality, with live notifications
+- Review status for walls & setups is here!
+- All-new Theme Manager
+- Added new category Trending, to list most viewed walls
+- Added views for walls & setups
+- Fixed visual bugs in AMOLED theme
+- Added quick actions
+- Added widget, to shuffle current wallpaper with downloaded walls
+- Favourite icon now shows favourite status
+- Created obsolete version check, after this version old apps can be forced to not work with Firebase Remote Config
+- Fixed error in setups where wallpaper was not able to download/set
+- Redesigned the notifications model
+- Added options to unsubscribe to notifications
+- Added licenses in-app
+- Added new onboarding page for following creators
+- Fixed wallpaper uploading in setups
+- Added material to the easter egg, so now it serves a functionality
+- Minor bug fixes and improvements
+
 ### v2.6.2
 - Fixed notification modifiers
 - Added apps check in setups view

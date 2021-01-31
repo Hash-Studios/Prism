@@ -27,6 +27,7 @@ Our main goal is to create an unimaginable self-sustainable experience where peo
 - Beautiful wallpapers uploaded by verified users
 - Community wallpapers uploaded by users all around the world
 - Favourite, set, and share walls
+- Browse wallpapers from the creators you follow
 - Download the ones you like
 - Apply filters on wallpapers (Clarendon, Hudson, Mayfair, and 20+ more filters)
 - Edit and upload your wallpapers
@@ -53,6 +54,7 @@ Our main goal is to create an unimaginable self-sustainable experience where peo
 <b>➡PROFILE</b>
 - Upload walls & setups!
 - Create your wallpaper resume and get verified!
+- Follow other creators!
 - Promote your social media handles!
 - Share your profile easily with others
 
@@ -105,25 +107,27 @@ You can also report bugs, upload your setups/walls on our telegram channel
 ## Features
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
-- Over 1000+ exclusive wallpapers, making it the best selection ever
+- Over 1300+ exclusive wallpapers, making it the best selection ever
 - Community wallpapers uploaded by users all-around the world
 - Homescreen setups - Unique and exclusive setups designed with the perfect combination of wallpapers, icon pack and widgets
 - Exclusive collections updated daily with premium wallpapers
 - Each wallpaper comes with 5 color variants and 20+ filters
+- Follow creators for the latest and greatest
 - AMOLED Dark Mode supported
 - Optional Sign-in
-- Each wallpaper/setup/user has a unique link, makes sharing them easier
+- Each wallpaper/setup/creator has a unique link, makes sharing them easier
 - Option to add Twitter/Instagram to your profile
 - Low Internet usage due to minimal loading and persistent data using Provider/ CacheNetworkImage
 - Save Liked Images for later (works even after uninstalling the app)
 - Download any wallpaper to Gallery by watching a quick video ad
+- Set random wallpaper from the downloaded ones, by using widget
 - Secure data and favorites storage on Google Firebase
 - Search for Wallpapers by keyword
 - Check how the wallpaper will look with fake clock and app icons
 - Search for Wallpapers by color
 - Find wallpapers with a similar color
 - Set any wallpaper on the home screen, lock screen or both
-- Find wallpapers by category (Curated, Abstract, Nature, Landscape, Art, 4K, Sports, Architecture, Marvel, Neon, etc.)
+- Find wallpapers by category (Trending, Curated, Abstract, Nature, Landscape, Art, 4K, Sports, Architecture, Marvel, Neon, etc.)
 - Extensive settings menu with various options
 - Toast/Snackbar supported buttons
 - Minimal design with smooth transitions and animations
@@ -136,19 +140,24 @@ You can also report bugs, upload your setups/walls on our telegram channel
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-### v2.6.2
-- Fixed notification modifiers
-- Added apps check in setups view
-- Added view counters for analytics
-- Added new image compression technique
-- Fixed premium wallpapers & setups
-- Added new onboarding pages
-- Added report button in walls and setups
-- Redesigned premium page
-- Redesigned settings page
-- Increased content value in premium
+### v2.6.3
+- Added follow functionality, with live notifications
+- Review status for walls & setups is here!
+- All-new Theme Manager
+- Added new category Trending, to list most viewed walls
+- Added views for walls & setups
+- Fixed visual bugs in AMOLED theme
+- Added quick actions
+- Added widget, to shuffle current wallpaper with downloaded walls
+- Favourite icon now shows favourite status
+- Created obsolete version check, after this version old apps can be forced to not work with Firebase Remote Config
+- Fixed error in setups where wallpaper was not able to download/set
+- Redesigned the notifications model
+- Added options to unsubscribe to notifications
+- Added licenses in-app
+- Added new onboarding page for following creators
 - Fixed wallpaper uploading in setups
-- Added new filters (Blur, Invert, Edge & Sharpen)
+- Added material to the easter egg, so now it serves a functionality
 - Minor bug fixes and improvements
 
 ## Demo
