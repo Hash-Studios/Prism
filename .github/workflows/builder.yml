@@ -1,5 +1,6 @@
 name: Build and Send APKs
-on: [push,pull_request]
+# on: [push,pull_request]
+on: []
 
 jobs:
   build:
