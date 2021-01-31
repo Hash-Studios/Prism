@@ -553,6 +553,8 @@ class _UserProfileState extends State<UserProfile> {
                                                 'body':
                                                     '${main.prefs.get('googlename')} is now following you.',
                                                 'color': "#e57697",
+                                                'tag':
+                                                    '${main.prefs.get('googlename')} Follow',
                                                 'image':
                                                     "${main.prefs.get('googleimage')}",
                                                 'android_channel_id':
