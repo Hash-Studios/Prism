@@ -62,40 +62,42 @@ public class WallpaperWidget extends AppWidgetProvider {
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
-        if (intent.getAction().equals(clickAction))
+        if (intent.getAction().equals(clickAction)) {
             Log.d(LOG, "onReceive: " + "clicked");
 
-        if(files == null || files.length == 0) {
-            path = Environment.getExternalStorageDirectory().toString() + "/Prism";
-            directory = new File(path);
-            files = directory.listFiles();
-            for (int fileIndex = 0; fileIndex < files.length; fileIndex++){
-                long size = getFolderSize(files[fileIndex]) / 1048576;
-                if(size>=5){
-                    System.arraycopy(files, fileIndex + 1, files, fileIndex, files.length - fileIndex - 1);
+            if(files == null || files.length == 0) {
+                path = Environment.getExternalStorageDirectory().toString() + "/Prism";
+                directory = new File(path);
+                files = directory.listFiles();
+                for (int fileIndex = 0; fileIndex < files.length; fileIndex++){
+                    long size = getFolderSize(files[fileIndex]) / 1048576;
+                    if(size>=5){
+                        System.arraycopy(files, fileIndex + 1, files, fileIndex, files.length - fileIndex - 1);
+                    }
                 }
             }
-        }
 
-        int random = new Random().nextInt(files.length);
+            int random = new Random().nextInt(files.length);
 
-        Bitmap bitmap;
-        try {
-            File f = files[random];
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-            bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
-            WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
+            Bitmap bitmap;
             try {
-                wallpaperManager.setBitmap(bitmap, null, false,
-                        WallpaperManager.FLAG_LOCK | WallpaperManager.FLAG_SYSTEM);
-                Log.d("TAG", "onBitmapLoaded: " + (bitmap == null));
-            } catch (IOException e) {
+                File f = files[random];
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+                bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
+                WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
+                try {
+                    wallpaperManager.setBitmap(bitmap, null, false,
+                            WallpaperManager.FLAG_LOCK | WallpaperManager.FLAG_SYSTEM);
+                    Log.d("TAG", "onBitmapLoaded: " + (bitmap == null));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                bitmap.recycle();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-            bitmap.recycle();
-        } catch (Exception e) {
-            e.printStackTrace();
+        
         }
     }
 
