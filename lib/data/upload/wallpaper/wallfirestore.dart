@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:Prism/gitkey.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -55,63 +54,61 @@ Future<void> createRecord(
     toasts.codeSend("Please try to upload less than 5 walls a day.");
   }
   if (main.prefs.get('premium') == true) {
+    http.post(
+      'https://fcm.googleapis.com/fcm/send',
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=$fcmServerToken',
+      },
+      body: jsonEncode(
+        <String, dynamic>{
+          'notification': <String, dynamic>{
+            'title': '🎉 New Premium Wall for review!',
+            'body':
+                'New Post by ${main.prefs.get('googlename')} is up for review.',
+            'color': "#e57697",
+            'image': wallpaperThumb,
+            'android_channel_id': "posts",
+          },
+          'priority': 'high',
+          'data': <String, dynamic>{
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+            'id': '1',
+            'status': 'done'
+          },
+          'to': "/topics/${"maurya.abhay30".split("@")[0]}"
+        },
+      ),
+    );
+    http.post(
+      'https://fcm.googleapis.com/fcm/send',
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=$fcmServerToken',
+      },
+      body: jsonEncode(
+        <String, dynamic>{
+          'notification': <String, dynamic>{
+            'title': '🎉 New Premium Wall for review!',
+            'body':
+                'New Post by ${main.prefs.get('googlename')} is up for review.',
+            'color': "#e57697",
+            'image': wallpaperThumb,
+            'android_channel_id': "posts",
+          },
+          'priority': 'high',
+          'data': <String, dynamic>{
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+            'id': '1',
+            'status': 'done'
+          },
+          'to': "/topics/${"akshaymaurya3006".split("@")[0]}"
+        },
+      ),
+    );
+
     toasts.codeSend("Succesfully uploaded");
   } else {
-    if (main.prefs.get("isLoggedin") == true &&
-        main.prefs.get("premium") == true) {
-      http.post(
-        'https://fcm.googleapis.com/fcm/send',
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-          'Authorization': 'key=$fcmServerToken',
-        },
-        body: jsonEncode(
-          <String, dynamic>{
-            'notification': <String, dynamic>{
-              'title': '🎉 New Premium Wall for review!',
-              'body':
-                  'New Post by ${main.prefs.get('googlename')} is up for review.',
-              'color': "#e57697",
-              'image': wallpaperThumb,
-              'android_channel_id': "posts",
-            },
-            'priority': 'high',
-            'data': <String, dynamic>{
-              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-              'id': '1',
-              'status': 'done'
-            },
-            'to': "/topics/${"maurya.abhay30".split("@")[0]}"
-          },
-        ),
-      );
-      http.post(
-        'https://fcm.googleapis.com/fcm/send',
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-          'Authorization': 'key=$fcmServerToken',
-        },
-        body: jsonEncode(
-          <String, dynamic>{
-            'notification': <String, dynamic>{
-              'title': '🎉 New Premium Wall for review!',
-              'body':
-                  'New Post by ${main.prefs.get('googlename')} is up for review.',
-              'color': "#e57697",
-              'image': wallpaperThumb,
-              'android_channel_id': "posts",
-            },
-            'priority': 'high',
-            'data': <String, dynamic>{
-              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-              'id': '1',
-              'status': 'done'
-            },
-            'to': "/topics/${"akshaymaurya3006".split("@")[0]}"
-          },
-        ),
-      );
-    }
     toasts.codeSend("Your wall is submitted, and is under review.");
   }
 }

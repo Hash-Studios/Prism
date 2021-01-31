@@ -331,14 +331,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
                 leading: const Icon(JamIcons.log_in),
                 title: Text(
-                  "Log in",
+                  "Sign in",
                   style: TextStyle(
                       color: Theme.of(context).accentColor,
                       fontWeight: FontWeight.w500,
                       fontFamily: "Proxima Nova"),
                 ),
                 subtitle: const Text(
-                  "Log in to sync data across devices",
+                  "Sign in to sync data across devices",
                   style: TextStyle(fontSize: 12),
                 ),
               )
