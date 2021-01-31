@@ -390,11 +390,11 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                 style: TextStyle(fontSize: 12),
               ),
               onChanged: (bool value) async {
-                main.prefs.put("followersSubscriber", value);
-                setState(() {
-                  followersSubscriber = value;
-                });
                 if (main.prefs.get('isLoggedin') as bool == true) {
+                  main.prefs.put("followersSubscriber", value);
+                  setState(() {
+                    followersSubscriber = value;
+                  });
                   if (value) {
                     home.f.subscribeToTopic(
                         main.prefs.get('googleemail').split("@")[0].toString());
@@ -402,6 +402,8 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                     home.f.unsubscribeFromTopic(
                         main.prefs.get('googleemail').split("@")[0].toString());
                   }
+                } else {
+                  toasts.error("Please login to change this setting.");
                 }
               },
             ),
