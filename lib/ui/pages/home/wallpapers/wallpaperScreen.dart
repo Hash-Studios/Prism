@@ -1037,7 +1037,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
                                                                           .errorColor
                                                                           .toString()
                                                                           .replaceAll(
-                                                                              "Color(0xFF",
+                                                                              "Color(0xff",
                                                                               "")
                                                                           .replaceAll(
                                                                               ")",

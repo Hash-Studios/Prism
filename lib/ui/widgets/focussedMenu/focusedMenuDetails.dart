@@ -125,7 +125,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
   @override
   Widget build(BuildContext context) {
     debugPrint(widget.provider);
-    // try {
+    try {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
@@ -484,7 +484,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     .errorColor
                                                                     .toString()
                                                                     .replaceAll(
-                                                                        "Color(0xFF",
+                                                                        "Color(0xff",
                                                                         "")
                                                                     .replaceAll(
                                                                         ")",
@@ -2299,11 +2299,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
         ],
       ),
     );
-    // } catch (e) {
-    //   debugPrint(e.toString());
-    //   Navigator.pop(context);
-    //   return Container();
-    // }
+    } catch (e) {
+      debugPrint(e.toString());
+      Navigator.pop(context);
+      return Container();
+    }
   }
 }
 
