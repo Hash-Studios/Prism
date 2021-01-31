@@ -21,6 +21,9 @@ import android.content.ContentValues;
 import android.content.*;
 import android.database.Cursor;
 import android.provider.MediaStore;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
