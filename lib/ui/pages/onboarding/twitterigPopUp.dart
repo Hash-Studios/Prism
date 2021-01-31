@@ -967,7 +967,13 @@ class FollowHeaderCard extends StatelessWidget {
                                       'notification': <String, dynamic>{
                                         'title': '🎉 New Follower!',
                                         'body':
-                                            '${main.prefs.get('googlename')} is now following you.'
+                                            '${main.prefs.get('googlename')} is now following you.',
+                                        'color': "#e57697",
+                                        'image':
+                                            "${main.prefs.get('googleimage')}",
+                                        'android_channel_id': "followers",
+                                        'tag':
+                                            '${main.prefs.get('googlename')} Follow',
                                       },
                                       'priority': 'high',
                                       'data': <String, dynamic>{
