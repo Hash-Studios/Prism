@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share/share.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class PrismList extends StatelessWidget {
   @override
@@ -49,7 +50,7 @@ class PrismList extends StatelessWidget {
             onTap: () {
               // Navigator.pushNamed(context, sharePrismRoute);
               Share.share(
-                  "Check out this amazing app called Prism!\nhttps://play.google.com/store/apps/details?id=com.hash.prism");
+                  "Fall in love with Android customisation again! Check out Prism -\nhttps://play.google.com/store/apps/details?id=com.hash.prism");
             }),
         ListTile(
             leading: const Icon(
@@ -69,6 +70,36 @@ class PrismList extends StatelessWidget {
             onTap: () {
               launch(
                   "https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md");
+            }),
+        ListTile(
+            leading: const Icon(
+              JamIcons.info,
+            ),
+            title: Text(
+              "Licenses",
+              style: TextStyle(
+                  color: Theme.of(context).accentColor,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: const Text(
+              "Licensing docs and other related stuff.",
+              style: TextStyle(fontSize: 12),
+            ),
+            onTap: () {
+              showLicensePage(
+                  context: context,
+                  applicationName: "Prism Wallpaper",
+                  applicationIcon: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                          height: 70,
+                          child: Image.asset(
+                            "assets/images/prism.png",
+                            height: 50,
+                          ))),
+                  applicationVersion:
+                      "${globals.currentAppVersion}+${globals.currentAppVersionCode}");
             }),
         ListTile(
             leading: const Icon(
