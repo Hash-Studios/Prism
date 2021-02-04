@@ -1,19 +1,23 @@
 package com.hash.prism;
 
+import android.Manifest;
 import android.app.PendingIntent;
 import android.app.WallpaperManager;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+import androidx.core.content.ContextCompat;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,41 +67,54 @@ public class WallpaperWidget extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         if (intent.getAction().equals(clickAction)) {
-            Log.d(LOG, "onReceive: " + "clicked");
+            String permission = Manifest.permission.READ_EXTERNAL_STORAGE;
+            if (ContextCompat.checkSelfPermission(context, permission)
+                    == PackageManager.PERMISSION_DENIED) {
+                Toast.makeText(context,
+                        "Storage permission denied!",
+                        Toast.LENGTH_SHORT)
+                        .show();
+                // Requesting the permission
+//            ActivityCompat.requestPermissions(,
+//                    new String[] { permission },
+//                    requestCode);
+            } else {
+                Log.d(LOG, "onReceive: " + "clicked");
 
-            if(files == null || files.length == 0) {
-                path = Environment.getExternalStorageDirectory().toString() + "/Prism";
-                directory = new File(path);
-                files = directory.listFiles();
-                for (int fileIndex = 0; fileIndex < files.length; fileIndex++){
-                    long size = getFolderSize(files[fileIndex]) / 1048576;
-                    if(size>=5){
-                        System.arraycopy(files, fileIndex + 1, files, fileIndex, files.length - fileIndex - 1);
+                if (files == null || files.length == 0) {
+                    path = Environment.getExternalStorageDirectory().toString() + "/Prism";
+                    directory = new File(path);
+                    files = directory.listFiles();
+                    for (int fileIndex = 0; fileIndex < files.length; fileIndex++) {
+                        long size = getFolderSize(files[fileIndex]) / 1048576;
+                        if (size >= 5) {
+                            System.arraycopy(files, fileIndex + 1, files, fileIndex, files.length - fileIndex - 1);
+                        }
                     }
                 }
-            }
 
-            int random = new Random().nextInt(files.length);
+                int random = new Random().nextInt(files.length);
 
-            Bitmap bitmap;
-            try {
-                File f = files[random];
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
-                WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
+                Bitmap bitmap;
                 try {
-                    wallpaperManager.setBitmap(bitmap, null, false,
-                            WallpaperManager.FLAG_LOCK | WallpaperManager.FLAG_SYSTEM);
-                    Log.d("TAG", "onBitmapLoaded: " + (bitmap == null));
-                } catch (IOException e) {
+                    File f = files[random];
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+                    bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
+                    WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
+                    try {
+                        wallpaperManager.setBitmap(bitmap, null, false,
+                                WallpaperManager.FLAG_LOCK | WallpaperManager.FLAG_SYSTEM);
+                        Log.d("TAG", "onBitmapLoaded: " + (bitmap == null));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    bitmap.recycle();
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
-                bitmap.recycle();
-            } catch (Exception e) {
-                e.printStackTrace();
+
             }
-        
         }
     }
 
