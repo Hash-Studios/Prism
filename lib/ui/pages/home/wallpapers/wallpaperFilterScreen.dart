@@ -11,6 +11,7 @@ import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/themeModeProvider.dart';
 import 'package:Prism/ui/pages/home/wallpapers/customFilters.dart';
 import 'package:Prism/ui/widgets/animated/loader.dart';
+import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
@@ -239,69 +240,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
   }
 
-  Future<void> onTapPaint(String url) async {
-    showPremiumPopUp(() async {
-      showModal(
-        context: context,
-        configuration: const FadeScaleTransitionConfiguration(),
-        builder: (context) => AlertDialog(
-          backgroundColor: Theme.of(context).hintColor,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(20),
-            ),
-          ),
-          content: Container(
-            height: 200,
-            width: 250,
-            child: Center(
-              child: ListView.builder(
-                  itemCount: 3,
-                  shrinkWrap: true,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      leading: Icon(
-                        index == 0
-                            ? JamIcons.phone
-                            : index == 1
-                                ? JamIcons.key
-                                : JamIcons.picture,
-                        color: Theme.of(context).accentColor,
-                      ),
-                      title: Text(
-                        index == 0
-                            ? "Home Screen"
-                            : index == 1
-                                ? "Lock Screen"
-                                : "Both",
-                        style: Theme.of(context).textTheme.headline4,
-                      ),
-                      onTap: index == 0
-                          ? () async {
-                              HapticFeedback.vibrate();
-                              Navigator.of(context).pop();
-                              _setHomeWallPaper(url);
-                            }
-                          : index == 1
-                              ? () async {
-                                  HapticFeedback.vibrate();
-                                  Navigator.of(context).pop();
-                                  _setLockWallPaper(url);
-                                }
-                              : () async {
-                                  HapticFeedback.vibrate();
-                                  Navigator.of(context).pop();
-                                  _setBothWallPaper(url);
-                                },
-                    );
-                  }),
-            ),
-          ),
-        ),
-      );
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -349,7 +287,27 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                     onPressed: () async {
                       toasts.codeSend("Processing Wallpaper");
                       final imageFile = await saveFilteredImage();
-                      onTapPaint(imageFile.path);
+                      showModalBottomSheet(
+                        isScrollControlled: true,
+                        context: context,
+                        builder: (context) => SetOptionsPanel(
+                          onTap1: () {
+                            HapticFeedback.vibrate();
+                            Navigator.of(context).pop();
+                            _setHomeWallPaper(imageFile.path);
+                          },
+                          onTap2: () {
+                            HapticFeedback.vibrate();
+                            Navigator.of(context).pop();
+                            _setLockWallPaper(imageFile.path);
+                          },
+                          onTap3: () {
+                            HapticFeedback.vibrate();
+                            Navigator.of(context).pop();
+                            _setBothWallPaper(imageFile.path);
+                          },
+                        ),
+                      );
                     },
                   )
           ],

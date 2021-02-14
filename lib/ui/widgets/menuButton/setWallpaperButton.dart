@@ -225,109 +225,6 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
-  Future<void> onTapPaint() async {
-    showModal(
-      context: context,
-      configuration: const FadeScaleTransitionConfiguration(),
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).hintColor,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(20),
-          ),
-        ),
-        content: Container(
-          height: 200,
-          width: 250,
-          child: Center(
-            child: ListView.builder(
-                itemCount: 3,
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    leading: Icon(
-                      index == 0
-                          ? JamIcons.phone
-                          : index == 1
-                              ? JamIcons.key
-                              : JamIcons.picture,
-                      color: Theme.of(context).accentColor,
-                    ),
-                    title: Text(
-                      index == 0
-                          ? "Home Screen"
-                          : index == 1
-                              ? "Lock Screen"
-                              : "Both",
-                      style: Theme.of(context).textTheme.headline4,
-                    ),
-                    onTap: index == 0
-                        ? () async {
-                            HapticFeedback.vibrate();
-                            Navigator.of(context).pop();
-                            if (widget.colorChanged) {
-                              // showPremiumPopUp(() async {
-                              setState(() {
-                                isLoading = true;
-                              });
-                              Future.delayed(const Duration(seconds: 1))
-                                  .then((value) => _setHomeWallPaper());
-                              // });
-                            } else {
-                              setState(() {
-                                isLoading = true;
-                              });
-                              Future.delayed(const Duration(seconds: 1))
-                                  .then((value) => _setHomeWallPaper());
-                            }
-                          }
-                        : index == 1
-                            ? () async {
-                                HapticFeedback.vibrate();
-                                Navigator.of(context).pop();
-                                if (widget.colorChanged) {
-                                  // showPremiumPopUp(() async {
-                                  setState(() {
-                                    isLoading = true;
-                                  });
-                                  Future.delayed(const Duration(seconds: 1))
-                                      .then((value) => _setLockWallPaper());
-                                  // });
-                                } else {
-                                  setState(() {
-                                    isLoading = true;
-                                  });
-                                  Future.delayed(const Duration(seconds: 1))
-                                      .then((value) => _setLockWallPaper());
-                                }
-                              }
-                            : () async {
-                                HapticFeedback.vibrate();
-                                Navigator.of(context).pop();
-                                if (widget.colorChanged) {
-                                  // showPremiumPopUp(() async {
-                                  setState(() {
-                                    isLoading = true;
-                                  });
-                                  Future.delayed(const Duration(seconds: 1))
-                                      .then((value) => _setBothWallPaper());
-                                  // });
-                                } else {
-                                  setState(() {
-                                    isLoading = true;
-                                  });
-                                  Future.delayed(const Duration(seconds: 1))
-                                      .then((value) => _setBothWallPaper());
-                                }
-                              },
-                  );
-                }),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -347,7 +244,41 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         }
       },
       onTap: () {
-        isLoading ? debugPrint("") : onTapPaint();
+        isLoading
+            ? debugPrint("")
+            : showModalBottomSheet(
+                isScrollControlled: true,
+                context: context,
+                builder: (context) => SetOptionsPanel(
+                  onTap1: () {
+                    HapticFeedback.vibrate();
+                    Navigator.of(context).pop();
+                    setState(() {
+                      isLoading = true;
+                    });
+                    Future.delayed(const Duration(seconds: 1))
+                        .then((value) => _setHomeWallPaper());
+                  },
+                  onTap2: () {
+                    HapticFeedback.vibrate();
+                    Navigator.of(context).pop();
+                    setState(() {
+                      isLoading = true;
+                    });
+                    Future.delayed(const Duration(seconds: 1))
+                        .then((value) => _setLockWallPaper());
+                  },
+                  onTap3: () {
+                    HapticFeedback.vibrate();
+                    Navigator.of(context).pop();
+                    setState(() {
+                      isLoading = true;
+                    });
+                    Future.delayed(const Duration(seconds: 1))
+                        .then((value) => _setBothWallPaper());
+                  },
+                ),
+              );
       },
       child: Stack(
         children: [
@@ -376,6 +307,185 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
               width: 53,
               child:
                   isLoading ? const CircularProgressIndicator() : Container())
+        ],
+      ),
+    );
+  }
+}
+
+class SetOptionsPanel extends StatefulWidget {
+  final Function onTap1;
+  final Function onTap2;
+  final Function onTap3;
+  const SetOptionsPanel({
+    Key key,
+    this.onTap1,
+    this.onTap2,
+    this.onTap3,
+  }) : super(key: key);
+
+  @override
+  _SetOptionsPanelState createState() => _SetOptionsPanelState();
+}
+
+class _SetOptionsPanelState extends State<SetOptionsPanel> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width * 0.85;
+    return Container(
+      height: MediaQuery.of(context).size.height / 2 > 400
+          ? MediaQuery.of(context).size.height / 2
+          : 400,
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Container(
+                  height: 5,
+                  width: 30,
+                  decoration: BoxDecoration(
+                      color: Theme.of(context).hintColor,
+                      borderRadius: BorderRadius.circular(500)),
+                ),
+              )
+            ],
+          ),
+          const Spacer(),
+          Text(
+            "Set Wallpaper as",
+            style: Theme.of(context).textTheme.headline2,
+          ),
+          const Spacer(flex: 2),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    widget.onTap1();
+                  },
+                  child: Container(
+                    width: width - 20,
+                    height: 60,
+                    child: Container(
+                      width: width - 14,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).errorColor.withOpacity(0.2),
+                        border: Border.all(
+                            color: Theme.of(context).errorColor, width: 3),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Home Screen",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).accentColor,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    widget.onTap2();
+                  },
+                  child: Container(
+                    width: width - 20,
+                    height: 60,
+                    child: Container(
+                      width: width - 14,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).errorColor.withOpacity(0.2),
+                        border: Border.all(
+                            color: Theme.of(context).errorColor, width: 3),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Lock Screen",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).accentColor,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    widget.onTap3();
+                  },
+                  child: Container(
+                    width: width - 20,
+                    height: 60,
+                    child: Container(
+                      width: width - 14,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).errorColor.withOpacity(0.2),
+                        border: Border.all(
+                            color: Theme.of(context).errorColor, width: 3),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Both",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).accentColor,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(flex: 2),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              child: Text(
+                "Select where wallpaper you want to change with this wallpaper. Selecting both, will change the wallpaper on home screen as well as lock screen.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).accentColor,
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
         ],
       ),
     );
