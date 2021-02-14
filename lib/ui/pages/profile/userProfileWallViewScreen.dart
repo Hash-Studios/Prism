@@ -503,6 +503,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                 provider: user_data.userProfileWalls[index]
                                         ["wallpaper_provider"]
                                     .toString(),
+                                prism: user_data.userProfileWalls[index] as Map,
                                 trash: false,
                               ),
                               ShareButton(
