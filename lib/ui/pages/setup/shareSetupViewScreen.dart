@@ -1259,10 +1259,20 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                           children: [
                                             GestureDetector(
                                               onTap: () async {
+                                                if (main.prefs.get("isLoggedin")
+                                                        as bool ==
+                                                    true) {
+                                                  Navigator.pushNamed(
+                                                      context, premiumRoute);
+                                                } else {
+                                                  googleSignInPopUp(context,
+                                                      () {
+                                                    Navigator.pushNamed(
+                                                        context, premiumRoute);
+                                                  });
+                                                }
                                                 toasts.codeSend(
-                                                    "Applying Setups require Premium");
-                                                Navigator.pushNamed(
-                                                    context, premiumRoute);
+                                                    "This is a premium wallpaper.");
                                               },
                                               child: Container(
                                                 decoration: BoxDecoration(
