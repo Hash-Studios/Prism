@@ -15,15 +15,6 @@
         android:icon="@mipmap/ic_launcher"
         android:label="Prism"
         android:requestLegacyExternalStorage="true" >
-        <receiver android:name=".WallpaperWidget" >
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/wallpaper_widget_info" />
-        </receiver>
         <service
             android:name=".MyTileService"
             android:icon="@drawable/preview_widget"
