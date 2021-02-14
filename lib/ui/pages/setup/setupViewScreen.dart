@@ -280,73 +280,53 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: <Widget>[
-                                          Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                0, 5, 0, 5),
-                                            child: Row(
-                                              children: [
-                                                Text(
-                                                  Provider.of<SetupProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .setups[index]["id"]
-                                                      .toString()
-                                                      .toUpperCase(),
-                                                  overflow: TextOverflow.fade,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyText1
-                                                      .copyWith(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .accentColor,
-                                                          fontSize: 16),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets
-                                                          .symmetric(
-                                                      horizontal: 6.0),
-                                                  child: Container(
-                                                    height: 16,
-                                                    color: Theme.of(context)
-                                                        .accentColor,
-                                                    width: 2,
+                                          Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.4,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      0, 5, 0, 5),
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    Provider.of<SetupProvider>(
+                                                            context,
+                                                            listen: false)
+                                                        .setups[index]["id"]
+                                                        .toString()
+                                                        .toUpperCase(),
+                                                    overflow: TextOverflow.fade,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyText1
+                                                        .copyWith(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .accentColor,
+                                                            fontSize: 16),
                                                   ),
-                                                ),
-                                                FutureBuilder(
-                                                  future: _futureView,
-                                                  builder: (context, snapshot) {
-                                                    switch (snapshot
-                                                        .connectionState) {
-                                                      case ConnectionState
-                                                          .waiting:
-                                                        return Text(
-                                                          "",
-                                                          style: Theme.of(
-                                                                  context)
-                                                              .textTheme
-                                                              .bodyText1
-                                                              .copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor,
-                                                                  fontSize: 16),
-                                                        );
-                                                      case ConnectionState.none:
-                                                        return Text(
-                                                          "",
-                                                          style: Theme.of(
-                                                                  context)
-                                                              .textTheme
-                                                              .bodyText1
-                                                              .copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .accentColor,
-                                                                  fontSize: 16),
-                                                        );
-                                                      default:
-                                                        if (snapshot.hasError) {
+                                                  Padding(
+                                                    padding: const EdgeInsets
+                                                            .symmetric(
+                                                        horizontal: 6.0),
+                                                    child: Container(
+                                                      height: 16,
+                                                      color: Theme.of(context)
+                                                          .accentColor,
+                                                      width: 2,
+                                                    ),
+                                                  ),
+                                                  FutureBuilder(
+                                                    future: _futureView,
+                                                    builder:
+                                                        (context, snapshot) {
+                                                      switch (snapshot
+                                                          .connectionState) {
+                                                        case ConnectionState
+                                                            .waiting:
                                                           return Text(
                                                             "",
                                                             style: Theme.of(
@@ -360,9 +340,10 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                     fontSize:
                                                                         16),
                                                           );
-                                                        } else {
+                                                        case ConnectionState
+                                                            .none:
                                                           return Text(
-                                                            "${snapshot.data} views",
+                                                            "",
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
@@ -374,11 +355,44 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                     fontSize:
                                                                         16),
                                                           );
-                                                        }
-                                                    }
-                                                  },
-                                                ),
-                                              ],
+                                                        default:
+                                                          if (snapshot
+                                                              .hasError) {
+                                                            return Text(
+                                                              "",
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText1
+                                                                  .copyWith(
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
+                                                                      fontSize:
+                                                                          16),
+                                                            );
+                                                          } else {
+                                                            return Text(
+                                                              "${snapshot.data} views",
+                                                              overflow: TextOverflow.fade,
+                                                              softWrap: false,
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodyText1
+                                                                  .copyWith(
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .accentColor,
+                                                                      fontSize:
+                                                                          16),
+                                                            );
+                                                          }
+                                                      }
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                           GestureDetector(
@@ -558,11 +572,16 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                         Colors
                                                                             .black
                                                                     ? "E57697"
-                                                                    : Theme.of(context)
-                                            .errorColor
-                                            .toString()
-                                            .replaceAll("Color(0xff", "")
-                                            .replaceAll(")", ""))),
+                                                                    : Theme.of(
+                                                                            context)
+                                                                        .errorColor
+                                                                        .toString()
+                                                                        .replaceAll(
+                                                                            "Color(0xff",
+                                                                            "")
+                                                                        .replaceAll(
+                                                                            ")",
+                                                                            ""))),
                                                           ),
                                                         )
                                                       : Container(),
