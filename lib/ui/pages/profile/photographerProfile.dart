@@ -559,7 +559,7 @@ class _UserProfileState extends State<UserProfile> {
                                                     "${main.prefs.get('googleimage')}",
                                                 'android_channel_id':
                                                     "followers",
-                                                'icon': 'ic_follow'
+                                                'icon': '@drawable/ic_follow'
                                               },
                                               'priority': 'high',
                                               'data': <String, dynamic>{
