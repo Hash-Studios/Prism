@@ -488,7 +488,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                           width: MediaQuery.of(context)
                                                     .size
                                                     .width *
-                                                0.4,
+                                                0.36,
                                           child: Padding(
                                             padding: const EdgeInsets.fromLTRB(
                                                 35, 0, 35, 10),

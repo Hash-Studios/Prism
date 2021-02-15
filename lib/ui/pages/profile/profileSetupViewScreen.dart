@@ -291,7 +291,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen>
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
-                                                0.4,
+                                                0.36,
                                             child: Padding(
                                               padding: const EdgeInsets.fromLTRB(
                                                   0, 5, 0, 5),

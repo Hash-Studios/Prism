@@ -333,7 +333,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen>
                                                           MediaQuery.of(context)
                                                                   .size
                                                                   .width *
-                                                              0.4,
+                                                              0.36,
                                                       child: Padding(
                                                         padding:
                                                             const EdgeInsets
