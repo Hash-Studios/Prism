@@ -28,6 +28,7 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 
 class WallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -61,6 +62,7 @@ class _WallpaperScreenState extends State<WallpaperScreen>
   bool panelClosed = true;
   bool panelCollapsed = true;
   Future<String> _futureView;
+  int firstTime = 0;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -108,6 +110,10 @@ class _WallpaperScreenState extends State<WallpaperScreen>
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
             .copyWith(statusBarIconBrightness: Brightness.light));
       }
+    }
+    if (firstTime == 0) {
+      toasts.codeSend("Long press to reset.");
+      firstTime = 1;
     }
   }
 
