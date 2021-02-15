@@ -284,7 +284,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
-                                                0.4,
+                                                0.36,
                                             child: Padding(
                                               padding:
                                                   const EdgeInsets.fromLTRB(

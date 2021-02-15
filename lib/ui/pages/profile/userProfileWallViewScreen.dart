@@ -260,7 +260,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen>
                                   children: <Widget>[
                                     Container(
                                       width: MediaQuery.of(context).size.width *
-                                          0.4,
+                                          0.36,
                                       child: Padding(
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),

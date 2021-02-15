@@ -289,7 +289,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                             width: MediaQuery.of(context)
                                                     .size
                                                     .width *
-                                                0.4,
+                                                0.36,
                                             child: Padding(
                                               padding: const EdgeInsets.fromLTRB(
                                                   0, 5, 0, 5),

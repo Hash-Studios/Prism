@@ -845,7 +845,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen>
                                                           MediaQuery.of(context)
                                                                   .size
                                                                   .width *
-                                                              0.4,
+                                                              0.36,
                                                       child: Padding(
                                                         padding:
                                                             const EdgeInsets
