@@ -69,7 +69,7 @@ public class MyTileService extends TileService {
             Log.d(LOG, "onReceive: " + "clicked");
 
             // if (files == null || files.length == 0) {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R){
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q){
                     path = Environment.getExternalStorageDirectory().toString() + "/Pictures/Prism";
                 } else{
                     path = Environment.getExternalStorageDirectory().toString() + "/Prism";
