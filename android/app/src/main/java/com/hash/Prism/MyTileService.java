@@ -68,8 +68,12 @@ public class MyTileService extends TileService {
             qsTile.updateTile();
             Log.d(LOG, "onReceive: " + "clicked");
 
-            if (files == null || files.length == 0) {
-                path = Environment.getExternalStorageDirectory().toString() + "/Prism";
+            // if (files == null || files.length == 0) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R){
+                    path = Environment.getExternalStorageDirectory().toString() + "/Pictures/Prism";
+                } else{
+                    path = Environment.getExternalStorageDirectory().toString() + "/Prism";
+                }
                 directory = new File(path);
                 files = directory.listFiles();
                 for (int fileIndex = 0; fileIndex < files.length; fileIndex++) {
@@ -78,7 +82,7 @@ public class MyTileService extends TileService {
                         System.arraycopy(files, fileIndex + 1, files, fileIndex, files.length - fileIndex - 1);
                     }
                 }
-            }
+            // }
 
             int random = new Random().nextInt(files.length);
 
