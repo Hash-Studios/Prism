@@ -559,8 +559,6 @@ class _UserProfileState extends State<UserProfile> {
                                                     "${main.prefs.get('googleimage')}",
                                                 'android_channel_id':
                                                     "followers",
-                                                'tag':
-                                                    '${main.prefs.get('googlename')} Follow',
                                                 'icon': 'ic_follow'
                                               },
                                               'priority': 'high',
