@@ -113,15 +113,15 @@ class _PageManagerChildState extends State<PageManagerChild>
       // NOTE: This second action icon will only work on Android.
       // In a real world project keep the same file name for both platforms.
       const ShortcutItem(
-          type: 'Follow_Feed', localizedTitle: 'Feed', icon: 'ic_feed'),
+          type: 'Follow_Feed', localizedTitle: 'Feed', icon: '@drawable/ic_feed'),
       const ShortcutItem(
           type: 'Collections',
           localizedTitle: 'Collections',
-          icon: 'ic_collections'),
+          icon: '@drawable/ic_collections'),
       const ShortcutItem(
-          type: 'Setups', localizedTitle: 'Setups', icon: 'ic_setups'),
+          type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
       const ShortcutItem(
-          type: 'Downloads', localizedTitle: 'Downloads', icon: 'ic_downloads'),
+          type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
     ]);
     if (box.get('dataSaved', defaultValue: false) as bool) {
     } else {
