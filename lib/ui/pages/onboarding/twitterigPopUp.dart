@@ -974,7 +974,7 @@ class FollowHeaderCard extends StatelessWidget {
                                         'android_channel_id': "followers",
                                         'tag':
                                             '${main.prefs.get('googlename')} Follow',
-                                        'icon': 'ic_follow',
+                                        'icon': '@drawable/ic_follow',
                                       },
                                       'priority': 'high',
                                       'data': <String, dynamic>{
