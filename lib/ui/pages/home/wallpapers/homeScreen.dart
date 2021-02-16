@@ -55,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
         as bool) {
     } else {
       f.subscribeToTopic('recommendations');
+      f.subscribeToTopic('posts');
       main.prefs.put('subscribedToRecommendations', true);
     }
     isNew = true;
