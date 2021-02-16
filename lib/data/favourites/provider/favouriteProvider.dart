@@ -63,7 +63,8 @@ class FavouriteProvider extends ChangeNotifier {
         "resolution": wallhaven.resolution.toString(),
         "fav": wallhaven.favourites.toString(),
         "size": wallhaven.file_size.toString(),
-        "photographer": ""
+        "photographer": "",
+        "createdAt": DateTime.now()
       });
     } else if (provider == "Pexels") {
       await databaseReference
@@ -81,7 +82,8 @@ class FavouriteProvider extends ChangeNotifier {
         "resolution": "${pexels.width}x${pexels.height}",
         "fav": "",
         "size": "",
-        "photographer": pexels.photographer.toString()
+        "photographer": pexels.photographer.toString(),
+        "createdAt": DateTime.now()
       });
     } else if (provider == "Prism") {
       await databaseReference
@@ -99,7 +101,8 @@ class FavouriteProvider extends ChangeNotifier {
         "resolution": prism["resolution"].toString(),
         "fav": "",
         "size": prism["size"].toString(),
-        "photographer": prism["by"].toString()
+        "photographer": prism["by"].toString(),
+        "createdAt": DateTime.now()
       });
     }
     return true;
