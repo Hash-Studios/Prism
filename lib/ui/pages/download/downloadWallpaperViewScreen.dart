@@ -5,6 +5,7 @@ import 'package:Prism/ui/widgets/home/wallpapers/clockOverlay.dart';
 import 'package:Prism/ui/widgets/menuButton/setWallpaperButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 class DownloadWallpaperScreen extends StatefulWidget {
   final List arguments;
@@ -102,7 +103,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     navStack.removeLast();
@@ -119,7 +120,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen>
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     final link = file.path;
