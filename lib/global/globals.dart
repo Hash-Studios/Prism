@@ -12,6 +12,7 @@ bool updateAlerted = false;
 bool hasNotch = false;
 double notchSize;
 bool tooltipShown = false;
+bool followersTab = true;
 
 List topTitleText = [
   "TOP-RATED",

@@ -22,6 +22,7 @@ import 'package:Prism/data/favourites/provider/favouriteProvider.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:quick_actions/quick_actions.dart';
+import 'package:Prism/global/globals.dart' as globals;
 
 TabController tabController;
 
@@ -84,7 +85,8 @@ class _PageManagerChildState extends State<PageManagerChild>
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 3, vsync: this);
+    tabController =
+        TabController(length: globals.followersTab ? 3 : 2, vsync: this);
     final QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       setState(() {
@@ -92,10 +94,16 @@ class _PageManagerChildState extends State<PageManagerChild>
       });
       if (shortcutType == 'Follow_Feed') {
         debugPrint('Follow_Feed');
-        tabController.animateTo(1);
+        if (globals.followersTab) {
+          tabController.animateTo(1);
+        }
       } else if (shortcutType == 'Collections') {
         debugPrint('Collections');
-        tabController.animateTo(2);
+        if (globals.followersTab) {
+          tabController.animateTo(2);
+        } else {
+          tabController.animateTo(1);
+        }
       } else if (shortcutType == 'Setups') {
         debugPrint('Setups');
         navStack.last == "Setups"
@@ -113,15 +121,21 @@ class _PageManagerChildState extends State<PageManagerChild>
       // NOTE: This second action icon will only work on Android.
       // In a real world project keep the same file name for both platforms.
       const ShortcutItem(
-          type: 'Follow_Feed', localizedTitle: 'Feed', icon: '@drawable/ic_feed'),
+          type: 'Follow_Feed',
+          localizedTitle: 'Feed',
+          icon: '@drawable/ic_feed'),
       const ShortcutItem(
           type: 'Collections',
           localizedTitle: 'Collections',
           icon: '@drawable/ic_collections'),
       const ShortcutItem(
-          type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
+          type: 'Setups',
+          localizedTitle: 'Setups',
+          icon: '@drawable/ic_setups'),
       const ShortcutItem(
-          type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
+          type: 'Downloads',
+          localizedTitle: 'Downloads',
+          icon: '@drawable/ic_downloads'),
     ]);
     if (box.get('dataSaved', defaultValue: false) as bool) {
     } else {
@@ -316,98 +330,119 @@ class _PageManagerChildState extends State<PageManagerChild>
               controller: tabController,
               indicatorColor: Theme.of(context).accentColor,
               indicatorSize: TabBarIndicatorSize.label,
-              tabs: [
-                Tab(
-                  icon: Icon(
-                    JamIcons.picture,
-                    color: Theme.of(context).accentColor,
-                  ),
-                  // child: Text(
-                  //   "Wallpapers",
-                  //   style: Theme.of(context)
-                  //       .textTheme
-                  //       .bodyText2
-                  //       .copyWith(color: Theme.of(context).accentColor),
-                  // ),
-                ),
-                Tab(
-                  icon: Icon(
-                    JamIcons.user_square,
-                    color: Theme.of(context).accentColor,
-                  ),
-                  // child: Text(
-                  //   "Following",
-                  //   style: Theme.of(context)
-                  //       .textTheme
-                  //       .bodyText2
-                  //       .copyWith(color: Theme.of(context).accentColor),
-                  // ),
-                ),
-                Tab(
-                  icon: Icon(
-                    JamIcons.pictures,
-                    color: Theme.of(context).accentColor,
-                  ),
-                  // child: Text(
-                  //   "Collections",
-                  //   style: Theme.of(context)
-                  //       .textTheme
-                  //       .bodyText2
-                  //       .copyWith(color: Theme.of(context).accentColor),
-                  // ),
-                )
-              ]),
+              tabs: globals.followersTab
+                  ? [
+                      Tab(
+                        icon: Icon(
+                          JamIcons.picture,
+                          color: Theme.of(context).accentColor,
+                        ),
+                        // child: Text(
+                        //   "Wallpapers",
+                        //   style: Theme.of(context)
+                        //       .textTheme
+                        //       .bodyText2
+                        //       .copyWith(color: Theme.of(context).accentColor),
+                        // ),
+                      ),
+                      Tab(
+                        icon: Icon(
+                          JamIcons.user_square,
+                          color: Theme.of(context).accentColor,
+                        ),
+                        // child: Text(
+                        //   "Following",
+                        //   style: Theme.of(context)
+                        //       .textTheme
+                        //       .bodyText2
+                        //       .copyWith(color: Theme.of(context).accentColor),
+                        // ),
+                      ),
+                      Tab(
+                        icon: Icon(
+                          JamIcons.pictures,
+                          color: Theme.of(context).accentColor,
+                        ),
+                        // child: Text(
+                        //   "Collections",
+                        //   style: Theme.of(context)
+                        //       .textTheme
+                        //       .bodyText2
+                        //       .copyWith(color: Theme.of(context).accentColor),
+                        // ),
+                      )
+                    ]
+                  : [
+                      Tab(
+                        icon: Icon(
+                          JamIcons.picture,
+                          color: Theme.of(context).accentColor,
+                        ),
+                      ),
+                      Tab(
+                        icon: Icon(
+                          JamIcons.pictures,
+                          color: Theme.of(context).accentColor,
+                        ),
+                      )
+                    ]),
         ),
         body: Stack(
           children: <Widget>[
-            TabBarView(controller: tabController, children: [
-              const HomeScreen(),
-              main.prefs.get('isLoggedin') as bool == true
-                  ? const FollowingScreen()
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        const Spacer(),
-                        Center(
-                            child: Container(
-                          width: MediaQuery.of(context).size.width * 0.7,
-                          child: const Text(
-                            "Please sign-in to view the latest walls from the artists you follow here.",
-                            textAlign: TextAlign.center,
-                          ),
-                        )),
-                        const SizedBox(
-                          height: 16,
-                        ),
-                        ElevatedButton(
-                          onPressed: () async {
-                            googleSignInPopUp(context, () {
-                              main.RestartWidget.restartApp(context);
-                            });
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateColor.resolveWith(
-                                (states) => Colors.white),
-                          ),
-                          child: Container(
-                            width: 60,
-                            child: const Text(
-                              'SIGN-IN',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Color(0xFFE57697),
-                                fontSize: 15,
-                                fontFamily: "Roboto",
-                                fontWeight: FontWeight.w500,
+            TabBarView(
+                controller: tabController,
+                children: globals.followersTab
+                    ? [
+                        const HomeScreen(),
+                        main.prefs.get('isLoggedin') as bool == true
+                            ? const FollowingScreen()
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  const Spacer(),
+                                  Center(
+                                      child: Container(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.7,
+                                    child: const Text(
+                                      "Please sign-in to view the latest walls from the artists you follow here.",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )),
+                                  const SizedBox(
+                                    height: 16,
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      googleSignInPopUp(context, () {
+                                        main.RestartWidget.restartApp(context);
+                                      });
+                                    },
+                                    style: ButtonStyle(
+                                      backgroundColor:
+                                          MaterialStateColor.resolveWith(
+                                              (states) => Colors.white),
+                                    ),
+                                    child: Container(
+                                      width: 60,
+                                      child: const Text(
+                                        'SIGN-IN',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Color(0xFFE57697),
+                                          fontSize: 15,
+                                          fontFamily: "Roboto",
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                ],
                               ),
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
-              const CollectionScreen()
-            ]),
+                        const CollectionScreen()
+                      ]
+                    : [const HomeScreen(), const CollectionScreen()]),
             if (!result) ConnectivityWidget() else Container(),
           ],
         ),
