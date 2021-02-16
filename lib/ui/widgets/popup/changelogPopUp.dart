@@ -43,6 +43,22 @@ void showChangelog(BuildContext context, Function func) {
               child: SingleChildScrollView(
                 controller: controller,
                 child: Column(mainAxisSize: MainAxisSize.min, children: const [
+                  ChangeVersion(number: 'v2.6.4'),
+                  Change(
+                      icon: JamIcons.bell,
+                      text: "Get notified when people you follow post."),
+                  Change(
+                      icon: JamIcons.shuffle,
+                      text:
+                          "Quickly change wallpaper, with quick tile. Changes wallpaper from the downloaded ones."),
+                  Change(
+                      icon: JamIcons.eye, text: "New Splash screen animation."),
+                  Change(
+                      icon: JamIcons.users,
+                      text: "Added option to turn followers feed off."),
+                  Change(
+                      icon: JamIcons.bug,
+                      text: "Minor bug fixes and improvements."),
                   ChangeVersion(number: 'v2.6.3'),
                   Change(
                       icon: JamIcons.user_plus,
