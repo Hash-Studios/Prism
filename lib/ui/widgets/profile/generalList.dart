@@ -15,6 +15,7 @@ class GeneralList extends StatefulWidget {
 
 class _GeneralListState extends State<GeneralList> {
   bool optWall = (main.prefs.get('optimisedWallpapers') ?? true) as bool;
+  bool followers = (main.prefs.get('followersTab') ?? true) as bool;
   int categories = (main.prefs.get('WHcategories') ?? 100) as int;
   int purity = (main.prefs.get('WHpurity') ?? 100) as int;
 
@@ -110,6 +111,35 @@ class _GeneralListState extends State<GeneralList> {
                 optWall = value;
               });
               main.prefs.put('optimisedWallpapers', value);
+            }),
+        SwitchListTile(
+            activeColor: Theme.of(context).errorColor,
+            secondary: const Icon(
+              JamIcons.user_plus,
+            ),
+            value: followers,
+            title: Text(
+              "Show Following Feed",
+              style: TextStyle(
+                  color: Theme.of(context).accentColor,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova"),
+            ),
+            subtitle: followers
+                ? const Text(
+                    "Disable this to hide the followers feed from home page.",
+                    style: TextStyle(fontSize: 12),
+                  )
+                : const Text(
+                    "Enable this to show the followers feed on home page.",
+                    style: TextStyle(fontSize: 12),
+                  ),
+            onChanged: (bool value) async {
+              setState(() {
+                followers = value;
+              });
+              toasts.codeSend("This will take effect on restarting app.");
+              main.prefs.put('followersTab', value);
             }),
         SwitchListTile(
             activeColor: Theme.of(context).errorColor,

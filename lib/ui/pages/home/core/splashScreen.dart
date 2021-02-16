@@ -9,6 +9,7 @@ import 'package:flare_splash_screen/flare_splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/theme/config.dart' as config;
+import 'package:Prism/main.dart' as main;
 
 RemoteConfig remoteConfig;
 
@@ -72,6 +73,8 @@ class SplashWidget extends StatelessWidget {
         categories[tempVar.indexOf(element)] = json.decode("$element}");
       });
       debugPrint(cList.toString());
+      globals.followersTab =
+          main.prefs.get('followersTab', defaultValue: true) as bool;
     } catch (e) {
       debugPrint(e.toString());
     }
