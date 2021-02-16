@@ -177,7 +177,7 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 
 | ![](demo/2.jpg) | ![](demo/3.jpg) | ![](demo/4.jpg) | ![](demo/5.jpg) | ![](demo/6.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Home     |    Search WallHaven   |    Search Pexels     |     Color Picker       |     Color Based     |
+|     Home     |    Search WallHaven   |    Search Pexels     |     Trending       |     Color Based     |
 
 | ![](demo/7.jpg) | ![](demo/8.jpg) | ![](demo/9.jpg) | ![](demo/11.jpg) | ![](demo/12.jpg) |
 | :-------------:  | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
@@ -198,6 +198,10 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 | ![](demo/33.jpg) | ![](demo/34.jpg) | ![](demo/35.jpg) | ![](demo/37.jpg) | ![](demo/22.jpg) |
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Splash Screen    |    Quick Action Menu    |    Settings     |     Themes      |     Notifications    |
+
+| ![](demo/47.jpg) | ![](demo/45.jpg) | ![](demo/46.jpg) | ![](demo/48.jpg) | ![](demo/51.jpg) |
+| :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
+|     Followers Feed    |    Theme Preference    |    Notification Settings     |     Onboarding      |     Top Followers    |
 
 **Themes**
 
