@@ -111,7 +111,7 @@ class SplashWidget extends StatelessWidget {
         }
         return PageManager();
       },
-      fit: BoxFit.contain,
+      fit: BoxFit.cover,
       startAnimation: Provider.of<ThemeModeExtended>(context)
                   .getCurrentModeStyle(
                       MediaQuery.of(context).platformBrightness) ==
