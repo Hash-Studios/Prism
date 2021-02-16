@@ -23,7 +23,7 @@ class CategoriesBar extends StatefulWidget {
 }
 
 class _CategoriesBarState extends State<CategoriesBar> {
-  bool noNotification = false;
+  bool noNotification = true;
   final Box<List> box = Hive.box('notifications');
   List notifications = [];
   final key = GlobalKey();
@@ -42,11 +42,11 @@ class _CategoriesBarState extends State<CategoriesBar> {
     await getNotifications();
     setState(() {
       notifications = box.get('notifications');
-      noNotification = checkNewNotification();
     });
+    checkNewNotification();
   }
 
-  bool checkNewNotification() {
+  void checkNewNotification() {
     final Box<List> box = Hive.box('notifications');
     var notifications = box.get('notifications');
     notifications ??= [];
@@ -54,12 +54,10 @@ class _CategoriesBarState extends State<CategoriesBar> {
       setState(() {
         noNotification = true;
       });
-      return true;
     } else {
       setState(() {
         noNotification = false;
       });
-      return false;
     }
   }
 
