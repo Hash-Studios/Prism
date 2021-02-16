@@ -1309,7 +1309,7 @@ class SetupTile extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: Icon(JamIcons.pen,
+                                    icon: Icon(JamIcons.pencil,
                                         color: Theme.of(context).primaryColor),
                                     onPressed: () {
                                       Navigator.pushNamed(
