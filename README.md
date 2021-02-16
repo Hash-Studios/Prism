@@ -5,8 +5,8 @@
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
-![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-10K+-green.svg)
-![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.6-blue.svg)
+![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-60K+-green.svg)
+![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.7-blue.svg)
 ![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
 ![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
 ![License](https://img.shields.io/github/license/Hash-Studios/Prism)
@@ -28,6 +28,7 @@ Our main goal is to create an unimaginable self-sustainable experience where peo
 - Community wallpapers uploaded by users all around the world
 - Favourite, set, and share walls
 - Browse wallpapers from the creators you follow
+- Apply wallpaper from quick tile
 - Download the ones you like
 - Apply filters on wallpapers (Clarendon, Hudson, Mayfair, and 20+ more filters)
 - Edit and upload your wallpapers
@@ -120,7 +121,7 @@ You can also report bugs, upload your setups/walls on our telegram channel
 - Low Internet usage due to minimal loading and persistent data using Provider/ CacheNetworkImage
 - Save Liked Images for later (works even after uninstalling the app)
 - Download any wallpaper to Gallery by watching a quick video ad
-- Set random wallpaper from the downloaded ones, by using widget
+- Set random wallpaper from the downloaded ones, by using quick tile
 - Secure data and favorites storage on Google Firebase
 - Search for Wallpapers by keyword
 - Check how the wallpaper will look with fake clock and app icons
@@ -139,6 +140,16 @@ You can also report bugs, upload your setups/walls on our telegram channel
 ## Changelog
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
+
+### v2.6.4
+- Added quick tile, to change wallpaper
+- Added option to turn follower feed on/off
+- Quick Actions fixed
+- Improved post/setup notifications
+- Updated Splash Screen Animation
+- Added toast in variants
+- Fixed minor UI bugs
+- Minor bug fixes and improvements
 
 ### v2.6.3
 - Added follow functionality, with live notifications
@@ -198,7 +209,7 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 
 ## Support
 
-If you like what we do, and would want to help us continue doing it, consider sponsoring this project.
+If you like what we do, and would want to help us continue doing it, consider sponsoring this project. We also upload exclusive artworks/wallpapers here.
 
 <a href="https://www.buymeacoffee.com/HashStudios" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height=51 width=217></a>
 
@@ -216,7 +227,9 @@ The following packages are needed for the development of this application.
 - `cached_network_image: ^2.2.0+1` for caching wallpapers
 - `carousel_slider: ^2.2.1` for carousel widget
 - `cloud_firestore: ^0.13.5` for storing liked images and other user based data
+- `confetti: ^0.5.4+1` for showing confetti animations
 - `data_connection_checker: ^0.3.4` for checking Internet connection
+- `device_apps: ^1.2.0` for opening installed apps from Prism
 - `device_info: ^0.4.2+7` for getting device info for bug reports
 - `extended_image: ^0.9.0` for cropping wallpapers before uploading
 - `firebase_admob: ^0.9.3+4` for rewarded video ads
@@ -229,6 +242,9 @@ The following packages are needed for the development of this application.
 - `flare_flutter: ^2.0.5` for animations
 - `flare_splash_screen: ^3.0.1` for the animated splash screen
 - `flutter_displaymode: ^0.1.1` for checking display resolution and refresh rate
+- `flutter_image_compress: ^0.7.0` for compressing uploaded images
+- `flutter_local_notifications: ^4.0.0` for showing local notifications
+- `flutter_staggered_grid_view: ^0.3.3` for showing staggered grid view in followers feed
 - `flutter_svg: ^0.19.0` for svg assets
 - `fluttertoast: ^4.0.1` for toast notifications
 - `gallery_saver: ^2.0.1` for saving wallpapers to gallery
@@ -247,10 +263,12 @@ The following packages are needed for the development of this application.
 - `photofilters: ^2.0.1` for editing filters
 - `provider: ^4.1.3` for caching data, and state management
 - `purchases_flutter: ^1.2.1` for RevenueCat support
+- `quick_actions: ^0.4.0+10` for showing shortcuts/quick actions in launcher
 - `rate_my_app: ^0.7.2` for showing app rating popup
 - `screenshot: ^0.2.0` for setting wallpapers
 - `share: ^0.6.4` for sharing the wallpaper links
 - `sliding_up_panel: ^1.0.2` for sliding info panel
+- `timeago: ^2.0.29` for showing time in a readible manner
 - `url_launcher: ^5.4.5` for launching urls
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.

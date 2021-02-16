@@ -1,5 +1,15 @@
 ## Changelog
 
+### v2.6.4
+- Added quick tile, to change wallpaper
+- Added option to turn follower feed on/off
+- Quick Actions fixed
+- Improved post/setup notifications
+- Updated Splash Screen Animation
+- Added toast in variants
+- Fixed minor UI bugs
+- Minor bug fixes and improvements
+
 ### v2.6.3
 - Added follow functionality, with live notifications
 - Review status for walls & setups is here!
