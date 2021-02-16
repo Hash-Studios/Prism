@@ -305,8 +305,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                         color: Theme.of(context).accentColor,
                       ),
                       decoration: InputDecoration(
-                        labelText: "* Write a Name...",
-                        hintText: "* Write a Name...",
+                        labelText: "* Write setup Name...",
+                        hintText: "* Write setup Name...",
                         hintStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
@@ -948,6 +948,19 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           ListTile(
             title: Text(
               "Fields marked with * are required.",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w100,
+                color: Theme.of(context).accentColor.withOpacity(0.7),
+              ),
+            ),
+          ),
+          const Divider(
+            height: 1,
+          ),
+          ListTile(
+            title: Text(
+              "If you are using a wallpaper from Prism, just click link and paste the share link of wallpaper there.",
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w100,
