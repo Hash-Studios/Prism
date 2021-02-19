@@ -32,10 +32,21 @@ class ThemeModel extends ChangeNotifier {
     return notifyListeners();
   }
 
+  
+  int getIndex(ThemeData currentThemeData) {
+    return themes.values.toList().contains(currentThemeData)
+        ? themes.values.toList().indexOf(currentThemeData)
+        : null;
+  }
+
+  String getTheme(ThemeData currentThemeData) {
+    return themes.keys.toList()[getIndex(currentThemeData) ?? 0];
+  }
+
   void changeThemeByID(String themeID) {
     debugPrint(themeID);
     currentTheme = themes[themeID];
-    main.prefs.put("themeID", themeID);
+    main.prefs.put("lightThemeID", themeID);
     main.prefs.put(
         "lightAccent",
         int.parse(currentTheme.errorColor
