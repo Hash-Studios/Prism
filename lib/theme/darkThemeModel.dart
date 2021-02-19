@@ -36,6 +36,16 @@ class DarkThemeModel extends ChangeNotifier {
     return notifyListeners();
   }
 
+  int getIndex(ThemeData currentThemeData) {
+    return darkThemes.values.toList().contains(currentThemeData)
+        ? darkThemes.values.toList().indexOf(currentThemeData)
+        : null;
+  }
+
+  String getTheme(ThemeData currentThemeData) {
+    return darkThemes.keys.toList()[getIndex(currentThemeData) ?? 0];
+  }
+
   void changeThemeByID(String themeID) {
     debugPrint(themeID);
     currentTheme = darkThemes[themeID];

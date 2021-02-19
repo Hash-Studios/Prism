@@ -53,8 +53,12 @@ class _ThemeViewState extends State<ThemeView> {
   @override
   void initState() {
     currentTheme = Provider.of<ThemeModel>(context, listen: false).currentTheme;
+    selectedTheme =
+        Provider.of<ThemeModel>(context, listen: false).getIndex(currentTheme);
     currentDarkTheme =
         Provider.of<DarkThemeModel>(context, listen: false).currentTheme;
+    selectedDarkTheme = Provider.of<DarkThemeModel>(context, listen: false)
+        .getIndex(currentDarkTheme);
     selectedAccentColor = Color(int.parse(
         Provider.of<ThemeModel>(context, listen: false)
             .currentTheme
@@ -79,12 +83,6 @@ class _ThemeViewState extends State<ThemeView> {
   }
 
   Future<bool> onWillPop() async {
-    // if (Provider.of<ThemeModel>(context, listen: false).currentTheme ==
-    //     currentTheme) {
-    // } else {
-    //   Provider.of<ThemeModel>(context, listen: false)
-    //       .changeThemeByThemeData(currentTheme);
-    // }
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
     return true;
@@ -320,9 +318,10 @@ class _ThemeViewState extends State<ThemeView> {
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: themes.length,
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
                       itemBuilder: (context, index) {
                         return Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 0, 4),
+                          padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: MaterialButton(
@@ -444,9 +443,10 @@ class _ThemeViewState extends State<ThemeView> {
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: darkThemes.length,
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
                       itemBuilder: (context, index) {
                         return Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 0, 4),
+                          padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: MaterialButton(
@@ -572,6 +572,7 @@ class _ThemeViewState extends State<ThemeView> {
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: accentColors.length,
+                      padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
                       itemBuilder: (context, index) {
                         return GestureDetector(
                           onTap: () {
@@ -647,6 +648,7 @@ class _ThemeViewState extends State<ThemeView> {
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: accentColors.length,
+                      padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
                       itemBuilder: (context, index) {
                         return GestureDetector(
                           onTap: () {
