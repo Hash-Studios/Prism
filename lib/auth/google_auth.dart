@@ -12,11 +12,11 @@ class GoogleAuth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
 
-  String name;
-  String email;
-  String imageUrl;
+  String? name;
+  String? email;
+  String? imageUrl;
   String errorMsg = "";
-  Box prefs;
+  late Box prefs;
   bool isLoggedIn = false;
   bool isLoading = false;
 
@@ -112,9 +112,10 @@ class GoogleAuth {
   }
 
   Future<bool> isSignedIn() async {
-    googleSignIn.isSignedIn().then((value) {
+    await googleSignIn.isSignedIn().then((value) {
       debugPrint(value.toString());
       return value;
     });
+    return false;
   }
 }

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class HeadingChipBar extends StatefulWidget {
   final String current;
-  const HeadingChipBar({Key key, @required this.current}) : super(key: key);
+  const HeadingChipBar({Key? key, required this.current}) : super(key: key);
 
   @override
   _HeadingChipBarState createState() => _HeadingChipBarState();
@@ -34,7 +34,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
         widget.current,
         style: Theme.of(context)
             .textTheme
-            .headline3
+            .headline3!
             .copyWith(color: Theme.of(context).accentColor),
       ),
     );

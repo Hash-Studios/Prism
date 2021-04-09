@@ -161,4 +161,5 @@ Color showColors(BuildContext context) {
       context: context,
       configuration: const FadeScaleTransitionConfiguration(),
       builder: (BuildContext context) => colorPopUp);
+  return const Color(0x00000000);
 }

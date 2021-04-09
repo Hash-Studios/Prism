@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
 class FavSetupLoader extends StatefulWidget {
-  final Future<List> future;
+  final Future<List?>? future;
   const FavSetupLoader({this.future});
   @override
   _FavSetupLoaderState createState() => _FavSetupLoaderState();
 }
 
 class _FavSetupLoaderState extends State<FavSetupLoader> {
-  Future<List> _future;
+  Future<List?>? _future;
   @override
   void initState() {
     super.initState();

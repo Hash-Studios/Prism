@@ -7,7 +7,7 @@ void codeSend(String msg) {
       toastLength: Toast.LENGTH_LONG,
       gravity: ToastGravity.BOTTOM,
       textColor: Colors.white,
-      backgroundColor: Colors.green[400]);
+      backgroundColor: Colors.green[400]!);
 }
 
 void error(String msg) {
@@ -16,7 +16,7 @@ void error(String msg) {
     toastLength: Toast.LENGTH_LONG,
     gravity: ToastGravity.BOTTOM,
     textColor: Colors.white,
-    backgroundColor: Colors.red[400],
+    backgroundColor: Colors.red[400]!,
   );
 }
 

@@ -6,16 +6,16 @@ import 'package:flutter/services.dart';
 import 'package:share/share.dart';
 
 class ShareButton extends StatefulWidget {
-  final String id;
-  final String provider;
-  final String url;
+  final String? id;
+  final String? provider;
+  final String? url;
   final String thumbUrl;
   const ShareButton({
-    @required this.id,
-    @required this.provider,
-    @required this.url,
-    @required this.thumbUrl,
-    Key key,
+    required this.id,
+    required this.provider,
+    required this.url,
+    required this.thumbUrl,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -23,7 +23,7 @@ class ShareButton extends StatefulWidget {
 }
 
 class _ShareButtonState extends State<ShareButton> {
-  bool isLoading;
+  late bool isLoading;
   @override
   void initState() {
     isLoading = false;
@@ -99,7 +99,7 @@ class _ShareButtonState extends State<ShareButton> {
     Share.share("🔥Check this out ➜ $shortUrl");
     debugPrint(shortUrl.toString());
     analytics.logShare(
-        contentType: 'wallpaperScreen', itemId: widget.id, method: 'link');
+        contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
     setState(() {
       isLoading = false;
     });

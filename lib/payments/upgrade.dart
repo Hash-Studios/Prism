@@ -13,7 +13,7 @@ import 'package:purchases_flutter/object_wrappers.dart';
 import 'package:Prism/payments/components.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
-PurchaserInfo _purchaserInfo;
+PurchaserInfo? _purchaserInfo;
 
 Future<void> checkPremium() async {
   appData.isPro = false;
@@ -24,7 +24,7 @@ Future<void> checkPremium() async {
   try {
     purchaserInfo = await Purchases.getPurchaserInfo();
     if (purchaserInfo.entitlements.all['prism_premium'] != null) {
-      appData.isPro = purchaserInfo.entitlements.all['prism_premium'].isActive;
+      appData.isPro = purchaserInfo.entitlements.all['prism_premium']!.isActive;
     } else {
       appData.isPro = false;
     }
@@ -42,7 +42,7 @@ class UpgradeScreen extends StatefulWidget {
 }
 
 class _UpgradeScreenState extends State<UpgradeScreen> {
-  Offerings _offerings;
+  Offerings? _offerings;
 
   @override
   void initState() {
@@ -63,7 +63,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       debugPrint(purchaserInfo.toString());
       if (purchaserInfo.entitlements.all['prism_premium'] != null) {
         appData.isPro =
-            purchaserInfo.entitlements.all['prism_premium'].isActive;
+            purchaserInfo.entitlements.all['prism_premium']!.isActive;
       } else {
         appData.isPro = false;
       }
@@ -76,14 +76,14 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   }
 
   Future<void> fetchData() async {
-    PurchaserInfo purchaserInfo;
+    PurchaserInfo? purchaserInfo;
     try {
       purchaserInfo = await Purchases.getPurchaserInfo();
     } on PlatformException catch (e) {
       debugPrint(e.toString());
     }
 
-    Offerings offerings;
+    Offerings? offerings;
     try {
       offerings = await Purchases.getOfferings();
     } on PlatformException catch (e) {
@@ -110,14 +110,14 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         ),
       );
     } else {
-      if (_purchaserInfo.entitlements.all.isNotEmpty &&
-          _purchaserInfo.entitlements.all['prism_premium'] != null) {
+      if (_purchaserInfo!.entitlements.all.isNotEmpty &&
+          _purchaserInfo!.entitlements.all['prism_premium'] != null) {
         appData.isPro =
-            _purchaserInfo.entitlements.all['prism_premium'].isActive;
+            _purchaserInfo!.entitlements.all['prism_premium']!.isActive;
       } else {
         appData.isPro = false;
       }
-      if (appData.isPro) {
+      if (appData.isPro!) {
         return ProScreen();
       } else {
         return UpsellScreen(
@@ -129,9 +129,9 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
 }
 
 class UpsellScreen extends StatefulWidget {
-  final Offerings offerings;
+  final Offerings? offerings;
 
-  const UpsellScreen({Key key, @required this.offerings}) : super(key: key);
+  const UpsellScreen({Key? key, required this.offerings}) : super(key: key);
 
   @override
   _UpsellScreenState createState() => _UpsellScreenState();
@@ -191,9 +191,9 @@ class _UpsellScreenState extends State<UpsellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    WidgetsBinding.instance!.addPostFrameCallback((_) => _scrollToBottom());
     if (widget.offerings != null) {
-      final offering = widget.offerings.current;
+      final offering = widget.offerings!.current;
       if (offering != null) {
         final lifetime = offering.lifetime;
         if (lifetime != null) {
@@ -257,7 +257,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         "Premium",
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline2
+                                            .headline2!
                                             .copyWith(
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.white),
@@ -280,7 +280,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         "Unlock everything",
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline5
+                                            .headline5!
                                             .copyWith(
                                                 color: const Color(0xFFE57697)),
                                       ),
@@ -327,7 +327,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                             'Lifetime',
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .headline3
+                                                .headline3!
                                                 .copyWith(
                                                     fontWeight: FontWeight.bold,
                                                     color: Colors.white),
@@ -339,7 +339,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                               'SALE',
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .headline6
+                                                  .headline6!
                                                   .copyWith(color: Colors.red),
                                               textAlign: TextAlign.center,
                                             )
@@ -352,7 +352,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         lifetime.product.priceString,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline3
+                                            .headline3!
                                             .copyWith(color: Colors.white),
                                         textAlign: TextAlign.center,
                                       ),
@@ -376,13 +376,13 @@ class _UpsellScreenState extends State<UpsellScreen> {
 
                                         appData.isPro = restoredInfo
                                             .entitlements
-                                            .all["prism_premium"]
+                                            .all["prism_premium"]!
                                             .isActive;
 
                                         debugPrint(
                                             'is user pro? ${appData.isPro}');
 
-                                        if (appData.isPro) {
+                                        if (appData.isPro!) {
                                           main.prefs
                                               .put('premium', appData.isPro);
                                           toasts.codeSend(
@@ -412,7 +412,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                           toasts.error(e.toString());
                                         }
                                       }
-                                      return UpgradeScreen();
+                                      // return UpgradeScreen();
                                     },
                                     child: Container(
                                       width: MediaQuery.of(context).size.width *
@@ -430,7 +430,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                         'Restore',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline3
+                                            .headline3!
                                             .copyWith(
                                                 fontWeight: FontWeight.bold,
                                                 color: Theme.of(context)
@@ -455,7 +455,7 @@ class _UpsellScreenState extends State<UpsellScreen> {
                                     textAlign: TextAlign.center,
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headline6
+                                        .headline6!
                                         .copyWith(
                                             fontSize: 12, color: Colors.white),
                                   ),
@@ -483,13 +483,14 @@ class _UpsellScreenState extends State<UpsellScreen> {
         ),
       );
     }
+    return Container();
   }
 }
 
 class PurchaseButton extends StatefulWidget {
   final Package package;
 
-  const PurchaseButton({Key key, @required this.package}) : super(key: key);
+  const PurchaseButton({Key? key, required this.package}) : super(key: key);
 
   @override
   _PurchaseButtonState createState() => _PurchaseButtonState();
@@ -509,11 +510,11 @@ class _PurchaseButtonState extends State<PurchaseButton> {
             debugPrint('purchase completed');
 
             appData.isPro =
-                _purchaserInfo.entitlements.all["prism_premium"].isActive;
+                _purchaserInfo!.entitlements.all["prism_premium"]!.isActive;
             main.prefs.put('premium', appData.isPro);
             debugPrint('is user pro? ${appData.isPro}');
 
-            if (appData.isPro) {
+            if (appData.isPro!) {
               toasts.codeSend("You are now a premium member.");
               main.RestartWidget.restartApp(context);
             } else {
@@ -531,7 +532,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
               toasts.error(e.toString());
             }
           }
-          return UpgradeScreen();
+          // return UpgradeScreen();
         },
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
@@ -543,7 +544,7 @@ class _PurchaseButtonState extends State<PurchaseButton> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Text(
             'Purchase',
-            style: Theme.of(context).textTheme.headline3.copyWith(
+            style: Theme.of(context).textTheme.headline3!.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).primaryColor),
             textAlign: TextAlign.center,
@@ -606,9 +607,9 @@ class FeatureChip extends StatelessWidget {
   final IconData icon;
   final String text;
   const FeatureChip({
-    @required this.icon,
-    @required this.text,
-    Key key,
+    required this.icon,
+    required this.text,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -629,7 +630,7 @@ class FeatureChip extends StatelessWidget {
             " $text",
             style: Theme.of(context)
                 .textTheme
-                .headline5
+                .headline5!
                 .copyWith(color: Colors.white),
           ),
           onPressed: () {}),

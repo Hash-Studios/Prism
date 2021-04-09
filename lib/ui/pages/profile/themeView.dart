@@ -43,13 +43,13 @@ class ThemeView extends StatefulWidget {
 }
 
 class _ThemeViewState extends State<ThemeView> {
-  ThemeData currentTheme;
-  ThemeData currentDarkTheme;
-  Color selectedAccentColor;
-  Color selectedDarkAccentColor;
-  int selectedTheme;
-  int selectedDarkTheme;
-  bool changingLight;
+  ThemeData? currentTheme;
+  ThemeData? currentDarkTheme;
+  Color? selectedAccentColor;
+  Color? selectedDarkAccentColor;
+  int? selectedTheme;
+  int? selectedDarkTheme;
+  late bool changingLight;
   @override
   void initState() {
     currentTheme = Provider.of<ThemeModel>(context, listen: false).currentTheme;
@@ -61,7 +61,7 @@ class _ThemeViewState extends State<ThemeView> {
         .getIndex(currentDarkTheme);
     selectedAccentColor = Color(int.parse(
         Provider.of<ThemeModel>(context, listen: false)
-            .currentTheme
+            .currentTheme!
             .errorColor
             .toString()
             .replaceAll("MaterialColor(primary value: Color(0xff", "")
@@ -69,7 +69,7 @@ class _ThemeViewState extends State<ThemeView> {
             .replaceAll(")", "")));
     selectedDarkAccentColor = Color(int.parse(
         Provider.of<DarkThemeModel>(context, listen: false)
-            .currentTheme
+            .currentTheme!
             .errorColor
             .toString()
             .replaceAll("MaterialColor(primary value: Color(0xff", "")
@@ -77,7 +77,7 @@ class _ThemeViewState extends State<ThemeView> {
             .replaceAll(")", "")));
     changingLight = Provider.of<ThemeModeExtended>(context, listen: false)
             .getCurrentModeStyle(
-                SchedulerBinding.instance.window.platformBrightness) ==
+                SchedulerBinding.instance!.window.platformBrightness) ==
         "Light";
     super.initState();
   }
@@ -128,7 +128,7 @@ class _ThemeViewState extends State<ThemeView> {
                 "Theme Manager",
                 style: Theme.of(context)
                     .textTheme
-                    .headline3
+                    .headline3!
                     .copyWith(color: Theme.of(context).accentColor),
               ),
               Container(
@@ -226,7 +226,7 @@ class _ThemeViewState extends State<ThemeView> {
                               .replaceAll(
                                   "181818",
                                   Provider.of<ThemeModel>(context)
-                                      .currentTheme
+                                      .currentTheme!
                                       .primaryColor
                                       .value
                                       .toRadixString(16)
@@ -234,14 +234,14 @@ class _ThemeViewState extends State<ThemeView> {
                                       .substring(2))
                               .replaceAll(
                                   "E57697",
-                                  selectedAccentColor.value
+                                  selectedAccentColor!.value
                                       .toRadixString(16)
                                       .toString()
                                       .substring(2))
                               .replaceAll(
                                   "F0F0F0",
                                   Provider.of<ThemeModel>(context)
-                                      .currentTheme
+                                      .currentTheme!
                                       .accentColor
                                       .value
                                       .toRadixString(16)
@@ -250,7 +250,7 @@ class _ThemeViewState extends State<ThemeView> {
                               .replaceAll(
                                   "2F2F2F",
                                   Provider.of<ThemeModel>(context)
-                                      .currentTheme
+                                      .currentTheme!
                                       .hintColor
                                       .value
                                       .toRadixString(16)
@@ -263,7 +263,7 @@ class _ThemeViewState extends State<ThemeView> {
                               .replaceAll(
                                   "181818",
                                   Provider.of<DarkThemeModel>(context)
-                                      .currentTheme
+                                      .currentTheme!
                                       .primaryColor
                                       .value
                                       .toRadixString(16)
@@ -271,14 +271,14 @@ class _ThemeViewState extends State<ThemeView> {
                                       .substring(2))
                               .replaceAll(
                                   "E57697",
-                                  selectedDarkAccentColor.value
+                                  selectedDarkAccentColor!.value
                                       .toRadixString(16)
                                       .toString()
                                       .substring(2))
                               .replaceAll(
                                   "F0F0F0",
                                   Provider.of<DarkThemeModel>(context)
-                                      .currentTheme
+                                      .currentTheme!
                                       .accentColor
                                       .value
                                       .toRadixString(16)
@@ -287,7 +287,7 @@ class _ThemeViewState extends State<ThemeView> {
                               .replaceAll(
                                   "2F2F2F",
                                   Provider.of<DarkThemeModel>(context)
-                                      .currentTheme
+                                      .currentTheme!
                                       .hintColor
                                       .value
                                       .toRadixString(16)
@@ -337,7 +337,7 @@ class _ThemeViewState extends State<ThemeView> {
                               selectedTheme = index;
                               selectedAccentColor = Color(int.parse(Provider.of<
                                       ThemeModel>(context, listen: false)
-                                  .currentTheme
+                                  .currentTheme!
                                   .errorColor
                                   .toString()
                                   .replaceAll(
@@ -357,7 +357,7 @@ class _ThemeViewState extends State<ThemeView> {
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.black12),
                                   borderRadius: BorderRadius.circular(10),
-                                  color: themes[themes.keys.toList()[index]]
+                                  color: themes[themes.keys.toList()[index]]!
                                       .hintColor,
                                 ),
                                 child: Column(
@@ -371,10 +371,10 @@ class _ThemeViewState extends State<ThemeView> {
                                             .substring(2),
                                         style: Theme.of(context)
                                             .textTheme
-                                            .subtitle2
+                                            .subtitle2!
                                             .copyWith(
                                                 color: themes[themes.keys
-                                                        .toList()[index]]
+                                                        .toList()[index]]!
                                                     .accentColor),
                                       ),
                                     ),
@@ -455,7 +455,7 @@ class _ThemeViewState extends State<ThemeView> {
                               selectedDarkAccentColor = Color(int.parse(Provider
                                       .of<DarkThemeModel>(context,
                                           listen: false)
-                                  .currentTheme
+                                  .currentTheme!
                                   .errorColor
                                   .toString()
                                   .replaceAll(
@@ -476,7 +476,7 @@ class _ThemeViewState extends State<ThemeView> {
                                   border: Border.all(color: Colors.black12),
                                   borderRadius: BorderRadius.circular(10),
                                   color: darkThemes[
-                                          darkThemes.keys.toList()[index]]
+                                          darkThemes.keys.toList()[index]]!
                                       .hintColor,
                                 ),
                                 child: Column(
@@ -490,11 +490,11 @@ class _ThemeViewState extends State<ThemeView> {
                                             .substring(2),
                                         style: Theme.of(context)
                                             .textTheme
-                                            .subtitle2
+                                            .subtitle2!
                                             .copyWith(
                                                 color: darkThemes[darkThemes
                                                         .keys
-                                                        .toList()[index]]
+                                                        .toList()[index]]!
                                                     .accentColor),
                                       ),
                                     ),
@@ -700,10 +700,10 @@ class _ThemeViewState extends State<ThemeView> {
 }
 
 class PreferencePanel extends StatefulWidget {
-  int selectedValue;
-  final Function(bool value) func;
+  int? selectedValue;
+  final Function(bool value)? func;
   PreferencePanel({
-    Key key,
+    Key? key,
     this.selectedValue,
     this.func,
   }) : super(key: key);
@@ -769,10 +769,10 @@ class _PreferencePanelState extends State<PreferencePanel> {
                     Navigator.pop(context);
                     Provider.of<ThemeModeExtended>(context, listen: false)
                         .changeThemeMode("System");
-                    widget.func(
+                    widget.func!(
                         Provider.of<ThemeModeExtended>(context, listen: false)
                                 .getCurrentModeStyle(SchedulerBinding
-                                    .instance.window.platformBrightness) ==
+                                    .instance!.window.platformBrightness) ==
                             "Light");
                   },
                   child: Container(
@@ -815,7 +815,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                     Navigator.pop(context);
                     Provider.of<ThemeModeExtended>(context, listen: false)
                         .changeThemeMode("Light");
-                    widget.func(true);
+                    widget.func!(true);
                   },
                   child: Container(
                     width: width - 20,
@@ -857,7 +857,7 @@ class _PreferencePanelState extends State<PreferencePanel> {
                     Navigator.pop(context);
                     Provider.of<ThemeModeExtended>(context, listen: false)
                         .changeThemeMode("Dark");
-                    widget.func(false);
+                    widget.func!(false);
                   },
                   child: Container(
                     width: width - 20,

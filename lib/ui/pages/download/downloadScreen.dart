@@ -25,7 +25,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = HashMap();
   List<FileSystemEntity> files = [];
-  ScrollController controller;
+  ScrollController? controller;
   GlobalKey<RefreshIndicatorState> refreshDownloadKey =
       GlobalKey<RefreshIndicatorState>();
   @override

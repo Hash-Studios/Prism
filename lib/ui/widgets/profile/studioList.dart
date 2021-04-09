@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -20,7 +21,7 @@ class _StudioListState extends State<StudioList> {
   bool _available = true;
   List<ProductDetails> _products = [];
   List<PurchaseDetails> _purchases = [];
-  StreamSubscription _subscription;
+  StreamSubscription? _subscription;
 
   Future<void> _initialize() async {
     _available = await _iap.isAvailable();
@@ -117,13 +118,12 @@ class _StudioListState extends State<StudioList> {
     });
   }
 
-  PurchaseDetails _hasPurchased(String productID) {
-    return _purchases.firstWhere((purchase) => purchase.productID == productID,
-        orElse: () => null);
+  PurchaseDetails? _hasPurchased(String productID) {
+    return _purchases.firstWhereOrNull((purchase) => purchase.productID == productID);
   }
 
   void _verifyPurchase(String productID) {
-    final PurchaseDetails purchase = _hasPurchased(productID);
+    final PurchaseDetails? purchase = _hasPurchased(productID);
     if (purchase != null) {
       if (purchase.status == PurchaseStatus.purchased) {
         toasts.codeSend("Thanks for your support! It means a lot.");
@@ -146,7 +146,7 @@ class _StudioListState extends State<StudioList> {
 
   @override
   void dispose() {
-    if (_subscription != null) _subscription.cancel();
+    if (_subscription != null) _subscription!.cancel();
     super.dispose();
   }
 

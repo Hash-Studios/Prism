@@ -18,10 +18,10 @@ final List choices = categories
     .toList();
 
 class CategorySupplier extends ChangeNotifier {
-  Future<List> wallpaperFutureRefresh = categories[0]['type'] == 'non-search'
+  Future<List?> wallpaperFutureRefresh = categories[0]['type'] == 'non-search'
       ? categories[0]['name'] == 'Popular'
-          ? wdata.getData("r", main.prefs.get('WHcategories') as int,
-              main.prefs.get('WHpurity') as int)
+          ? wdata.getData("r", main.prefs.get('WHcategories') as int?,
+              main.prefs.get('WHpurity') as int?)
           : categories[0]['name'] == 'Curated'
               ? pdata.getDataP("r")
               : categories[0]['name'] == 'Community'
@@ -37,7 +37,7 @@ class CategorySupplier extends ChangeNotifier {
     notifyListeners();
   }
 
-  String get getCurrentChoice {
+  String? get getCurrentChoice {
     return selectedChoice.name;
   }
 
@@ -49,8 +49,8 @@ class CategorySupplier extends ChangeNotifier {
             wallpaperFutureRefresh = wdata.categoryDataFetcher(
                 category['name'].toString(),
                 mode,
-                main.prefs.get('WHcategories') as int,
-                main.prefs.get('WHpurity') as int);
+                main.prefs.get('WHcategories') as int?,
+                main.prefs.get('WHpurity') as int?);
           } else if (category['provider'] == "Pexels") {
             wallpaperFutureRefresh =
                 pdata.categoryDataFetcherP(category['name'].toString(), mode);
@@ -65,12 +65,13 @@ class CategorySupplier extends ChangeNotifier {
           } else if (category['name'] == 'Popular') {
             wallpaperFutureRefresh = wdata.getData(
                 mode,
-                main.prefs.get('WHcategories') as int,
-                main.prefs.get('WHpurity') as int);
+                main.prefs.get('WHcategories') as int?,
+                main.prefs.get('WHpurity') as int?);
           }
         }
       }
     }
     notifyListeners();
+    return [];
   }
 }

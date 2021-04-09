@@ -19,7 +19,7 @@ import 'package:Prism/global/globals.dart' as globals;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -153,7 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 onTap: () async {
                   DefaultCacheManager().emptyCache();
-                  PaintingBinding.instance.imageCache.clear();
+                  PaintingBinding.instance!.imageCache!.clear();
                   await Hive.box('wallpapers').deleteFromDisk();
                   await Hive.openBox('wallpapers');
                   await Hive.box('collections').deleteFromDisk();
@@ -600,7 +600,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   Theme.of(context).errorColor,
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .headline5
+                                                  .headline5!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -618,7 +618,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     "Ex - PrismWallpapers",
                                                 hintStyle: Theme.of(context)
                                                     .textTheme
-                                                    .headline5
+                                                    .headline5!
                                                     .copyWith(
                                                         fontSize: 14,
                                                         color: Theme.of(context)
@@ -733,7 +733,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   Theme.of(context).errorColor,
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .headline5
+                                                  .headline5!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -751,7 +751,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     "Ex - PrismWallpapers",
                                                 hintStyle: Theme.of(context)
                                                     .textTheme
-                                                    .headline5
+                                                    .headline5!
                                                     .copyWith(
                                                         fontSize: 14,
                                                         color: Theme.of(context)

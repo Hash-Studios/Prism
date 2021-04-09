@@ -8,9 +8,9 @@ import 'package:provider/provider.dart';
 
 class PexelsTile extends StatelessWidget {
   const PexelsTile({
-    Key key,
-    @required this.widget,
-    @required this.index,
+    Key? key,
+    required this.widget,
+    required this.index,
   }) : super(key: key);
 
   final PexelsGrid widget;
@@ -41,7 +41,7 @@ class PexelsTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
                       image: CachedNetworkImageProvider(
-                          PData.wallsP[index].src["medium"].toString()),
+                          PData.wallsP[index].src!["medium"].toString()),
                       fit: BoxFit.cover)),
         ),
         ClipRRect(
@@ -57,7 +57,7 @@ class PexelsTile extends StatelessWidget {
                   Navigator.pushNamed(context, wallpaperRoute, arguments: [
                     widget.provider,
                     index,
-                    PData.wallsP[index].src["small"]
+                    PData.wallsP[index].src!["small"]
                   ]);
                 }
               },

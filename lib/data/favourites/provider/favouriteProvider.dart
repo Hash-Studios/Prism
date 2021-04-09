@@ -7,8 +7,8 @@ import 'package:hive/hive.dart';
 
 class FavouriteProvider extends ChangeNotifier {
   final Firestore databaseReference = Firestore.instance;
-  List liked;
-  Future<List> getDataBase() async {
+  List? liked;
+  Future<List?> getDataBase() async {
     final String uid = main.prefs.get("id") as String;
     liked = [];
     await databaseReference
@@ -19,7 +19,7 @@ class FavouriteProvider extends ChangeNotifier {
         .then((value) {
       liked = [];
       for (final f in value.documents) {
-        liked.add(f.data);
+        liked!.add(f.data);
       }
     }).catchError((e) {
       debugPrint("data done with error");
@@ -44,19 +44,19 @@ class FavouriteProvider extends ChangeNotifier {
     return true;
   }
 
-  Future<bool> createDataByWall(String provider, WallPaper wallhaven,
-      WallPaperP pexels, Map prism) async {
-    final String uid = main.prefs.get("id") as String;
+  Future<bool> createDataByWall(String provider, WallPaper? wallhaven,
+      WallPaperP? pexels, Map? prism) async {
+    final String? uid = main.prefs.get("id") as String?;
     if (provider == "WallHaven") {
       await databaseReference
           .collection("users")
-          .document(uid)
+          .document(uid!)
           .collection("images")
-          .document(wallhaven.id.toString())
+          .document(wallhaven!.id.toString())
           .setData({
         "id": wallhaven.id.toString(),
         "url": wallhaven.path.toString(),
-        "thumb": wallhaven.thumbs["original"].toString(),
+        "thumb": wallhaven.thumbs!["original"].toString(),
         "category": wallhaven.category.toString(),
         "provider": "WallHaven",
         "views": wallhaven.views.toString(),
@@ -69,13 +69,13 @@ class FavouriteProvider extends ChangeNotifier {
     } else if (provider == "Pexels") {
       await databaseReference
           .collection("users")
-          .document(uid)
+          .document(uid!)
           .collection("images")
-          .document(pexels.id.toString())
+          .document(pexels!.id.toString())
           .setData({
         "id": pexels.id.toString(),
-        "url": pexels.src["original"].toString(),
-        "thumb": pexels.src["medium"].toString(),
+        "url": pexels.src!["original"].toString(),
+        "thumb": pexels.src!["medium"].toString(),
         "category": "",
         "provider": "Pexels",
         "views": "",
@@ -88,9 +88,9 @@ class FavouriteProvider extends ChangeNotifier {
     } else if (provider == "Prism") {
       await databaseReference
           .collection("users")
-          .document(uid)
+          .document(uid!)
           .collection("images")
-          .document(prism["id"].toString())
+          .document(prism!["id"].toString())
           .setData({
         "id": prism["id"].toString(),
         "url": prism["wallpaper_url"].toString(),
@@ -108,12 +108,12 @@ class FavouriteProvider extends ChangeNotifier {
     return true;
   }
 
-  Future favCheck(String id, String provider, WallPaper wallhaven,
-      WallPaperP pexels, Map prism) async {
-    int index;
+  Future favCheck(String? id, String provider, WallPaper? wallhaven,
+      WallPaperP? pexels, Map? prism) async {
+    int? index;
     await getDataBase().then(
       (value) {
-        for (final element in value) {
+        for (final element in value!) {
           if (element["id"] == id) {
             index = value.indexOf(element);
           }
@@ -124,7 +124,7 @@ class FavouriteProvider extends ChangeNotifier {
           localFavSave(provider, wallhaven, pexels, prism);
         } else {
           localFavDelete(id);
-          deleteDataByID(id);
+          deleteDataByID(id!);
           return false;
         }
       },
@@ -132,24 +132,24 @@ class FavouriteProvider extends ChangeNotifier {
   }
 
   bool localFavSave(
-      String provider, WallPaper wallhaven, WallPaperP pexels, Map prism) {
+      String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) {
     if (provider == "WallHaven") {
       final Box box = Hive.box('localFav');
-      box.put(wallhaven.id.toString(), true);
+      box.put(wallhaven!.id.toString(), true);
       return true;
     } else if (provider == "Pexels") {
       final Box box = Hive.box('localFav');
-      box.put(pexels.id.toString(), true);
+      box.put(pexels!.id.toString(), true);
       return true;
     } else if (provider == "Prism") {
       final Box box = Hive.box('localFav');
-      box.put(prism["id"].toString(), true);
+      box.put(prism!["id"].toString(), true);
       return true;
     }
     return false;
   }
 
-  bool localFavDelete(String id) {
+  bool localFavDelete(String? id) {
     final Box box = Hive.box('localFav');
     box.delete(id);
     return true;
@@ -159,7 +159,7 @@ class FavouriteProvider extends ChangeNotifier {
     int favs = 0;
     debugPrint("in countfav");
     await getDataBase().then((value) {
-      debugPrint(value.length.toString());
+      debugPrint(value!.length.toString());
       favs = value.length;
     });
     return favs;

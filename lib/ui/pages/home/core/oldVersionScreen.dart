@@ -15,7 +15,7 @@ class OldVersion extends StatelessWidget {
           "Update",
           style: Theme.of(context)
               .textTheme
-              .headline3
+              .headline3!
               .copyWith(color: Theme.of(context).accentColor),
         ),
       ),

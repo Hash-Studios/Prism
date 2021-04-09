@@ -7,13 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:github/github.dart';
 
 void showContributorDetails(BuildContext context, String username) {
-  Future<User> getUser(String username) async {
+  Future<User?> getUser(String username) async {
     final github = GitHub();
-    User user;
+    User? user;
     await github.users.getUser(username).then((value) {
       user = value;
     });
-    debugPrint(user.blog);
+    debugPrint(user!.blog);
     return user;
   }
 
@@ -24,7 +24,7 @@ void showContributorDetails(BuildContext context, String username) {
           borderRadius: BorderRadius.circular(10),
           color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
-      child: FutureBuilder<User>(
+      child: FutureBuilder<User?>(
           future: getUser(username),
           builder: (context, snapshot) {
             if (snapshot == null) {
@@ -55,7 +55,7 @@ void showContributorDetails(BuildContext context, String username) {
                         ),
                         CircleAvatar(
                           backgroundImage: CachedNetworkImageProvider(
-                              snapshot.data.avatarUrl ?? ""),
+                              snapshot.data!.avatarUrl ?? ""),
                           radius: 40,
                         ),
                         const SizedBox(
@@ -68,13 +68,13 @@ void showContributorDetails(BuildContext context, String username) {
                             Container(
                               width: MediaQuery.of(context).size.width * 0.4,
                               child: Text(
-                                snapshot.data.name,
+                                snapshot.data!.name,
                                 maxLines: 2,
                                 textAlign: TextAlign.center,
                                 overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(
                                         color: Theme.of(context).accentColor,
                                         fontSize: 20),
@@ -83,12 +83,12 @@ void showContributorDetails(BuildContext context, String username) {
                             Container(
                                 width: MediaQuery.of(context).size.width * 0.4,
                                 child: Text(
-                                  snapshot.data.login,
+                                  snapshot.data!.login,
                                   textAlign: TextAlign.center,
                                   overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2
+                                      .bodyText2!
                                       .copyWith(
                                           color: Theme.of(context)
                                               .accentColor
@@ -97,7 +97,7 @@ void showContributorDetails(BuildContext context, String username) {
                             const SizedBox(
                               height: 5,
                             ),
-                            if (snapshot.data.location != null)
+                            if (snapshot.data!.location != null)
                               Row(
                                 children: [
                                   Icon(JamIcons.map_marker,
@@ -108,12 +108,12 @@ void showContributorDetails(BuildContext context, String username) {
                                       width: MediaQuery.of(context).size.width *
                                           0.3,
                                       child: Text(
-                                        snapshot.data.location,
+                                        snapshot.data!.location,
                                         textAlign: TextAlign.center,
                                         overflow: TextOverflow.ellipsis,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .bodyText2
+                                            .bodyText2!
                                             .copyWith(
                                                 color: Theme.of(context)
                                                     .accentColor
@@ -135,7 +135,7 @@ void showContributorDetails(BuildContext context, String username) {
                         child: Container(
                           width: MediaQuery.of(context).size.width * 0.6,
                           child: Text(
-                            snapshot.data.bio,
+                            snapshot.data!.bio,
                             style: TextStyle(
                                 fontSize: 14,
                                 color: Theme.of(context).accentColor,
@@ -149,23 +149,23 @@ void showContributorDetails(BuildContext context, String username) {
                   Wrap(
                     alignment: WrapAlignment.center,
                     children: [
-                      if (snapshot.data.blog != null &&
-                          snapshot.data.blog != "")
+                      if (snapshot.data!.blog != null &&
+                          snapshot.data!.blog != "")
                         ActionButton(
                             icon: JamIcons.link,
-                            link: "https://${snapshot.data.blog}",
+                            link: "https://${snapshot.data!.blog}",
                             text: "WEBSITE")
                       else
                         Container(),
                       ActionButton(
                           icon: JamIcons.github,
-                          link: snapshot.data.htmlUrl,
+                          link: snapshot.data!.htmlUrl,
                           text: "GITHUB"),
-                      if (snapshot.data.twitterUsername != null)
+                      if (snapshot.data!.twitterUsername != null)
                         ActionButton(
                             icon: JamIcons.twitter,
                             link:
-                                "https://www.twitter.com/${snapshot.data.twitterUsername}",
+                                "https://www.twitter.com/${snapshot.data!.twitterUsername}",
                             text: "TWITTER")
                       else
                         Container(),

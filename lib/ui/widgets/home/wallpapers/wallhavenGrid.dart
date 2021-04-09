@@ -16,8 +16,8 @@ import 'package:provider/provider.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
 class WallHavenGrid extends StatefulWidget {
-  final String provider;
-  const WallHavenGrid({@required this.provider});
+  final String? provider;
+  const WallHavenGrid({required this.provider});
   @override
   _WallHavenGridState createState() => _WallHavenGridState();
 }
@@ -100,8 +100,8 @@ class _WallHavenGridState extends State<WallHavenGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     final CarouselController carouselController = CarouselController();
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
@@ -171,7 +171,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                         maxLines: 1,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline2
+                                            .headline2!
                                             .copyWith(
                                                 fontSize: 20,
                                                 color: Colors.white,
@@ -194,7 +194,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                       arguments: [
                                         widget.provider,
                                         i,
-                                        wData.walls[i].thumbs["small"],
+                                        wData.walls[i].thumbs!["small"],
                                       ]);
                                 }
                               },
@@ -227,7 +227,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                           image: DecorationImage(
                                               image: CachedNetworkImageProvider(
                                                   wData.walls[i]
-                                                      .thumbs["original"]
+                                                      .thumbs!["original"]
                                                       .toString()),
                                               fit: BoxFit.cover)),
                                       child: Center(
@@ -243,7 +243,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                               maxLines: 1,
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .headline2
+                                                  .headline2!
                                                   .copyWith(
                                                       color: Colors.white,
                                                       fontSize: 20,

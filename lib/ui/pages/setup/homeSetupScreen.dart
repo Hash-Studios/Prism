@@ -14,7 +14,7 @@ import 'package:Prism/main.dart' as main;
 
 class HomeSetupScreen extends StatefulWidget {
   const HomeSetupScreen({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -25,7 +25,7 @@ class _HomeSetupScreenState extends State<HomeSetupScreen> {
   final PageController controller = PageController(
     viewportFraction: 0.78,
   );
-  Future future;
+  Future? future;
 
   @override
   void initState() {
@@ -44,12 +44,12 @@ class _HomeSetupScreenState extends State<HomeSetupScreen> {
 
 class HomeSetupPage extends StatefulWidget {
   const HomeSetupPage({
-    Key key,
-    @required this.future,
-    @required this.controller,
+    Key? key,
+    required this.future,
+    required this.controller,
   }) : super(key: key);
 
-  final Future future;
+  final Future? future;
   final PageController controller;
 
   @override
@@ -110,16 +110,16 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                   children: <Widget>[
                     Text(
                       Provider.of<SetupProvider>(context, listen: false)
-                              .setups
+                              .setups!
                               .isEmpty
                           ? ""
                           : Provider.of<SetupProvider>(context, listen: false)
-                              .setups[pageNumber]['name']
+                              .setups![pageNumber]['name']
                               .toString()
                               .toUpperCase(),
                       style: Theme.of(context)
                           .textTheme
-                          .headline1
+                          .headline1!
                           .copyWith(fontSize: 30),
                     ),
                   ],
@@ -169,15 +169,15 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                         controller: widget.controller,
                         itemCount: Provider.of<SetupProvider>(context,
                                     listen: false)
-                                .setups
+                                .setups!
                                 .isEmpty
                             ? 1
                             : Provider.of<SetupProvider>(context, listen: false)
-                                .setups
+                                .setups!
                                 .length,
                         itemBuilder: (context, index) => Provider.of<
                                     SetupProvider>(context, listen: false)
-                                .setups
+                                .setups!
                                 .isEmpty
                             ? Loader()
                             : AnimatedContainer(
@@ -197,7 +197,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
                                       imageUrl: Provider.of<SetupProvider>(
                                               context,
                                               listen: false)
-                                          .setups[index]['image']
+                                          .setups![index]['image']
                                           .toString(),
                                       imageBuilder: (context, imageProvider) =>
                                           Container(
@@ -299,7 +299,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
             child: ArrowBounceAnimation(
               onTap: () {
                 widget.controller.animateToPage(
-                    widget.controller.page.toInt() - 1,
+                    widget.controller.page!.toInt() - 1,
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.fastOutSlowIn);
                 HapticFeedback.vibrate();
@@ -308,7 +308,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
             ),
           ),
         if (pageNumber ==
-            Provider.of<SetupProvider>(context, listen: false).setups.length -
+            Provider.of<SetupProvider>(context, listen: false).setups!.length -
                 1)
           Container()
         else
@@ -317,7 +317,7 @@ class _HomeSetupPageState extends State<HomeSetupPage> {
             child: ArrowBounceAnimation(
               onTap: () {
                 widget.controller.animateToPage(
-                    widget.controller.page.toInt() + 1,
+                    widget.controller.page!.toInt() + 1,
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.fastOutSlowIn);
                 HapticFeedback.vibrate();

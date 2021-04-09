@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 
 class SeeMoreButton extends StatelessWidget {
   const SeeMoreButton({
-    Key key,
-    @required this.seeMoreLoader,
-    @required this.func,
+    Key? key,
+    required this.seeMoreLoader,
+    required this.func,
   }) : super(key: key);
 
   final bool seeMoreLoader;

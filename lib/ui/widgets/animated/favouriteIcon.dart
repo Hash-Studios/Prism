@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 
 class FavoriteIcon extends StatefulWidget {
   const FavoriteIcon({
-    double iconSize,
-    Color iconColor,
-    bool isFavorite,
-    @required Function valueChanged,
-    Key key,
+    double? iconSize,
+    Color? iconColor,
+    bool? isFavorite,
+    required Function valueChanged,
+    Key? key,
   })  : _iconSize = iconSize ?? 60.0,
         _iconColor = iconColor ?? Colors.red,
         _isFavorite = isFavorite ?? false,
@@ -26,11 +26,11 @@ class FavoriteIcon extends StatefulWidget {
 
 class _FavoriteIconState extends State<FavoriteIcon>
     with TickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> _colorAnimation;
-  Animation<double> _sizeAnimation;
+  late AnimationController _controller;
+  late Animation<Color?> _colorAnimation;
+  late Animation<double> _sizeAnimation;
 
-  CurvedAnimation _curve;
+  late CurvedAnimation _curve;
 
   double _maxIconSize = 0.0;
   double _minIconSize = 0.0;
@@ -59,12 +59,12 @@ class _FavoriteIconState extends State<FavoriteIcon>
     );
 
     _curve = CurvedAnimation(curve: Curves.slowMiddle, parent: _controller);
-    final Animation<Color> _selectedColorAnimation = ColorTween(
+    final Animation<Color?> _selectedColorAnimation = ColorTween(
       begin: widget._iconColor,
       end: widget._iconColor,
     ).animate(_curve);
 
-    final Animation<Color> _deSelectedColorAnimation = ColorTween(
+    final Animation<Color?> _deSelectedColorAnimation = ColorTween(
       begin: widget._iconColor,
       end: widget._iconColor,
     ).animate(_curve);

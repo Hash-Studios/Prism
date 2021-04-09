@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 class AnimatedToggle extends StatefulWidget {
   final List<String> values;
   final ValueChanged onToggleCallback;
-  final Color backgroundColor;
-  final Color buttonColor;
-  final Color textColor;
-  final List<BoxShadow> shadows;
+  final Color? backgroundColor;
+  final Color? buttonColor;
+  final Color? textColor;
+  final List<BoxShadow>? shadows;
 
   const AnimatedToggle({
-    @required this.values,
-    @required this.onToggleCallback,
+    required this.values,
+    required this.onToggleCallback,
     this.backgroundColor,
     this.buttonColor,
     this.textColor,

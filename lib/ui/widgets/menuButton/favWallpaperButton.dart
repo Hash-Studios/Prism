@@ -13,18 +13,18 @@ import 'package:Prism/routes/router.dart';
 class FavouriteWallpaperButton extends StatefulWidget {
   final String id;
   final String provider;
-  final WallPaper wallhaven;
-  final WallPaperP pexels;
-  final Map prism;
+  final WallPaper? wallhaven;
+  final WallPaperP? pexels;
+  final Map? prism;
   final bool trash;
   const FavouriteWallpaperButton({
-    @required this.id,
-    @required this.provider,
-    @required this.trash,
+    required this.id,
+    required this.provider,
+    required this.trash,
     this.wallhaven,
     this.pexels,
     this.prism,
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -33,8 +33,8 @@ class FavouriteWallpaperButton extends StatefulWidget {
 }
 
 class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
-  bool isLoading;
-  Box box;
+  late bool isLoading;
+  late Box box;
 
   @override
   void initState() {
@@ -90,8 +90,8 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     );
   }
 
-  Future<void> onFav(String id, String provider, WallPaper wallhaven,
-      WallPaperP pexels, Map prism) async {
+  Future<void> onFav(String id, String provider, WallPaper? wallhaven,
+      WallPaperP? pexels, Map? prism) async {
     setState(() {
       isLoading = true;
     });

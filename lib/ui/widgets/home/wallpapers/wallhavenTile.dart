@@ -9,9 +9,9 @@ import 'package:provider/provider.dart';
 
 class WallhavenTile extends StatelessWidget {
   const WallhavenTile({
-    Key key,
-    @required this.widget,
-    @required this.index,
+    Key? key,
+    required this.widget,
+    required this.index,
   }) : super(key: key);
 
   final WallHavenGrid widget;
@@ -42,7 +42,7 @@ class WallhavenTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
                       image: CachedNetworkImageProvider(
-                        wData.walls[index].thumbs["original"].toString(),
+                        wData.walls[index].thumbs!["original"].toString(),
                       ),
                       fit: BoxFit.cover),
                 ),
@@ -60,7 +60,7 @@ class WallhavenTile extends StatelessWidget {
                   Navigator.pushNamed(context, wallpaperRoute, arguments: [
                     widget.provider,
                     index,
-                    wData.walls[index].thumbs["small"].toString(),
+                    wData.walls[index].thumbs!["small"].toString(),
                   ]);
                 }
               },

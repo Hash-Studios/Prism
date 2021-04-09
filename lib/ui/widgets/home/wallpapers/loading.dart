@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 class LoadingCards extends StatefulWidget {
   const LoadingCards({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -15,8 +15,8 @@ class LoadingCards extends StatefulWidget {
 
 class _LoadingCardsState extends State<LoadingCards>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+  late AnimationController _controller;
+  late Animation<Color?> animation;
 
   @override
   void initState() {
@@ -27,9 +27,9 @@ class _LoadingCardsState extends State<LoadingCards>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -47,7 +47,7 @@ class _LoadingCardsState extends State<LoadingCards>
               ),
             ],
           ).animate(_controller)
-        : TweenSequence<Color>(
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -79,9 +79,9 @@ class _LoadingCardsState extends State<LoadingCards>
 
   @override
   Widget build(BuildContext context) {
-    ScrollController controller;
+    ScrollController? controller;
     try {
-      controller = InheritedDataProvider.of(context).scrollController;
+      controller = InheritedDataProvider.of(context)!.scrollController;
     } catch (e) {
       debugPrint(e.toString());
     }

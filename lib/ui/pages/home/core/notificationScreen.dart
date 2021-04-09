@@ -20,7 +20,7 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  List notifications;
+  List? notifications;
   @override
   void initState() {
     final Box<List> box = Hive.box('notifications');
@@ -29,7 +29,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     } else {
       notifications = box.get('notifications');
     }
-    notifications = List.from(notifications.reversed);
+    notifications = List.from(notifications!.reversed);
     super.initState();
   }
 
@@ -69,16 +69,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ],
         ),
         body: Container(
-          child: notifications.isNotEmpty
+          child: notifications!.isNotEmpty
               ? ListView.builder(
-                  itemCount: notifications.length,
+                  itemCount: notifications!.length,
                   itemBuilder: (BuildContext context, int index) {
                     return Dismissible(
                       onDismissed: (DismissDirection direction) {
                         setState(() {
-                          notifications.removeAt(index);
+                          notifications!.removeAt(index);
                         });
-                        final Box<List> box = Hive.box('notifications');
+                        final Box<List?> box = Hive.box('notifications');
                         box.put('notifications', notifications);
                       },
                       dismissThresholds: const {
@@ -107,7 +107,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ),
                       key: UniqueKey(),
                       child: NotificationCard(
-                          notification: notifications[index] as NotifData),
+                          notification: notifications![index] as NotifData),
                     );
                   },
                 )
@@ -115,7 +115,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   child: Text('No new notifications',
                       style: TextStyle(color: Theme.of(context).accentColor))),
         ),
-        floatingActionButton: notifications.isNotEmpty
+        floatingActionButton: notifications!.isNotEmpty
             ? FloatingActionButton(
                 mini: true,
                 tooltip: "Clear Notifications",
@@ -139,7 +139,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Navigator.of(context).pop();
                           setState(() {
                             notifications = [];
-                            final Box<List> box = Hive.box('notifications');
+                            final Box<List?> box = Hive.box('notifications');
                             box.put('notifications', notifications);
                           });
                         },
@@ -186,7 +186,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 }
 
 class NotificationCard extends StatelessWidget {
-  final NotifData notification;
+  final NotifData? notification;
 
   const NotificationCard({this.notification});
 
@@ -225,26 +225,26 @@ class NotificationCard extends StatelessWidget {
       ),
       backgroundColor: Theme.of(context).primaryColor,
       title: Text(
-        notification.title,
+        notification!.title!,
         style: TextStyle(
             color: Theme.of(context).accentColor,
             fontWeight: FontWeight.w500,
             fontFamily: "Proxima Nova"),
       ),
       subtitle: Text(
-        notification.desc,
+        notification!.desc!,
         style: TextStyle(fontSize: 12, color: Theme.of(context).accentColor),
       ),
       children: <Widget>[
         InkWell(
           onTap: () {
-            if (notification.url == "") {
-              if (notification.pageName != null) {
-                Navigator.pushNamed(context, notification.pageName,
-                    arguments: notification.arguments);
+            if (notification!.url == "") {
+              if (notification!.pageName != null) {
+                Navigator.pushNamed(context, notification!.pageName!,
+                    arguments: notification!.arguments);
               }
             } else {
-              launch(notification.url);
+              launch(notification!.url!);
             }
           },
           onLongPress: () {
@@ -260,7 +260,7 @@ class NotificationCard extends StatelessWidget {
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.width * 9 / 16,
                     child: CachedNetworkImage(
-                      imageUrl: notification.imageUrl ??
+                      imageUrl: notification!.imageUrl ??
                           "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
                       fit: BoxFit.cover,
                     ),
@@ -270,7 +270,7 @@ class NotificationCard extends StatelessWidget {
                   width: MediaQuery.of(context).size.width,
                   height: MediaQuery.of(context).size.width * 9 / 16,
                   child: CachedNetworkImage(
-                    imageUrl: notification.imageUrl ??
+                    imageUrl: notification!.imageUrl ??
                         "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
                     fit: BoxFit.contain,
                   ),
@@ -280,7 +280,7 @@ class NotificationCard extends StatelessWidget {
                   child: Align(
                     alignment: Alignment.topRight,
                     child: Text(
-                      stringForDatetime(notification.createdAt),
+                      stringForDatetime(notification!.createdAt!),
                       style: const TextStyle(
                         backgroundColor: Colors.white24,
                         color: Colors.black,
@@ -305,21 +305,21 @@ class NotificationSettingsSheet extends StatefulWidget {
 }
 
 class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
-  bool followersSubscriber;
-  bool postsSubscriber;
-  bool inappSubscriber;
-  bool recommendationsSubscriber;
+  bool? followersSubscriber;
+  bool? postsSubscriber;
+  bool? inappSubscriber;
+  bool? recommendationsSubscriber;
   @override
   void initState() {
     super.initState();
     followersSubscriber =
-        main.prefs.get("followersSubscriber", defaultValue: true) as bool;
+        main.prefs.get("followersSubscriber", defaultValue: true) as bool?;
     postsSubscriber =
-        main.prefs.get("postsSubscriber", defaultValue: true) as bool;
+        main.prefs.get("postsSubscriber", defaultValue: true) as bool?;
     inappSubscriber =
-        main.prefs.get("inappSubscriber", defaultValue: true) as bool;
-    recommendationsSubscriber =
-        main.prefs.get("recommendationsSubscriber", defaultValue: true) as bool;
+        main.prefs.get("inappSubscriber", defaultValue: true) as bool?;
+    recommendationsSubscriber = main.prefs
+        .get("recommendationsSubscriber", defaultValue: true) as bool?;
   }
 
   @override
@@ -380,7 +380,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               secondary: const Icon(
                 JamIcons.user_plus,
               ),
-              value: followersSubscriber,
+              value: followersSubscriber!,
               title: Text(
                 "Followers",
                 style: TextStyle(
@@ -393,7 +393,8 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                 style: TextStyle(fontSize: 12),
               ),
               onChanged: (bool value) async {
-                if (main.prefs.get('isLoggedin') as bool == true) {
+                if (main.prefs.get('isLoggedin', defaultValue: false) as bool ==
+                    true) {
                   main.prefs.put("followersSubscriber", value);
                   setState(() {
                     followersSubscriber = value;
@@ -420,7 +421,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               secondary: const Icon(
                 JamIcons.pictures,
               ),
-              value: postsSubscriber,
+              value: postsSubscriber!,
               title: Text(
                 "Posts",
                 style: TextStyle(
@@ -432,9 +433,11 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                 "Get notifications for posts from the artists you follow.",
                 style: TextStyle(fontSize: 12),
               ),
-              onChanged: followersSubscriber
+              onChanged: followersSubscriber!
                   ? (bool value) async {
-                      if (main.prefs.get('isLoggedin') as bool == true) {
+                      if (main.prefs.get('isLoggedin', defaultValue: false)
+                              as bool ==
+                          true) {
                         main.prefs.put("postsSubscriber", value);
                         setState(() {
                           postsSubscriber = value;
@@ -455,7 +458,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               secondary: const Icon(
                 JamIcons.picture,
               ),
-              value: inappSubscriber,
+              value: inappSubscriber!,
               title: Text(
                 "In-App",
                 style: TextStyle(
@@ -477,7 +480,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
             SwitchListTile(
               activeColor: Theme.of(context).errorColor,
               secondary: const Icon(JamIcons.lightbulb),
-              value: recommendationsSubscriber,
+              value: recommendationsSubscriber!,
               title: Text(
                 "Recommendations",
                 style: TextStyle(

@@ -3,16 +3,16 @@ import 'package:Prism/ui/widgets/focussedMenu/searchFocusedMenuDetails.dart';
 import 'package:flutter/material.dart';
 
 class SearchFocusedMenuHolder extends StatefulWidget {
-  final String selectedProvider;
+  final String? selectedProvider;
   final String query;
   final Widget child;
   final int index;
 
   const SearchFocusedMenuHolder(
-      {@required this.selectedProvider,
-      @required this.query,
-      @required this.child,
-      @required this.index});
+      {required this.selectedProvider,
+      required this.query,
+      required this.child,
+      required this.index});
 
   @override
   _SearchFocusedMenuHolderState createState() =>
@@ -22,11 +22,11 @@ class SearchFocusedMenuHolder extends StatefulWidget {
 class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
   GlobalKey containerKey = GlobalKey();
   Offset childOffset = const Offset(0, 0);
-  Size childSize;
+  Size? childSize;
 
   void getOffset() {
     final RenderBox renderBox =
-        containerKey.currentContext.findRenderObject() as RenderBox;
+        containerKey.currentContext!.findRenderObject() as RenderBox;
     final Size size = renderBox.size;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     setState(() {

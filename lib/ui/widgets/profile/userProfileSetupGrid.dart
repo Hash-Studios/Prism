@@ -13,10 +13,10 @@ import 'package:provider/provider.dart';
 import 'package:Prism/main.dart' as main;
 
 class UserProfileSetupGrid extends StatefulWidget {
-  final String email;
+  final String? email;
   const UserProfileSetupGrid({
     this.email,
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -25,8 +25,8 @@ class UserProfileSetupGrid extends StatefulWidget {
 
 class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+  AnimationController? _controller;
+  late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshProfileKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -56,9 +56,9 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -75,8 +75,8 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -93,11 +93,11 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -119,7 +119,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
         key: refreshProfileKey,
         onRefresh: refreshList,
         child: userdata.userProfileSetups != null
-            ? userdata.userProfileSetups.isEmpty
+            ? userdata.userProfileSetups!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -240,7 +240,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                     shrinkWrap: true,
                     cacheExtent: 50000,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: userdata.userProfileSetups.length,
+                    itemCount: userdata.userProfileSetups!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
                             MediaQuery.of(context).orientation ==
@@ -261,7 +261,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid>
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        userdata.userProfileSetups[index]
+                                        userdata.userProfileSetups![index]
                                                 ["image"]
                                             .toString(),
                                       ),

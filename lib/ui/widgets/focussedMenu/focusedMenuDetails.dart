@@ -21,23 +21,23 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
 class FocusedMenuDetails extends StatefulWidget {
-  final String provider;
+  final String? provider;
   final Offset childOffset;
-  final Size childSize;
+  final Size? childSize;
   final int index;
   final Size size;
   final Orientation orientation;
   final Widget child;
 
   const FocusedMenuDetails({
-    Key key,
-    @required this.provider,
-    @required this.childOffset,
-    @required this.childSize,
-    @required this.child,
-    @required this.index,
-    @required this.size,
-    @required this.orientation,
+    Key? key,
+    required this.provider,
+    required this.childOffset,
+    required this.childSize,
+    required this.child,
+    required this.index,
+    required this.size,
+    required this.orientation,
   }) : super(key: key);
 
   @override
@@ -45,14 +45,14 @@ class FocusedMenuDetails extends StatefulWidget {
 }
 
 class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
-  num maxMenuWidth;
-  num menuHeight;
-  double leftOffset;
-  double topOffset;
-  num fabHeartTopOffset;
-  num fabWallLeftOffset;
-  num fabWallTopOffset;
-  num fabHeartLeftOffset;
+  late num maxMenuWidth;
+  late num menuHeight;
+  double? leftOffset;
+  double? topOffset;
+  late num fabHeartTopOffset;
+  late num fabWallLeftOffset;
+  late num fabWallTopOffset;
+  late num fabHeartLeftOffset;
   @override
   void initState() {
     maxMenuWidth = widget.size.width * 0.63;
@@ -60,32 +60,32 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
     leftOffset = (widget.childOffset.dx + maxMenuWidth) < widget.size.width
         ? widget.orientation == Orientation.portrait
             ? widget.childOffset.dx +
-                widget.childSize.width +
+                widget.childSize!.width +
                 widget.size.width * 0.015
             : widget.childOffset.dx +
-                widget.childSize.width +
+                widget.childSize!.width +
                 widget.size.width * 0.01
         : widget.orientation == Orientation.portrait
-            ? (widget.childOffset.dx - maxMenuWidth + widget.childSize.width)
+            ? (widget.childOffset.dx - maxMenuWidth + widget.childSize!.width)
             : (widget.childOffset.dx -
                 maxMenuWidth +
-                widget.childSize.width +
+                widget.childSize!.width +
                 widget.size.width * 0.3);
-    topOffset = (widget.childOffset.dy + menuHeight + widget.childSize.height) <
+    topOffset = (widget.childOffset.dy + menuHeight + widget.childSize!.height) <
             widget.size.height
         ? widget.orientation == Orientation.portrait
             ? widget.childOffset.dy +
-                widget.childSize.height +
+                widget.childSize!.height +
                 widget.size.width * 0.015
             : widget.childOffset.dy +
-                widget.childSize.height +
+                widget.childSize!.height +
                 widget.size.width * 0.015
         : widget.orientation == Orientation.portrait
             ? widget.childOffset.dy - menuHeight + widget.size.width * 0.125
             : widget.childOffset.dy - menuHeight;
 
     fabHeartTopOffset =
-        (widget.childOffset.dy + menuHeight + widget.childSize.height) <
+        (widget.childOffset.dy + menuHeight + widget.childSize!.height) <
                 widget.size.height
             ? widget.orientation == Orientation.portrait
                 ? widget.size.width * 0.175
@@ -103,7 +103,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 : widget.size.width * 0.1;
 
     fabWallTopOffset =
-        (widget.childOffset.dy + menuHeight + widget.childSize.height) <
+        (widget.childOffset.dy + menuHeight + widget.childSize!.height) <
                 widget.size.height
             ? widget.orientation == Orientation.portrait
                 ? widget.size.width * 0.05
@@ -152,17 +152,17 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                   },
                   child: AbsorbPointer(
                       child: Container(
-                          width: widget.childSize.width,
-                          height: widget.childSize.height,
+                          width: widget.childSize!.width,
+                          height: widget.childSize!.height,
                           child: widget.child)),
                 )),
             if (widget.provider == "WallHaven")
               Positioned(
-                top: widget.childOffset.dy + widget.childSize.height * 4 / 10,
+                top: widget.childOffset.dy + widget.childSize!.height * 4 / 10,
                 left: widget.childOffset.dx,
                 child: TweenAnimationBuilder(
                   duration: const Duration(milliseconds: 150),
-                  builder: (BuildContext context, double value, Widget child) {
+                  builder: (BuildContext context, double value, Widget? child) {
                     return Transform.scale(
                       scale: value,
                       alignment: Alignment.bottomRight,
@@ -171,8 +171,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                   },
                   tween: Tween(begin: 0.0, end: 1.0),
                   child: Container(
-                    width: widget.childSize.width,
-                    height: widget.childSize.height * 6 / 10,
+                    width: widget.childSize!.width,
+                    height: widget.childSize!.height * 6 / 10,
                     decoration: BoxDecoration(
                       color: Theme.of(context).hintColor,
                       borderRadius:
@@ -198,10 +198,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       JamIcons.ordered_list,
                                       color: HexColor(WData
                                                       .walls[widget.index]
-                                                      .colors[WData
+                                                      .colors![WData
                                                               .walls[
                                                                   widget.index]
-                                                              .colors
+                                                              .colors!
                                                               .length -
                                                           1]
                                                       .toString())
@@ -213,7 +213,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     ),
                                     backgroundColor: HexColor(WData
                                         .walls[widget.index]
-                                        .colors[WData.walls[widget.index].colors
+                                        .colors![WData.walls[widget.index].colors!
                                                 .length -
                                             1]
                                         .toString()),
@@ -226,14 +226,14 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               .substring(1),
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headline4
+                                          .headline4!
                                           .copyWith(
                                             color: HexColor(WData
                                                             .walls[widget.index]
-                                                            .colors[WData
+                                                            .colors![WData
                                                                     .walls[widget
                                                                         .index]
-                                                                    .colors
+                                                                    .colors!
                                                                     .length -
                                                                 1]
                                                             .toString())
@@ -253,7 +253,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         .toUpperCase(),
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headline5
+                                        .headline5!
                                         .copyWith(
                                             color:
                                                 Theme.of(context).accentColor),
@@ -271,7 +271,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       "Views: ${WData.walls[widget.index].views.toString()}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               color: Theme.of(context)
                                                   .accentColor),
@@ -291,7 +291,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           .toString(),
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               color: Theme.of(context)
                                                   .accentColor),
@@ -335,12 +335,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
               widget.provider == "Prism"
                   ? Positioned(
                       top: widget.childOffset.dy +
-                          widget.childSize.height * 4 / 10,
+                          widget.childSize!.height * 4 / 10,
                       left: widget.childOffset.dx,
                       child: TweenAnimationBuilder(
                         duration: const Duration(milliseconds: 150),
                         builder:
-                            (BuildContext context, double value, Widget child) {
+                            (BuildContext context, double value, Widget? child) {
                           return Transform.scale(
                             scale: value,
                             alignment: Alignment.bottomRight,
@@ -349,8 +349,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                         },
                         tween: Tween(begin: 0.0, end: 1.0),
                         child: Container(
-                          width: widget.childSize.width,
-                          height: widget.childSize.height * 6 / 10,
+                          width: widget.childSize!.width,
+                          height: widget.childSize!.height * 6 / 10,
                           decoration: BoxDecoration(
                             color: Theme.of(context).hintColor,
                             borderRadius:
@@ -373,7 +373,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     children: <Widget>[
                                       Stack(
                                           alignment: globals.verifiedUsers
-                                                  .contains(Data.subPrismWalls[
+                                                  .contains(Data.subPrismWalls![
                                                           widget.index]["email"]
                                                       .toString())
                                               ? Alignment.topRight
@@ -387,7 +387,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   backgroundImage:
                                                       CachedNetworkImageProvider(
                                                           Data
-                                                              .subPrismWalls[
+                                                              .subPrismWalls![
                                                                   widget.index]
                                                                   ["userPhoto"]
                                                               .toString()),
@@ -397,17 +397,17 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     const EdgeInsets.fromLTRB(
                                                         7, 3, 7, 3),
                                                 label: Text(
-                                                  Data.subPrismWalls[widget
+                                                  Data.subPrismWalls![widget
                                                               .index]["by"]
                                                           .toString()[0]
                                                           .toUpperCase() +
-                                                      Data.subPrismWalls[widget
+                                                      Data.subPrismWalls![widget
                                                               .index]["by"]
                                                           .toString()
                                                           .substring(1),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .headline4
+                                                      .headline4!
                                                       .copyWith(
                                                         color: Colors.white,
                                                       ),
@@ -416,28 +416,28 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   Navigator.pushNamed(context,
                                                       photographerProfileRoute,
                                                       arguments: [
-                                                        Data.subPrismWalls[
+                                                        Data.subPrismWalls![
                                                             widget.index]["by"],
-                                                        Data.subPrismWalls[
+                                                        Data.subPrismWalls![
                                                                 widget.index]
                                                             ["email"],
-                                                        Data.subPrismWalls[
+                                                        Data.subPrismWalls![
                                                                 widget.index]
                                                             ["userPhoto"],
                                                         false,
-                                                        if (Data.subPrismWalls[
+                                                        if (Data.subPrismWalls![
                                                                         widget
                                                                             .index]
                                                                     [
                                                                     "twitter"] !=
                                                                 null &&
-                                                            Data.subPrismWalls[
+                                                            Data.subPrismWalls![
                                                                         widget
                                                                             .index]
                                                                     [
                                                                     "twitter"] !=
                                                                 "")
-                                                          Data.subPrismWalls[
+                                                          Data.subPrismWalls![
                                                                   widget.index]
                                                                   ["twitter"]
                                                               .toString()
@@ -445,19 +445,19 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   "https://www.twitter.com/")[1]
                                                         else
                                                           "",
-                                                        if (Data.subPrismWalls[
+                                                        if (Data.subPrismWalls![
                                                                         widget
                                                                             .index]
                                                                     [
                                                                     "instagram"] !=
                                                                 null &&
-                                                            Data.subPrismWalls[
+                                                            Data.subPrismWalls![
                                                                         widget
                                                                             .index]
                                                                     [
                                                                     "instagram"] !=
                                                                 "")
-                                                          Data.subPrismWalls[
+                                                          Data.subPrismWalls![
                                                                   widget.index]
                                                                   ["instagram"]
                                                               .toString()
@@ -468,7 +468,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                       ]);
                                                 }),
                                             if (globals.verifiedUsers.contains(
-                                                Data.subPrismWalls[widget.index]
+                                                Data.subPrismWalls![widget.index]
                                                         ["email"]
                                                     .toString()))
                                               Container(
@@ -497,12 +497,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         padding: const EdgeInsets.fromLTRB(
                                             0, 5, 0, 10),
                                         child: Text(
-                                          Data.subPrismWalls[widget.index]["id"]
+                                          Data.subPrismWalls![widget.index]["id"]
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .headline5
+                                              .headline5!
                                               .copyWith(
                                                   color: Theme.of(context)
                                                       .accentColor),
@@ -518,12 +518,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            Data.subPrismWalls[widget.index]
+                                            Data.subPrismWalls![widget.index]
                                                     ["size"]
                                                 .toString(),
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodyText2
+                                                .bodyText2!
                                                 .copyWith(
                                                     color: Theme.of(context)
                                                         .accentColor),
@@ -540,12 +540,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            Data.subPrismWalls[widget.index]
+                                            Data.subPrismWalls![widget.index]
                                                     ["resolution"]
                                                 .toString(),
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodyText2
+                                                .bodyText2!
                                                 .copyWith(
                                                     color: Theme.of(context)
                                                         .accentColor),
@@ -589,12 +589,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                   : widget.provider == "ProfileWall"
                       ? Positioned(
                           top: widget.childOffset.dy +
-                              widget.childSize.height * 4 / 10,
+                              widget.childSize!.height * 4 / 10,
                           left: widget.childOffset.dx,
                           child: TweenAnimationBuilder(
                             duration: const Duration(milliseconds: 150),
                             builder: (BuildContext context, double value,
-                                Widget child) {
+                                Widget? child) {
                               return Transform.scale(
                                 scale: value,
                                 alignment: Alignment.bottomRight,
@@ -603,8 +603,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                             },
                             tween: Tween(begin: 0.0, end: 1.0),
                             child: Container(
-                              width: widget.childSize.width,
-                              height: widget.childSize.height * 6 / 10,
+                              width: widget.childSize!.width,
+                              height: widget.childSize!.height * 6 / 10,
                               decoration: BoxDecoration(
                                 color: Theme.of(context).hintColor,
                                 borderRadius: const BorderRadius.all(
@@ -640,20 +640,20 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 Provider.of<ProfileWallProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileWalls[
+                                                        .profileWalls![
                                                             widget.index]["by"]
                                                         .toString()[0]
                                                         .toUpperCase() +
                                                     Provider.of<ProfileWallProvider>(
                                                             context,
                                                             listen: false)
-                                                        .profileWalls[
+                                                        .profileWalls![
                                                             widget.index]["by"]
                                                         .toString()
                                                         .substring(1),
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .headline4
+                                                    .headline4!
                                                     .copyWith(
                                                       color: Colors.white,
                                                     ),
@@ -666,13 +666,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               Provider.of<ProfileWallProvider>(
                                                       context,
                                                       listen: false)
-                                                  .profileWalls[widget.index]
+                                                  .profileWalls![widget.index]
                                                       ["id"]
                                                   .toString()
                                                   .toUpperCase(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .headline5
+                                                  .headline5!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -691,12 +691,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 Provider.of<ProfileWallProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileWalls[widget.index]
+                                                    .profileWalls![widget.index]
                                                         ["size"]
                                                     .toString(),
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2
+                                                    .bodyText2!
                                                     .copyWith(
                                                         color: Theme.of(context)
                                                             .accentColor),
@@ -716,12 +716,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 Provider.of<ProfileWallProvider>(
                                                         context,
                                                         listen: false)
-                                                    .profileWalls[widget.index]
+                                                    .profileWalls![widget.index]
                                                         ["resolution"]
                                                     .toString(),
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2
+                                                    .bodyText2!
                                                     .copyWith(
                                                         color: Theme.of(context)
                                                             .accentColor),
@@ -769,12 +769,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                       : widget.provider == "UserProfileWall"
                           ? Positioned(
                               top: widget.childOffset.dy +
-                                  widget.childSize.height * 4 / 10,
+                                  widget.childSize!.height * 4 / 10,
                               left: widget.childOffset.dx,
                               child: TweenAnimationBuilder(
                                 duration: const Duration(milliseconds: 150),
                                 builder: (BuildContext context, double value,
-                                    Widget child) {
+                                    Widget? child) {
                                   return Transform.scale(
                                     scale: value,
                                     alignment: Alignment.bottomRight,
@@ -783,8 +783,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                 },
                                 tween: Tween(begin: 0.0, end: 1.0),
                                 child: Container(
-                                  width: widget.childSize.width,
-                                  height: widget.childSize.height * 6 / 10,
+                                  width: widget.childSize!.width,
+                                  height: widget.childSize!.height * 6 / 10,
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).hintColor,
                                     borderRadius: const BorderRadius.all(
@@ -817,20 +817,20 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   ),
                                                   backgroundColor: Colors.black,
                                                   label: Text(
-                                                    UserData.userProfileWalls[
+                                                    UserData.userProfileWalls![
                                                                 widget.index]
                                                                 ["by"]
                                                             .toString()[0]
                                                             .toUpperCase() +
                                                         UserData
-                                                            .userProfileWalls[
+                                                            .userProfileWalls![
                                                                 widget.index]
                                                                 ["by"]
                                                             .toString()
                                                             .substring(1),
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .headline4
+                                                        .headline4!
                                                         .copyWith(
                                                           color: Colors.white,
                                                         ),
@@ -841,13 +841,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     const EdgeInsets.fromLTRB(
                                                         0, 5, 0, 10),
                                                 child: Text(
-                                                  UserData.userProfileWalls[
+                                                  UserData.userProfileWalls![
                                                           widget.index]["id"]
                                                       .toString()
                                                       .toUpperCase(),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .headline5
+                                                      .headline5!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -864,13 +864,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    UserData.userProfileWalls[
+                                                    UserData.userProfileWalls![
                                                             widget.index]
                                                             ["size"]
                                                         .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText2
+                                                        .bodyText2!
                                                         .copyWith(
                                                             color: Theme.of(
                                                                     context)
@@ -888,13 +888,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    UserData.userProfileWalls[
+                                                    UserData.userProfileWalls![
                                                             widget.index]
                                                             ["resolution"]
                                                         .toString(),
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText2
+                                                        .bodyText2!
                                                         .copyWith(
                                                             color: Theme.of(
                                                                     context)
@@ -946,12 +946,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                           : widget.provider == "Pexels"
                               ? Positioned(
                                   top: widget.childOffset.dy +
-                                      widget.childSize.height * 4 / 10,
+                                      widget.childSize!.height * 4 / 10,
                                   left: widget.childOffset.dx,
                                   child: TweenAnimationBuilder(
                                     duration: const Duration(milliseconds: 200),
                                     builder: (BuildContext context,
-                                        double value, Widget child) {
+                                        double value, Widget? child) {
                                       return Transform.scale(
                                         scale: value,
                                         alignment: Alignment.bottomRight,
@@ -960,8 +960,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     },
                                     tween: Tween(begin: 0.0, end: 1.0),
                                     child: Container(
-                                      width: widget.childSize.width,
-                                      height: widget.childSize.height * 6 / 10,
+                                      width: widget.childSize!.width,
+                                      height: widget.childSize!.height * 6 / 10,
                                       decoration: BoxDecoration(
                                         color: Theme.of(context).hintColor,
                                         borderRadius: const BorderRadius.all(
@@ -1003,7 +1003,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             .toString(),
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .headline4
+                                                            .headline4!
                                                             .copyWith(
                                                               color:
                                                                   Colors.white,
@@ -1013,7 +1013,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         launch(PData
                                                             .wallsP[
                                                                 widget.index]
-                                                            .url);
+                                                            .url!);
                                                       }),
                                                   Padding(
                                                     padding: const EdgeInsets
@@ -1051,7 +1051,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           : PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "")[0].toUpperCase() + PData.wallsP[widget.index].url.toString().replaceAll("https://www.pexels.com/photo/", "").replaceAll("-", " ").replaceAll("/", "").substring(1),
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .headline5
+                                                          .headline5!
                                                           .copyWith(
                                                               color: Theme.of(
                                                                       context)
@@ -1071,7 +1071,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         "${PData.wallsP[widget.index].width.toString()}x${PData.wallsP[widget.index].height.toString()}",
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .headline6
+                                                            .headline6!
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
@@ -1124,18 +1124,18 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               : widget.provider == "Liked"
                                   ? Provider.of<FavouriteProvider>(context,
                                                       listen: false)
-                                                  .liked[widget.index]
+                                                  .liked![widget.index]
                                               ["provider"] ==
                                           "WallHaven"
                                       ? Positioned(
                                           top: widget.childOffset.dy +
-                                              widget.childSize.height * 2 / 8,
+                                              widget.childSize!.height * 2 / 8,
                                           left: widget.childOffset.dx,
                                           child: TweenAnimationBuilder(
                                             duration: const Duration(
                                                 milliseconds: 200),
                                             builder: (BuildContext context,
-                                                double value, Widget child) {
+                                                double value, Widget? child) {
                                               return Transform.scale(
                                                 scale: value,
                                                 alignment:
@@ -1145,8 +1145,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             },
                                             tween: Tween(begin: 0.0, end: 1.0),
                                             child: Container(
-                                              width: widget.childSize.width,
-                                              height: widget.childSize.height *
+                                              width: widget.childSize!.width,
+                                              height: widget.childSize!.height *
                                                   6 /
                                                   8,
                                               decoration: BoxDecoration(
@@ -1199,7 +1199,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             context,
                                                                             listen:
                                                                                 false)
-                                                                        .liked[
+                                                                        .liked![
                                                                             widget.index]
                                                                             [
                                                                             "category"]
@@ -1210,7 +1210,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             context,
                                                                             listen:
                                                                                 false)
-                                                                        .liked[
+                                                                        .liked![
                                                                             widget.index]
                                                                             [
                                                                             "category"]
@@ -1220,7 +1220,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                 style: Theme.of(
                                                                         context)
                                                                     .textTheme
-                                                                    .headline4
+                                                                    .headline4!
                                                                     .copyWith(
                                                                       color: Colors
                                                                           .white,
@@ -1240,7 +1240,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .liked[widget
+                                                                  .liked![widget
                                                                           .index]
                                                                       ["id"]
                                                                   .toString()
@@ -1248,7 +1248,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .headline5
+                                                                  .headline5!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -1266,11 +1266,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                               const SizedBox(
                                                                   width: 10),
                                                               Text(
-                                                                "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["views"].toString()}",
+                                                                "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked![widget.index]["views"].toString()}",
                                                                 style: Theme.of(
                                                                         context)
                                                                     .textTheme
-                                                                    .bodyText2
+                                                                    .bodyText2!
                                                                     .copyWith(
                                                                         color: Theme.of(context)
                                                                             .accentColor),
@@ -1293,7 +1293,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .liked[
+                                                                    .liked![
                                                                         widget
                                                                             .index]
                                                                         [
@@ -1302,7 +1302,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                 style: Theme.of(
                                                                         context)
                                                                     .textTheme
-                                                                    .bodyText2
+                                                                    .bodyText2!
                                                                     .copyWith(
                                                                         color: Theme.of(context)
                                                                             .accentColor),
@@ -1360,12 +1360,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         )
                                       : Provider.of<FavouriteProvider>(context,
                                                           listen: false)
-                                                      .liked[widget.index]
+                                                      .liked![widget.index]
                                                   ["provider"] ==
                                               "Prism"
                                           ? Positioned(
                                               top: widget.childOffset.dy +
-                                                  widget.childSize.height *
+                                                  widget.childSize!.height *
                                                       2 /
                                                       8,
                                               left: widget.childOffset.dx,
@@ -1374,7 +1374,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     milliseconds: 200),
                                                 builder: (BuildContext context,
                                                     double value,
-                                                    Widget child) {
+                                                    Widget? child) {
                                                   return Transform.scale(
                                                     scale: value,
                                                     alignment:
@@ -1385,9 +1385,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 tween:
                                                     Tween(begin: 0.0, end: 1.0),
                                                 child: Container(
-                                                  width: widget.childSize.width,
+                                                  width: widget.childSize!.width,
                                                   height:
-                                                      widget.childSize.height *
+                                                      widget.childSize!.height *
                                                           6 /
                                                           8,
                                                   decoration: BoxDecoration(
@@ -1444,20 +1444,20 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                           .black,
                                                                   label: Text(
                                                                     Provider.of<FavouriteProvider>(context, listen: false)
-                                                                            .liked[widget.index][
+                                                                            .liked![widget.index][
                                                                                 "photographer"]
                                                                             .toString()[
                                                                                 0]
                                                                             .toUpperCase() +
                                                                         Provider.of<FavouriteProvider>(context,
                                                                                 listen: false)
-                                                                            .liked[widget.index]["photographer"]
+                                                                            .liked![widget.index]["photographer"]
                                                                             .toString()
                                                                             .substring(1),
                                                                     style: Theme.of(
                                                                             context)
                                                                         .textTheme
-                                                                        .headline4
+                                                                        .headline4!
                                                                         .copyWith(
                                                                           color:
                                                                               Colors.white,
@@ -1478,7 +1478,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                           context,
                                                                           listen:
                                                                               false)
-                                                                      .liked[
+                                                                      .liked![
                                                                           widget
                                                                               .index]
                                                                           ["id"]
@@ -1487,7 +1487,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                   style: Theme.of(
                                                                           context)
                                                                       .textTheme
-                                                                      .headline5
+                                                                      .headline5!
                                                                       .copyWith(
                                                                           color:
                                                                               Theme.of(context).accentColor),
@@ -1510,7 +1510,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             context,
                                                                             listen:
                                                                                 false)
-                                                                        .liked[
+                                                                        .liked![
                                                                             widget.index]
                                                                             [
                                                                             "size"]
@@ -1518,7 +1518,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     style: Theme.of(
                                                                             context)
                                                                         .textTheme
-                                                                        .bodyText2
+                                                                        .bodyText2!
                                                                         .copyWith(
                                                                             color:
                                                                                 Theme.of(context).accentColor),
@@ -1542,7 +1542,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                             context,
                                                                             listen:
                                                                                 false)
-                                                                        .liked[
+                                                                        .liked![
                                                                             widget.index]
                                                                             [
                                                                             "resolution"]
@@ -1550,7 +1550,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                     style: Theme.of(
                                                                             context)
                                                                         .textTheme
-                                                                        .bodyText2
+                                                                        .bodyText2!
                                                                         .copyWith(
                                                                             color:
                                                                                 Theme.of(context).accentColor),
@@ -1611,12 +1611,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           : Provider.of<FavouriteProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[widget.index]
+                                                          .liked![widget.index]
                                                       ["provider"] ==
                                                   "Pexels"
                                               ? Positioned(
                                                   top: widget.childOffset.dy +
-                                                      widget.childSize.height *
+                                                      widget.childSize!.height *
                                                           1 /
                                                           2,
                                                   left: widget.childOffset.dx,
@@ -1626,7 +1626,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     builder:
                                                         (BuildContext context,
                                                             double value,
-                                                            Widget child) {
+                                                            Widget? child) {
                                                       return Transform.scale(
                                                         scale: value,
                                                         alignment: Alignment
@@ -1638,8 +1638,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         begin: 0.0, end: 1.0),
                                                     child: Container(
                                                       width: widget
-                                                          .childSize.width,
-                                                      height: widget.childSize
+                                                          .childSize!.width,
+                                                      height: widget.childSize!
                                                               .height *
                                                           1 /
                                                           2,
@@ -1701,11 +1701,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                           Text(
                                                                         Provider.of<FavouriteProvider>(context,
                                                                                 listen: false)
-                                                                            .liked[widget.index]["photographer"]
+                                                                            .liked![widget.index]["photographer"]
                                                                             .toString(),
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .headline4
+                                                                            .headline4!
                                                                             .copyWith(
                                                                               color: Colors.white,
                                                                             ),
@@ -1728,11 +1728,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       Text(
                                                                         Provider.of<FavouriteProvider>(context,
                                                                                 listen: false)
-                                                                            .liked[widget.index]["resolution"]
+                                                                            .liked![widget.index]["resolution"]
                                                                             .toString(),
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .bodyText2
+                                                                            .bodyText2!
                                                                             .copyWith(color: Theme.of(context).accentColor),
                                                                       ),
                                                                     ],
@@ -1790,7 +1790,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 )
                                               : Positioned(
                                                   top: widget.childOffset.dy +
-                                                      widget.childSize.height *
+                                                      widget.childSize!.height *
                                                           1 /
                                                           2,
                                                   left: widget.childOffset.dx,
@@ -1800,7 +1800,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     builder:
                                                         (BuildContext context,
                                                             double value,
-                                                            Widget child) {
+                                                            Widget? child) {
                                                       return Transform.scale(
                                                         scale: value,
                                                         alignment: Alignment
@@ -1812,8 +1812,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                         begin: 0.0, end: 1.0),
                                                     child: Container(
                                                       width: widget
-                                                          .childSize.width,
-                                                      height: widget.childSize
+                                                          .childSize!.width,
+                                                      height: widget.childSize!
                                                               .height *
                                                           1 /
                                                           2,
@@ -1866,10 +1866,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                           width:
                                                                               5),
                                                                       Text(
-                                                                        "Likes: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["fav"]}",
+                                                                        "Likes: ${Provider.of<FavouriteProvider>(context, listen: false).liked![widget.index]["fav"]}",
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .headline6
+                                                                            .headline6!
                                                                             .copyWith(color: Theme.of(context).accentColor),
                                                                       ),
                                                                     ],
@@ -1888,10 +1888,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                           width:
                                                                               5),
                                                                       Text(
-                                                                        "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked[widget.index]["views"]}",
+                                                                        "Views: ${Provider.of<FavouriteProvider>(context, listen: false).liked![widget.index]["views"]}",
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .headline6
+                                                                            .headline6!
                                                                             .copyWith(color: Theme.of(context).accentColor),
                                                                       ),
                                                                     ],
@@ -1912,11 +1912,11 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                                       Text(
                                                                         Provider.of<FavouriteProvider>(context,
                                                                                 listen: false)
-                                                                            .liked[widget.index]["resolution"]
+                                                                            .liked![widget.index]["resolution"]
                                                                             .toString(),
                                                                         style: Theme.of(context)
                                                                             .textTheme
-                                                                            .headline6
+                                                                            .headline6!
                                                                             .copyWith(color: Theme.of(context).accentColor),
                                                                       ),
                                                                     ],
@@ -1974,13 +1974,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 )
                                   : Positioned(
                                       top: widget.childOffset.dy +
-                                          widget.childSize.height * 2 / 8,
+                                          widget.childSize!.height * 2 / 8,
                                       left: widget.childOffset.dx,
                                       child: TweenAnimationBuilder(
                                         duration:
                                             const Duration(milliseconds: 200),
                                         builder: (BuildContext context,
-                                            double value, Widget child) {
+                                            double value, Widget? child) {
                                           return Transform.scale(
                                             scale: value,
                                             alignment: Alignment.bottomRight,
@@ -1989,9 +1989,9 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         },
                                         tween: Tween(begin: 0.0, end: 1.0),
                                         child: Container(
-                                          width: widget.childSize.width,
+                                          width: widget.childSize!.width,
                                           height:
-                                              widget.childSize.height * 6 / 8,
+                                              widget.childSize!.height * 6 / 8,
                                           decoration: BoxDecoration(
                                             color: Theme.of(context).hintColor,
                                             borderRadius:
@@ -2042,7 +2042,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .headline4
+                                                                .headline4!
                                                                 .copyWith(
                                                                   color: Colors
                                                                       .white,
@@ -2087,7 +2087,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .headline5
+                                                              .headline5!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -2109,7 +2109,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .headline6
+                                                                .headline6!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -2171,34 +2171,34 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 url: widget.provider == "WallHaven"
                     ? WData.walls[widget.index].path.toString()
                     : widget.provider == "Prism"
-                        ? Data.subPrismWalls[widget.index]["wallpaper_url"]
+                        ? Data.subPrismWalls![widget.index]["wallpaper_url"]
                             .toString()
                         : widget.provider == "ProfileWall"
                             ? Provider.of<ProfileWallProvider>(context,
                                     listen: false)
-                                .profileWalls[widget.index]["wallpaper_url"]
+                                .profileWalls![widget.index]["wallpaper_url"]
                                 .toString()
                             : widget.provider == "UserProfileWall"
-                                ? UserData.userProfileWalls[widget.index]
+                                ? UserData.userProfileWalls![widget.index]
                                         ["wallpaper_url"]
                                     .toString()
                                 : widget.provider == "Pexels"
-                                    ? PData.wallsP[widget.index].src["original"]
+                                    ? PData.wallsP[widget.index].src!["original"]
                                         .toString()
                                     : widget.provider == "Liked"
                                         ? Provider.of<FavouriteProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[widget.index]["url"]
+                                            .liked![widget.index]["url"]
                                             .toString()
                                         : PData.wallsC[widget.index]
-                                            .src["original"]
+                                            .src!["original"]
                                             .toString(),
               ),
             ),
             Positioned(
-              top: topOffset - fabHeartTopOffset,
-              left: leftOffset - fabHeartLeftOffset,
+              top: topOffset! - fabHeartTopOffset,
+              left: leftOffset! - fabHeartLeftOffset,
               child: widget.provider == "WallHaven"
                   ? FavouriteWallpaperButton(
                       id: WData.walls[widget.index].id.toString(),
@@ -2208,30 +2208,30 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                     )
                   : widget.provider == "Prism"
                       ? FavouriteWallpaperButton(
-                          id: Data.subPrismWalls[widget.index]["id"].toString(),
+                          id: Data.subPrismWalls![widget.index]["id"].toString(),
                           provider: "Prism",
-                          prism: Data.subPrismWalls[widget.index] as Map,
+                          prism: Data.subPrismWalls![widget.index] as Map,
                           trash: false,
                         )
                       : widget.provider == "ProfileWall"
                           ? FavouriteWallpaperButton(
                               id: Provider.of<ProfileWallProvider>(context,
                                       listen: false)
-                                  .profileWalls[widget.index]["id"]
+                                  .profileWalls![widget.index]["id"]
                                   .toString(),
                               provider: "Prism",
                               prism: Provider.of<ProfileWallProvider>(context,
                                       listen: false)
-                                  .profileWalls[widget.index] as Map,
+                                  .profileWalls![widget.index] as Map,
                               trash: false,
                             )
                           : widget.provider == "UserProfileWall"
                               ? FavouriteWallpaperButton(
-                                  id: UserData.userProfileWalls[widget.index]
+                                  id: UserData.userProfileWalls![widget.index]
                                           ["id"]
                                       .toString(),
                                   provider: "Prism",
-                                  prism: UserData.userProfileWalls[widget.index]
+                                  prism: UserData.userProfileWalls![widget.index]
                                       as Map,
                                   trash: false,
                                 )
@@ -2248,13 +2248,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           id: Provider.of<FavouriteProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[widget.index]["id"]
+                                              .liked![widget.index]["id"]
                                               .toString(),
                                           provider:
                                               Provider.of<FavouriteProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[widget.index]
+                                                  .liked![widget.index]
                                                       ["provider"]
                                                   .toString(),
                                           trash: true,
@@ -2268,35 +2268,35 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         ),
             ),
             Positioned(
-              top: topOffset + fabWallTopOffset,
-              left: leftOffset + fabWallLeftOffset,
+              top: topOffset! + fabWallTopOffset,
+              left: leftOffset! + fabWallLeftOffset,
               child: DownloadButton(
                 colorChanged: false,
                 link: widget.provider == "WallHaven"
                     ? WData.walls[widget.index].path.toString()
                     : widget.provider == "Prism"
-                        ? Data.subPrismWalls[widget.index]["wallpaper_url"]
+                        ? Data.subPrismWalls![widget.index]["wallpaper_url"]
                             .toString()
                         : widget.provider == "ProfileWall"
                             ? Provider.of<ProfileWallProvider>(context,
                                     listen: false)
-                                .profileWalls[widget.index]["wallpaper_url"]
+                                .profileWalls![widget.index]["wallpaper_url"]
                                 .toString()
                             : widget.provider == "UserProfileWall"
-                                ? UserData.userProfileWalls[widget.index]
+                                ? UserData.userProfileWalls![widget.index]
                                         ["wallpaper_url"]
                                     .toString()
                                 : widget.provider == "Pexels"
-                                    ? PData.wallsP[widget.index].src["original"]
+                                    ? PData.wallsP[widget.index].src!["original"]
                                         .toString()
                                     : widget.provider == "Liked"
                                         ? Provider.of<FavouriteProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[widget.index]["url"]
+                                            .liked![widget.index]["url"]
                                             .toString()
                                         : PData.wallsC[widget.index]
-                                            .src["original"]
+                                            .src!["original"]
                                             .toString(),
               ),
             ),
@@ -2314,7 +2314,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
 class HexColor extends Color {
   static int _getColorFromHex(String hexColor) {
     final String heColor = hexColor.toUpperCase().replaceAll("#", "");
-    String hColor;
+    late String hColor;
     if (heColor.length == 6) {
       hColor = "FF$heColor";
     }

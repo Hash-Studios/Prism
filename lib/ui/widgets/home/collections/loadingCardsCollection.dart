@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 class LoadingCardsCollection extends StatefulWidget {
   const LoadingCardsCollection({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -15,8 +15,8 @@ class LoadingCardsCollection extends StatefulWidget {
 
 class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+  late AnimationController _controller;
+  late Animation<Color?> animation;
 
   @override
   void initState() {
@@ -27,9 +27,9 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -47,7 +47,7 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
               ),
             ],
           ).animate(_controller)
-        : TweenSequence<Color>(
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -79,9 +79,9 @@ class _LoadingCardsCollectionState extends State<LoadingCardsCollection>
 
   @override
   Widget build(BuildContext context) {
-    ScrollController controller;
+    ScrollController? controller;
     try {
-      controller = InheritedDataProvider.of(context).scrollController;
+      controller = InheritedDataProvider.of(context)!.scrollController;
     } catch (e) {
       debugPrint(e.toString());
     }

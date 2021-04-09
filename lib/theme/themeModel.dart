@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:Prism/main.dart' as main;
 
-Map<String, ThemeData> themes = {
+Map<String, ThemeData?> themes = {
   "kLFrost White": kLightTheme,
   "kLCoffee": kLightTheme2,
   "kLRose": kLightTheme3,
@@ -10,17 +10,17 @@ Map<String, ThemeData> themes = {
 };
 
 class ThemeModel extends ChangeNotifier {
-  ThemeData currentTheme = kLightTheme;
+  ThemeData? currentTheme = kLightTheme;
 
   ThemeModel(
     this.currentTheme,
-    Color accentColor,
+    Color? accentColor,
   ) {
     changeAccent(accentColor);
   }
 
-  void changeAccent(Color accentColor) {
-    ThemeData newTheme = currentTheme;
+  void changeAccent(Color? accentColor) {
+    ThemeData newTheme = currentTheme!;
     newTheme = newTheme.copyWith(errorColor: accentColor);
     currentTheme = newTheme;
     main.prefs.put(
@@ -33,7 +33,7 @@ class ThemeModel extends ChangeNotifier {
   }
 
   
-  int getIndex(ThemeData currentThemeData) {
+  int? getIndex(ThemeData? currentThemeData) {
     return themes.values.toList().contains(currentThemeData)
         ? themes.values.toList().indexOf(currentThemeData)
         : null;
@@ -49,7 +49,7 @@ class ThemeModel extends ChangeNotifier {
     main.prefs.put("lightThemeID", themeID);
     main.prefs.put(
         "lightAccent",
-        int.parse(currentTheme.errorColor
+        int.parse(currentTheme!.errorColor
             .toString()
             .replaceAll("Color(", "")
             .replaceAll(")", "")));

@@ -536,7 +536,7 @@ void showChangelog(BuildContext context, Function func) {
 
 class ChangeVersion extends StatelessWidget {
   final String number;
-  const ChangeVersion({@required this.number});
+  const ChangeVersion({required this.number});
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -568,7 +568,7 @@ class ChangeVersion extends StatelessWidget {
 class Change extends StatelessWidget {
   final IconData icon;
   final String text;
-  const Change({@required this.icon, @required this.text});
+  const Change({required this.icon, required this.text});
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -603,7 +603,7 @@ class Change extends StatelessWidget {
                 text,
                 style: Theme.of(context)
                     .textTheme
-                    .headline6
+                    .headline6!
                     .copyWith(color: Theme.of(context).accentColor),
               ),
             ),

@@ -17,13 +17,13 @@ class NotifDataAdapter extends TypeAdapter<NotifData> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return NotifData(
-      pageName: fields[1] as String,
-      title: fields[0] as String,
-      desc: fields[2] as String,
-      imageUrl: fields[3] as String,
-      arguments: (fields[4] as List)?.cast<dynamic>(),
-      url: fields[5] as String,
-      createdAt: fields[6] as DateTime,
+      pageName: fields[1] as String?,
+      title: fields[0] as String?,
+      desc: fields[2] as String?,
+      imageUrl: fields[3] as String?,
+      arguments: (fields[4] as List?)?.cast<dynamic>(),
+      url: fields[5] as String?,
+      createdAt: fields[6] as DateTime?,
     );
   }
 

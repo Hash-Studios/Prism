@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class CollapsedPanel extends StatelessWidget {
-  final bool panelCollapsed;
+  final bool? panelCollapsed;
   final PanelController panelController;
   const CollapsedPanel({
-    Key key,
+    Key? key,
     this.panelCollapsed,
-    @required this.panelController,
+    required this.panelController,
   }) : super(key: key);
 
   @override
@@ -22,7 +22,7 @@ class CollapsedPanel extends StatelessWidget {
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
         ),
-        color: panelCollapsed
+        color: panelCollapsed!
             ? Theme.of(context).primaryColor.withOpacity(1)
             : Theme.of(context).primaryColor.withOpacity(0),
       ),
@@ -32,7 +32,7 @@ class CollapsedPanel extends StatelessWidget {
         child: Center(
             child: AnimatedOpacity(
           duration: const Duration(),
-          opacity: panelCollapsed ? 1.0 : 0.0,
+          opacity: panelCollapsed! ? 1.0 : 0.0,
           child: IconButton(
             icon: Icon(
               JamIcons.chevron_up,

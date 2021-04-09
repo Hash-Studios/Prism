@@ -9,7 +9,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:share/share.dart';
 
 Future<String> createDynamicLink(
-    String id, String provider, String url, String thumbUrl) async {
+    String id, String provider, String? url, String thumbUrl) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
           title: "Prism Wallpapers - $id",
@@ -41,7 +41,7 @@ Future<String> createDynamicLink(
 }
 
 Future<void> createUserDynamicLink(String name, String email, String userPhoto,
-    bool premium, String twitter, String instagram) async {
+    bool? premium, String twitter, String instagram) async {
   final DynamicLinkParameters parameters = DynamicLinkParameters(
       socialMetaTagParameters: SocialMetaTagParameters(
           title: "$name - Prism Wallpapers",
@@ -128,18 +128,18 @@ Future<String> createSharingPrismLink(String userID) async {
 }
 
 Future<String> createCopyrightLink(bool setup, BuildContext context,
-    {String id,
-    String provider,
-    String url,
-    String thumbUrl,
-    String name,
-    String index}) async {
+    {String? id,
+    String? provider,
+    String? url,
+    String? thumbUrl,
+    String? name,
+    String? index}) async {
   Uri shortUrl;
   if (setup == true) {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
         socialMetaTagParameters: SocialMetaTagParameters(
             title: "$name - Prism Wallpapers",
-            imageUrl: Uri.parse(thumbUrl),
+            imageUrl: Uri.parse(thumbUrl!),
             description:
                 "Check out this amazing setup I got, from Prism Wallpapers App."),
         dynamicLinkParametersOptions: DynamicLinkParametersOptions(
@@ -164,7 +164,7 @@ Future<String> createCopyrightLink(bool setup, BuildContext context,
     final DynamicLinkParameters parameters = DynamicLinkParameters(
         socialMetaTagParameters: SocialMetaTagParameters(
             title: "Prism Wallpapers - $id",
-            imageUrl: Uri.parse(thumbUrl),
+            imageUrl: Uri.parse(thumbUrl!),
             description:
                 "Check out this amazing wallpaper I got, from Prism Wallpapers App."),
         dynamicLinkParametersOptions: DynamicLinkParametersOptions(
@@ -193,4 +193,5 @@ Future<String> createCopyrightLink(bool setup, BuildContext context,
             setup: setup,
             shortlink: shortUrl.toString(),
           ));
+  return "";
 }

@@ -18,49 +18,49 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 
 class EditSetupReviewScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const EditSetupReviewScreen({this.arguments});
   @override
   _EditSetupReviewScreenState createState() => _EditSetupReviewScreenState();
 }
 
 class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
-  bool isUploading;
-  bool isProcessing;
-  File image;
-  DocumentSnapshot setupDoc;
-  String imageURL;
+  late bool isUploading;
+  late bool isProcessing;
+  late File image;
+  late DocumentSnapshot setupDoc;
+  String? imageURL;
   TextEditingController setupName = TextEditingController();
   TextEditingController setupDesc = TextEditingController();
   TextEditingController iconName = TextEditingController();
   TextEditingController iconURL = TextEditingController();
   TextEditingController widgetName1 = TextEditingController();
   TextEditingController widgetURL1 = TextEditingController();
-  String id;
-  String tempid;
+  String? id;
+  String? tempid;
   TextEditingController wallpaperUrl = TextEditingController();
-  String wallpaperUploadLink;
+  String? wallpaperUploadLink;
   String wallpaperId = "";
   TextEditingController wallpaperAppName = TextEditingController();
   TextEditingController wallpaperAppWallName = TextEditingController();
   TextEditingController wallpaperAppLink = TextEditingController();
   TextEditingController widgetName2 = TextEditingController();
   TextEditingController widgetURL2 = TextEditingController();
-  String wallpaperProvider;
-  String wallpaperThumb;
-  bool review;
-  List<int> imageBytes;
+  String? wallpaperProvider;
+  String? wallpaperThumb;
+  bool? review;
+  late List<int> imageBytes;
   List<Widget> tags = [];
-  FocusNode textFocusNode;
-  int groupValue;
-  int groupWidgetValue;
+  FocusNode? textFocusNode;
+  int? groupValue;
+  int? groupWidgetValue;
   bool wallpaperUploaded = false;
   bool secondWidgetAdded = false;
 
   @override
   void initState() {
     super.initState();
-    setupDoc = widget.arguments[0] as DocumentSnapshot;
+    setupDoc = widget.arguments![0] as DocumentSnapshot;
     imageURL = setupDoc.data["image"].toString();
     groupWidgetValue = 0;
     setupName = TextEditingController(text: setupDoc.data["name"].toString());
@@ -101,7 +101,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
     isProcessing = false;
     wallpaperProvider = setupDoc.data["wallpaper_provider"].toString();
     wallpaperThumb = setupDoc.data["wallpaper_thumb"].toString();
-    review = setupDoc.data["review"] as bool;
+    review = setupDoc.data["review"] as bool?;
     secondWidgetAdded = "${setupDoc.data["widget2"]}" != "" &&
         "${setupDoc.data["widget2"]}" != null;
   }
@@ -386,7 +386,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       height: 200,
                       width: 120,
                       child: CachedNetworkImage(
-                          imageUrl: imageURL, fit: BoxFit.contain),
+                          imageUrl: imageURL!, fit: BoxFit.contain),
                     ),
                     if (isUploading || isProcessing)
                       Container(
@@ -449,7 +449,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           cursorColor: Theme.of(context).errorColor,
                           style: Theme.of(context)
                               .textTheme
-                              .headline5
+                              .headline5!
                               .copyWith(color: Theme.of(context).accentColor),
                           controller: widgetName1,
                           focusNode: textFocusNode,
@@ -463,7 +463,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             hintText: "Write widget app name...",
                             hintStyle: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.android,
@@ -488,7 +488,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           cursorColor: Theme.of(context).errorColor,
                           style: Theme.of(context)
                               .textTheme
-                              .headline5
+                              .headline5!
                               .copyWith(color: Theme.of(context).accentColor),
                           controller: widgetURL1,
                           focusNode: textFocusNode,
@@ -502,7 +502,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             hintText: "Write widget app link...",
                             hintStyle: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.google_play,
@@ -528,7 +528,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             cursorColor: Theme.of(context).errorColor,
                             style: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             controller: widgetName2,
                             focusNode: textFocusNode,
@@ -542,7 +542,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               hintText: "Write 2nd widget app name...",
                               hintStyle: Theme.of(context)
                                   .textTheme
-                                  .headline5
+                                  .headline5!
                                   .copyWith(
                                       color: Theme.of(context).accentColor),
                               suffixIcon: Icon(
@@ -578,7 +578,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             cursorColor: Theme.of(context).errorColor,
                             style: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             controller: widgetURL2,
                             focusNode: textFocusNode,
@@ -592,7 +592,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               hintText: "Write 2nd widget app link...",
                               hintStyle: Theme.of(context)
                                   .textTheme
-                                  .headline5
+                                  .headline5!
                                   .copyWith(
                                       color: Theme.of(context).accentColor),
                               suffixIcon: Icon(
@@ -625,7 +625,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           cursorColor: Theme.of(context).errorColor,
                           style: Theme.of(context)
                               .textTheme
-                              .headline5
+                              .headline5!
                               .copyWith(color: Theme.of(context).accentColor),
                           controller: iconName,
                           focusNode: textFocusNode,
@@ -639,7 +639,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             hintText: "Write icon pack name...",
                             hintStyle: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.android,
@@ -664,7 +664,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                           cursorColor: Theme.of(context).errorColor,
                           style: Theme.of(context)
                               .textTheme
-                              .headline5
+                              .headline5!
                               .copyWith(color: Theme.of(context).accentColor),
                           controller: iconURL,
                           focusNode: textFocusNode,
@@ -678,7 +678,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             hintText: "Write icon app link...",
                             hintStyle: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.google_play_circle,
@@ -737,7 +737,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       cursorColor: Theme.of(context).errorColor,
                       style: Theme.of(context)
                           .textTheme
-                          .headline5
+                          .headline5!
                           .copyWith(color: Theme.of(context).accentColor),
                       controller: wallpaperUrl,
                       focusNode: textFocusNode,
@@ -751,7 +751,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                         hintText: "Write wallpaper link...",
                         hintStyle: Theme.of(context)
                             .textTheme
-                            .headline5
+                            .headline5!
                             .copyWith(color: Theme.of(context).accentColor),
                         suffixIcon: Icon(
                           JamIcons.picture,
@@ -825,7 +825,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 controller: wallpaperAppName,
@@ -840,7 +840,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   hintText: "Write wallpaper app name...",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5
+                                      .headline5!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                   suffixIcon: Icon(
@@ -866,7 +866,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 controller: wallpaperAppLink,
@@ -881,7 +881,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   hintText: "Write app link...",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5
+                                      .headline5!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                   suffixIcon: Icon(
@@ -907,7 +907,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 controller: wallpaperAppWallName,
@@ -922,7 +922,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                   hintText: "Write wallpaper name",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5
+                                      .headline5!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                   suffixIcon: Icon(

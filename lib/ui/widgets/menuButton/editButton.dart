@@ -11,10 +11,10 @@ import 'package:flutter/foundation.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 class EditButton extends StatefulWidget {
-  final String url;
+  final String? url;
   const EditButton({
-    @required this.url,
-    Key key,
+    required this.url,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -22,9 +22,9 @@ class EditButton extends StatefulWidget {
 }
 
 class _EditButtonState extends State<EditButton> {
-  bool isLoading;
-  String imageData;
-  String imageThumbData;
+  late bool isLoading;
+  late String imageData;
+  late String imageThumbData;
 
   @override
   void initState() {
@@ -72,7 +72,7 @@ class _EditButtonState extends State<EditButton> {
     );
   }
 
-  Future<void> onEdit(String url) async {
+  Future<void> onEdit(String? url) async {
     setState(() {
       isLoading = true;
     });

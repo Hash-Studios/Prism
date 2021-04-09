@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 
 class UploadedSetupsLoader extends StatefulWidget {
   final Future future;
-  const UploadedSetupsLoader({@required this.future});
+  const UploadedSetupsLoader({required this.future});
   @override
   _UploadedSetupsLoaderState createState() => _UploadedSetupsLoaderState();
 }
 
 class _UploadedSetupsLoaderState extends State<UploadedSetupsLoader> {
-  Future _future;
+  Future? _future;
 
   @override
   void initState() {

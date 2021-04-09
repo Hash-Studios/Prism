@@ -16,17 +16,17 @@ import 'package:Prism/main.dart' as main;
 
 class SearchGrid extends StatefulWidget {
   final String query;
-  final String selectedProvider;
-  const SearchGrid({@required this.query, @required this.selectedProvider});
+  final String? selectedProvider;
+  const SearchGrid({required this.query, required this.selectedProvider});
   @override
   _SearchGridState createState() => _SearchGridState();
 }
 
 class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
-  AnimationController _controller;
-  AnimationController shakeController;
-  Animation<Color> animation;
-  int longTapIndex;
+  AnimationController? _controller;
+  late AnimationController shakeController;
+  late Animation<Color?> animation;
+  int? longTapIndex;
   GlobalKey<RefreshIndicatorState> refreshHomeKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -42,9 +42,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -61,8 +61,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -79,11 +79,11 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -98,8 +98,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
     await Future.delayed(const Duration(milliseconds: 500));
     if (widget.selectedProvider == "WallHaven") {
       wData.wallsS = [];
-      wData.getWallsbyQuery(widget.query, main.prefs.get('WHcategories') as int,
-          main.prefs.get('WHpurity') as int);
+      wData.getWallsbyQuery(widget.query, main.prefs.get('WHcategories') as int?,
+          main.prefs.get('WHpurity') as int?);
     } else if (widget.selectedProvider == "Pexels") {
       pData.wallsPS = [];
       pData.getWallsPbyQuery(widget.query);
@@ -116,8 +116,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               shakeController.reverse();
             }
           });
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshHomeKey,
@@ -129,8 +129,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               if (widget.selectedProvider == "WallHaven") {
                 wData.getWallsbyQueryPage(
                     widget.query,
-                    main.prefs.get('WHcategories') as int,
-                    main.prefs.get('WHpurity') as int);
+                    main.prefs.get('WHcategories') as int?,
+                    main.prefs.get('WHpurity') as int?);
               } else if (widget.selectedProvider == "Pexels") {
                 pData.getWallsPbyQueryPage(widget.query);
               }
@@ -179,8 +179,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                       if (!seeMoreLoader) {
                         wData.getWallsbyQueryPage(
                             widget.query,
-                            main.prefs.get('WHcategories') as int,
-                            main.prefs.get('WHpurity') as int);
+                            main.prefs.get('WHcategories') as int?,
+                            main.prefs.get('WHpurity') as int?);
                         setState(() {
                           seeMoreLoader = true;
                           Future.delayed(const Duration(seconds: 2))
@@ -248,7 +248,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                           image: DecorationImage(
                                               image: CachedNetworkImageProvider(
                                                   wData.wallsS[index]
-                                                      .thumbs["original"]
+                                                      .thumbs!["original"]
                                                       .toString()),
                                               fit: BoxFit.cover))
                                   : pData.wallsPS.isEmpty
@@ -264,7 +264,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                           image: DecorationImage(
                                               image: CachedNetworkImageProvider(
                                                   pData.wallsPS[index]
-                                                      .src["medium"]
+                                                      .src!["medium"]
                                                       .toString()),
                                               fit: BoxFit.cover)),
                             ),
@@ -290,7 +290,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                               widget.query,
                                               index,
                                               wData.wallsS[index]
-                                                  .thumbs["small"],
+                                                  .thumbs!["small"],
                                             ]);
                                       }
                                     } else if (widget.selectedProvider ==
@@ -304,7 +304,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                               widget.query,
                                               index,
                                               pData
-                                                  .wallsPS[index].src["medium"],
+                                                  .wallsPS[index].src!["medium"],
                                             ]);
                                       }
                                     }
@@ -320,11 +320,11 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                       } else {
                                         HapticFeedback.vibrate();
                                         createDynamicLink(
-                                            wData.wallsS[index].id,
+                                            wData.wallsS[index].id!,
                                             "WallHaven",
                                             wData.wallsS[index].path,
                                             wData.wallsS[index]
-                                                .thumbs["original"]
+                                                .thumbs!["original"]
                                                 .toString());
                                       }
                                     } else if (widget.selectedProvider ==
@@ -333,11 +333,11 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                       } else {
                                         HapticFeedback.vibrate();
                                         createDynamicLink(
-                                            pData.wallsPS[index].id,
+                                            pData.wallsPS[index].id!,
                                             "Pexels",
-                                            pData.wallsPS[index].src["original"]
+                                            pData.wallsPS[index].src!["original"]
                                                 .toString(),
-                                            pData.wallsPS[index].src["medium"]
+                                            pData.wallsPS[index].src!["medium"]
                                                 .toString());
                                       }
                                     }

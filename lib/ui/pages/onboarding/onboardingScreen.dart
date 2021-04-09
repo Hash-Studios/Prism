@@ -16,21 +16,21 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   PageController onboardingCarouselController = PageController();
-  int _currentPage;
-  Color selectedAccentColor;
-  int selectedTheme;
-  bool isLoading;
-  bool isSignedIn;
-  Image image1;
-  Image image2;
-  Image image3;
+  int? _currentPage;
+  Color? selectedAccentColor;
+  int? selectedTheme;
+  late bool isLoading;
+  bool? isSignedIn;
+  Image? image1;
+  Image? image2;
+  Image? image3;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    precacheImage(image1.image, context);
-    precacheImage(image2.image, context);
-    precacheImage(image3.image, context);
+    precacheImage(image1!.image, context);
+    precacheImage(image2!.image, context);
+    precacheImage(image3!.image, context);
   }
 
   @override
@@ -40,13 +40,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     image3 = Image.asset('assets/images/third.png');
     super.initState();
     isLoading = false;
-    isSignedIn = main.prefs.get('isLoggedin') as bool ?? false;
+    isSignedIn = main.prefs.get('isLoggedin') as bool? ?? false;
     selectedTheme = 2;
     selectedAccentColor = const Color(0xFFE57697);
     _currentPage = 0;
     onboardingCarouselController.addListener(() {
       setState(() {
-        _currentPage = onboardingCarouselController.page.toInt();
+        _currentPage = onboardingCarouselController.page!.toInt();
       });
     });
   }
@@ -210,7 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       "Light",
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .subtitle2
+                                                          .subtitle2!
                                                           .copyWith(
                                                               color:
                                                                   Colors.black),
@@ -301,7 +301,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       "Dark",
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .subtitle2
+                                                          .subtitle2!
                                                           .copyWith(
                                                               color:
                                                                   Colors.white),
@@ -397,7 +397,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       "System",
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .subtitle2
+                                                          .subtitle2!
                                                           .copyWith(
                                                               color: MediaQuery.of(
                                                                               context)
@@ -590,7 +590,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     duration: const Duration(milliseconds: 250),
                                     curve: Curves.easeOutCubic);
                               }
-                            : isSignedIn
+                            : isSignedIn!
                                 ? () {
                                     toasts.codeSend("Already signed-in!");
                                   }
@@ -635,7 +635,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         setState(() {
                                           isLoading = false;
                                           isSignedIn = main.prefs
-                                              .get('isLoggedin') as bool;
+                                              .get('isLoggedin') as bool?;
                                         });
                                       },
                         style: ButtonStyle(
@@ -659,7 +659,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 )
-                              : isSignedIn
+                              : isSignedIn!
                                   ? const Icon(
                                       JamIcons.check,
                                       color: Color(0xFFE57697),
@@ -709,12 +709,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 class OBIndicator extends StatelessWidget {
   const OBIndicator({
-    Key key,
-    @required int currentPage,
+    Key? key,
+    required int? currentPage,
   })  : _currentPage = currentPage,
         super(key: key);
 
-  final int _currentPage;
+  final int? _currentPage;
 
   @override
   Widget build(BuildContext context) {

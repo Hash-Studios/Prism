@@ -7,7 +7,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 
 class CollectionScreen extends StatefulWidget {
   const CollectionScreen({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -33,9 +33,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: onWillPop,
-      child: FutureBuilder<Map>(
+      child: FutureBuilder<Map?>(
         future: getCollections(), // async work
-        builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
+        builder: (BuildContext context, AsyncSnapshot<Map?> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
               return Center(child: Loader());

@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 
 class FavouriteSetupGrid extends StatefulWidget {
   const FavouriteSetupGrid({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -21,8 +21,8 @@ class FavouriteSetupGrid extends StatefulWidget {
 
 class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
+  AnimationController? _controller;
+  late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshFavKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -35,9 +35,9 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -54,8 +54,8 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -72,11 +72,11 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -93,8 +93,8 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     return RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
         key: refreshFavKey,
@@ -103,7 +103,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
                     .liked !=
                 null
             ? Provider.of<FavouriteSetupProvider>(context, listen: false)
-                    .liked
+                    .liked!
                     .isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -227,7 +227,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
                     padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
                     controller: controller,
                     itemCount: Provider.of<FavouriteSetupProvider>(context)
-                        .liked
+                        .liked!
                         .length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent:
@@ -249,7 +249,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid>
                                     image: CachedNetworkImageProvider(
                                       Provider.of<FavouriteSetupProvider>(
                                               context)
-                                          .liked[index]["image"]
+                                          .liked![index]["image"]
                                           .toString(),
                                     ),
                                     fit: BoxFit.cover)),

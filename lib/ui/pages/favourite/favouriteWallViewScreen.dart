@@ -23,7 +23,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:Prism/global/globals.dart' as globals;
 
 class FavWallpaperViewScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const FavWallpaperViewScreen({this.arguments});
 
   @override
@@ -39,22 +39,22 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int index;
-  String thumb;
+  late int index;
+  late String thumb;
   bool isLoading = true;
-  PaletteGenerator paletteGenerator;
-  List<Color> colors;
-  Color accent;
+  late PaletteGenerator paletteGenerator;
+  List<Color?>? colors;
+  Color? accent;
   bool colorChanged = false;
-  String downloadLinkBackwards;
-  File _imageFile;
+  String? downloadLinkBackwards;
+  late File _imageFile;
   bool screenshotTaken = false;
   ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
-  AnimationController shakeController;
+  late AnimationController shakeController;
   bool panelClosed = true;
   bool panelCollapsed = true;
-  Future<String> _futureView;
+  Future<String>? _futureView;
 
   Future<void> _updatePaletteGenerator() async {
     setState(() {
@@ -71,12 +71,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
     });
     colors = paletteGenerator.colors.toList();
     if (paletteGenerator.colors.length > 5) {
-      colors = colors.sublist(0, 5);
+      colors = colors!.sublist(0, 5);
     }
     setState(() {
-      accent = colors[0];
+      accent = colors![0];
     });
-    if (accent.computeLuminance() > 0.5) {
+    if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
           .copyWith(statusBarIconBrightness: Brightness.dark));
     } else {
@@ -86,15 +86,15 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
   }
 
   void updateAccent() {
-    if (colors.contains(accent)) {
-      final index = colors.indexOf(accent);
+    if (colors!.contains(accent)) {
+      final index = colors!.indexOf(accent);
       setState(() {
-        accent = colors[(index + 1) % 5];
+        accent = colors![(index + 1) % 5];
       });
       setState(() {
         colorChanged = true;
       });
-      if (accent.computeLuminance() > 0.5) {
+      if (accent!.computeLuminance() > 0.5) {
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
             .copyWith(statusBarIconBrightness: Brightness.dark));
       } else {
@@ -108,19 +108,19 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0] as int;
-    thumb = widget.arguments[1] as String;
+    index = widget.arguments![0] as int;
+    thumb = widget.arguments![1] as String;
     isLoading = true;
-    if (Provider.of<FavouriteProvider>(context, listen: false).liked[index]
+    if (Provider.of<FavouriteProvider>(context, listen: false).liked![index]
             ["provider"] ==
         "Prism") {
       updateViews(Provider.of<FavouriteProvider>(context, listen: false)
-          .liked[index]["id"]
+          .liked![index]["id"]
           .toString()
           .toUpperCase());
       _futureView = getViews(
           Provider.of<FavouriteProvider>(context, listen: false)
-              .liked[index]["id"]
+              .liked![index]["id"]
               .toString()
               .toUpperCase());
     }
@@ -146,14 +146,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
           });
     return WillPopScope(
       onWillPop: onWillPop,
-      child: Provider.of<FavouriteProvider>(context, listen: false).liked[index]
+      child: Provider.of<FavouriteProvider>(context, listen: false).liked![index]
                       ["provider"] ==
                   "WallHaven" ||
               Provider.of<FavouriteProvider>(context, listen: false)
-                      .liked[index]["provider"] ==
+                      .liked![index]["provider"] ==
                   "Pexels" ||
               Provider.of<FavouriteProvider>(context, listen: false)
-                      .liked[index]["provider"] ==
+                      .liked![index]["provider"] ==
                   "Prism"
           ? Scaffold(
               key: _scaffoldKey,
@@ -267,7 +267,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             ColorBar(colors: colors),
                             if (Provider.of<FavouriteProvider>(context,
                                         listen: false)
-                                    .liked[index]["provider"] ==
+                                    .liked![index]["provider"] ==
                                 "WallHaven")
                               Expanded(
                                 flex: 8,
@@ -291,12 +291,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               Provider.of<FavouriteProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["id"]
+                                                  .liked![index]["id"]
                                                   .toString()
                                                   .toUpperCase(),
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText1
+                                                  .bodyText1!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -313,10 +313,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"]}",
+                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["views"]}",
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2
+                                                    .bodyText2!
                                                     .copyWith(
                                                         color: Theme.of(context)
                                                             .accentColor),
@@ -335,10 +335,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["fav"]}",
+                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["fav"]}",
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2
+                                                    .bodyText2!
                                                     .copyWith(
                                                         color: Theme.of(context)
                                                             .accentColor),
@@ -357,10 +357,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                "${double.parse((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                                "${double.parse((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2
+                                                    .bodyText2!
                                                     .copyWith(
                                                         color: Theme.of(context)
                                                             .accentColor),
@@ -383,20 +383,20 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                   Provider.of<FavouriteProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]
+                                                          .liked![index]
                                                               ["category"]
                                                           .toString()[0]
                                                           .toUpperCase() +
                                                       Provider.of<FavouriteProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]
+                                                          .liked![index]
                                                               ["category"]
                                                           .toString()
                                                           .substring(1),
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           color:
                                                               Theme.of(context)
@@ -417,10 +417,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                           Row(
                                             children: [
                                               Text(
-                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"]}",
+                                                "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["resolution"]}",
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2
+                                                    .bodyText2!
                                                     .copyWith(
                                                         color: Theme.of(context)
                                                             .accentColor),
@@ -442,11 +442,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                 Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["provider"]
+                                                    .liked![index]["provider"]
                                                     .toString(),
                                                 style: Theme.of(context)
                                                     .textTheme
-                                                    .bodyText2
+                                                    .bodyText2!
                                                     .copyWith(
                                                         color: Theme.of(context)
                                                             .accentColor),
@@ -470,7 +470,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             else
                               Provider.of<FavouriteProvider>(context,
                                               listen: false)
-                                          .liked[index]["provider"] ==
+                                          .liked![index]["provider"] ==
                                       "Prism"
                                   ? Expanded(
                                       flex: 8,
@@ -501,14 +501,14 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                           Provider.of<FavouriteProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .liked[index]
+                                                              .liked![index]
                                                                   ["id"]
                                                               .toString()
                                                               .toUpperCase(),
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText1
+                                                              .bodyText1!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -541,7 +541,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                   style: Theme.of(
                                                                           context)
                                                                       .textTheme
-                                                                      .bodyText1
+                                                                      .bodyText1!
                                                                       .copyWith(
                                                                           color: Theme.of(context)
                                                                               .accentColor,
@@ -555,7 +555,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                   style: Theme.of(
                                                                           context)
                                                                       .textTheme
-                                                                      .bodyText1
+                                                                      .bodyText1!
                                                                       .copyWith(
                                                                           color: Theme.of(context)
                                                                               .accentColor,
@@ -570,7 +570,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                     style: Theme.of(
                                                                             context)
                                                                         .textTheme
-                                                                        .bodyText1
+                                                                        .bodyText1!
                                                                         .copyWith(
                                                                             color:
                                                                                 Theme.of(context).accentColor,
@@ -587,7 +587,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                     style: Theme.of(
                                                                             context)
                                                                         .textTheme
-                                                                        .bodyText1
+                                                                        .bodyText1!
                                                                         .copyWith(
                                                                             color:
                                                                                 Theme.of(context).accentColor,
@@ -611,10 +611,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
-                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["photographer"]}",
+                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["photographer"]}",
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2
+                                                            .bodyText2!
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
@@ -635,10 +635,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
-                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["category"]}",
+                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["category"]}",
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2
+                                                            .bodyText2!
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
@@ -658,10 +658,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                       ),
                                                       const SizedBox(width: 10),
                                                       Text(
-                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"]}",
+                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["size"]}",
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2
+                                                            .bodyText2!
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
@@ -679,10 +679,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"]}",
+                                                        "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["resolution"]}",
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2
+                                                            .bodyText2!
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
@@ -705,12 +705,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                         Provider.of<FavouriteProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .liked[index]
+                                                            .liked![index]
                                                                 ["provider"]
                                                             .toString(),
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .bodyText2
+                                                            .bodyText2!
                                                             .copyWith(
                                                                 color: Theme.of(
                                                                         context)
@@ -735,7 +735,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     )
                                   : Provider.of<FavouriteProvider>(context,
                                                   listen: false)
-                                              .liked[index]["provider"] ==
+                                              .liked![index]["provider"] ==
                                           "Pexels"
                                       ? Expanded(
                                           flex: 8,
@@ -786,7 +786,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .liked[
+                                                                    .liked![
                                                                         index][
                                                                         "photographer"]
                                                                     .toString(),
@@ -796,7 +796,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                 style: Theme.of(
                                                                         context)
                                                                     .textTheme
-                                                                    .bodyText2
+                                                                    .bodyText2!
                                                                     .copyWith(
                                                                         color: Theme.of(context)
                                                                             .accentColor),
@@ -825,13 +825,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .liked[index][
+                                                                  .liked![index][
                                                                       "resolution"]
                                                                   .toString(),
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText2
+                                                                  .bodyText2!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -855,13 +855,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .liked[index]
+                                                                  .liked![index]
                                                                       ["id"]
                                                                   .toString(),
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText2
+                                                                  .bodyText2!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -889,13 +889,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .liked[index][
+                                                                  .liked![index][
                                                                       "provider"]
                                                                   .toString(),
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText2
+                                                                  .bodyText2!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -936,7 +936,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                         : Provider.of<FavouriteProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[index]["url"]
+                                            .liked![index]["url"]
                                             .toString(),
                                   ),
                                   SetWallpaperButton(
@@ -946,18 +946,18 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                         : Provider.of<FavouriteProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[index]["url"]
+                                            .liked![index]["url"]
                                             .toString(),
                                   ),
                                   FavouriteWallpaperButton(
                                     id: Provider.of<FavouriteProvider>(context,
                                             listen: false)
-                                        .liked[index]["id"]
+                                        .liked![index]["id"]
                                         .toString(),
                                     provider: Provider.of<FavouriteProvider>(
                                             context,
                                             listen: false)
-                                        .liked[index]["provider"]
+                                        .liked![index]["provider"]
                                         .toString(),
                                     trash: true,
                                   ),
@@ -965,27 +965,27 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       id: Provider.of<FavouriteProvider>(
                                               context,
                                               listen: false)
-                                          .liked[index]["id"]
+                                          .liked![index]["id"]
                                           .toString(),
                                       provider: Provider.of<FavouriteProvider>(
                                               context,
                                               listen: false)
-                                          .liked[index]["provider"]
+                                          .liked![index]["provider"]
                                           .toString(),
                                       url: Provider.of<FavouriteProvider>(
                                               context,
                                               listen: false)
-                                          .liked[index]["url"]
+                                          .liked![index]["url"]
                                           .toString(),
                                       thumbUrl: Provider.of<FavouriteProvider>(
                                               context,
                                               listen: false)
-                                          .liked[index]["thumb"]
+                                          .liked![index]["thumb"]
                                           .toString()),
                                   EditButton(
                                     url: Provider.of<FavouriteProvider>(context,
                                             listen: false)
-                                        .liked[index]["url"]
+                                        .liked![index]["url"]
                                         .toString(),
                                   ),
                                 ],
@@ -1027,7 +1027,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             child: CachedNetworkImage(
                               imageUrl: Provider.of<FavouriteProvider>(context,
                                       listen: false)
-                                  .liked[index]["url"]
+                                  .liked![index]["url"]
                                   .toString(),
                               imageBuilder: (context, imageProvider) =>
                                   Screenshot(
@@ -1042,7 +1042,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     image: DecorationImage(
                                       colorFilter: colorChanged
                                           ? ColorFilter.mode(
-                                              accent, BlendMode.hue)
+                                              accent!, BlendMode.hue)
                                           : null,
                                       image: imageProvider,
                                       fit: BoxFit.cover,
@@ -1068,7 +1068,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                   JamIcons.close_circle_f,
                                   color: isLoading
                                       ? Theme.of(context).accentColor
-                                      : accent.computeLuminance() > 0.5
+                                      : accent!.computeLuminance() > 0.5
                                           ? Colors.black
                                           : Colors.white,
                                 ),
@@ -1080,7 +1080,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       alignment: Alignment.topLeft,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -1089,7 +1089,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(
@@ -1102,12 +1102,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       alignment: Alignment.topRight,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             final link = Provider.of<FavouriteProvider>(context,
                                     listen: false)
-                                .liked[index]["url"];
+                                .liked![index]["url"];
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
@@ -1131,7 +1131,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(
@@ -1276,12 +1276,12 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                             Provider.of<FavouriteProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["id"]
+                                                .liked![index]["id"]
                                                 .toString()
                                                 .toUpperCase(),
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodyText1
+                                                .bodyText1!
                                                 .copyWith(
                                                     color: Theme.of(context)
                                                         .accentColor),
@@ -1298,10 +1298,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["views"]}",
+                                              "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["views"]}",
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -1320,10 +1320,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["fav"]}",
+                                              "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["fav"]}",
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -1341,10 +1341,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                         Row(
                                           children: [
                                             Text(
-                                              "${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["resolution"]}",
+                                              "${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["resolution"]}",
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -1363,10 +1363,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                         Row(
                                           children: [
                                             Text(
-                                              "${double.parse((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                              "${double.parse((double.parse(Provider.of<FavouriteProvider>(context, listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyText2
+                                                  .bodyText2!
                                                   .copyWith(
                                                       color: Theme.of(context)
                                                           .accentColor),
@@ -1395,7 +1395,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                 children: Provider.of<FavouriteProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[index]["provider"] ==
+                                            .liked![index]["provider"] ==
                                         null
                                     ? downloadLinkBackwards == null
                                         ? <Widget>[
@@ -1406,15 +1406,15 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                   : Provider.of<FavouriteProvider>(
                                                                       context,
                                                                       listen: false)
-                                                                  .liked[index]
+                                                                  .liked![index]
                                                               ["provider"] ==
                                                           null
-                                                      ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                                      ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.png"
                                                       : Provider.of<
                                                                   FavouriteProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]["url"]
+                                                          .liked![index]["url"]
                                                           .toString(),
                                             ),
                                             FavouriteWallpaperButton(
@@ -1422,13 +1422,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                           FavouriteProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["id"]
+                                                  .liked![index]["id"]
                                                   .toString(),
                                               provider: Provider.of<
                                                           FavouriteProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["provider"]
+                                                  .liked![index]["provider"]
                                                   .toString(),
                                               trash: true,
                                             ),
@@ -1436,31 +1436,31 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                 id: Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["id"]
+                                                    .liked![index]["id"]
                                                     .toString(),
                                                 provider: Provider.of<
                                                             FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["provider"]
+                                                    .liked![index]["provider"]
                                                     .toString(),
                                                 url: Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["url"]
+                                                    .liked![index]["url"]
                                                     .toString(),
                                                 thumbUrl:
                                                     Provider.of<FavouriteProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]["thumb"]
+                                                        .liked![index]["thumb"]
                                                         .toString()),
                                             EditButton(
                                               url: Provider.of<
                                                           FavouriteProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["url"]
+                                                  .liked![index]["url"]
                                                   .toString(),
                                             ),
                                           ]
@@ -1478,15 +1478,15 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                   : Provider.of<FavouriteProvider>(
                                                                       context,
                                                                       listen: false)
-                                                                  .liked[index]
+                                                                  .liked![index]
                                                               ["provider"] ==
                                                           null
-                                                      ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                                      ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.png"
                                                       : Provider.of<
                                                                   FavouriteProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]["url"]
+                                                          .liked![index]["url"]
                                                           .toString(),
                                             ),
                                             FavouriteWallpaperButton(
@@ -1494,13 +1494,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                           FavouriteProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["id"]
+                                                  .liked![index]["id"]
                                                   .toString(),
                                               provider: Provider.of<
                                                           FavouriteProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["provider"]
+                                                  .liked![index]["provider"]
                                                   .toString(),
                                               trash: true,
                                             ),
@@ -1508,24 +1508,24 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                                 id: Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["id"]
+                                                    .liked![index]["id"]
                                                     .toString(),
                                                 provider: Provider.of<
                                                             FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["provider"]
+                                                    .liked![index]["provider"]
                                                     .toString(),
                                                 url: Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["url"]
+                                                    .liked![index]["url"]
                                                     .toString(),
                                                 thumbUrl:
                                                     Provider.of<FavouriteProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]["thumb"]
+                                                        .liked![index]["thumb"]
                                                         .toString())
                                           ]
                                     : <Widget>[
@@ -1536,7 +1536,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               : Provider.of<FavouriteProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["url"]
+                                                  .liked![index]["url"]
                                                   .toString(),
                                         ),
                                         SetWallpaperButton(
@@ -1546,28 +1546,28 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                               : Provider.of<FavouriteProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .liked[index]
+                                                              .liked![index]
                                                           ["provider"] ==
                                                       null
-                                                  ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png"
+                                                  ? "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.png"
                                                   : Provider.of<
                                                               FavouriteProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]["url"]
+                                                      .liked![index]["url"]
                                                       .toString(),
                                         ),
                                         FavouriteWallpaperButton(
                                           id: Provider.of<FavouriteProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["id"]
+                                              .liked![index]["id"]
                                               .toString(),
                                           provider:
                                               Provider.of<FavouriteProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["provider"]
+                                                  .liked![index]["provider"]
                                                   .toString(),
                                           trash: true,
                                         ),
@@ -1575,24 +1575,24 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                             id: Provider.of<FavouriteProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["id"]
+                                                .liked![index]["id"]
                                                 .toString(),
                                             provider:
                                                 Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["provider"]
+                                                    .liked![index]["provider"]
                                                     .toString(),
                                             url: Provider.of<FavouriteProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["url"]
+                                                .liked![index]["url"]
                                                 .toString(),
                                             thumbUrl:
                                                 Provider.of<FavouriteProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["thumb"]
+                                                    .liked![index]["thumb"]
                                                     .toString())
                                       ],
                               ),
@@ -1632,10 +1632,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                             },
                             child: CachedNetworkImage(
                               imageUrl:
-                                  "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg",
+                                  "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.jpg",
                               imageBuilder: (context, imageProvider) {
                                 downloadLinkBackwards =
-                                    "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.jpg";
+                                    "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.jpg";
                                 return Screenshot(
                                   controller: screenshotController,
                                   child: Container(
@@ -1648,7 +1648,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                       image: DecorationImage(
                                         colorFilter: colorChanged
                                             ? ColorFilter.mode(
-                                                accent, BlendMode.hue)
+                                                accent!, BlendMode.hue)
                                             : null,
                                         image: imageProvider,
                                         fit: BoxFit.cover,
@@ -1673,10 +1673,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                               errorWidget: (context, url, error) =>
                                   CachedNetworkImage(
                                 imageUrl:
-                                    "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png",
+                                    "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.png",
                                 imageBuilder: (context, imageProvider) {
                                   downloadLinkBackwards =
-                                      "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.png";
+                                      "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.png";
                                   return Screenshot(
                                     controller: screenshotController,
                                     child: Container(
@@ -1691,7 +1691,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                         image: DecorationImage(
                                           colorFilter: colorChanged
                                               ? ColorFilter.mode(
-                                                  accent, BlendMode.hue)
+                                                  accent!, BlendMode.hue)
                                               : null,
                                           image: imageProvider,
                                           fit: BoxFit.cover,
@@ -1713,7 +1713,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                                     JamIcons.close_circle_f,
                                     color: isLoading
                                         ? Theme.of(context).accentColor
-                                        : accent.computeLuminance() > 0.5
+                                        : accent!.computeLuminance() > 0.5
                                             ? Colors.black
                                             : Colors.white,
                                   ),
@@ -1726,7 +1726,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       alignment: Alignment.topLeft,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             navStack.removeLast();
@@ -1735,7 +1735,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(
@@ -1748,11 +1748,11 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                       alignment: Alignment.topRight,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                            8.0, globals.notchSize + 8, 8, 8),
+                            8.0, globals.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
                             final link =
-                                "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["id"]}.${Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().substring(Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().length - 3, Provider.of<FavouriteProvider>(context, listen: false).liked[index]["thumb"].toString().length)}";
+                                "https://w.wallhaven.cc/full/${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["id"]}.${Provider.of<FavouriteProvider>(context, listen: false).liked![index]["thumb"].toString().substring(Provider.of<FavouriteProvider>(context, listen: false).liked![index]["thumb"].toString().length - 3, Provider.of<FavouriteProvider>(context, listen: false).liked![index]["thumb"].toString().length)}";
                             Navigator.push(
                                 context,
                                 PageRouteBuilder(
@@ -1776,7 +1776,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen>
                           },
                           color: isLoading
                               ? Theme.of(context).accentColor
-                              : accent.computeLuminance() > 0.5
+                              : accent!.computeLuminance() > 0.5
                                   ? Colors.black
                                   : Colors.white,
                           icon: const Icon(

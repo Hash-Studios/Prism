@@ -28,7 +28,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/global/svgAssets.dart';
 
 class SetupViewScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const SetupViewScreen({this.arguments});
 
   @override
@@ -44,28 +44,28 @@ class _SetupViewScreenState extends State<SetupViewScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int index;
-  String thumb;
+  int? index;
+  String? thumb;
   bool isLoading = true;
   PanelController panelController = PanelController();
-  AnimationController shakeController;
+  late AnimationController shakeController;
   bool panelCollapsed = true;
-  Future<String> _futureView;
-  Box box;
+  Future<String>? _futureView;
+  late Box box;
 
   @override
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0] as int;
+    index = widget.arguments![0] as int;
     isLoading = true;
     updateViewsSetup(Provider.of<SetupProvider>(context, listen: false)
-        .setups[index]["id"]
+        .setups![index!]["id"]
         .toString()
         .toUpperCase());
     _futureView = getViewsSetup(
         Provider.of<SetupProvider>(context, listen: false)
-            .setups[index]["id"]
+            .setups![index!]["id"]
             .toString()
             .toUpperCase());
     box = Hive.box('localFav');
@@ -217,14 +217,14 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       child: Text(
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
-                                            .setups[index]["name"]
+                                            .setups![index!]["name"]
                                             .toString()
                                             .toUpperCase(),
                                         maxLines: 1,
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline1
+                                            .headline1!
                                             .copyWith(
                                                 fontSize: 30,
                                                 color: Theme.of(context)
@@ -243,13 +243,13 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       child: Text(
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
-                                            .setups[index]["desc"]
+                                            .setups![index!]["desc"]
                                             .toString(),
                                         maxLines: 2,
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline6
+                                            .headline6!
                                             .copyWith(
                                                 color: Theme.of(context)
                                                     .accentColor),
@@ -294,13 +294,13 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]["id"]
+                                                        .setups![index!]["id"]
                                                         .toString()
                                                         .toUpperCase(),
                                                     overflow: TextOverflow.fade,
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText1
+                                                        .bodyText1!
                                                         .copyWith(
                                                             color: Theme.of(
                                                                     context)
@@ -331,7 +331,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText1
+                                                                .bodyText1!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -346,7 +346,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText1
+                                                                .bodyText1!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -362,7 +362,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -380,7 +380,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -405,13 +405,13 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["name"]
+                                                      .setups![index!]["name"]
                                                       .toString(),
                                                   thumbUrl: Provider.of<
                                                               SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["image"]
+                                                      .setups![index!]["image"]
                                                       .toString());
                                             },
                                             child: Row(
@@ -429,7 +429,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           decoration:
                                                               TextDecoration
@@ -462,7 +462,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           Provider.of<SetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .setups[index]
+                                                              .setups![index!]
                                                                   ["by"]
                                                               .toString(),
                                                           overflow:
@@ -470,7 +470,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -488,7 +488,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .setups[index]
+                                                                  .setups![index!]
                                                                       [
                                                                       "userPhoto"]
                                                                   .toString()),
@@ -506,30 +506,30 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .setups[index]["by"],
+                                                                    .setups![index!]["by"],
                                                                 Provider.of<SetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .setups[index]["email"],
+                                                                    .setups![index!]["email"],
                                                                 Provider.of<SetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .setups[index]["userPhoto"],
+                                                                    .setups![index!]["userPhoto"],
                                                                 false,
-                                                                if (Provider.of<SetupProvider>(context, listen: false).setups[index][
+                                                                if (Provider.of<SetupProvider>(context, listen: false).setups![index!][
                                                                             "twitter"] !=
                                                                         null &&
-                                                                    Provider.of<SetupProvider>(context, listen: false).setups[index][
+                                                                    Provider.of<SetupProvider>(context, listen: false).setups![index!][
                                                                             "twitter"] !=
                                                                         "")
                                                                   Provider.of<SetupProvider>(
                                                                           context,
                                                                           listen:
                                                                               false)
-                                                                      .setups[
-                                                                          index]
+                                                                      .setups![
+                                                                          index!]
                                                                           [
                                                                           "twitter"]
                                                                       .toString()
@@ -537,18 +537,18 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                           "https://www.twitter.com/")[1]
                                                                 else
                                                                   "",
-                                                                if (Provider.of<SetupProvider>(context, listen: false).setups[index][
+                                                                if (Provider.of<SetupProvider>(context, listen: false).setups![index!][
                                                                             "instagram"] !=
                                                                         null &&
-                                                                    Provider.of<SetupProvider>(context, listen: false).setups[index][
+                                                                    Provider.of<SetupProvider>(context, listen: false).setups![index!][
                                                                             "instagram"] !=
                                                                         "")
                                                                   Provider.of<SetupProvider>(
                                                                           context,
                                                                           listen:
                                                                               false)
-                                                                      .setups[
-                                                                          index]
+                                                                      .setups![
+                                                                          index!]
                                                                           [
                                                                           "instagram"]
                                                                       .toString()
@@ -564,7 +564,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                   SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .setups[index]
+                                                          .setups![index!]
                                                               ["email"]
                                                           .toString()))
                                                     Align(
@@ -610,11 +610,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
                           child: Provider.of<SetupProvider>(context,
                                               listen: false)
-                                          .setups[index]["widget"] ==
+                                          .setups![index!]["widget"] ==
                                       "" ||
                                   Provider.of<SetupProvider>(context,
                                               listen: false)
-                                          .setups[index]["widget"] ==
+                                          .setups![index!]["widget"] ==
                                       null
                               ? Column(
                                   mainAxisAlignment:
@@ -626,26 +626,26 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       onTap: () async {
                                         if (Provider.of<SetupProvider>(context,
                                                     listen: false)
-                                                .setups[index]["wallpaper_url"]
+                                                .setups![index!]["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
                                           if (Provider.of<SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .setups[index]
+                                                          .setups![index!]
                                                       ["wall_id"] ==
                                                   null ||
                                               Provider.of<SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .setups[index]
+                                                          .setups![index!]
                                                       ["wall_id"] ==
                                                   "") {
                                             debugPrint("Id Not Found!");
                                             launch(Provider.of<SetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .setups[index]["wallpaper_url"]
+                                                .setups![index!]["wallpaper_url"]
                                                 .toString());
                                           } else {
                                             Navigator.pushNamed(
@@ -654,24 +654,24 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["wall_id"]
+                                                      .setups![index!]["wall_id"]
                                                       .toString(),
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]
+                                                      .setups![index!]
                                                           ["wallpaper_provider"]
                                                       .toString(),
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]
+                                                      .setups![index!]
                                                           ["wallpaper_url"]
                                                       .toString(),
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]
+                                                      .setups![index!]
                                                           ["wallpaper_url"]
                                                       .toString(),
                                                 ]);
@@ -680,19 +680,19 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                           launch(Provider.of<SetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .setups[index]["wallpaper_url"][1]
+                                              .setups![index!]["wallpaper_url"][1]
                                               .toString());
                                         }
                                       },
                                       tileText: Provider.of<SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]
+                                                  .setups![index!]
                                                       ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
                                           ? "Prism"
-                                          : "${Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][2].toString() : ""}",
+                                          : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
@@ -701,7 +701,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       isInstalled: Provider.of<SetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .setups[index]["icon_url"]
+                                              .setups![index!]["icon_url"]
                                               .toString()
                                               .contains(
                                                   'play.google.com/store/apps/details?id=')
@@ -709,7 +709,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               Provider.of<SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]["icon_url"]
+                                                  .setups![index!]["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
@@ -717,7 +717,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       onTap: () async {
                                         if (Provider.of<SetupProvider>(context,
                                                 listen: false)
-                                            .setups[index]["icon_url"]
+                                            .setups![index!]["icon_url"]
                                             .toString()
                                             .contains(
                                                 'play.google.com/store/apps/details?id=')) {
@@ -726,7 +726,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["icon_url"]
+                                                      .setups![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0]);
@@ -735,7 +735,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["icon_url"]
+                                                      .setups![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
@@ -743,20 +743,20 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["icon_url"]
+                                                      .setups![index!]["icon_url"]
                                                       .toString());
                                         } else {
                                           launch(Provider.of<SetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .setups[index]["icon_url"]
+                                              .setups![index!]["icon_url"]
                                               .toString());
                                         }
                                       },
                                       tileText: Provider.of<SetupProvider>(
                                               context,
                                               listen: false)
-                                          .setups[index]["icon"]
+                                          .setups![index!]["icon"]
                                           .toString(),
                                       tileType: "Icons",
                                       panelCollapsed: panelCollapsed,
@@ -766,11 +766,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                 )
                               : Provider.of<SetupProvider>(context,
                                                   listen: false)
-                                              .setups[index]["widget2"] ==
+                                              .setups![index!]["widget2"] ==
                                           "" ||
                                       Provider.of<SetupProvider>(context,
                                                   listen: false)
-                                              .setups[index]["widget2"] ==
+                                              .setups![index!]["widget2"] ==
                                           null
                                   ? Column(
                                       mainAxisAlignment:
@@ -783,20 +783,20 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                             if (Provider.of<SetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .setups[index]
+                                                    .setups![index!]
                                                         ["wallpaper_url"]
                                                     .toString()[0] !=
                                                 "[") {
                                               if (Provider.of<SetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .setups[index]
+                                                              .setups![index!]
                                                           ["wall_id"] ==
                                                       null ||
                                                   Provider.of<SetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .setups[index]
+                                                              .setups![index!]
                                                           ["wall_id"] ==
                                                       "") {
                                                 debugPrint("Id Not Found!");
@@ -804,7 +804,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["wallpaper_url"]
                                                         .toString());
                                               } else {
@@ -814,25 +814,25 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                       Provider.of<SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .setups[index]
+                                                          .setups![index!]
                                                               ["wall_id"]
                                                           .toString(),
                                                       Provider.of<SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .setups[index][
+                                                          .setups![index!][
                                                               "wallpaper_provider"]
                                                           .toString(),
                                                       Provider.of<SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .setups[index]
+                                                          .setups![index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                       Provider.of<SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .setups[index]
+                                                          .setups![index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                     ]);
@@ -841,7 +841,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               launch(Provider.of<SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]
+                                                  .setups![index!]
                                                       ["wallpaper_url"][1]
                                                   .toString());
                                             }
@@ -849,12 +849,12 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                           tileText: Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]
+                                                      .setups![index!]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
                                               ? "Prism"
-                                              : "${Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][2].toString() : ""}",
+                                              : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
@@ -865,7 +865,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]["icon_url"]
+                                                  .setups![index!]["icon_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')
@@ -873,7 +873,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["icon_url"]
+                                                      .setups![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
@@ -882,7 +882,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                             if (Provider.of<SetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .setups[index]["icon_url"]
+                                                .setups![index!]["icon_url"]
                                                 .toString()
                                                 .contains(
                                                     'play.google.com/store/apps/details?id=')) {
@@ -892,7 +892,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               .of<SetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                          .setups[index]
+                                                          .setups![index!]
                                                               ["icon_url"]
                                                           .toString()
                                                           .split(
@@ -903,7 +903,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           .of<SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                      .setups[index]["icon_url"]
+                                                      .setups![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
@@ -911,20 +911,20 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]["icon_url"]
+                                                      .setups![index!]["icon_url"]
                                                       .toString());
                                             } else {
                                               launch(Provider.of<SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]["icon_url"]
+                                                  .setups![index!]["icon_url"]
                                                   .toString());
                                             }
                                           },
                                           tileText: Provider.of<SetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .setups[index]["icon"]
+                                              .setups![index!]["icon"]
                                               .toString(),
                                           tileType: "Icons",
                                           panelCollapsed: panelCollapsed,
@@ -936,7 +936,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]["widget_url"]
+                                                  .setups![index!]["widget_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')
@@ -944,7 +944,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                   Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]
+                                                      .setups![index!]
                                                           ["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -954,7 +954,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                             if (Provider.of<SetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .setups[index]["widget_url"]
+                                                .setups![index!]["widget_url"]
                                                 .toString()
                                                 .contains(
                                                     'play.google.com/store/apps/details?id=')) {
@@ -964,7 +964,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               .of<SetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                          .setups[index]
+                                                          .setups![index!]
                                                               ["widget_url"]
                                                           .toString()
                                                           .split(
@@ -975,7 +975,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                           .of<SetupProvider>(
                                                               context,
                                                               listen: false)
-                                                      .setups[index]
+                                                      .setups![index!]
                                                           ["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -984,21 +984,21 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]
+                                                      .setups![index!]
                                                           ["widget_url"]
                                                       .toString());
                                             } else {
                                               launch(Provider.of<SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]["widget_url"]
+                                                  .setups![index!]["widget_url"]
                                                   .toString());
                                             }
                                           },
                                           tileText: Provider.of<SetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .setups[index]["widget"]
+                                              .setups![index!]["widget"]
                                               .toString(),
                                           tileType: "Widget",
                                           panelCollapsed: panelCollapsed,
@@ -1018,20 +1018,20 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               if (Provider.of<SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]
+                                                      .setups![index!]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "[") {
                                                 if (Provider.of<SetupProvider>(
                                                                     context,
                                                                     listen: false)
-                                                                .setups[index]
+                                                                .setups![index!]
                                                             ["wall_id"] ==
                                                         null ||
                                                     Provider.of<SetupProvider>(
                                                                     context,
                                                                     listen: false)
-                                                                .setups[index]
+                                                                .setups![index!]
                                                             ["wall_id"] ==
                                                         "") {
                                                   debugPrint("Id Not Found!");
@@ -1039,7 +1039,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                               SetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .setups[index]
+                                                      .setups![index!]
                                                           ["wallpaper_url"]
                                                       .toString());
                                                 } else {
@@ -1049,25 +1049,25 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                         Provider.of<SetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .setups[index]
+                                                            .setups![index!]
                                                                 ["wall_id"]
                                                             .toString(),
                                                         Provider.of<SetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .setups[index][
+                                                            .setups![index!][
                                                                 "wallpaper_provider"]
                                                             .toString(),
                                                         Provider.of<SetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .setups[index][
+                                                            .setups![index!][
                                                                 "wallpaper_url"]
                                                             .toString(),
                                                         Provider.of<SetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .setups[index][
+                                                            .setups![index!][
                                                                 "wallpaper_url"]
                                                             .toString(),
                                                       ]);
@@ -1077,7 +1077,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["wallpaper_url"][1]
                                                         .toString());
                                               }
@@ -1086,12 +1086,12 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
                                                 ? "Prism"
-                                                : "${Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups[index]["wallpaper_url"][2].toString() : ""}",
+                                                : "${Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][0]} - ${(Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<SetupProvider>(context, listen: false).setups![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(
@@ -1102,7 +1102,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                             SetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .setups[index]["icon_url"]
+                                                    .setups![index!]["icon_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
@@ -1110,7 +1110,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1120,7 +1120,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               if (Provider.of<SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]["icon_url"]
+                                                  .setups![index!]["icon_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
@@ -1129,7 +1129,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1139,7 +1139,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                             .of<SetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1148,7 +1148,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["icon_url"]
                                                         .toString());
                                               } else {
@@ -1156,7 +1156,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["icon_url"]
                                                         .toString());
                                               }
@@ -1165,7 +1165,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                 Provider.of<SetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .setups[index]["icon"]
+                                                    .setups![index!]["icon"]
                                                     .toString(),
                                             tileType: "Icons",
                                             panelCollapsed: panelCollapsed,
@@ -1177,7 +1177,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                             SetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .setups[index]["widget_url"]
+                                                    .setups![index!]["widget_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
@@ -1185,7 +1185,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1195,7 +1195,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               if (Provider.of<SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]["widget_url"]
+                                                  .setups![index!]["widget_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
@@ -1204,7 +1204,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1214,7 +1214,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                             .of<SetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1223,7 +1223,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url"]
                                                         .toString());
                                               } else {
@@ -1231,7 +1231,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url"]
                                                         .toString());
                                               }
@@ -1240,7 +1240,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                 Provider.of<SetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .setups[index]["widget"]
+                                                    .setups![index!]["widget"]
                                                     .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
@@ -1252,7 +1252,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                             SetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .setups[index]
+                                                    .setups![index!]
                                                         ["widget_url2"]
                                                     .toString()
                                                     .contains(
@@ -1261,7 +1261,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1271,7 +1271,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                               if (Provider.of<SetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .setups[index]["widget_url2"]
+                                                  .setups![index!]["widget_url2"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
@@ -1280,7 +1280,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1290,7 +1290,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                             .of<SetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1299,7 +1299,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                                 SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url2"]
                                                         .toString());
                                               } else {
@@ -1307,7 +1307,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                     Provider.of<SetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .setups[index]
+                                                        .setups![index!]
                                                             ["widget_url2"]
                                                         .toString());
                                               }
@@ -1316,7 +1316,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                                 Provider.of<SetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .setups[index]["widget2"]
+                                                    .setups![index!]["widget2"]
                                                     .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
@@ -1354,21 +1354,21 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                       onFavSetup(
                                           Provider.of<SetupProvider>(context,
                                                   listen: false)
-                                              .setups[index]["id"]
+                                              .setups![index!]["id"]
                                               .toString(),
                                           Provider.of<SetupProvider>(context,
                                                   listen: false)
-                                              .setups[index] as Map);
+                                              .setups![index!] as Map);
                                     });
                                   } else {
                                     onFavSetup(
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
-                                            .setups[index]["id"]
+                                            .setups![index!]["id"]
                                             .toString(),
                                         Provider.of<SetupProvider>(context,
                                                 listen: false)
-                                            .setups[index] as Map);
+                                            .setups![index!] as Map);
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,
@@ -1376,7 +1376,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                 isFavorite: box.get(
                                     Provider.of<SetupProvider>(context,
                                             listen: false)
-                                        .setups[index]["id"]
+                                        .setups![index!]["id"]
                                         .toString(),
                                     defaultValue: false) as bool,
                               ),
@@ -1387,11 +1387,11 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                                     index.toString(),
                                     Provider.of<SetupProvider>(context,
                                             listen: false)
-                                        .setups[index]["name"]
+                                        .setups![index!]["name"]
                                         .toString(),
                                     Provider.of<SetupProvider>(context,
                                             listen: false)
-                                        .setups[index]["image"]
+                                        .setups![index!]["image"]
                                         .toString());
                               },
                               child: Container(
@@ -1448,7 +1448,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                       child: CachedNetworkImage(
                         imageUrl:
                             Provider.of<SetupProvider>(context, listen: false)
-                                .setups[index]["image"]
+                                .setups![index!]["image"]
                                 .toString(),
                         imageBuilder: (context, imageProvider) => Container(
                           margin: EdgeInsets.symmetric(
@@ -1493,7 +1493,7 @@ class _SetupViewScreenState extends State<SetupViewScreen>
                 alignment: Alignment.topLeft,
                 child: Padding(
                   padding:
-                      EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
@@ -1549,13 +1549,13 @@ class SetupDetailsTile extends StatelessWidget {
   final Function onTap;
   final Future<bool> isInstalled;
   const SetupDetailsTile({
-    Key key,
-    @required this.delay,
-    @required this.tileText,
-    @required this.tileType,
-    @required this.onTap,
-    @required this.panelCollapsed,
-    @required this.isInstalled,
+    Key? key,
+    required this.delay,
+    required this.tileText,
+    required this.tileType,
+    required this.onTap,
+    required this.panelCollapsed,
+    required this.isInstalled,
   }) : super(key: key);
 
   @override
@@ -1662,30 +1662,30 @@ class SetupDetailsTile extends StatelessWidget {
 }
 
 class ModifiedDownloadButton extends StatelessWidget {
-  final int index;
-  const ModifiedDownloadButton({@required this.index});
+  final int? index;
+  const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
     return Provider.of<SetupProvider>(context, listen: false)
-                .setups[index]["wallpaper_url"]
+                .setups![index!]["wallpaper_url"]
                 .toString()[0] !=
             "["
-        ? Provider.of<SetupProvider>(context, listen: false).setups[index]
+        ? Provider.of<SetupProvider>(context, listen: false).setups![index!]
                         ["wall_id"] !=
                     null &&
-                Provider.of<SetupProvider>(context, listen: false).setups[index]
+                Provider.of<SetupProvider>(context, listen: false).setups![index!]
                         ["wall_id"] !=
                     ""
             ? DownloadButton(
                 link: Provider.of<SetupProvider>(context, listen: false)
-                    .setups[index]["wallpaper_url"]
+                    .setups![index!]["wallpaper_url"]
                     .toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
                   launch(Provider.of<SetupProvider>(context, listen: false)
-                      .setups[index]["wallpaper_url"]
+                      .setups![index!]["wallpaper_url"]
                       .toString());
                 },
                 child: Container(
@@ -1710,7 +1710,7 @@ class ModifiedDownloadButton extends StatelessWidget {
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<SetupProvider>(context, listen: false)
-                  .setups[index]["wallpaper_url"][1]
+                  .setups![index!]["wallpaper_url"][1]
                   .toString());
             },
             child: Container(
@@ -1736,30 +1736,30 @@ class ModifiedDownloadButton extends StatelessWidget {
 }
 
 class ModifiedSetWallpaperButton extends StatelessWidget {
-  final int index;
-  const ModifiedSetWallpaperButton({@required this.index});
+  final int? index;
+  const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
     return Provider.of<SetupProvider>(context, listen: false)
-                .setups[index]["wallpaper_url"]
+                .setups![index!]["wallpaper_url"]
                 .toString()[0] !=
             "["
-        ? Provider.of<SetupProvider>(context, listen: false).setups[index]
+        ? Provider.of<SetupProvider>(context, listen: false).setups![index!]
                         ["wall_id"] !=
                     null &&
-                Provider.of<SetupProvider>(context, listen: false).setups[index]
+                Provider.of<SetupProvider>(context, listen: false).setups![index!]
                         ["wall_id"] !=
                     ""
             ? SetWallpaperButton(
                 url: Provider.of<SetupProvider>(context, listen: false)
-                    .setups[index]["wallpaper_url"]
+                    .setups![index!]["wallpaper_url"]
                     .toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
                   launch(Provider.of<SetupProvider>(context, listen: false)
-                      .setups[index]["wallpaper_url"]
+                      .setups![index!]["wallpaper_url"]
                       .toString());
                 },
                 child: Container(
@@ -1784,7 +1784,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<SetupProvider>(context, listen: false)
-                  .setups[index]["wallpaper_url"][1]
+                  .setups![index!]["wallpaper_url"][1]
                   .toString());
             },
             child: Container(

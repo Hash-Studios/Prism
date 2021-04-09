@@ -20,22 +20,22 @@ class OptionalInfo extends StatefulWidget {
   final String heading;
   final String subheading;
   final bool showSkip;
-  final String skipText;
-  final String doneText;
+  final String? skipText;
+  final String? doneText;
   const OptionalInfo({
-    @required this.img,
-    @required this.heading,
-    @required this.subheading,
-    @required this.showSkip,
+    required this.img,
+    required this.heading,
+    required this.subheading,
+    required this.showSkip,
     this.skipText,
-    @required this.doneText,
+    required this.doneText,
   });
   @override
   _OptionalInfoState createState() => _OptionalInfoState();
 }
 
 class _OptionalInfoState extends State<OptionalInfo> {
-  Image image1;
+  Image? image1;
   final TextEditingController _twitterController = TextEditingController();
   final TextEditingController _igController = TextEditingController();
   Future<bool> onWillPop(BuildContext ctx) async {
@@ -47,7 +47,7 @@ class _OptionalInfoState extends State<OptionalInfo> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    precacheImage(image1.image, context);
+    precacheImage(image1!.image, context);
   }
 
   @override
@@ -74,7 +74,7 @@ class _OptionalInfoState extends State<OptionalInfo> {
     return WillPopScope(
       onWillPop: () {
         onWillPop(context);
-      },
+      } as Future<bool> Function()?,
       child: Scaffold(
         backgroundColor: const Color(0xFFE57697),
         body: SingleChildScrollView(
@@ -247,7 +247,7 @@ class TwitterIGBoxes extends StatelessWidget {
   final TextEditingController twitterController;
   final TextEditingController igController;
   const TwitterIGBoxes(
-      {@required this.twitterController, @required this.igController});
+      {required this.twitterController, required this.igController});
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -262,7 +262,7 @@ class TwitterIGBoxes extends StatelessWidget {
                 cursorColor: const Color(0xFFE57697),
                 style: Theme.of(context)
                     .textTheme
-                    .headline5
+                    .headline5!
                     .copyWith(color: Colors.white),
                 controller: twitterController,
                 decoration: InputDecoration(
@@ -286,12 +286,12 @@ class TwitterIGBoxes extends StatelessWidget {
                   labelText: "Twitter",
                   labelStyle: Theme.of(context)
                       .textTheme
-                      .headline5
+                      .headline5!
                       .copyWith(fontSize: 14, color: Colors.white),
                   hintText: "Ex - PrismWallpapers",
                   hintStyle: Theme.of(context)
                       .textTheme
-                      .headline5
+                      .headline5!
                       .copyWith(fontSize: 14, color: Colors.white),
                   prefixIcon: const Icon(
                     JamIcons.twitter,
@@ -309,7 +309,7 @@ class TwitterIGBoxes extends StatelessWidget {
                 cursorColor: const Color(0xFFE57697),
                 style: Theme.of(context)
                     .textTheme
-                    .headline5
+                    .headline5!
                     .copyWith(color: Colors.white),
                 controller: igController,
                 decoration: InputDecoration(
@@ -334,11 +334,11 @@ class TwitterIGBoxes extends StatelessWidget {
                   hintText: "Ex - PrismWallpapers",
                   labelStyle: Theme.of(context)
                       .textTheme
-                      .headline5
+                      .headline5!
                       .copyWith(fontSize: 14, color: Colors.white),
                   hintStyle: Theme.of(context)
                       .textTheme
-                      .headline5
+                      .headline5!
                       .copyWith(fontSize: 14, color: Colors.white),
                   prefixIcon: const Icon(
                     JamIcons.instagram,
@@ -359,22 +359,22 @@ class OptionalInfo2 extends StatefulWidget {
   final String heading;
   final String subheading;
   final bool showSkip;
-  final String skipText;
-  final String doneText;
+  final String? skipText;
+  final String? doneText;
   const OptionalInfo2({
-    @required this.img,
-    @required this.heading,
-    @required this.subheading,
-    @required this.showSkip,
+    required this.img,
+    required this.heading,
+    required this.subheading,
+    required this.showSkip,
     this.skipText,
-    @required this.doneText,
+    required this.doneText,
   });
   @override
   _OptionalInfo2State createState() => _OptionalInfo2State();
 }
 
 class _OptionalInfo2State extends State<OptionalInfo2> {
-  Image image1;
+  Image? image1;
   Future<bool> onWillPop(BuildContext ctx) async {
     Navigator.pushReplacement(
         ctx, MaterialPageRoute(builder: (context) => SplashWidget()));
@@ -384,7 +384,7 @@ class _OptionalInfo2State extends State<OptionalInfo2> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    precacheImage(image1.image, context);
+    precacheImage(image1!.image, context);
   }
 
   @override
@@ -400,7 +400,7 @@ class _OptionalInfo2State extends State<OptionalInfo2> {
     return WillPopScope(
       onWillPop: () {
         onWillPop(context);
-      },
+      } as Future<bool> Function()?,
       child: Scaffold(
         backgroundColor: const Color(0xFFE57697),
         body: SingleChildScrollView(
@@ -615,30 +615,30 @@ class OptionalInfo3 extends StatefulWidget {
   final String heading;
   final String subheading;
   final bool showSkip;
-  final String skipText;
-  final String doneText;
+  final String? skipText;
+  final String? doneText;
   const OptionalInfo3({
-    @required this.heading,
-    @required this.subheading,
-    @required this.showSkip,
+    required this.heading,
+    required this.subheading,
+    required this.showSkip,
     this.skipText,
-    @required this.doneText,
+    required this.doneText,
   });
   @override
   _OptionalInfo3State createState() => _OptionalInfo3State();
 }
 
 class _OptionalInfo3State extends State<OptionalInfo3> {
-  Image image1;
+  Image? image1;
   Future<bool> onWillPop(BuildContext ctx) async {
     Navigator.pushReplacement(
         ctx, MaterialPageRoute(builder: (context) => SplashWidget()));
     return false;
   }
 
-  bool isFollow1;
-  bool isFollow2;
-  bool isFollow3;
+  bool? isFollow1;
+  bool? isFollow2;
+  bool? isFollow3;
 
   @override
   void initState() {
@@ -653,7 +653,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
     return WillPopScope(
       onWillPop: () {
         onWillPop(context);
-      },
+      } as Future<bool> Function()?,
       child: Scaffold(
         backgroundColor: const Color(0xFFE57697),
         body: SingleChildScrollView(
@@ -846,13 +846,13 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
 
 class FollowHeaderCard extends StatelessWidget {
   FollowHeaderCard({
-    Key key,
-    @required this.url,
-    @required this.email,
-    @required this.name,
-    @required this.img1,
-    @required this.img2,
-    @required this.img3,
+    Key? key,
+    required this.url,
+    required this.email,
+    required this.name,
+    required this.img1,
+    required this.img2,
+    required this.img3,
   }) : super(key: key);
 
   final String url;
@@ -910,8 +910,8 @@ class FollowHeaderCard extends StatelessWidget {
                       if (!snapshot.hasData) {
                         return Container();
                       } else {
-                        final List following = snapshot
-                                .data.documents[0].data['following'] as List ??
+                        final List following = snapshot.data!.documents[0]
+                                .data['following'] as List? ??
                             [];
                         if (following.contains(email)) {
                           return Padding(
@@ -941,7 +941,7 @@ class FollowHeaderCard extends StatelessWidget {
                             child: ElevatedButton(
                               onPressed: () {
                                 following.add(email);
-                                snapshot.data.documents[0].reference
+                                snapshot.data!.documents[0].reference
                                     .updateData({'following': following});
                                 users
                                     .where("email", isEqualTo: email)
@@ -951,7 +951,7 @@ class FollowHeaderCard extends StatelessWidget {
                                       value.documents == null) {
                                   } else {
                                     final List followers = value.documents[0]
-                                            .data['followers'] as List ??
+                                            .data['followers'] as List? ??
                                         [];
                                     followers.add(main.prefs.get('email'));
                                     value.documents[0].reference
@@ -1054,8 +1054,8 @@ class FollowHeaderCard extends StatelessWidget {
 
 class FollowImage extends StatelessWidget {
   const FollowImage({
-    Key key,
-    @required this.img1,
+    Key? key,
+    required this.img1,
   }) : super(key: key);
 
   final String img1;

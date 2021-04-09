@@ -28,7 +28,7 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:hive/hive.dart';
 
 class UserProfileSetupViewScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const UserProfileSetupViewScreen({this.arguments});
 
   @override
@@ -45,24 +45,24 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int index;
-  String thumb;
+  int? index;
+  String? thumb;
   bool isLoading = true;
   PanelController panelController = PanelController();
-  AnimationController shakeController;
+  late AnimationController shakeController;
   bool panelCollapsed = true;
-  Future<String> _futureView;
-  Box box;
+  Future<String>? _futureView;
+  late Box box;
 
   @override
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0] as int;
+    index = widget.arguments![0] as int;
     updateViewsSetup(
-        user_data.userProfileSetups[index]["id"].toString().toUpperCase());
+        user_data.userProfileSetups![index!]["id"].toString().toUpperCase());
     _futureView = getViewsSetup(
-        user_data.userProfileSetups[index]["id"].toString().toUpperCase());
+        user_data.userProfileSetups![index!]["id"].toString().toUpperCase());
     isLoading = true;
     box = Hive.box('localFav');
     super.initState();
@@ -211,7 +211,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       forward: true,
                                       slideSide: SlideFromSlide.bottom,
                                       child: Text(
-                                        user_data.userProfileSetups[index]
+                                        user_data.userProfileSetups![index!]
                                                 ["name"]
                                             .toString()
                                             .toUpperCase(),
@@ -219,7 +219,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline1
+                                            .headline1!
                                             .copyWith(
                                                 fontSize: 30,
                                                 color: Theme.of(context)
@@ -236,14 +236,14 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                       slideSide: SlideFromSlide.bottom,
                                       delay: const Duration(milliseconds: 50),
                                       child: Text(
-                                        user_data.userProfileSetups[index]
+                                        user_data.userProfileSetups![index!]
                                                 ["desc"]
                                             .toString(),
                                         maxLines: 2,
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline6
+                                            .headline6!
                                             .copyWith(
                                                 color: Theme.of(context)
                                                     .accentColor),
@@ -285,14 +285,14 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               child: Row(
                                                 children: [
                                                   Text(
-                                                    user_data.userProfileSetups[
-                                                            index]["id"]
+                                                    user_data.userProfileSetups![
+                                                            index!]["id"]
                                                         .toString()
                                                         .toUpperCase(),
                                                     overflow: TextOverflow.fade,
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText1
+                                                        .bodyText1!
                                                         .copyWith(
                                                             color: Theme.of(
                                                                     context)
@@ -323,7 +323,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText1
+                                                                .bodyText1!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -338,7 +338,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText1
+                                                                .bodyText1!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -354,7 +354,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -372,7 +372,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -394,11 +394,11 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                   true, context,
                                                   index: index.toString(),
                                                   name: user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["name"]
                                                       .toString(),
                                                   thumbUrl: user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["image"]
                                                       .toString());
                                             },
@@ -417,7 +417,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           decoration:
                                                               TextDecoration
@@ -448,15 +448,15 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                     child: ActionChip(
                                                         label: Text(
                                                           user_data
-                                                              .userProfileSetups[
-                                                                  index]["by"]
+                                                              .userProfileSetups![
+                                                                  index!]["by"]
                                                               .toString(),
                                                           overflow:
                                                               TextOverflow.fade,
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -470,8 +470,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                         avatar: CircleAvatar(
                                                           backgroundImage:
                                                               CachedNetworkImageProvider(user_data
-                                                                  .userProfileSetups[
-                                                                      index][
+                                                                  .userProfileSetups![
+                                                                      index!][
                                                                       "userPhoto"]
                                                                   .toString()),
                                                         ),
@@ -484,27 +484,27 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                               context,
                                                               photographerProfileRoute,
                                                               arguments: [
-                                                                user_data.userProfileSetups[
-                                                                        index]
+                                                                user_data.userProfileSetups![
+                                                                        index!]
                                                                     ["by"],
-                                                                user_data.userProfileSetups[
-                                                                        index]
+                                                                user_data.userProfileSetups![
+                                                                        index!]
                                                                     ["email"],
-                                                                user_data.userProfileSetups[
-                                                                        index][
+                                                                user_data.userProfileSetups![
+                                                                        index!][
                                                                     "userPhoto"],
                                                                 false,
-                                                                if (user_data.userProfileSetups[index]
+                                                                if (user_data.userProfileSetups![index!]
                                                                             [
                                                                             "twitter"] !=
                                                                         null &&
-                                                                    user_data.userProfileSetups[index]
+                                                                    user_data.userProfileSetups![index!]
                                                                             [
                                                                             "twitter"] !=
                                                                         "")
                                                                   user_data
-                                                                      .userProfileSetups[
-                                                                          index]
+                                                                      .userProfileSetups![
+                                                                          index!]
                                                                           [
                                                                           "twitter"]
                                                                       .toString()
@@ -512,17 +512,17 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                                           "https://www.twitter.com/")[1]
                                                                 else
                                                                   "",
-                                                                if (user_data.userProfileSetups[index]
+                                                                if (user_data.userProfileSetups![index!]
                                                                             [
                                                                             "instagram"] !=
                                                                         null &&
-                                                                    user_data.userProfileSetups[index]
+                                                                    user_data.userProfileSetups![index!]
                                                                             [
                                                                             "instagram"] !=
                                                                         "")
                                                                   user_data
-                                                                      .userProfileSetups[
-                                                                          index]
+                                                                      .userProfileSetups![
+                                                                          index!]
                                                                           [
                                                                           "instagram"]
                                                                       .toString()
@@ -535,8 +535,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                   ),
                                                   if (globals.verifiedUsers
                                                       .contains(user_data
-                                                          .userProfileSetups[
-                                                              index]["email"]
+                                                          .userProfileSetups![
+                                                              index!]["email"]
                                                           .toString()))
                                                     Align(
                                                       alignment:
@@ -579,9 +579,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                         flex: 16,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                          child: user_data.userProfileSetups[index]["widget"] ==
+                          child: user_data.userProfileSetups![index!]["widget"] ==
                                       "" ||
-                                  user_data.userProfileSetups[index]
+                                  user_data.userProfileSetups![index!]
                                           ["widget"] ==
                                       null
                               ? Column(
@@ -592,19 +592,19 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        if (user_data.userProfileSetups[index]
+                                        if (user_data.userProfileSetups![index!]
                                                     ["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
-                                          if (user_data.userProfileSetups[index]
+                                          if (user_data.userProfileSetups![index!]
                                                       ["wall_id"] ==
                                                   null ||
-                                              user_data.userProfileSetups[index]
+                                              user_data.userProfileSetups![index!]
                                                       ["wall_id"] ==
                                                   "") {
                                             debugPrint("Id Not Found!");
                                             launch(user_data
-                                                .userProfileSetups[index]
+                                                .userProfileSetups![index!]
                                                     ["wallpaper_url"]
                                                 .toString());
                                           } else {
@@ -612,57 +612,57 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 context, shareRoute,
                                                 arguments: [
                                                   user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["wall_id"]
                                                       .toString(),
                                                   user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["wallpaper_provider"]
                                                       .toString(),
                                                   user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString(),
                                                   user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString(),
                                                 ]);
                                           }
                                         } else {
                                           launch(user_data
-                                              .userProfileSetups[index]
+                                              .userProfileSetups![index!]
                                                   ["wallpaper_url"][1]
                                               .toString());
                                         }
                                       },
                                       tileText: user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
                                           ? "Prism"
-                                          : "${user_data.userProfileSetups[index]["wallpaper_url"][0]} - ${(user_data.userProfileSetups[index]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups[index]["wallpaper_url"][2].toString() : ""}",
+                                          : "${user_data.userProfileSetups![index!]["wallpaper_url"][0]} - ${(user_data.userProfileSetups![index!]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
                                       isInstalled: user_data
-                                              .userProfileSetups[index]
+                                              .userProfileSetups![index!]
                                                   ["icon_url"]
                                               .toString()
                                               .contains(
                                                   'play.google.com/store/apps/details?id=')
                                           ? DeviceApps.isAppInstalled(user_data
-                                              .userProfileSetups[index]
+                                              .userProfileSetups![index!]
                                                   ["icon_url"]
                                               .toString()
                                               .split("details?id=")[1]
                                               .split("&")[0])
                                           : Future.value(false),
                                       onTap: () async {
-                                        if (user_data.userProfileSetups[index]
+                                        if (user_data.userProfileSetups![index!]
                                                 ["icon_url"]
                                             .toString()
                                             .contains(
@@ -670,31 +670,31 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           final isInstalled =
                                               await DeviceApps.isAppInstalled(
                                                   user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0]);
                                           isInstalled
                                               ? DeviceApps.openApp(user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
                                               : launch(user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["icon_url"]
                                                   .toString());
                                         } else {
                                           launch(user_data
-                                              .userProfileSetups[index]
+                                              .userProfileSetups![index!]
                                                   ["icon_url"]
                                               .toString());
                                         }
                                       },
                                       tileText: user_data
-                                          .userProfileSetups[index]["icon"]
+                                          .userProfileSetups![index!]["icon"]
                                           .toString(),
                                       tileType: "Icons",
                                       panelCollapsed: panelCollapsed,
@@ -702,9 +702,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     ),
                                   ],
                                 )
-                              : user_data.userProfileSetups[index]["widget2"] ==
+                              : user_data.userProfileSetups![index!]["widget2"] ==
                                           "" ||
-                                      user_data.userProfileSetups[index]
+                                      user_data.userProfileSetups![index!]
                                               ["widget2"] ==
                                           null
                                   ? Column(
@@ -716,19 +716,19 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           isInstalled: Future.value(false),
                                           onTap: () async {
                                             if (user_data
-                                                    .userProfileSetups[index]
+                                                    .userProfileSetups![index!]
                                                         ["wallpaper_url"]
                                                     .toString()[0] !=
                                                 "[") {
-                                              if (user_data.userProfileSetups[
-                                                          index]["wall_id"] ==
+                                              if (user_data.userProfileSetups![
+                                                          index!]["wall_id"] ==
                                                       null ||
-                                                  user_data.userProfileSetups[
-                                                          index]["wall_id"] ==
+                                                  user_data.userProfileSetups![
+                                                          index!]["wall_id"] ==
                                                       "") {
                                                 debugPrint("Id Not Found!");
                                                 launch(user_data
-                                                    .userProfileSetups[index]
+                                                    .userProfileSetups![index!]
                                                         ["wallpaper_url"]
                                                     .toString());
                                               } else {
@@ -736,40 +736,40 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                     context, shareRoute,
                                                     arguments: [
                                                       user_data
-                                                          .userProfileSetups[
-                                                              index]["wall_id"]
+                                                          .userProfileSetups![
+                                                              index!]["wall_id"]
                                                           .toString(),
                                                       user_data
-                                                          .userProfileSetups[
-                                                              index][
+                                                          .userProfileSetups![
+                                                              index!][
                                                               "wallpaper_provider"]
                                                           .toString(),
                                                       user_data
-                                                          .userProfileSetups[
-                                                              index]
+                                                          .userProfileSetups![
+                                                              index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                       user_data
-                                                          .userProfileSetups[
-                                                              index]
+                                                          .userProfileSetups![
+                                                              index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                     ]);
                                               }
                                             } else {
                                               launch(user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["wallpaper_url"][1]
                                                   .toString());
                                             }
                                           },
                                           tileText: user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "["
                                               ? "Prism"
-                                              : "${user_data.userProfileSetups[index]["wallpaper_url"][0]} - ${(user_data.userProfileSetups[index]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups[index]["wallpaper_url"][2].toString() : ""}",
+                                              : "${user_data.userProfileSetups![index!]["wallpaper_url"][0]} - ${(user_data.userProfileSetups![index!]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
@@ -777,14 +777,14 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                         ),
                                         SetupDetailsTile(
                                           isInstalled: user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["icon_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')
                                               ? DeviceApps.isAppInstalled(
                                                   user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -792,7 +792,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               : Future.value(false),
                                           onTap: () async {
                                             if (user_data
-                                                .userProfileSetups[index]
+                                                .userProfileSetups![index!]
                                                     ["icon_url"]
                                                 .toString()
                                                 .contains(
@@ -800,32 +800,32 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               final isInstalled =
                                                   await DeviceApps
                                                       .isAppInstalled(user_data
-                                                          .userProfileSetups[
-                                                              index]["icon_url"]
+                                                          .userProfileSetups![
+                                                              index!]["icon_url"]
                                                           .toString()
                                                           .split(
                                                               "details?id=")[1]
                                                           .split("&")[0]);
                                               isInstalled
                                                   ? DeviceApps.openApp(user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
                                                   : launch(user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["icon_url"]
                                                       .toString());
                                             } else {
                                               launch(user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["icon_url"]
                                                   .toString());
                                             }
                                           },
                                           tileText: user_data
-                                              .userProfileSetups[index]["icon"]
+                                              .userProfileSetups![index!]["icon"]
                                               .toString(),
                                           tileType: "Icons",
                                           panelCollapsed: panelCollapsed,
@@ -834,14 +834,14 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                         ),
                                         SetupDetailsTile(
                                           isInstalled: user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["widget_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')
                                               ? DeviceApps.isAppInstalled(
                                                   user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -849,7 +849,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               : Future.value(false),
                                           onTap: () async {
                                             if (user_data
-                                                .userProfileSetups[index]
+                                                .userProfileSetups![index!]
                                                     ["widget_url"]
                                                 .toString()
                                                 .contains(
@@ -857,8 +857,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                               final isInstalled =
                                                   await DeviceApps
                                                       .isAppInstalled(user_data
-                                                          .userProfileSetups[
-                                                              index]
+                                                          .userProfileSetups![
+                                                              index!]
                                                               ["widget_url"]
                                                           .toString()
                                                           .split(
@@ -866,24 +866,24 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                           .split("&")[0]);
                                               isInstalled
                                                   ? DeviceApps.openApp(user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
                                                   : launch(user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["widget_url"]
                                                       .toString());
                                             } else {
                                               launch(user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["widget_url"]
                                                   .toString());
                                             }
                                           },
                                           tileText: user_data
-                                              .userProfileSetups[index]
+                                              .userProfileSetups![index!]
                                                   ["widget"]
                                               .toString(),
                                           tileType: "Widget",
@@ -902,19 +902,19 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                             isInstalled: Future.value(false),
                                             onTap: () async {
                                               if (user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "[") {
-                                                if (user_data.userProfileSetups[
-                                                            index]["wall_id"] ==
+                                                if (user_data.userProfileSetups![
+                                                            index!]["wall_id"] ==
                                                         null ||
-                                                    user_data.userProfileSetups[
-                                                            index]["wall_id"] ==
+                                                    user_data.userProfileSetups![
+                                                            index!]["wall_id"] ==
                                                         "") {
                                                   debugPrint("Id Not Found!");
                                                   launch(user_data
-                                                      .userProfileSetups[index]
+                                                      .userProfileSetups![index!]
                                                           ["wallpaper_url"]
                                                       .toString());
                                                 } else {
@@ -922,42 +922,42 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                       context, shareRoute,
                                                       arguments: [
                                                         user_data
-                                                            .userProfileSetups[
-                                                                index]
+                                                            .userProfileSetups![
+                                                                index!]
                                                                 ["wall_id"]
                                                             .toString(),
                                                         user_data
-                                                            .userProfileSetups[
-                                                                index][
+                                                            .userProfileSetups![
+                                                                index!][
                                                                 "wallpaper_provider"]
                                                             .toString(),
                                                         user_data
-                                                            .userProfileSetups[
-                                                                index][
+                                                            .userProfileSetups![
+                                                                index!][
                                                                 "wallpaper_url"]
                                                             .toString(),
                                                         user_data
-                                                            .userProfileSetups[
-                                                                index][
+                                                            .userProfileSetups![
+                                                                index!][
                                                                 "wallpaper_url"]
                                                             .toString(),
                                                       ]);
                                                 }
                                               } else {
                                                 launch(user_data
-                                                    .userProfileSetups[index]
+                                                    .userProfileSetups![index!]
                                                         ["wallpaper_url"][1]
                                                     .toString());
                                               }
                                             },
                                             tileText: user_data
-                                                        .userProfileSetups[
-                                                            index]
+                                                        .userProfileSetups![
+                                                            index!]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
                                                 ? "Prism"
-                                                : "${user_data.userProfileSetups[index]["wallpaper_url"][0]} - ${(user_data.userProfileSetups[index]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups[index]["wallpaper_url"][2].toString() : ""}",
+                                                : "${user_data.userProfileSetups![index!]["wallpaper_url"][0]} - ${(user_data.userProfileSetups![index!]["wallpaper_url"] as List).length > 2 ? user_data.userProfileSetups![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(
@@ -965,21 +965,21 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           ),
                                           SetupDetailsTile(
                                             isInstalled: user_data
-                                                    .userProfileSetups[index]
+                                                    .userProfileSetups![index!]
                                                         ["icon_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
                                                 ? DeviceApps.isAppInstalled(
-                                                    user_data.userProfileSetups[
-                                                            index]["icon_url"]
+                                                    user_data.userProfileSetups![
+                                                            index!]["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
                                               if (user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["icon_url"]
                                                   .toString()
                                                   .contains(
@@ -987,8 +987,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 final isInstalled =
                                                     await DeviceApps
                                                         .isAppInstalled(user_data
-                                                            .userProfileSetups[
-                                                                index]
+                                                            .userProfileSetups![
+                                                                index!]
                                                                 ["icon_url"]
                                                             .toString()
                                                             .split(
@@ -996,24 +996,24 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                             .split("&")[0]);
                                                 isInstalled
                                                     ? DeviceApps.openApp(user_data
-                                                        .userProfileSetups[
-                                                            index]["icon_url"]
+                                                        .userProfileSetups![
+                                                            index!]["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                     : launch(user_data
-                                                        .userProfileSetups[
-                                                            index]["icon_url"]
+                                                        .userProfileSetups![
+                                                            index!]["icon_url"]
                                                         .toString());
                                               } else {
                                                 launch(user_data
-                                                    .userProfileSetups[index]
+                                                    .userProfileSetups![index!]
                                                         ["icon_url"]
                                                     .toString());
                                               }
                                             },
                                             tileText: user_data
-                                                .userProfileSetups[index]
+                                                .userProfileSetups![index!]
                                                     ["icon"]
                                                 .toString(),
                                             tileType: "Icons",
@@ -1023,21 +1023,21 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           ),
                                           SetupDetailsTile(
                                             isInstalled: user_data
-                                                    .userProfileSetups[index]
+                                                    .userProfileSetups![index!]
                                                         ["widget_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
                                                 ? DeviceApps.isAppInstalled(
-                                                    user_data.userProfileSetups[
-                                                            index]["widget_url"]
+                                                    user_data.userProfileSetups![
+                                                            index!]["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                 : Future.value(false),
                                             onTap: () async {
                                               if (user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["widget_url"]
                                                   .toString()
                                                   .contains(
@@ -1045,8 +1045,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 final isInstalled =
                                                     await DeviceApps
                                                         .isAppInstalled(user_data
-                                                            .userProfileSetups[
-                                                                index]
+                                                            .userProfileSetups![
+                                                                index!]
                                                                 ["widget_url"]
                                                             .toString()
                                                             .split(
@@ -1054,24 +1054,24 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                             .split("&")[0]);
                                                 isInstalled
                                                     ? DeviceApps.openApp(user_data
-                                                        .userProfileSetups[
-                                                            index]["widget_url"]
+                                                        .userProfileSetups![
+                                                            index!]["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                     : launch(user_data
-                                                        .userProfileSetups[
-                                                            index]["widget_url"]
+                                                        .userProfileSetups![
+                                                            index!]["widget_url"]
                                                         .toString());
                                               } else {
                                                 launch(user_data
-                                                    .userProfileSetups[index]
+                                                    .userProfileSetups![index!]
                                                         ["widget_url"]
                                                     .toString());
                                               }
                                             },
                                             tileText: user_data
-                                                .userProfileSetups[index]
+                                                .userProfileSetups![index!]
                                                     ["widget"]
                                                 .toString(),
                                             tileType: "Widget",
@@ -1081,14 +1081,14 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           ),
                                           SetupDetailsTile(
                                             isInstalled: user_data
-                                                    .userProfileSetups[index]
+                                                    .userProfileSetups![index!]
                                                         ["widget_url2"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
                                                 ? DeviceApps.isAppInstalled(
-                                                    user_data.userProfileSetups[
-                                                            index]
+                                                    user_data.userProfileSetups![
+                                                            index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1096,7 +1096,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 : Future.value(false),
                                             onTap: () async {
                                               if (user_data
-                                                  .userProfileSetups[index]
+                                                  .userProfileSetups![index!]
                                                       ["widget_url2"]
                                                   .toString()
                                                   .contains(
@@ -1104,8 +1104,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                 final isInstalled =
                                                     await DeviceApps
                                                         .isAppInstalled(user_data
-                                                            .userProfileSetups[
-                                                                index]
+                                                            .userProfileSetups![
+                                                                index!]
                                                                 ["widget_url2"]
                                                             .toString()
                                                             .split(
@@ -1113,26 +1113,26 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                             .split("&")[0]);
                                                 isInstalled
                                                     ? DeviceApps.openApp(user_data
-                                                        .userProfileSetups[
-                                                            index]
+                                                        .userProfileSetups![
+                                                            index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
                                                         .split("&")[0])
                                                     : launch(user_data
-                                                        .userProfileSetups[
-                                                            index]
+                                                        .userProfileSetups![
+                                                            index!]
                                                             ["widget_url2"]
                                                         .toString());
                                               } else {
                                                 launch(user_data
-                                                    .userProfileSetups[index]
+                                                    .userProfileSetups![index!]
                                                         ["widget_url2"]
                                                     .toString());
                                               }
                                             },
                                             tileText: user_data
-                                                .userProfileSetups[index]
+                                                .userProfileSetups![index!]
                                                     ["widget2"]
                                                 .toString(),
                                             tileType: "Widget",
@@ -1169,24 +1169,24 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                   if (main.prefs.get("isLoggedin") == false) {
                                     googleSignInPopUp(context, () {
                                       onFavSetup(
-                                          user_data.userProfileSetups[index]
+                                          user_data.userProfileSetups![index!]
                                                   ["id"]
                                               .toString(),
-                                          user_data.userProfileSetups[index]
+                                          user_data.userProfileSetups![index!]
                                               as Map);
                                     });
                                   } else {
                                     onFavSetup(
-                                        user_data.userProfileSetups[index]["id"]
+                                        user_data.userProfileSetups![index!]["id"]
                                             .toString(),
-                                        user_data.userProfileSetups[index]
+                                        user_data.userProfileSetups![index!]
                                             as Map);
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,
                                 iconSize: 30,
                                 isFavorite: box.get(
-                                    user_data.userProfileSetups[index]["id"]
+                                    user_data.userProfileSetups![index!]["id"]
                                         .toString(),
                                     defaultValue: false) as bool,
                               ),
@@ -1195,9 +1195,9 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                               onTap: () {
                                 createSetupDynamicLink(
                                     index.toString(),
-                                    user_data.userProfileSetups[index]["name"]
+                                    user_data.userProfileSetups![index!]["name"]
                                         .toString(),
-                                    user_data.userProfileSetups[index]["image"]
+                                    user_data.userProfileSetups![index!]["image"]
                                         .toString());
                               },
                               child: Container(
@@ -1252,7 +1252,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                         shakeController.forward(from: 0.0);
                       },
                       child: CachedNetworkImage(
-                        imageUrl: user_data.userProfileSetups[index]["image"]
+                        imageUrl: user_data.userProfileSetups![index!]["image"]
                             .toString(),
                         imageBuilder: (context, imageProvider) => Container(
                           margin: EdgeInsets.symmetric(
@@ -1297,7 +1297,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                 alignment: Alignment.topLeft,
                 child: Padding(
                   padding:
-                      EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
@@ -1327,13 +1327,13 @@ class SetupDetailsTile extends StatelessWidget {
   final Function onTap;
   final Future<bool> isInstalled;
   const SetupDetailsTile({
-    Key key,
-    @required this.delay,
-    @required this.tileText,
-    @required this.tileType,
-    @required this.onTap,
-    @required this.panelCollapsed,
-    @required this.isInstalled,
+    Key? key,
+    required this.delay,
+    required this.tileText,
+    required this.tileType,
+    required this.onTap,
+    required this.panelCollapsed,
+    required this.isInstalled,
   }) : super(key: key);
 
   @override
@@ -1440,22 +1440,22 @@ class SetupDetailsTile extends StatelessWidget {
 }
 
 class ModifiedDownloadButton extends StatelessWidget {
-  final int index;
-  const ModifiedDownloadButton({@required this.index});
+  final int? index;
+  const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return user_data.userProfileSetups[index]["wallpaper_url"].toString()[0] !=
+    return user_data.userProfileSetups![index!]["wallpaper_url"].toString()[0] !=
             "["
-        ? user_data.userProfileSetups[index]["wall_id"] != null &&
-                user_data.userProfileSetups[index]["wall_id"] != ""
+        ? user_data.userProfileSetups![index!]["wall_id"] != null &&
+                user_data.userProfileSetups![index!]["wall_id"] != ""
             ? DownloadButton(
-                link: user_data.userProfileSetups[index]["wallpaper_url"]
+                link: user_data.userProfileSetups![index!]["wallpaper_url"]
                     .toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(user_data.userProfileSetups[index]["wallpaper_url"]
+                  launch(user_data.userProfileSetups![index!]["wallpaper_url"]
                       .toString());
                 },
                 child: Container(
@@ -1479,7 +1479,7 @@ class ModifiedDownloadButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(user_data.userProfileSetups[index]["wallpaper_url"][1]
+              launch(user_data.userProfileSetups![index!]["wallpaper_url"][1]
                   .toString());
             },
             child: Container(
@@ -1505,22 +1505,22 @@ class ModifiedDownloadButton extends StatelessWidget {
 }
 
 class ModifiedSetWallpaperButton extends StatelessWidget {
-  final int index;
-  const ModifiedSetWallpaperButton({@required this.index});
+  final int? index;
+  const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return user_data.userProfileSetups[index]["wallpaper_url"].toString()[0] !=
+    return user_data.userProfileSetups![index!]["wallpaper_url"].toString()[0] !=
             "["
-        ? user_data.userProfileSetups[index]["wall_id"] != null &&
-                user_data.userProfileSetups[index]["wall_id"] != ""
+        ? user_data.userProfileSetups![index!]["wall_id"] != null &&
+                user_data.userProfileSetups![index!]["wall_id"] != ""
             ? SetWallpaperButton(
-                url: user_data.userProfileSetups[index]["wallpaper_url"]
+                url: user_data.userProfileSetups![index!]["wallpaper_url"]
                     .toString(),
                 colorChanged: false,
               )
             : GestureDetector(
                 onTap: () async {
-                  launch(user_data.userProfileSetups[index]["wallpaper_url"]
+                  launch(user_data.userProfileSetups![index!]["wallpaper_url"]
                       .toString());
                 },
                 child: Container(
@@ -1544,7 +1544,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
               )
         : GestureDetector(
             onTap: () async {
-              launch(user_data.userProfileSetups[index]["wallpaper_url"][1]
+              launch(user_data.userProfileSetups![index!]["wallpaper_url"][1]
                   .toString());
             },
             child: Container(

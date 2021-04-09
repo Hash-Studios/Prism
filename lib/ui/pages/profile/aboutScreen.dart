@@ -77,13 +77,13 @@ class AboutScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: Theme.of(context)
                       .textTheme
-                      .bodyText2
+                      .bodyText2!
                       .copyWith(color: Theme.of(context).accentColor),
                 ),
                 Text(
                   "Version ${globals.currentAppVersion}+${globals.currentAppVersionCode}",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyText2.copyWith(
+                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
                       color: Theme.of(context).accentColor.withOpacity(0.5)),
                 ),
                 const SizedBox(
@@ -92,7 +92,7 @@ class AboutScreen extends StatelessWidget {
                 Text(
                   "A feature-rich wallpaper and setup manager for Android.",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyText2.copyWith(
+                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
                       color: Theme.of(context).accentColor.withOpacity(0.5)),
                 ),
                 const SizedBox(
@@ -161,15 +161,15 @@ class AboutScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           ContributorWidget(
-                            contributor: snapshot.data[1],
+                            contributor: snapshot.data![1],
                             radius: 35,
                           ),
                           ContributorWidget(
-                            contributor: snapshot.data[0],
+                            contributor: snapshot.data![0],
                             radius: 45,
                           ),
                           ContributorWidget(
-                            contributor: snapshot.data[2],
+                            contributor: snapshot.data![2],
                             radius: 35,
                           ),
                         ],
@@ -192,10 +192,10 @@ class AboutScreen extends StatelessWidget {
                           ),
                         ),
                       );
-                      for (final Contributor c in snapshot.data) {
-                        if (snapshot.data.indexOf(c) == 0 ||
-                            snapshot.data.indexOf(c) == 1 ||
-                            snapshot.data.indexOf(c) == 2) {
+                      for (final Contributor c in snapshot.data!) {
+                        if (snapshot.data!.indexOf(c) == 0 ||
+                            snapshot.data!.indexOf(c) == 1 ||
+                            snapshot.data!.indexOf(c) == 2) {
                         } else {
                           tiles.add(ListTile(
                             leading: CircleAvatar(
@@ -206,7 +206,7 @@ class AboutScreen extends StatelessWidget {
                               c.login,
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyText2
+                                  .bodyText2!
                                   .copyWith(
                                       color: Theme.of(context).accentColor),
                             ),
@@ -216,7 +216,7 @@ class AboutScreen extends StatelessWidget {
                                   : "${c.contributions} commits",
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyText2
+                                  .bodyText2!
                                   .copyWith(
                                       color: Theme.of(context)
                                           .accentColor
@@ -245,7 +245,7 @@ class AboutScreen extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme
-                  .bodyText2
+                  .bodyText2!
                   .copyWith(color: Theme.of(context).accentColor),
             ),
           ),
@@ -257,9 +257,9 @@ class AboutScreen extends StatelessWidget {
 
 class ContributorWidget extends StatelessWidget {
   const ContributorWidget({
-    Key key,
-    @required this.contributor,
-    @required this.radius,
+    Key? key,
+    required this.contributor,
+    required this.radius,
   }) : super(key: key);
   final Contributor contributor;
   final double radius;
@@ -288,7 +288,7 @@ class ContributorWidget extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme
-                  .bodyText2
+                  .bodyText2!
                   .copyWith(color: Theme.of(context).accentColor),
             ),
           ),
@@ -297,7 +297,7 @@ class ContributorWidget extends StatelessWidget {
             child: Text(
               "${contributor.contributions} commits",
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyText2.copyWith(
+              style: Theme.of(context).textTheme.bodyText2!.copyWith(
                   color: Theme.of(context).accentColor.withOpacity(0.5)),
             ),
           ),
@@ -309,10 +309,10 @@ class ContributorWidget extends StatelessWidget {
 
 class ActionButton extends StatelessWidget {
   const ActionButton({
-    Key key,
-    @required this.icon,
-    @required this.link,
-    @required this.text,
+    Key? key,
+    required this.icon,
+    required this.link,
+    required this.text,
   }) : super(key: key);
   final IconData icon;
   final String text;
@@ -337,7 +337,7 @@ class ActionButton extends StatelessWidget {
           label: Text(
             text,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyText2.copyWith(
+            style: Theme.of(context).textTheme.bodyText2!.copyWith(
                 color: Theme.of(context).accentColor,
                 fontWeight: FontWeight.bold),
           ),

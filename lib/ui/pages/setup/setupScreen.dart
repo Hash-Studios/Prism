@@ -19,7 +19,7 @@ import 'package:Prism/global/globals.dart' as globals;
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -36,7 +36,7 @@ class _SetupScreenState extends State<SetupScreen> {
   final PageController controller = PageController(
     viewportFraction: 0.78,
   );
-  Future future;
+  Future? future;
 
   @override
   void initState() {
@@ -63,12 +63,12 @@ class _SetupScreenState extends State<SetupScreen> {
 
 class SetupPage extends StatefulWidget {
   const SetupPage({
-    Key key,
-    @required this.future,
-    @required this.controller,
+    Key? key,
+    required this.future,
+    required this.controller,
   }) : super(key: key);
 
-  final Future future;
+  final Future? future;
   final PageController controller;
 
   @override
@@ -123,7 +123,7 @@ class _SetupPageState extends State<SetupPage> {
               alignment: Alignment.topLeft,
               child: Container(
                 width: MediaQuery.of(context).size.width - 25,
-                padding: EdgeInsets.only(left: 25, top: 5 + globals.notchSize),
+                padding: EdgeInsets.only(left: 25, top: 5 + globals.notchSize!),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -131,18 +131,18 @@ class _SetupPageState extends State<SetupPage> {
                       width: MediaQuery.of(context).size.width * 0.8,
                       child: Text(
                         Provider.of<SetupProvider>(context, listen: false)
-                                .setups
+                                .setups!
                                 .isEmpty
                             ? ""
                             : Provider.of<SetupProvider>(context, listen: false)
-                                .setups[pageNumber]['name']
+                                .setups![pageNumber]['name']
                                 .toString()
                                 .toUpperCase(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context)
                             .textTheme
-                            .headline1
+                            .headline1!
                             .copyWith(fontSize: 30),
                       ),
                     ),
@@ -193,15 +193,15 @@ class _SetupPageState extends State<SetupPage> {
                         controller: widget.controller,
                         itemCount: Provider.of<SetupProvider>(context,
                                     listen: false)
-                                .setups
+                                .setups!
                                 .isEmpty
                             ? 1
                             : Provider.of<SetupProvider>(context, listen: false)
-                                .setups
+                                .setups!
                                 .length,
                         itemBuilder: (context, index) => Provider.of<
                                     SetupProvider>(context, listen: false)
-                                .setups
+                                .setups!
                                 .isEmpty
                             ? Loader()
                             : AnimatedContainer(
@@ -220,7 +220,7 @@ class _SetupPageState extends State<SetupPage> {
                                     imageUrl: Provider.of<SetupProvider>(
                                             context,
                                             listen: false)
-                                        .setups[index]['image']
+                                        .setups![index]['image']
                                         .toString(),
                                     imageBuilder: (context, imageProvider) =>
                                         Container(
@@ -358,7 +358,7 @@ class _SetupPageState extends State<SetupPage> {
             child: ArrowBounceAnimation(
               onTap: () {
                 widget.controller.animateToPage(
-                    widget.controller.page.toInt() - 1,
+                    widget.controller.page!.toInt() - 1,
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.fastOutSlowIn);
                 HapticFeedback.vibrate();
@@ -379,7 +379,7 @@ class _SetupPageState extends State<SetupPage> {
             ),
           ),
         if (pageNumber ==
-            Provider.of<SetupProvider>(context, listen: false).setups.length -
+            Provider.of<SetupProvider>(context, listen: false).setups!.length -
                 1)
           Container()
         else
@@ -388,7 +388,7 @@ class _SetupPageState extends State<SetupPage> {
             child: ArrowBounceAnimation(
               onTap: () {
                 widget.controller.animateToPage(
-                    widget.controller.page.toInt() + 1,
+                    widget.controller.page!.toInt() + 1,
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.fastOutSlowIn);
                 HapticFeedback.vibrate();

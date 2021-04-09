@@ -12,7 +12,7 @@ List<Widget> tempTags = [];
 final TextEditingController searchController = TextEditingController();
 
 class TagSetupScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const TagSetupScreen({this.arguments});
 
   @override
@@ -20,14 +20,14 @@ class TagSetupScreen extends StatefulWidget {
 }
 
 class _TagSetupScreenState extends State<TagSetupScreen> {
-  File image;
-  int heightOfImage;
-  int widthOfImage;
-  int displayHeightOfImage;
-  int displayWidthOfImage;
-  double scale;
-  FocusNode textFocusNode;
-  String defaultText;
+  late File image;
+  late int heightOfImage;
+  late int widthOfImage;
+  int? displayHeightOfImage;
+  int? displayWidthOfImage;
+  double? scale;
+  FocusNode? textFocusNode;
+  String? defaultText;
 
   @override
   void initState() {
@@ -35,15 +35,15 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
     textFocusNode = FocusNode();
     defaultText = "Default";
     tempTags = [];
-    tempTags = widget.arguments[2] as List<Widget> ?? [];
-    image = widget.arguments[0] as File;
-    displayHeightOfImage = widget.arguments[1].round() as int;
+    tempTags = widget.arguments![2] as List<Widget> ?? [];
+    image = widget.arguments![0] as File;
+    displayHeightOfImage = widget.arguments![1].round() as int?;
     _imageProcess();
   }
 
   @override
   void dispose() {
-    textFocusNode.dispose();
+    textFocusNode!.dispose();
     super.dispose();
   }
 
@@ -59,8 +59,8 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
     setState(() {
       heightOfImage = decodedImage.height;
       widthOfImage = decodedImage.width;
-      scale = displayHeightOfImage / heightOfImage;
-      displayWidthOfImage = (scale * widthOfImage).round();
+      scale = displayHeightOfImage! / heightOfImage;
+      displayWidthOfImage = (scale! * widthOfImage).round();
     });
 
     debugPrint(decodedImage.width.toString());
@@ -102,7 +102,7 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
                               cursorColor: Theme.of(context).errorColor,
                               style: Theme.of(context)
                                   .textTheme
-                                  .headline5
+                                  .headline5!
                                   .copyWith(
                                       color: Theme.of(context).accentColor),
                               controller: searchController,
@@ -117,7 +117,7 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
                                 hintText: "Search",
                                 hintStyle: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 suffixIcon: Icon(
@@ -189,7 +189,7 @@ class _TagSetupScreenState extends State<TagSetupScreen> {
                             visible: true),
                       ));
                     });
-                    textFocusNode.requestFocus();
+                    textFocusNode!.requestFocus();
                   },
                   onTap: () async {},
                   child: Image.file(image, fit: BoxFit.contain),
@@ -232,16 +232,16 @@ class Tag extends StatefulWidget {
   final double yBound;
   final WidgetTag widgetTag;
   const Tag({
-    @required this.xBound,
-    @required this.yBound,
-    @required this.widgetTag,
+    required this.xBound,
+    required this.yBound,
+    required this.widgetTag,
   });
   @override
   _TagState createState() => _TagState();
 }
 
 class _TagState extends State<Tag> {
-  Color color;
+  Color? color;
 
   @override
   void initState() {
@@ -290,7 +290,7 @@ class _TagState extends State<Tag> {
                   color: color,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text(widget.widgetTag.name),
+                child: Text(widget.widgetTag.name!),
               )
             : Container(),
       ),
@@ -300,16 +300,16 @@ class _TagState extends State<Tag> {
 
 class WidgetTag {
   String link;
-  String name;
+  String? name;
   String desc;
   double positionX;
   double positionY;
   bool visible;
   WidgetTag(
-      {@required this.link,
-      @required this.name,
-      @required this.desc,
-      @required this.positionX,
-      @required this.positionY,
-      @required this.visible});
+      {required this.link,
+      required this.name,
+      required this.desc,
+      required this.positionX,
+      required this.positionY,
+      required this.visible});
 }

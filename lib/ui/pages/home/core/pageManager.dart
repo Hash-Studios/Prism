@@ -24,7 +24,7 @@ import 'package:Prism/main.dart' as main;
 import 'package:quick_actions/quick_actions.dart';
 import 'package:Prism/global/globals.dart' as globals;
 
-TabController tabController;
+TabController? tabController;
 
 class PageManager extends StatelessWidget {
   @override
@@ -74,7 +74,7 @@ class _PageManagerChildState extends State<PageManagerChild>
         .getDataBase()
         .then(
       (value) {
-        for (final element in value) {
+        for (final element in value!) {
           box.put(element['id'].toString(), true);
         }
         box.put('dataSaved', true);
@@ -86,7 +86,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   void initState() {
     super.initState();
     tabController =
-        TabController(length: globals.followersTab ? 3 : 2, vsync: this);
+        TabController(length: globals.followersTab! ? 3 : 2, vsync: this);
     final QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       setState(() {
@@ -94,15 +94,15 @@ class _PageManagerChildState extends State<PageManagerChild>
       });
       if (shortcutType == 'Follow_Feed') {
         debugPrint('Follow_Feed');
-        if (globals.followersTab) {
-          tabController.animateTo(1);
+        if (globals.followersTab!) {
+          tabController!.animateTo(1);
         }
       } else if (shortcutType == 'Collections') {
         debugPrint('Collections');
-        if (globals.followersTab) {
-          tabController.animateTo(2);
+        if (globals.followersTab!) {
+          tabController!.animateTo(2);
         } else {
-          tabController.animateTo(1);
+          tabController!.animateTo(1);
         }
       } else if (shortcutType == 'Setups') {
         debugPrint('Setups');
@@ -142,7 +142,7 @@ class _PageManagerChildState extends State<PageManagerChild>
       saveFavToLocal();
     }
     checkConnection();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    WidgetsBinding.instance!.addPostFrameCallback((_) async {
       await rateMyApp.init();
       if (mounted && rateMyApp.shouldOpenDialog) {
         rateMyApp.showStarRateDialog(
@@ -203,7 +203,7 @@ class _PageManagerChildState extends State<PageManagerChild>
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             messageStyle: Theme.of(context)
                 .textTheme
-                .headline6
+                .headline6!
                 .copyWith(color: Theme.of(context).accentColor),
             messagePadding: const EdgeInsets.only(bottom: 20),
             titleStyle: TextStyle(
@@ -226,7 +226,7 @@ class _PageManagerChildState extends State<PageManagerChild>
   Future<bool> initDynamicLinks(BuildContext context) async {
     final PendingDynamicLinkData data =
         await FirebaseDynamicLinks.instance.getInitialLink();
-    final Uri deepLink = data?.link;
+    final Uri deepLink = data.link;
 
     if (deepLink != null && linkOpened == 0) {
       debugPrint("opened while closed altogether via deep link");
@@ -266,7 +266,7 @@ class _PageManagerChildState extends State<PageManagerChild>
 
     FirebaseDynamicLinks.instance.onLink(
         onSuccess: (PendingDynamicLinkData dynamicLink) async {
-      final Uri deepLink = dynamicLink?.link;
+      final Uri deepLink = dynamicLink.link;
 
       if (deepLink != null) {
         debugPrint("opened while bg via deep link1");
@@ -311,8 +311,8 @@ class _PageManagerChildState extends State<PageManagerChild>
     Future.delayed(const Duration(seconds: 1), () => initDynamicLinks(context));
     return WillPopScope(
       onWillPop: () async {
-        if (tabController.index != 0) {
-          tabController.animateTo(0);
+        if (tabController!.index != 0) {
+          tabController!.animateTo(0);
         } else {
           return true;
         }
@@ -330,7 +330,7 @@ class _PageManagerChildState extends State<PageManagerChild>
               controller: tabController,
               indicatorColor: Theme.of(context).accentColor,
               indicatorSize: TabBarIndicatorSize.label,
-              tabs: globals.followersTab
+              tabs: globals.followersTab!
                   ? [
                       Tab(
                         icon: Icon(
@@ -390,61 +390,65 @@ class _PageManagerChildState extends State<PageManagerChild>
         body: Stack(
           children: <Widget>[
             TabBarView(
-                controller: tabController,
-                children: globals.followersTab
-                    ? [
-                        const HomeScreen(),
-                        if (main.prefs.get('isLoggedin') as bool == true)
-                          const FollowingScreen()
-                        else
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              const Spacer(),
-                              Center(
-                                child: Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.7,
-                                  child: const Text(
-                                    "Please sign-in to view the latest walls from the artists you follow here.",
-                                    textAlign: TextAlign.center,
+              controller: tabController,
+              children: (globals.followersTab == true)
+                  ? <Widget>[
+                      const HomeScreen(),
+                      if (main.prefs.get('isLoggedin', defaultValue: false)
+                              as bool ==
+                          true)
+                        const FollowingScreen()
+                      else
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            const Spacer(),
+                            Center(
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.7,
+                                child: const Text(
+                                  "Please sign-in to view the latest walls from the artists you follow here.",
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 16,
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                googleSignInPopUp(context, () {
+                                  main.RestartWidget.restartApp(context);
+                                });
+                              },
+                              style: ButtonStyle(
+                                backgroundColor: MaterialStateColor.resolveWith(
+                                    (states) => Colors.white),
+                              ),
+                              child: Container(
+                                width: 60,
+                                child: const Text(
+                                  'SIGN-IN',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Color(0xFFE57697),
+                                    fontSize: 15,
+                                    fontFamily: "Roboto",
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
-                              const SizedBox(
-                                height: 16,
-                              ),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  googleSignInPopUp(context, () {
-                                    main.RestartWidget.restartApp(context);
-                                  });
-                                },
-                                style: ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateColor.resolveWith(
-                                          (states) => Colors.white),
-                                ),
-                                child: Container(
-                                  width: 60,
-                                  child: const Text(
-                                    'SIGN-IN',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Color(0xFFE57697),
-                                      fontSize: 15,
-                                      fontFamily: "Roboto",
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                            ],
-                          ),
-                        const CollectionScreen()
-                      ]
-                    : [const HomeScreen(), const CollectionScreen()]),
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                      const CollectionScreen(),
+                    ]
+                  : [
+                      const HomeScreen(),
+                      const CollectionScreen(),
+                    ],
+            ),
             if (!result) ConnectivityWidget() else Container(),
           ],
         ),

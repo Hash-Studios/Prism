@@ -21,9 +21,9 @@ class CollectionsGrid extends StatefulWidget {
 
 class _CollectionsGridState extends State<CollectionsGrid>
     with TickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<Color> animation;
-  bool isLoggedin;
+  AnimationController? _controller;
+  late Animation<Color?> animation;
+  bool? isLoggedin;
   GlobalKey<RefreshIndicatorState> refreshKey =
       GlobalKey<RefreshIndicatorState>();
   Random r = Random();
@@ -38,9 +38,9 @@ class _CollectionsGridState extends State<CollectionsGrid>
     );
     animation = Provider.of<ThemeModeExtended>(context, listen: false)
                 .getCurrentModeStyle(
-                    SchedulerBinding.instance.window.platformBrightness) ==
+                    SchedulerBinding.instance!.window.platformBrightness) ==
             "Dark"
-        ? TweenSequence<Color>(
+        ? TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -57,8 +57,8 @@ class _CollectionsGridState extends State<CollectionsGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
-        : TweenSequence<Color>(
+          ).animate(_controller!)
+        : TweenSequence<Color?>(
             [
               TweenSequenceItem(
                 weight: 1.0,
@@ -75,11 +75,11 @@ class _CollectionsGridState extends State<CollectionsGrid>
                 ),
               ),
             ],
-          ).animate(_controller)
+          ).animate(_controller!)
       ..addListener(() {
         setState(() {});
       });
-    _controller.repeat();
+    _controller!.repeat();
   }
 
   @override
@@ -98,7 +98,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
 
   Future<void> checkSignIn() async {
     setState(() {
-      isLoggedin = main.prefs.get("isLoggedin") as bool;
+      isLoggedin = main.prefs.get("isLoggedin") as bool?;
     });
   }
 
@@ -122,8 +122,8 @@ class _CollectionsGridState extends State<CollectionsGrid>
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshKey,
@@ -160,7 +160,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                             .toList()[index]
                             .toString()
                             .substring(1),
-                    CData.collections[CData.collectionNames.toList()[index]],
+                    CData.collections![CData.collectionNames.toList()[index]],
                   ]);
                 } else {
                   if (main.prefs.get('premium') == true) {
@@ -174,7 +174,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                               .toList()[index]
                               .toString()
                               .substring(1),
-                      CData.collections[CData.collectionNames.toList()[index]],
+                      CData.collections![CData.collectionNames.toList()[index]],
                     ]);
                   } else {
                     showGooglePopUp(() {
@@ -235,7 +235,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                               maxLines: 1,
                               style: Theme.of(context)
                                   .textTheme
-                                  .headline2
+                                  .headline2!
                                   .copyWith(
                                       fontSize: 16,
                                       color: Theme.of(context).accentColor,
@@ -247,7 +247,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                               maxLines: 1,
                               style: Theme.of(context)
                                   .textTheme
-                                  .headline2
+                                  .headline2!
                                   .copyWith(
                                       fontSize: 16,
                                       color: Provider.of<ThemeModeExtended>(
@@ -296,7 +296,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   borderRadius: BorderRadius.circular(20),
                                 )
                               : CData
-                                          .collections[CData.collectionNames
+                                          .collections![CData.collectionNames
                                               .toList()[index]
                                               .toString()]
                                           .length ==
@@ -306,7 +306,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                       borderRadius: BorderRadius.circular(20),
                                       image: DecorationImage(
                                           image: CachedNetworkImageProvider(
-                                            CData.collections[CData
+                                            CData.collections![CData
                                                         .collectionNames
                                                         .toList()[index]
                                                         .toString()][0]
@@ -319,7 +319,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                       borderRadius: BorderRadius.circular(20),
                                       image: DecorationImage(
                                           image: CachedNetworkImageProvider(
-                                            CData.collections[CData
+                                            CData.collections![CData
                                                         .collectionNames
                                                         .toList()[index]
                                                         .toString()][1]
@@ -369,7 +369,7 @@ class _CollectionsGridState extends State<CollectionsGrid>
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        CData.collections[CData.collectionNames
+                                        CData.collections![CData.collectionNames
                                                     .toList()[index]
                                                     .toString()][0]
                                                 ["wallpaper_thumb"]
@@ -391,15 +391,15 @@ class _CollectionsGridState extends State<CollectionsGrid>
 }
 
 class PremiumBanner extends StatelessWidget {
-  final bool comparator;
-  final Widget child;
+  final bool? comparator;
+  final Widget? child;
   const PremiumBanner({this.comparator, this.child});
   @override
   Widget build(BuildContext context) {
-    return comparator
-        ? child
+    return comparator!
+        ? child!
         : Stack(
-            children: <Widget>[
+            children: [
               child,
               Positioned(
                 top: (MediaQuery.of(context).size.width / 2) / 0.6225 - 142,
@@ -420,23 +420,23 @@ class PremiumBanner extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+            ] as List<Widget>,
           );
   }
 }
 
 class PremiumBannerWalls extends StatelessWidget {
-  final bool comparator;
-  final Widget defaultChild;
-  final Widget trueChild;
+  final bool? comparator;
+  final Widget? defaultChild;
+  final Widget? trueChild;
   const PremiumBannerWalls(
       {this.comparator, this.defaultChild, this.trueChild});
   @override
   Widget build(BuildContext context) {
-    return comparator
-        ? defaultChild
+    return comparator!
+        ? defaultChild!
         : Stack(
-            children: <Widget>[
+            children: [
               trueChild,
               Positioned(
                 top: (MediaQuery.of(context).size.width / 2) / 0.6225 - 68,
@@ -457,21 +457,21 @@ class PremiumBannerWalls extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+            ] as List<Widget>,
           );
   }
 }
 
 class PremiumBannerFollowingFeed extends StatelessWidget {
-  final bool comparator;
-  final Widget child;
+  final bool? comparator;
+  final Widget? child;
   const PremiumBannerFollowingFeed({this.comparator, this.child});
   @override
   Widget build(BuildContext context) {
-    return comparator
-        ? child
+    return comparator!
+        ? child!
         : Stack(
-            children: <Widget>[
+            children: [
               child,
               Positioned(
                 bottom: 0,
@@ -492,21 +492,21 @@ class PremiumBannerFollowingFeed extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+            ] as List<Widget>,
           );
   }
 }
 
 class PremiumBannerWallsCarousel extends StatelessWidget {
-  final bool comparator;
-  final Widget child;
+  final bool? comparator;
+  final Widget? child;
   const PremiumBannerWallsCarousel({this.comparator, this.child});
   @override
   Widget build(BuildContext context) {
-    return comparator
-        ? child
+    return comparator!
+        ? child!
         : Stack(
-            children: <Widget>[
+            children: [
               child,
               Positioned(
                 top: 160,
@@ -527,21 +527,21 @@ class PremiumBannerWallsCarousel extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+            ] as List<Widget>,
           );
   }
 }
 
 class PremiumBannerSetup extends StatelessWidget {
-  final bool comparator;
-  final Widget child;
+  final bool? comparator;
+  final Widget? child;
   const PremiumBannerSetup({this.comparator, this.child});
   @override
   Widget build(BuildContext context) {
-    return comparator
-        ? child
+    return comparator!
+        ? child!
         : Stack(
-            children: <Widget>[
+            children: [
               child,
               Positioned(
                 top: MediaQuery.of(context).size.height * 0.62 - 32,
@@ -562,21 +562,21 @@ class PremiumBannerSetup extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+            ] as List<Widget>,
           );
   }
 }
 
 class PremiumBannerSetupOld extends StatelessWidget {
-  final bool comparator;
-  final Widget child;
+  final bool? comparator;
+  final Widget? child;
   const PremiumBannerSetupOld({this.comparator, this.child});
   @override
   Widget build(BuildContext context) {
-    return comparator
-        ? child
+    return comparator!
+        ? child!
         : Stack(
-            children: <Widget>[
+            children: [
               child,
               Positioned(
                 bottom: 0,
@@ -597,21 +597,21 @@ class PremiumBannerSetupOld extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+            ] as List<Widget>,
           );
   }
 }
 
 class PremiumBannerSetupPhotographer extends StatelessWidget {
-  final bool comparator;
-  final Widget child;
+  final bool? comparator;
+  final Widget? child;
   const PremiumBannerSetupPhotographer({this.comparator, this.child});
   @override
   Widget build(BuildContext context) {
-    return comparator
-        ? child
+    return comparator!
+        ? child!
         : Stack(
-            children: <Widget>[
+            children: [
               child,
               Positioned(
                 top: (MediaQuery.of(context).size.width / 2) / 0.5025 - 52,
@@ -632,7 +632,7 @@ class PremiumBannerSetupPhotographer extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+            ] as List<Widget>,
           );
   }
 }

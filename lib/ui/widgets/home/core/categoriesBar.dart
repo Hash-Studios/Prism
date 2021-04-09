@@ -15,7 +15,7 @@ import 'package:Prism/main.dart' as main;
 
 class CategoriesBar extends StatefulWidget {
   const CategoriesBar({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -163,12 +163,12 @@ class _CategoriesBarState extends State<CategoriesBar> {
                   },
                   child: Text(
                     Provider.of<CategorySupplier>(context)
-                        .getCurrentChoice
+                        .getCurrentChoice!
                         .toUpperCase(),
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.clip,
-                    style: Theme.of(context).textTheme.headline3.copyWith(
+                    style: Theme.of(context).textTheme.headline3!.copyWith(
                           fontFamily: "Proxima Nova",
                           fontSize: 24,
                           fontWeight: FontWeight.w600,

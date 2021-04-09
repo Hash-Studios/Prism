@@ -62,13 +62,13 @@ class ProfileChild extends StatefulWidget {
 class _ProfileChildState extends State<ProfileChild> {
   final TextEditingController _twitterController = TextEditingController();
   final TextEditingController _igController = TextEditingController();
-  ConfettiController _controllerBottomCenter;
-  int favCount = main.prefs.get('userFavs') as int ?? 0;
-  int profileCount = ((main.prefs.get('userPosts') as int) ?? 0) +
-      ((main.prefs.get('userSetups') as int) ?? 0);
+  late ConfettiController _controllerBottomCenter;
+  int favCount = main.prefs.get('userFavs') as int? ?? 0;
+  int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
+      ((main.prefs.get('userSetups') as int?) ?? 0);
   final ScrollController scrollController = ScrollController();
   final Firestore firestore = Firestore.instance;
-  int count;
+  int count = 0;
   @override
   void initState() {
     count = main.prefs.get('easterCount', defaultValue: 0) as int;
@@ -117,8 +117,8 @@ class _ProfileChildState extends State<ProfileChild> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller =
-        InheritedDataProvider.of(context).scrollController;
+    final ScrollController? controller =
+        InheritedDataProvider.of(context)!.scrollController;
     final CollectionReference users = firestore.collection('users');
 
     return WillPopScope(
@@ -145,7 +145,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                               color: Theme.of(context)
                                                   .accentColor),
                                           onPressed: () {
-                                            scaffoldKey.currentState
+                                            scaffoldKey.currentState!
                                                 .openEndDrawer();
                                           }),
                                     )
@@ -210,10 +210,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                 main.prefs.put(
                                                                     'easterCount',
                                                                     count);
-                                                                if (main.prefs.get(
+                                                                if ((main.prefs.get(
                                                                         'easterCount',
                                                                         defaultValue:
-                                                                            0) as int >
+                                                                            0) as int) >
                                                                     20) {
                                                                   toasts.codeSend(
                                                                       "Congratulations");
@@ -359,7 +359,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                       style: Theme.of(
                                                                               context)
                                                                           .textTheme
-                                                                          .bodyText2
+                                                                          .bodyText2!
                                                                           .copyWith(
                                                                             fontSize:
                                                                                 9,
@@ -445,7 +445,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                               decoration: BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                                                                               child: TextField(
                                                                                 cursorColor: Theme.of(context).errorColor,
-                                                                                style: Theme.of(context).textTheme.headline5.copyWith(color: Theme.of(context).accentColor),
+                                                                                style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                                                                                 controller: _twitterController,
                                                                                 decoration: InputDecoration(
                                                                                   contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -454,7 +454,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                                   enabledBorder: InputBorder.none,
                                                                                   focusedBorder: InputBorder.none,
                                                                                   hintText: "Ex - PrismWallpapers",
-                                                                                  hintStyle: Theme.of(context).textTheme.headline5.copyWith(fontSize: 14, color: Theme.of(context).accentColor),
+                                                                                  hintStyle: Theme.of(context).textTheme.headline5!.copyWith(fontSize: 14, color: Theme.of(context).accentColor),
                                                                                   suffixIcon: Icon(
                                                                                     JamIcons.twitter,
                                                                                     color: Theme.of(context).accentColor,
@@ -585,7 +585,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                               decoration: BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
                                                                               child: TextField(
                                                                                 cursorColor: Theme.of(context).errorColor,
-                                                                                style: Theme.of(context).textTheme.headline5.copyWith(color: Theme.of(context).accentColor),
+                                                                                style: Theme.of(context).textTheme.headline5!.copyWith(color: Theme.of(context).accentColor),
                                                                                 controller: _igController,
                                                                                 decoration: InputDecoration(
                                                                                   contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -594,7 +594,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                                   enabledBorder: InputBorder.none,
                                                                                   focusedBorder: InputBorder.none,
                                                                                   hintText: "Ex - PrismWallpapers",
-                                                                                  hintStyle: Theme.of(context).textTheme.headline5.copyWith(fontSize: 14, color: Theme.of(context).accentColor),
+                                                                                  hintStyle: Theme.of(context).textTheme.headline5!.copyWith(fontSize: 14, color: Theme.of(context).accentColor),
                                                                                   suffixIcon: Icon(
                                                                                     JamIcons.instagram,
                                                                                     color: Theme.of(context).accentColor,
@@ -788,19 +788,19 @@ class _ProfileChildState extends State<ProfileChild> {
                                                             );
                                                           } else {
                                                             List followers = [];
-                                                            if (snapshot.data
+                                                            if (snapshot.data!
                                                                         .documents !=
                                                                     null &&
                                                                 snapshot
-                                                                    .data
+                                                                    .data!
                                                                     .documents
                                                                     .isNotEmpty) {
                                                               followers = snapshot
-                                                                          .data
+                                                                          .data!
                                                                           .documents[
                                                                               0]
                                                                           .data['followers']
-                                                                      as List ??
+                                                                      as List? ??
                                                                   [];
                                                             }
                                                             return GestureDetector(
@@ -881,7 +881,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                           "Wallpapers",
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2
+                                              .bodyText2!
                                               .copyWith(
                                                   color: Theme.of(context)
                                                       .accentColor),
@@ -890,7 +890,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                           "Setups",
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2
+                                              .bodyText2!
                                               .copyWith(
                                                   color: Theme.of(context)
                                                       .accentColor),

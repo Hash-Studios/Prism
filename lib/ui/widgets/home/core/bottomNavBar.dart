@@ -11,10 +11,10 @@ import 'package:Prism/main.dart' as main;
 import 'package:image_picker/image_picker.dart';
 
 class BottomBar extends StatefulWidget {
-  final Widget child;
+  final Widget? child;
   const BottomBar({
     this.child,
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -24,8 +24,8 @@ class BottomBar extends StatefulWidget {
 class _BottomBarState extends State<BottomBar>
     with SingleTickerProviderStateMixin {
   ScrollController scrollBottomBarController = ScrollController();
-  AnimationController _controller;
-  Animation<Offset> _offsetAnimation;
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
   bool isScrollingDown = false;
   bool isOnTop = true;
 
@@ -97,7 +97,7 @@ class _BottomBarState extends State<BottomBar>
       children: [
         InheritedDataProvider(
           scrollController: scrollBottomBarController,
-          child: widget.child,
+          child: widget.child!,
         ),
         Positioned(
           bottom: 10,
@@ -143,9 +143,9 @@ class BottomNavBar extends StatefulWidget {
 
 class _BottomNavBarState extends State<BottomNavBar>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller2;
-  Animation<double> _paddingAnimation;
-  bool isLoggedin = false;
+  late AnimationController _controller2;
+  late Animation<double> _paddingAnimation;
+  bool? isLoggedin = false;
   bool imageNotFound = false;
   @override
   void initState() {
@@ -176,7 +176,7 @@ class _BottomNavBarState extends State<BottomNavBar>
 
   Future<void> checkSignIn() async {
     setState(() {
-      isLoggedin = main.prefs.get("isLoggedin") as bool;
+      isLoggedin = main.prefs.get("isLoggedin") as bool?;
     });
   }
 
@@ -506,7 +506,7 @@ class _BottomNavBarState extends State<BottomNavBar>
 
 class UploadBottomPanel extends StatefulWidget {
   const UploadBottomPanel({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -514,7 +514,7 @@ class UploadBottomPanel extends StatefulWidget {
 }
 
 class _UploadBottomPanelState extends State<UploadBottomPanel> {
-  File _wallpaper;
+  File? _wallpaper;
   final picker = ImagePicker();
   @override
   void initState() {

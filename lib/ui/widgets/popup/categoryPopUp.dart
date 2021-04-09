@@ -70,8 +70,8 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                             Provider.of<CategorySupplier>(context,
                                     listen: false)
                                 .changeWallpaperFuture(
-                                    choice as CategoryMenu, "r");
-                            PM.tabController.animateTo(0,
+                                    choice, "r");
+                            PM.tabController!.animateTo(0,
                                 duration: const Duration(milliseconds: 200),
                                 curve: Curves.easeInCubic);
                           },
@@ -92,7 +92,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (initialValue == choice as CategoryMenu)
+                                  if (initialValue == choice)
                                     Icon(JamIcons.check,
                                         color: Theme.of(context).accentColor)
                                   else
@@ -101,7 +101,7 @@ void showCategories(BuildContext context, CategoryMenu initialValue) {
                                     choice.name.toString(),
                                     style: Theme.of(context)
                                         .textTheme
-                                        .headline4
+                                        .headline4!
                                         .copyWith(
                                             color:
                                                 Theme.of(context).accentColor),

@@ -11,9 +11,9 @@ import 'package:Prism/main.dart' as main;
 
 class WallpaperTile extends StatelessWidget {
   const WallpaperTile({
-    Key key,
-    @required this.widget,
-    @required this.index,
+    Key? key,
+    required this.widget,
+    required this.index,
   }) : super(key: key);
 
   final WallpaperGrid widget;
@@ -33,7 +33,7 @@ class WallpaperTile extends StatelessWidget {
     return Stack(
       children: [
         Container(
-          decoration: Data.subPrismWalls.isEmpty
+          decoration: Data.subPrismWalls!.isEmpty
               ? BoxDecoration(
                   color: Provider.of<ThemeModeExtended>(context)
                               .getCurrentModeStyle(
@@ -53,7 +53,7 @@ class WallpaperTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   image: DecorationImage(
                     image: CachedNetworkImageProvider(
-                      Data.subPrismWalls[index]["wallpaper_thumb"].toString(),
+                      Data.subPrismWalls![index]["wallpaper_thumb"].toString(),
                     ),
                     fit: BoxFit.cover,
                   )),
@@ -70,8 +70,8 @@ class WallpaperTile extends StatelessWidget {
                 } else {
                   globals.isPremiumWall(
                                   globals.premiumCollections,
-                                  Data.subPrismWalls[index]["collections"]
-                                          as List ??
+                                  Data.subPrismWalls![index]["collections"]
+                                          as List? ??
                                       []) ==
                               true &&
                           main.prefs.get('premium') != true
@@ -87,7 +87,7 @@ class WallpaperTile extends StatelessWidget {
                           arguments: [
                             widget.provider,
                             index,
-                            Data.subPrismWalls[index]["wallpaper_thumb"],
+                            Data.subPrismWalls![index]["wallpaper_thumb"],
                           ],
                         );
                 }

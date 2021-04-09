@@ -18,39 +18,39 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/main.dart' as main;
 
 class UploadSetupScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const UploadSetupScreen({this.arguments});
   @override
   _UploadSetupScreenState createState() => _UploadSetupScreenState();
 }
 
 class _UploadSetupScreenState extends State<UploadSetupScreen> {
-  bool isUploading;
-  bool isProcessing;
-  File image;
-  String imageURL;
+  late bool isUploading;
+  late bool isProcessing;
+  late File image;
+  String? imageURL;
   TextEditingController setupName = TextEditingController();
   TextEditingController setupDesc = TextEditingController();
   TextEditingController iconName = TextEditingController();
   TextEditingController iconURL = TextEditingController();
   TextEditingController widgetName1 = TextEditingController();
   TextEditingController widgetURL1 = TextEditingController();
-  String id;
-  String tempid;
+  String? id;
+  String? tempid;
   TextEditingController wallpaperUrl = TextEditingController();
-  String wallpaperUploadLink;
+  String? wallpaperUploadLink;
   String wallpaperId = "";
   TextEditingController wallpaperAppName = TextEditingController();
   TextEditingController wallpaperAppWallName = TextEditingController();
   TextEditingController wallpaperAppLink = TextEditingController();
   TextEditingController widgetName2 = TextEditingController();
   TextEditingController widgetURL2 = TextEditingController();
-  String wallpaperProvider;
-  String wallpaperThumb;
-  bool review;
-  List<int> imageBytes;
+  String? wallpaperProvider;
+  String? wallpaperThumb;
+  bool? review;
+  late List<int> imageBytes;
   List<Widget> tags = [];
-  FocusNode textFocusNode;
+  FocusNode? textFocusNode;
   int groupValue = 0;
   int groupWidgetValue = 0;
   bool wallpaperUploaded = false;
@@ -118,7 +118,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
   @override
   void initState() {
     super.initState();
-    image = widget.arguments[0] as File;
+    image = widget.arguments![0] as File;
     isUploading = false;
     isProcessing = true;
     randomId();
@@ -136,10 +136,10 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
     for (var i = 0; i < 6; i++) {
       if (choice == i) {
         final ran = r.nextInt(10);
-        tempid = tempid + ran.toString();
+        tempid = tempid! + ran.toString();
       } else {
         final ran = r.nextInt(26);
-        tempid = tempid + alp[ran].toString();
+        tempid = tempid! + alp[ran].toString();
       }
     }
     setState(() {
@@ -432,7 +432,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           cursorColor: Theme.of(context).errorColor,
                           style: Theme.of(context)
                               .textTheme
-                              .headline5
+                              .headline5!
                               .copyWith(color: Theme.of(context).accentColor),
                           controller: widgetName1,
                           focusNode: textFocusNode,
@@ -446,7 +446,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             hintText: "Write widget app name...",
                             hintStyle: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.android,
@@ -471,7 +471,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           cursorColor: Theme.of(context).errorColor,
                           style: Theme.of(context)
                               .textTheme
-                              .headline5
+                              .headline5!
                               .copyWith(color: Theme.of(context).accentColor),
                           controller: widgetURL1,
                           focusNode: textFocusNode,
@@ -485,7 +485,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             hintText: "Write widget app link...",
                             hintStyle: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.google_play,
@@ -511,7 +511,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             cursorColor: Theme.of(context).errorColor,
                             style: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             controller: widgetName2,
                             focusNode: textFocusNode,
@@ -525,7 +525,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                               hintText: "Write 2nd widget app name...",
                               hintStyle: Theme.of(context)
                                   .textTheme
-                                  .headline5
+                                  .headline5!
                                   .copyWith(
                                       color: Theme.of(context).accentColor),
                               suffixIcon: Icon(
@@ -561,7 +561,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             cursorColor: Theme.of(context).errorColor,
                             style: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             controller: widgetURL2,
                             focusNode: textFocusNode,
@@ -575,7 +575,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                               hintText: "Write 2nd widget app link...",
                               hintStyle: Theme.of(context)
                                   .textTheme
-                                  .headline5
+                                  .headline5!
                                   .copyWith(
                                       color: Theme.of(context).accentColor),
                               suffixIcon: Icon(
@@ -608,7 +608,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           cursorColor: Theme.of(context).errorColor,
                           style: Theme.of(context)
                               .textTheme
-                              .headline5
+                              .headline5!
                               .copyWith(color: Theme.of(context).accentColor),
                           controller: iconName,
                           focusNode: textFocusNode,
@@ -622,7 +622,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             hintText: "Write icon pack name...",
                             hintStyle: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.android,
@@ -647,7 +647,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                           cursorColor: Theme.of(context).errorColor,
                           style: Theme.of(context)
                               .textTheme
-                              .headline5
+                              .headline5!
                               .copyWith(color: Theme.of(context).accentColor),
                           controller: iconURL,
                           focusNode: textFocusNode,
@@ -661,7 +661,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                             hintText: "Write icon app link...",
                             hintStyle: Theme.of(context)
                                 .textTheme
-                                .headline5
+                                .headline5!
                                 .copyWith(color: Theme.of(context).accentColor),
                             suffixIcon: Icon(
                               JamIcons.google_play_circle,
@@ -720,7 +720,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                       cursorColor: Theme.of(context).errorColor,
                       style: Theme.of(context)
                           .textTheme
-                          .headline5
+                          .headline5!
                           .copyWith(color: Theme.of(context).accentColor),
                       controller: wallpaperUrl,
                       focusNode: textFocusNode,
@@ -734,7 +734,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                         hintText: "Write wallpaper link...",
                         hintStyle: Theme.of(context)
                             .textTheme
-                            .headline5
+                            .headline5!
                             .copyWith(color: Theme.of(context).accentColor),
                         suffixIcon: Icon(
                           JamIcons.picture,
@@ -811,7 +811,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 controller: wallpaperAppName,
@@ -826,7 +826,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                   hintText: "Write wallpaper app name...",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5
+                                      .headline5!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                   suffixIcon: Icon(
@@ -852,7 +852,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 controller: wallpaperAppLink,
@@ -867,7 +867,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                   hintText: "Write app link...",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5
+                                      .headline5!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                   suffixIcon: Icon(
@@ -893,7 +893,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                 cursorColor: Theme.of(context).errorColor,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .headline5
+                                    .headline5!
                                     .copyWith(
                                         color: Theme.of(context).accentColor),
                                 controller: wallpaperAppWallName,
@@ -908,7 +908,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                   hintText: "Write wallpaper name",
                                   hintStyle: Theme.of(context)
                                       .textTheme
-                                      .headline5
+                                      .headline5!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                   suffixIcon: Icon(

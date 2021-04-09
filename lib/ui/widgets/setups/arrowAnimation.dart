@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ArrowBounceAnimation extends StatefulWidget {
-  final Function onTap;
-  final Widget child;
+  final Function? onTap;
+  final Widget? child;
 
   const ArrowBounceAnimation({this.child, this.onTap});
 
@@ -12,8 +12,8 @@ class ArrowBounceAnimation extends StatefulWidget {
 
 class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<double> animation;
+  late AnimationController _controller;
+  late Animation<double> animation;
 
   @override
   void initState() {
@@ -56,6 +56,6 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation>
   }
 
   void _onTap() {
-    if (widget.onTap != null) widget.onTap();
+    if (widget.onTap != null) widget.onTap!();
   }
 }

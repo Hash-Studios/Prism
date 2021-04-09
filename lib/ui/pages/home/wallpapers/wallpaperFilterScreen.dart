@@ -32,11 +32,11 @@ class WallpaperFilterScreen extends StatefulWidget {
   final String finalFilename;
 
   const WallpaperFilterScreen({
-    Key key,
-    @required this.image,
-    @required this.finalImage,
-    @required this.filename,
-    @required this.finalFilename,
+    Key? key,
+    required this.image,
+    required this.finalImage,
+    required this.filename,
+    required this.finalFilename,
   }) : super(key: key);
 
   @override
@@ -44,13 +44,13 @@ class WallpaperFilterScreen extends StatefulWidget {
 }
 
 class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
-  String filename;
-  String finalFilename;
-  Map<String, List<int>> cachedFilters = {};
-  Filter _filter;
-  imagelib.Image image;
-  imagelib.Image finalImage;
-  bool loading;
+  String? filename;
+  String? finalFilename;
+  Map<String, List<int>?> cachedFilters = {};
+  Filter? _filter;
+  imagelib.Image? image;
+  imagelib.Image? finalImage;
+  late bool loading;
   List<Filter> selectedFilters = [
     NoFilter(),
     AdenFilter(),
@@ -109,7 +109,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   static const platform = MethodChannel("flutter.prism.set_wallpaper");
 
   Future<void> _setBothWallPaper(String url) async {
-    bool result;
+    bool? result;
     try {
       if (url.contains("com.hash.prism")) {
         result = await platform
@@ -127,7 +127,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           'url': url,
         });
       }
-      if (result) {
+      if (result!) {
         debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -146,7 +146,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _setLockWallPaper(String url) async {
-    bool result;
+    bool? result;
     try {
       if (url.contains("com.hash.prism")) {
         result = await platform
@@ -164,7 +164,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           'url': url,
         });
       }
-      if (result) {
+      if (result!) {
         debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -183,7 +183,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _setHomeWallPaper(String url) async {
-    bool result;
+    bool? result;
     try {
       if (url.contains("com.hash.prism")) {
         result = await platform
@@ -201,7 +201,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           'url': url,
         });
       }
-      if (result) {
+      if (result!) {
         debugPrint("Success");
         analytics.logEvent(
             name: 'set_wall',
@@ -382,7 +382,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                                       selectedFilters[index].name,
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               color: Theme.of(context)
                                                   .accentColor),
@@ -403,8 +403,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Widget _buildFilterThumbnail(
-      Filter filter, imagelib.Image image, String filename) {
-    if (cachedFilters[filter?.name ?? "_"] == null) {
+      Filter filter, imagelib.Image? image, String? filename) {
+    if (cachedFilters[filter.name ?? "_"] == null) {
       return FutureBuilder<List<int>>(
         future: compute(applyFilter, <String, dynamic>{
           "filter": filter,
@@ -431,7 +431,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
-              cachedFilters[filter?.name ?? "_"] = snapshot.data;
+              cachedFilters[filter.name ?? "_"] = snapshot.data;
               return ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
@@ -447,7 +447,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 ),
               );
           }
-          return null; // unreachable
+          return Container(); // unreachable
         },
       );
     } else {
@@ -459,7 +459,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           color: Theme.of(context).primaryColor,
           child: Image(
             image: MemoryImage(
-              cachedFilters[filter?.name ?? "_"] as Uint8List,
+              cachedFilters[filter.name ?? "_"] as Uint8List,
             ),
             fit: BoxFit.cover,
           ),
@@ -492,7 +492,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Widget _buildFilteredImage(
-      Filter filter, imagelib.Image image, String filename) {
+      Filter? filter, imagelib.Image? image, String? filename) {
     return FutureBuilder<List<int>>(
       future: compute(applyFilter, <String, dynamic>{
         "filter": filter,
@@ -610,7 +610,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               ),
             );
         }
-        return null; // unreachable
+        return Container(); // unreachable
       },
     );
   }
@@ -618,7 +618,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
 ///The global applyfilter function
 List<int> applyFilter(Map<String, dynamic> params) {
-  final Filter filter = params["filter"] as Filter;
+  final Filter? filter = params["filter"] as Filter?;
   final imagelib.Image image = params["image"] as imagelib.Image;
   final String filename = params["filename"] as String;
   List<int> _bytes = image.getBytes();

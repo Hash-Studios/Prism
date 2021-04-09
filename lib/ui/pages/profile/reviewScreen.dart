@@ -27,7 +27,7 @@ class ReviewScreen extends StatefulWidget {
 
 class _ReviewScreenState extends State<ReviewScreen>
     with SingleTickerProviderStateMixin {
-  TabController tabController;
+  TabController? tabController;
   Future<bool> onWillPop() async {
     if (navStack.length > 1) navStack.removeLast();
     debugPrint(navStack.toString());
@@ -92,7 +92,7 @@ class _ReviewScreenState extends State<ReviewScreen>
                     "Wallpapers",
                     style: Theme.of(context)
                         .textTheme
-                        .bodyText2
+                        .bodyText2!
                         .copyWith(color: Theme.of(context).accentColor),
                   ),
                 ),
@@ -101,7 +101,7 @@ class _ReviewScreenState extends State<ReviewScreen>
                     "Setups",
                     style: Theme.of(context)
                         .textTheme
-                        .bodyText2
+                        .bodyText2!
                         .copyWith(color: Theme.of(context).accentColor),
                   ),
                 )
@@ -147,9 +147,9 @@ class _WallReviewState extends State<WallReview> {
                 } else {
                   return Column(
                     children: List.generate(
-                      snapshot.data.documents.length,
+                      snapshot.data!.documents.length,
                       (int index) =>
-                          RejectedWallTile(snapshot.data.documents[index]),
+                          RejectedWallTile(snapshot.data!.documents[index]),
                     ),
                   );
                 }
@@ -169,8 +169,8 @@ class _WallReviewState extends State<WallReview> {
                 } else {
                   return Column(
                     children: List.generate(
-                      snapshot.data.documents.length,
-                      (int index) => WallTile(snapshot.data.documents[index]),
+                      snapshot.data!.documents.length,
+                      (int index) => WallTile(snapshot.data!.documents[index]),
                     ),
                   );
                 }
@@ -221,7 +221,7 @@ class WallTile extends StatelessWidget {
                                 .toLocal()),
                         style: Theme.of(context)
                             .textTheme
-                            .bodyText2
+                            .bodyText2!
                             .copyWith(color: Theme.of(context).accentColor),
                       ),
                     ],
@@ -278,7 +278,7 @@ class WallTile extends StatelessWidget {
                                   "${wallpaper.data["id"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2
+                                      .bodyText2!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                 ),
@@ -300,7 +300,7 @@ class WallTile extends StatelessWidget {
                                   "${wallpaper.data["size"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2
+                                      .bodyText2!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                 ),
@@ -322,7 +322,7 @@ class WallTile extends StatelessWidget {
                                   "${wallpaper.data["resolution"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2
+                                      .bodyText2!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                 ),
@@ -342,7 +342,7 @@ class WallTile extends StatelessWidget {
                                 "IN REVIEW",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(color: Colors.black),
                               ),
                             ),
@@ -555,7 +555,7 @@ class RejectedWallTile extends StatelessWidget {
                                 .toLocal()),
                         style: Theme.of(context)
                             .textTheme
-                            .bodyText2
+                            .bodyText2!
                             .copyWith(color: Theme.of(context).accentColor),
                       ),
                     ],
@@ -612,7 +612,7 @@ class RejectedWallTile extends StatelessWidget {
                                   "${wallpaper.data["id"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2
+                                      .bodyText2!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                 ),
@@ -634,7 +634,7 @@ class RejectedWallTile extends StatelessWidget {
                                   "${wallpaper.data["size"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2
+                                      .bodyText2!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                 ),
@@ -656,7 +656,7 @@ class RejectedWallTile extends StatelessWidget {
                                   "${wallpaper.data["resolution"]}",
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyText2
+                                      .bodyText2!
                                       .copyWith(
                                           color: Theme.of(context).accentColor),
                                 ),
@@ -676,7 +676,7 @@ class RejectedWallTile extends StatelessWidget {
                                 "REJECTED",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(color: Colors.white),
                               ),
                             ),
@@ -854,7 +854,7 @@ class RejectedWallTile extends StatelessWidget {
                           "The wallpaper didn't meet our expectations. Please try uploading a good quality wallpaper.",
                           style: Theme.of(context)
                               .textTheme
-                              .bodyText2
+                              .bodyText2!
                               .copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),
@@ -897,9 +897,9 @@ class _SetupReviewState extends State<SetupReview> {
                 } else {
                   return Column(
                     children: List.generate(
-                      snapshot.data.documents.length,
+                      snapshot.data!.documents.length,
                       (int index) =>
-                          RejectedSetupTile(snapshot.data.documents[index]),
+                          RejectedSetupTile(snapshot.data!.documents[index]),
                     ),
                   );
                 }
@@ -919,8 +919,8 @@ class _SetupReviewState extends State<SetupReview> {
                 } else {
                   return Column(
                     children: List.generate(
-                      snapshot.data.documents.length,
-                      (int index) => SetupTile(snapshot.data.documents[index]),
+                      snapshot.data!.documents.length,
+                      (int index) => SetupTile(snapshot.data!.documents[index]),
                     ),
                   );
                 }
@@ -974,7 +974,7 @@ class SetupTile extends StatelessWidget {
                                 .toLocal()),
                         style: Theme.of(context)
                             .textTheme
-                            .bodyText2
+                            .bodyText2!
                             .copyWith(color: Theme.of(context).accentColor),
                       ),
                     ],
@@ -1028,7 +1028,7 @@ class SetupTile extends StatelessWidget {
                                       text: "${wallpaper.data["name"]}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               fontWeight: FontWeight.bold,
                                               decoration:
@@ -1040,7 +1040,7 @@ class SetupTile extends StatelessWidget {
                                           text: " - ${wallpaper.data["desc"]}",
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2
+                                              .bodyText2!
                                               .copyWith(
                                                   decoration:
                                                       TextDecoration.underline,
@@ -1077,7 +1077,7 @@ class SetupTile extends StatelessWidget {
                                     "${wallpaper.data["id"]}",
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodyText2
+                                        .bodyText2!
                                         .copyWith(
                                             color:
                                                 Theme.of(context).accentColor),
@@ -1142,7 +1142,7 @@ class SetupTile extends StatelessWidget {
                                           : "${wallpaper.data["wallpaper_url"][0]} - ${wallpaper.data["wallpaper_url"][2]}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               decoration:
                                                   TextDecoration.underline,
@@ -1179,7 +1179,7 @@ class SetupTile extends StatelessWidget {
                                       "${wallpaper.data["icon"]}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               decoration:
                                                   TextDecoration.underline,
@@ -1222,7 +1222,7 @@ class SetupTile extends StatelessWidget {
                                         "${wallpaper.data["widget"]}",
                                         style: Theme.of(context)
                                             .textTheme
-                                            .bodyText2
+                                            .bodyText2!
                                             .copyWith(
                                                 decoration:
                                                     TextDecoration.underline,
@@ -1267,7 +1267,7 @@ class SetupTile extends StatelessWidget {
                                         "${wallpaper.data["widget2"]}",
                                         style: Theme.of(context)
                                             .textTheme
-                                            .bodyText2
+                                            .bodyText2!
                                             .copyWith(
                                                 decoration:
                                                     TextDecoration.underline,
@@ -1294,7 +1294,7 @@ class SetupTile extends StatelessWidget {
                                 "IN REVIEW",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(color: Colors.black),
                               ),
                             ),
@@ -1527,7 +1527,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 .toLocal()),
                         style: Theme.of(context)
                             .textTheme
-                            .bodyText2
+                            .bodyText2!
                             .copyWith(color: Theme.of(context).accentColor),
                       ),
                     ],
@@ -1581,7 +1581,7 @@ class RejectedSetupTile extends StatelessWidget {
                                       text: "${wallpaper.data["name"]}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               fontWeight: FontWeight.bold,
                                               decoration:
@@ -1593,7 +1593,7 @@ class RejectedSetupTile extends StatelessWidget {
                                           text: " - ${wallpaper.data["desc"]}",
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyText2
+                                              .bodyText2!
                                               .copyWith(
                                                   decoration:
                                                       TextDecoration.underline,
@@ -1630,7 +1630,7 @@ class RejectedSetupTile extends StatelessWidget {
                                     "${wallpaper.data["id"]}",
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodyText2
+                                        .bodyText2!
                                         .copyWith(
                                             color:
                                                 Theme.of(context).accentColor),
@@ -1695,7 +1695,7 @@ class RejectedSetupTile extends StatelessWidget {
                                           : "${wallpaper.data["wallpaper_url"][0]} - ${wallpaper.data["wallpaper_url"][2]}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               decoration:
                                                   TextDecoration.underline,
@@ -1732,7 +1732,7 @@ class RejectedSetupTile extends StatelessWidget {
                                       "${wallpaper.data["icon"]}",
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyText2
+                                          .bodyText2!
                                           .copyWith(
                                               decoration:
                                                   TextDecoration.underline,
@@ -1775,7 +1775,7 @@ class RejectedSetupTile extends StatelessWidget {
                                         "${wallpaper.data["widget"]}",
                                         style: Theme.of(context)
                                             .textTheme
-                                            .bodyText2
+                                            .bodyText2!
                                             .copyWith(
                                                 decoration:
                                                     TextDecoration.underline,
@@ -1820,7 +1820,7 @@ class RejectedSetupTile extends StatelessWidget {
                                         "${wallpaper.data["widget2"]}",
                                         style: Theme.of(context)
                                             .textTheme
-                                            .bodyText2
+                                            .bodyText2!
                                             .copyWith(
                                                 decoration:
                                                     TextDecoration.underline,
@@ -1847,7 +1847,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 "REJECTED",
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyText2
+                                    .bodyText2!
                                     .copyWith(color: Colors.white),
                               ),
                             ),
@@ -2024,7 +2024,7 @@ class RejectedSetupTile extends StatelessWidget {
                           "The setup didn't meet our expectations. Please try uploading another setup.",
                           style: Theme.of(context)
                               .textTheme
-                              .bodyText2
+                              .bodyText2!
                               .copyWith(color: Theme.of(context).accentColor),
                         ),
                       ),

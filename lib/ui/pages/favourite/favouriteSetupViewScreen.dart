@@ -27,7 +27,7 @@ import 'package:Prism/ui/widgets/popup/signInPopUp.dart';
 import 'package:hive/hive.dart';
 
 class FavSetupViewScreen extends StatefulWidget {
-  final List arguments;
+  final List? arguments;
   const FavSetupViewScreen({this.arguments});
 
   @override
@@ -43,27 +43,27 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int index;
-  String thumb;
+  int? index;
+  String? thumb;
   bool isLoading = true;
   PanelController panelController = PanelController();
-  AnimationController shakeController;
+  late AnimationController shakeController;
   bool panelCollapsed = true;
-  Future<String> _futureView;
-  Box box;
+  Future<String>? _futureView;
+  late Box box;
 
   @override
   void initState() {
     shakeController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments[0] as int;
+    index = widget.arguments![0] as int;
     updateViewsSetup(Provider.of<FavouriteSetupProvider>(context, listen: false)
-        .liked[index]["id"]
+        .liked![index!]["id"]
         .toString()
         .toUpperCase());
     _futureView = getViewsSetup(
         Provider.of<FavouriteSetupProvider>(context, listen: false)
-            .liked[index]["id"]
+            .liked![index!]["id"]
             .toString()
             .toUpperCase());
     isLoading = true;
@@ -220,14 +220,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[index]["name"]
+                                            .liked![index!]["name"]
                                             .toString()
                                             .toUpperCase(),
                                         maxLines: 1,
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline1
+                                            .headline1!
                                             .copyWith(
                                                 fontSize: 30,
                                                 color: Theme.of(context)
@@ -247,13 +247,13 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[index]["desc"]
+                                            .liked![index!]["desc"]
                                             .toString(),
                                         maxLines: 2,
                                         overflow: TextOverflow.fade,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .headline6
+                                            .headline6!
                                             .copyWith(
                                                 color: Theme.of(context)
                                                     .accentColor),
@@ -298,13 +298,13 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                     Provider.of<FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]["id"]
+                                                        .liked![index!]["id"]
                                                         .toString()
                                                         .toUpperCase(),
                                                     overflow: TextOverflow.fade,
                                                     style: Theme.of(context)
                                                         .textTheme
-                                                        .bodyText1
+                                                        .bodyText1!
                                                         .copyWith(
                                                             color: Theme.of(
                                                                     context)
@@ -335,7 +335,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText1
+                                                                .bodyText1!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -350,7 +350,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
-                                                                .bodyText1
+                                                                .bodyText1!
                                                                 .copyWith(
                                                                     color: Theme.of(
                                                                             context)
@@ -366,7 +366,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -384,7 +384,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               style: Theme.of(
                                                                       context)
                                                                   .textTheme
-                                                                  .bodyText1
+                                                                  .bodyText1!
                                                                   .copyWith(
                                                                       color: Theme.of(
                                                                               context)
@@ -409,13 +409,13 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]["name"]
+                                                      .liked![index!]["name"]
                                                       .toString(),
                                                   thumbUrl: Provider.of<
                                                               FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]["image"]
+                                                      .liked![index!]["image"]
                                                       .toString());
                                             },
                                             child: Row(
@@ -433,7 +433,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context)
                                                       .textTheme
-                                                      .bodyText2
+                                                      .bodyText2!
                                                       .copyWith(
                                                           decoration:
                                                               TextDecoration
@@ -466,7 +466,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           Provider.of<FavouriteSetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .liked[index]
+                                                              .liked![index!]
                                                                   ["by"]
                                                               .toString(),
                                                           overflow:
@@ -474,7 +474,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           style: Theme.of(
                                                                   context)
                                                               .textTheme
-                                                              .bodyText2
+                                                              .bodyText2!
                                                               .copyWith(
                                                                   color: Theme.of(
                                                                           context)
@@ -492,7 +492,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                       context,
                                                                       listen:
                                                                           false)
-                                                                  .liked[index][
+                                                                  .liked![index!][
                                                                       "userPhoto"]
                                                                   .toString()),
                                                         ),
@@ -509,30 +509,30 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .liked[index]["by"],
+                                                                    .liked![index!]["by"],
                                                                 Provider.of<FavouriteSetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .liked[index]["email"],
+                                                                    .liked![index!]["email"],
                                                                 Provider.of<FavouriteSetupProvider>(
                                                                         context,
                                                                         listen:
                                                                             false)
-                                                                    .liked[index]["userPhoto"],
+                                                                    .liked![index!]["userPhoto"],
                                                                 false,
-                                                                if (Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index][
+                                                                if (Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!][
                                                                             "twitter"] !=
                                                                         null &&
-                                                                    Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index][
+                                                                    Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!][
                                                                             "twitter"] !=
                                                                         "")
                                                                   Provider.of<FavouriteSetupProvider>(
                                                                           context,
                                                                           listen:
                                                                               false)
-                                                                      .liked[
-                                                                          index]
+                                                                      .liked![
+                                                                          index!]
                                                                           [
                                                                           "twitter"]
                                                                       .toString()
@@ -540,18 +540,18 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                           "https://www.twitter.com/")[1]
                                                                 else
                                                                   "",
-                                                                if (Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index][
+                                                                if (Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!][
                                                                             "instagram"] !=
                                                                         null &&
-                                                                    Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index][
+                                                                    Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!][
                                                                             "instagram"] !=
                                                                         "")
                                                                   Provider.of<FavouriteSetupProvider>(
                                                                           context,
                                                                           listen:
                                                                               false)
-                                                                      .liked[
-                                                                          index]
+                                                                      .liked![
+                                                                          index!]
                                                                           [
                                                                           "instagram"]
                                                                       .toString()
@@ -567,7 +567,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                   FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]["email"]
+                                                          .liked![index!]["email"]
                                                           .toString()))
                                                     Align(
                                                       alignment:
@@ -612,11 +612,11 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                           padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
                           child: Provider.of<FavouriteSetupProvider>(context,
                                               listen: false)
-                                          .liked[index]["widget"] ==
+                                          .liked![index!]["widget"] ==
                                       "" ||
                                   Provider.of<FavouriteSetupProvider>(context,
                                               listen: false)
-                                          .liked[index]["widget"] ==
+                                          .liked![index!]["widget"] ==
                                       null
                               ? Column(
                                   mainAxisAlignment:
@@ -629,19 +629,19 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                         if (Provider.of<FavouriteSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["wallpaper_url"]
+                                                .liked![index!]["wallpaper_url"]
                                                 .toString()[0] !=
                                             "[") {
                                           if (Provider.of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]
+                                                          .liked![index!]
                                                       ["wall_id"] ==
                                                   null ||
                                               Provider.of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]
+                                                          .liked![index!]
                                                       ["wall_id"] ==
                                                   "") {
                                             debugPrint("Id Not Found!");
@@ -649,7 +649,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         FavouriteSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["wallpaper_url"]
+                                                .liked![index!]["wallpaper_url"]
                                                 .toString());
                                           } else {
                                             Navigator.pushNamed(
@@ -658,24 +658,24 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                   Provider.of<FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]["wall_id"]
+                                                      .liked![index!]["wall_id"]
                                                       .toString(),
                                                   Provider.of<FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]
+                                                      .liked![index!]
                                                           ["wallpaper_provider"]
                                                       .toString(),
                                                   Provider.of<FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]
+                                                      .liked![index!]
                                                           ["wallpaper_url"]
                                                       .toString(),
                                                   Provider.of<FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]
+                                                      .liked![index!]
                                                           ["wallpaper_url"]
                                                       .toString(),
                                                 ]);
@@ -685,7 +685,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["wallpaper_url"][1]
+                                              .liked![index!]["wallpaper_url"][1]
                                               .toString());
                                         }
                                       },
@@ -693,11 +693,11 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["wallpaper_url"]
+                                                  .liked![index!]["wallpaper_url"]
                                                   .toString()[0] !=
                                               "["
                                           ? "Prism"
-                                          : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"][2].toString() : ""}",
+                                          : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
@@ -707,7 +707,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["icon_url"]
+                                              .liked![index!]["icon_url"]
                                               .toString()
                                               .contains(
                                                   'play.google.com/store/apps/details?id=')
@@ -715,7 +715,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                   .of<FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                              .liked[index]["icon_url"]
+                                              .liked![index!]["icon_url"]
                                               .toString()
                                               .split("details?id=")[1]
                                               .split("&")[0])
@@ -724,7 +724,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                         if (Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[index]["icon_url"]
+                                            .liked![index!]["icon_url"]
                                             .toString()
                                             .contains(
                                                 'play.google.com/store/apps/details?id=')) {
@@ -733,7 +733,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["icon_url"]
+                                                  .liked![index!]["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0]);
@@ -742,7 +742,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["icon_url"]
+                                                  .liked![index!]["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
@@ -750,14 +750,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["icon_url"]
+                                                  .liked![index!]["icon_url"]
                                                   .toString());
                                         } else {
                                           launch(Provider.of<
                                                       FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["icon_url"]
+                                              .liked![index!]["icon_url"]
                                               .toString());
                                         }
                                       },
@@ -765,7 +765,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                           Provider.of<FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["icon"]
+                                              .liked![index!]["icon"]
                                               .toString(),
                                       tileType: "Icons",
                                       panelCollapsed: panelCollapsed,
@@ -775,12 +775,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                 )
                               : Provider.of<FavouriteSetupProvider>(context,
                                                   listen: false)
-                                              .liked[index]["widget2"] ==
+                                              .liked![index!]["widget2"] ==
                                           "" ||
                                       Provider.of<FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["widget2"] ==
+                                              .liked![index!]["widget2"] ==
                                           null
                                   ? Column(
                                       mainAxisAlignment:
@@ -793,20 +793,20 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                             if (Provider.of<FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]
+                                                    .liked![index!]
                                                         ["wallpaper_url"]
                                                     .toString()[0] !=
                                                 "[") {
                                               if (Provider.of<FavouriteSetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .liked[index]
+                                                              .liked![index!]
                                                           ["wall_id"] ==
                                                       null ||
                                                   Provider.of<FavouriteSetupProvider>(
                                                                   context,
                                                                   listen: false)
-                                                              .liked[index]
+                                                              .liked![index!]
                                                           ["wall_id"] ==
                                                       "") {
                                                 debugPrint("Id Not Found!");
@@ -814,7 +814,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]
+                                                    .liked![index!]
                                                         ["wallpaper_url"]
                                                     .toString());
                                               } else {
@@ -824,25 +824,25 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       Provider.of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]
+                                                          .liked![index!]
                                                               ["wall_id"]
                                                           .toString(),
                                                       Provider.of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index][
+                                                          .liked![index!][
                                                               "wallpaper_provider"]
                                                           .toString(),
                                                       Provider.of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]
+                                                          .liked![index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                       Provider.of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]
+                                                          .liked![index!]
                                                               ["wallpaper_url"]
                                                           .toString(),
                                                     ]);
@@ -852,7 +852,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["wallpaper_url"]
+                                                  .liked![index!]["wallpaper_url"]
                                                       [1]
                                                   .toString());
                                             }
@@ -861,12 +861,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                               Provider.of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                          .liked[index]
+                                                          .liked![index!]
                                                               ["wallpaper_url"]
                                                           .toString()[0] !=
                                                       "["
                                                   ? "Prism"
-                                                  : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"][2].toString() : ""}",
+                                                  : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                           tileType: "Wallpaper",
                                           panelCollapsed: panelCollapsed,
                                           delay:
@@ -877,7 +877,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["icon_url"]
+                                                  .liked![index!]["icon_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')
@@ -885,7 +885,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       .of<FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                  .liked[index]["icon_url"]
+                                                  .liked![index!]["icon_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
@@ -895,7 +895,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         FavouriteSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["icon_url"]
+                                                .liked![index!]["icon_url"]
                                                 .toString()
                                                 .contains(
                                                     'play.google.com/store/apps/details?id=')) {
@@ -904,7 +904,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]["icon_url"]
+                                                      .liked![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0]);
@@ -913,7 +913,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           .of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                      .liked[index]["icon_url"]
+                                                      .liked![index!]["icon_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
                                                       .split("&")[0])
@@ -921,14 +921,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]["icon_url"]
+                                                      .liked![index!]["icon_url"]
                                                       .toString());
                                             } else {
                                               launch(Provider.of<
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["icon_url"]
+                                                  .liked![index!]["icon_url"]
                                                   .toString());
                                             }
                                           },
@@ -936,7 +936,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["icon"]
+                                              .liked![index!]["icon"]
                                               .toString(),
                                           tileType: "Icons",
                                           panelCollapsed: panelCollapsed,
@@ -948,7 +948,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["widget_url"]
+                                                  .liked![index!]["widget_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')
@@ -956,7 +956,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       .of<FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                  .liked[index]["widget_url"]
+                                                  .liked![index!]["widget_url"]
                                                   .toString()
                                                   .split("details?id=")[1]
                                                   .split("&")[0])
@@ -966,7 +966,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         FavouriteSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["widget_url"]
+                                                .liked![index!]["widget_url"]
                                                 .toString()
                                                 .contains(
                                                     'play.google.com/store/apps/details?id=')) {
@@ -975,7 +975,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]
+                                                      .liked![index!]
                                                           ["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -985,7 +985,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           .of<FavouriteSetupProvider>(
                                                               context,
                                                               listen: false)
-                                                      .liked[index]
+                                                      .liked![index!]
                                                           ["widget_url"]
                                                       .toString()
                                                       .split("details?id=")[1]
@@ -994,7 +994,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]
+                                                      .liked![index!]
                                                           ["widget_url"]
                                                       .toString());
                                             } else {
@@ -1002,7 +1002,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["widget_url"]
+                                                  .liked![index!]["widget_url"]
                                                   .toString());
                                             }
                                           },
@@ -1010,7 +1010,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                       FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["widget"]
+                                              .liked![index!]["widget"]
                                               .toString(),
                                           tileType: "Widget",
                                           panelCollapsed: panelCollapsed,
@@ -1030,20 +1030,20 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                               if (Provider.of<FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]
+                                                      .liked![index!]
                                                           ["wallpaper_url"]
                                                       .toString()[0] !=
                                                   "[") {
                                                 if (Provider.of<FavouriteSetupProvider>(
                                                                     context,
                                                                     listen: false)
-                                                                .liked[index]
+                                                                .liked![index!]
                                                             ["wall_id"] ==
                                                         null ||
                                                     Provider.of<FavouriteSetupProvider>(
                                                                     context,
                                                                     listen: false)
-                                                                .liked[index]
+                                                                .liked![index!]
                                                             ["wall_id"] ==
                                                         "") {
                                                   debugPrint("Id Not Found!");
@@ -1051,7 +1051,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                               FavouriteSetupProvider>(
                                                           context,
                                                           listen: false)
-                                                      .liked[index]
+                                                      .liked![index!]
                                                           ["wallpaper_url"]
                                                       .toString());
                                                 } else {
@@ -1061,25 +1061,25 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         Provider.of<FavouriteSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .liked[index]
+                                                            .liked![index!]
                                                                 ["wall_id"]
                                                             .toString(),
                                                         Provider.of<FavouriteSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .liked[index][
+                                                            .liked![index!][
                                                                 "wallpaper_provider"]
                                                             .toString(),
                                                         Provider.of<FavouriteSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .liked[index][
+                                                            .liked![index!][
                                                                 "wallpaper_url"]
                                                             .toString(),
                                                         Provider.of<FavouriteSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                            .liked[index][
+                                                            .liked![index!][
                                                                 "wallpaper_url"]
                                                             .toString(),
                                                       ]);
@@ -1089,7 +1089,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]
+                                                    .liked![index!]
                                                         ["wallpaper_url"][1]
                                                     .toString());
                                               }
@@ -1098,12 +1098,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                 FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["wallpaper_url"]
                                                         .toString()[0] !=
                                                     "["
                                                 ? "Prism"
-                                                : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked[index]["wallpaper_url"][2].toString() : ""}",
+                                                : "${Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][0]} - ${(Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"] as List).length > 2 ? Provider.of<FavouriteSetupProvider>(context, listen: false).liked![index!]["wallpaper_url"][2].toString() : ""}",
                                             tileType: "Wallpaper",
                                             panelCollapsed: panelCollapsed,
                                             delay: const Duration(
@@ -1114,7 +1114,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["icon_url"]
+                                                    .liked![index!]["icon_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
@@ -1122,7 +1122,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                     Provider.of<FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1133,7 +1133,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["icon_url"]
+                                                  .liked![index!]["icon_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
@@ -1142,7 +1142,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                 FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1152,7 +1152,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             .of<FavouriteSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["icon_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1161,7 +1161,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                 FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["icon_url"]
                                                         .toString());
                                               } else {
@@ -1169,7 +1169,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["icon_url"]
+                                                    .liked![index!]["icon_url"]
                                                     .toString());
                                               }
                                             },
@@ -1177,7 +1177,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         FavouriteSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["icon"]
+                                                .liked![index!]["icon"]
                                                 .toString(),
                                             tileType: "Icons",
                                             panelCollapsed: panelCollapsed,
@@ -1189,7 +1189,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["widget_url"]
+                                                    .liked![index!]["widget_url"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
@@ -1197,7 +1197,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                     Provider.of<FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1208,7 +1208,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["widget_url"]
+                                                  .liked![index!]["widget_url"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
@@ -1217,7 +1217,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                 FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1227,7 +1227,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             .of<FavouriteSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["widget_url"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1236,7 +1236,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                 FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["widget_url"]
                                                         .toString());
                                               } else {
@@ -1244,7 +1244,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["widget_url"]
+                                                    .liked![index!]["widget_url"]
                                                     .toString());
                                               }
                                             },
@@ -1252,7 +1252,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         FavouriteSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["widget"]
+                                                .liked![index!]["widget"]
                                                 .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
@@ -1264,7 +1264,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["widget_url2"]
+                                                    .liked![index!]["widget_url2"]
                                                     .toString()
                                                     .contains(
                                                         'play.google.com/store/apps/details?id=')
@@ -1272,7 +1272,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                     Provider.of<FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1283,7 +1283,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                           FavouriteSetupProvider>(
                                                       context,
                                                       listen: false)
-                                                  .liked[index]["widget_url2"]
+                                                  .liked![index!]["widget_url2"]
                                                   .toString()
                                                   .contains(
                                                       'play.google.com/store/apps/details?id=')) {
@@ -1292,7 +1292,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                 FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1302,7 +1302,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             .of<FavouriteSetupProvider>(
                                                                 context,
                                                                 listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["widget_url2"]
                                                         .toString()
                                                         .split("details?id=")[1]
@@ -1311,7 +1311,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                                 FavouriteSetupProvider>(
                                                             context,
                                                             listen: false)
-                                                        .liked[index]
+                                                        .liked![index!]
                                                             ["widget_url2"]
                                                         .toString());
                                               } else {
@@ -1319,7 +1319,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                             FavouriteSetupProvider>(
                                                         context,
                                                         listen: false)
-                                                    .liked[index]["widget_url2"]
+                                                    .liked![index!]["widget_url2"]
                                                     .toString());
                                               }
                                             },
@@ -1327,7 +1327,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                                         FavouriteSetupProvider>(
                                                     context,
                                                     listen: false)
-                                                .liked[index]["widget2"]
+                                                .liked![index!]["widget2"]
                                                 .toString(),
                                             tileType: "Widget",
                                             panelCollapsed: panelCollapsed,
@@ -1366,24 +1366,24 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                           Provider.of<FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index]["id"]
+                                              .liked![index!]["id"]
                                               .toString(),
                                           Provider.of<FavouriteSetupProvider>(
                                                   context,
                                                   listen: false)
-                                              .liked[index] as Map);
+                                              .liked![index!] as Map);
                                     });
                                   } else {
                                     onFavSetup(
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[index]["id"]
+                                            .liked![index!]["id"]
                                             .toString(),
                                         Provider.of<FavouriteSetupProvider>(
                                                 context,
                                                 listen: false)
-                                            .liked[index] as Map);
+                                            .liked![index!] as Map);
                                   }
                                 },
                                 iconColor: Theme.of(context).accentColor,
@@ -1391,7 +1391,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                 isFavorite: box.get(
                                     Provider.of<FavouriteSetupProvider>(context,
                                             listen: false)
-                                        .liked[index]["id"]
+                                        .liked![index!]["id"]
                                         .toString(),
                                     defaultValue: false) as bool,
                               ),
@@ -1402,11 +1402,11 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                                     index.toString(),
                                     Provider.of<FavouriteSetupProvider>(context,
                                             listen: false)
-                                        .liked[index]["name"]
+                                        .liked![index!]["name"]
                                         .toString(),
                                     Provider.of<FavouriteSetupProvider>(context,
                                             listen: false)
-                                        .liked[index]["image"]
+                                        .liked![index!]["image"]
                                         .toString());
                               },
                               child: Container(
@@ -1463,7 +1463,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                       child: CachedNetworkImage(
                         imageUrl: Provider.of<FavouriteSetupProvider>(context,
                                 listen: false)
-                            .liked[index]["image"]
+                            .liked![index!]["image"]
                             .toString(),
                         imageBuilder: (context, imageProvider) => Container(
                           margin: EdgeInsets.symmetric(
@@ -1507,7 +1507,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen>
                 alignment: Alignment.topLeft,
                 child: Padding(
                   padding:
-                      EdgeInsets.fromLTRB(8.0, globals.notchSize + 8, 8, 8),
+                      EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
                   child: IconButton(
                     onPressed: () {
                       navStack.removeLast();
@@ -1563,13 +1563,13 @@ class SetupDetailsTile extends StatelessWidget {
   final Function onTap;
   final Future<bool> isInstalled;
   const SetupDetailsTile({
-    Key key,
-    @required this.delay,
-    @required this.tileText,
-    @required this.tileType,
-    @required this.onTap,
-    @required this.panelCollapsed,
-    @required this.isInstalled,
+    Key? key,
+    required this.delay,
+    required this.tileText,
+    required this.tileType,
+    required this.onTap,
+    required this.panelCollapsed,
+    required this.isInstalled,
   }) : super(key: key);
 
   @override
@@ -1676,24 +1676,24 @@ class SetupDetailsTile extends StatelessWidget {
 }
 
 class ModifiedDownloadButton extends StatelessWidget {
-  final int index;
-  const ModifiedDownloadButton({@required this.index});
+  final int? index;
+  const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
     return Provider.of<FavouriteSetupProvider>(context, listen: false)
-                .liked[index]["wallpaper_url"]
+                .liked![index!]["wallpaper_url"]
                 .toString()[0] !=
             "["
         ? Provider.of<FavouriteSetupProvider>(context, listen: false)
-                        .liked[index]["wall_id"] !=
+                        .liked![index!]["wall_id"] !=
                     null &&
                 Provider.of<FavouriteSetupProvider>(context, listen: false)
-                        .liked[index]["wall_id"] !=
+                        .liked![index!]["wall_id"] !=
                     ""
             ? DownloadButton(
                 link:
                     Provider.of<FavouriteSetupProvider>(context, listen: false)
-                        .liked[index]["wallpaper_url"]
+                        .liked![index!]["wallpaper_url"]
                         .toString(),
                 colorChanged: false,
               )
@@ -1701,7 +1701,7 @@ class ModifiedDownloadButton extends StatelessWidget {
                 onTap: () async {
                   launch(Provider.of<FavouriteSetupProvider>(context,
                           listen: false)
-                      .liked[index]["wallpaper_url"]
+                      .liked![index!]["wallpaper_url"]
                       .toString());
                 },
                 child: Container(
@@ -1726,7 +1726,7 @@ class ModifiedDownloadButton extends StatelessWidget {
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
-                  .liked[index]["wallpaper_url"][1]
+                  .liked![index!]["wallpaper_url"][1]
                   .toString());
             },
             child: Container(
@@ -1752,23 +1752,23 @@ class ModifiedDownloadButton extends StatelessWidget {
 }
 
 class ModifiedSetWallpaperButton extends StatelessWidget {
-  final int index;
-  const ModifiedSetWallpaperButton({@required this.index});
+  final int? index;
+  const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
     return Provider.of<FavouriteSetupProvider>(context, listen: false)
-                .liked[index]["wallpaper_url"]
+                .liked![index!]["wallpaper_url"]
                 .toString()[0] !=
             "["
         ? Provider.of<FavouriteSetupProvider>(context, listen: false)
-                        .liked[index]["wall_id"] !=
+                        .liked![index!]["wall_id"] !=
                     null &&
                 Provider.of<FavouriteSetupProvider>(context, listen: false)
-                        .liked[index]["wall_id"] !=
+                        .liked![index!]["wall_id"] !=
                     ""
             ? SetWallpaperButton(
                 url: Provider.of<FavouriteSetupProvider>(context, listen: false)
-                    .liked[index]["wallpaper_url"]
+                    .liked![index!]["wallpaper_url"]
                     .toString(),
                 colorChanged: false,
               )
@@ -1776,7 +1776,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 onTap: () async {
                   launch(Provider.of<FavouriteSetupProvider>(context,
                           listen: false)
-                      .liked[index]["wallpaper_url"]
+                      .liked![index!]["wallpaper_url"]
                       .toString());
                 },
                 child: Container(
@@ -1801,7 +1801,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
         : GestureDetector(
             onTap: () async {
               launch(Provider.of<FavouriteSetupProvider>(context, listen: false)
-                  .liked[index]["wallpaper_url"][1]
+                  .liked![index!]["wallpaper_url"][1]
                   .toString());
             },
             child: Container(

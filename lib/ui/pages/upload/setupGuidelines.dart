@@ -18,7 +18,7 @@ class SetupGuidelinesScreen extends StatefulWidget {
 }
 
 class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
-  File _setup;
+  File? _setup;
 
   final picker2 = ImagePicker();
 

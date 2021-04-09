@@ -89,7 +89,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 Text(
                   "Share Prism with friends",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyText2.copyWith(
+                  style: Theme.of(context).textTheme.bodyText2!.copyWith(
                       fontSize: 18, color: Theme.of(context).accentColor),
                 ),
                 Container(
@@ -97,7 +97,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   child: Text(
                     "Get 50 coins when your friend launches the app from the link!",
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyText2.copyWith(
+                    style: Theme.of(context).textTheme.bodyText2!.copyWith(
                         color: Theme.of(context).accentColor.withOpacity(0.5)),
                   ),
                 ),
@@ -106,7 +106,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   child: Text(
                     "They also get 50 coins, which you can spend on exclusives.",
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyText2.copyWith(
+                    style: Theme.of(context).textTheme.bodyText2!.copyWith(
                         color: Theme.of(context).accentColor.withOpacity(0.5)),
                   ),
                 ),

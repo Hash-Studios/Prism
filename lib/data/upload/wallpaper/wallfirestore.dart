@@ -8,14 +8,14 @@ import 'package:http/http.dart' as http;
 
 Firestore firestore = Firestore.instance;
 Future<void> createRecord(
-    String id,
-    String wallpaperProvider,
-    String wallpaperThumb,
-    String wallpaperUrl,
-    String wallpaperResolution,
-    String wallpaperSize,
-    String wallpaperCategory,
-    String wallpaperDesc,
+    String? id,
+    String? wallpaperProvider,
+    String? wallpaperThumb,
+    String? wallpaperUrl,
+    String? wallpaperResolution,
+    String? wallpaperSize,
+    String? wallpaperCategory,
+    String? wallpaperDesc,
     dynamic review) async {
   await firestore.collection("walls").add({
     'by': main.prefs.get('name'),
@@ -35,7 +35,7 @@ Future<void> createRecord(
     'twitter': main.prefs.get('twitter') ?? "",
     'instagram': main.prefs.get('instagram') ?? "",
   });
-  int wallsUploaded = main.prefs.get("wallsUploaded") as int ?? 0;
+  int wallsUploaded = main.prefs.get("wallsUploaded") as int? ?? 0;
   if (main.prefs.get('date') !=
       DateFormat("yy-MM-dd").format(
         DateTime.now(),
@@ -114,10 +114,10 @@ Future<void> createRecord(
 }
 
 Future<void> createSetup(
-    String id,
-    String imageURL,
-    String wallpaperProvider,
-    String wallpaperThumb,
+    String? id,
+    String? imageURL,
+    String? wallpaperProvider,
+    String? wallpaperThumb,
     dynamic wallpaperUrl,
     String iconName,
     String iconURL,
@@ -128,7 +128,7 @@ Future<void> createSetup(
     String setupName,
     String setupDesc,
     String wallId,
-    bool review) async {
+    bool? review) async {
   await firestore.collection("setups").add({
     'by': main.prefs.get('name'),
     'email': main.prefs.get('email'),
@@ -212,10 +212,10 @@ Future<void> createSetup(
 
 Future<void> updateSetup(
     String setupDocId,
-    String id,
-    String imageURL,
-    String wallpaperProvider,
-    String wallpaperThumb,
+    String? id,
+    String? imageURL,
+    String? wallpaperProvider,
+    String? wallpaperThumb,
     dynamic wallpaperUrl,
     String iconName,
     String iconURL,
@@ -226,7 +226,7 @@ Future<void> updateSetup(
     String setupName,
     String setupDesc,
     String wallId,
-    bool review) async {
+    bool? review) async {
   await firestore.collection("setups").document(setupDocId).updateData({
     'by': main.prefs.get('name'),
     'email': main.prefs.get('email'),
